@@ -23,6 +23,18 @@ RUN_TESTS="${RUN_TESTS:-1}"      # set 0 to skip Julia tests (they will fail unt
 
 die() { echo "ERROR: $*" >&2; exit 1; }
 
+# Windows/Git Bash ships python as `python`, not `python3`. Detect once.
+PY=""
+for c in python3 python py; do
+  if command -v "$c" >/dev/null 2>&1; then
+    if "$c" -c "import sys; sys.exit(0 if sys.version_info[0]==3 else 1)" 2>/dev/null; then
+      PY="$c"; break
+    fi
+  fi
+done
+[[ -n "$PY" ]] || die "no Python 3 found. Install from python.org (tick 'Add to PATH')."
+
+
 [[ $# -ge 1 ]] || die "usage: bash signoff.sh <patch> [patch...]"
 [[ -f SOURCES.md && -d .git ]] || die "run from inside the repo root"
 command -v git >/dev/null || die "git not found"
@@ -83,7 +95,7 @@ fi
 
 # ---------------------------------------------------------------------------
 echo "==> ledger provenance check"
-python3 tools/ledger_to_julia.py --check || {
+"$PY" tools/ledger_to_julia.py --check || {
   echo
   echo "Ledger check FAILED. The branch exists but will not be pushed."
   echo "Either fix the ledger and amend, or discard:"

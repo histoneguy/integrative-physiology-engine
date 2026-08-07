@@ -30,6 +30,18 @@ STRIP_SEED_ROWS=0
 
 die() { echo "ERROR: $*" >&2; exit 1; }
 
+# Windows/Git Bash ships python as `python`, not `python3`. Detect once.
+PY=""
+for c in python3 python py; do
+  if command -v "$c" >/dev/null 2>&1; then
+    if "$c" -c "import sys; sys.exit(0 if sys.version_info[0]==3 else 1)" 2>/dev/null; then
+      PY="$c"; break
+    fi
+  fi
+done
+[[ -n "$PY" ]] || die "no Python 3 found. Install from python.org (tick 'Add to PATH')."
+
+
 check_repo() {
   [[ -f SOURCES.md && -d .git ]] || die "run this from inside the ipe/ directory"
 }
@@ -61,7 +73,7 @@ EOF
   rm -f Project.toml.bak
 
   echo "==> README licence section"
-  python3 - <<'PY'
+  "$PY" - <<'PYEOF'
 import pathlib, re
 p = pathlib.Path("README.md"); s = p.read_text()
 s = re.sub(
@@ -74,7 +86,7 @@ s = s.replace("TODO — CITATION.cff once the first release is tagged.",
               "See `CITATION.cff`.")
 p.write_text(s)
 print("   README updated")
-PY
+PYEOF
 
   echo "==> CITATION.cff"
   cat > CITATION.cff <<EOF
@@ -96,11 +108,11 @@ EOF
     echo "==> stripping scaffold seed rows from ledger"
     grep -v "SCAFFOLD SEED" ledger/parameters.csv > /tmp/led.csv
     mv /tmp/led.csv ledger/parameters.csv
-    python3 tools/ledger_to_julia.py
+    "$PY" tools/ledger_to_julia.py
   fi
 
   echo "==> verifying ledger/codegen consistency"
-  python3 tools/ledger_to_julia.py --check
+  "$PY" tools/ledger_to_julia.py --check
 
   echo "==> remaining TODOs (review these):"
   grep -rn "TODO" README.md Project.toml CITATION.cff 2>/dev/null || echo "   none"
