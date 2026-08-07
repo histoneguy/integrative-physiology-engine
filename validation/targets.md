@@ -68,3 +68,13 @@ When extracting a data series from a published figure:
 3. Store the extracted series under `validation/data/` with a manifest naming the source.
 4. Cite the study that generated the data, not the review or model paper that reprinted it.
 5. Do not commit the source figure image.
+
+## Averaging of reference data
+
+This model is cycle-averaged (ADR 0002). Reference data must be averaged to a declared
+window before comparison. See `validation/averaging.md` - binding, and to be settled
+before any dataset is digitised.
+
+Endpoints that are within-cycle or spectral quantities (HRV, RSA, Mayer waves,
+beat-to-beat variability) are **out of scope** and must not be listed above as
+achievable targets.

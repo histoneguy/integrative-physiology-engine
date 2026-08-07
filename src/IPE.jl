@@ -11,9 +11,10 @@ Architecture:
     interpreted at run time.
   - Every numeric constant originates in ledger/parameters.csv and reaches code only
     via tools/ledger_to_julia.py. See LedgerParams.
-  - Subsystems are components with a declared interface. Each may expose a
-    quasi-steady-state form so long-horizon runs can collapse fast loops instead of
-    integrating them.
+  - CYCLE-AVERAGED (ADR 0002). Cardiac and respiratory cycles are not integrated.
+    Within-cycle quantities are reconstructed algebraically - see reconstruct.jl -
+    and are never reported as simulated. Cycle-averaging is itself the fast-mode
+    reduction, so the per-component `qss` flag is near-vestigial; default false.
   - Ensembles are the primary workload. STORAGE is the binding constraint, not
     compute: at 5 s resolution a 1000-member 30-day population would materialise
     ~0.9 TB of trajectory. Members return summary statistics, never trajectories.
@@ -39,6 +40,7 @@ include("LedgerParams.jl")
 using .LedgerParams
 
 include("recording.jl")
+include("reconstruct.jl")
 include("components/BodyFluids.jl")
 include("assemble.jl")
 include("ensemble.jl")
