@@ -14,7 +14,10 @@ Architecture:
   - Subsystems are components with a declared interface. Each may expose a
     quasi-steady-state form so long-horizon runs can collapse fast loops instead of
     integrating them.
-  - Ensembles are the primary workload. Per-run memory is the binding constraint.
+  - Ensembles are the primary workload. STORAGE is the binding constraint, not
+    compute: at 5 s resolution a 1000-member 30-day population would materialise
+    ~0.9 TB of trajectory. Members return summary statistics, never trajectories.
+    See recording.jl.
 
 STATUS: walking skeleton. The physiological payload is deliberately trivial and is
 NOT a physiological claim. Its purpose is to prove the pipeline end to end -
@@ -35,11 +38,13 @@ using SciMLBase
 include("LedgerParams.jl")
 using .LedgerParams
 
+include("recording.jl")
 include("components/BodyFluids.jl")
 include("assemble.jl")
 include("ensemble.jl")
 
 export build_model, solve_individual, run_population
+export FullTrace, StreamingStats, EventWindows, projected_storage
 export LedgerParams, provenance, unledgered_check
 
 end # module
