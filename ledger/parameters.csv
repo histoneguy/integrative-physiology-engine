@@ -1,0 +1,2 @@
+param_id,name,symbol,units,value,uncertainty_type,uncertainty_value,subsystem,source_tier,citation,doi,extraction_method,species,entered_by,date_entered,notes
+EXAMPLE.DELETE.ME,Example row - delete before first real entry,X,unitless,0,none,,cardiovascular,A,"Author A, Author B. Title. Journal Year;Vol:pp.",10.0000/example,reported,human,initial-scaffold,2026-08-06,Schema demonstration only. Delete this row.
