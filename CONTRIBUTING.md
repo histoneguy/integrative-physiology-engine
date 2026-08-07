@@ -42,3 +42,12 @@ explicitly rather than tuning it away.
 
 Use the template. PRs that add or change parameters without corresponding ledger entries
 will not be merged.
+
+## Generated patches
+
+Changes produced outside the repo arrive as `git format-patch` series in `incoming/`
+and are applied via `bash signoff.sh`. See `incoming/README.md`.
+
+Authorship is preserved; the reviewer adds `Signed-off-by`. Do not re-author a
+generated commit under your own name - the distinction between author and signer is
+part of the provenance record.
