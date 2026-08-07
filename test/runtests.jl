@@ -54,3 +54,29 @@ using IPE
         # TODO: bound the disagreement on slow states once real subsystems land.
     end
 end
+
+@testset "coupling partition rules" begin
+    couplings = [
+        Coupling(:cv, :renal, Neurohumoral; tau_seconds = 3.0,
+                 note = "sympathetic effector"),
+        Coupling(:renal, :cv, Neurohumoral; tau_seconds = 3600.0,
+                 note = "aldosterone tubular effect"),
+        Coupling(:bodyfluids, :cv, Mechanical;
+                 note = "blood volume -> venous return -> filling; hydraulic"),
+    ]
+
+    # Cutting a mechanical coupling must fail.
+    @test_throws ErrorException validate_partition(
+        couplings, Dict(:cv => :fast, :renal => :slow, :bodyfluids => :slow);
+        boundary_seconds = 60.0)
+
+    # Keeping mechanically-coupled subsystems together must pass.
+    r = validate_partition(
+        couplings, Dict(:cv => :fast, :bodyfluids => :fast, :renal => :slow);
+        boundary_seconds = 60.0)
+    @test r.ok
+
+    # Contradictory constructions are rejected at construction time.
+    @test_throws ErrorException Coupling(:a, :b, Neurohumoral)
+    @test_throws ErrorException Coupling(:a, :b, Mechanical; tau_seconds = 1.0)
+end

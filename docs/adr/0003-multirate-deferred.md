@@ -85,3 +85,72 @@ standard.
 
 Do not build the partition before running the measurements. The tools in
 src/profiling.jl exist to make the decision, not to implement it.
+
+---
+
+## Amendment, 2026-08-06: lagged coupling weakens the correctness objection
+
+**Objection raised:** the feedback pathways have their own physiological timescales.
+
+Correct, and it materially changes risk assessment 3 above.
+
+If a coupling is a first-order lag, a partition does not CUT it - it ASSIGNS it. And
+lagged coupling is exactly the condition under which multirate is safe: the lag
+low-pass filters the upstream signal, so a downstream block never sees high-frequency
+content from a fast block, and interpolation error is attenuated by the same dynamics
+that make the coupling physiological.
+
+**The lag is the interpolator.** A multirate infinitesimal scheme that advances the
+fast solution within the slow step and averages it delivers precisely the filtered
+signal the lag equation requires. Method and physiology want the same thing.
+
+### The refined partition rule
+
+Not all coupling here is lagged. Two classes, and the distinction is the criterion:
+
+| Class | Character | Partition? |
+|---|---|---|
+| **Neurohumoral** | first-order lag, measured tau | **Safe to cut across** |
+| **Mechanical** | hydraulic pressure-flow, effectively instantaneous | **Never cut** |
+| **Conservation** | mass/volume/solute balance, algebraic | **Never cut** |
+
+Examples of the second and third: blood volume -> venous return -> cardiac filling is
+hydraulic and has no lag; sodium content and volume determining concentration is
+algebraic. Neither has anything to hide interpolation error behind.
+
+Measured neurohumoral time constants spanning the range: vagal baroreflex ~0.5 s,
+sympathetic effector 2-5 s, renin release minutes, angiotensin II seconds-minutes,
+ADH renal effect 10-30 min, aldosterone synthesis 30-60 min with tubular effect
+hours, autonomic resetting hours-days.
+
+**Cut along neurohumoral pathways; never across mechanical or conservation ones.**
+This is a physiologically motivated boundary, which was the main deficiency in the
+original proposal.
+
+Enforced mechanically by `validate_partition` in src/coupling.jl.
+
+### Evidence quality note
+
+Coupling GAINS are the weak link - frequently fitted rather than measured, and they
+populate the `calibrated` category in the ledger. Coupling TIME CONSTANTS are the
+opposite: directly measured and well replicated.
+
+So the timescale structure of this model rests on firmer empirical ground than its
+gain structure. Building the architecture around timescales leans on what is actually
+known rather than on what was fitted.
+
+### What survives of the objection
+
+1. **State-dependence still applies.** Time constants shift with physiological state.
+   Run `timescale_audit` at rest, mid-hemorrhage and peak exercise regardless.
+2. **Couplings whose tau sits AT the boundary.** The filtering argument is weakest
+   precisely where the lag is neither clearly fast nor clearly slow.
+   `validate_partition` warns on these.
+3. **The scheme must average, not sample.** A naive multirate method that samples the
+   fast variable at slow steps aliases it. MRI-type schemes that integrate the fast
+   solution within the slow step do not. Method choice is load-bearing.
+
+### Status change
+
+Multirate remains **Deferred** pending profiling, but the correctness risk is now
+assessed as materially lower, and the partition boundary is no longer arbitrary.

@@ -41,6 +41,7 @@ using .LedgerParams
 
 include("recording.jl")
 include("reconstruct.jl")
+include("coupling.jl")
 include("profiling.jl")
 include("components/BodyFluids.jl")
 include("assemble.jl")
@@ -49,6 +50,8 @@ include("ensemble.jl")
 export build_model, solve_individual, run_population
 export FullTrace, StreamingStats, EventWindows, projected_storage
 export step_distribution, cost_profile, timescale_audit, boundary_sensitivity
+export Coupling, CouplingKind, Neurohumoral, Mechanical, Conservation
+export validate_partition, suggest_boundary
 export LedgerParams, provenance, unledgered_check
 
 end # module
