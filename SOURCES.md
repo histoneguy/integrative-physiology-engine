@@ -72,7 +72,7 @@ definition file into another language is a translation, and translations are der
 
 ## 3. Prior-exposure declaration
 
-Before a contributor's first commit, they must complete `docs/exposure-declaration.md`.
+Before a contributor's first commit, they must complete a prior-exposure declaration held privately by the project lead. Declarations are NOT stored in this repository - see `docs/exposure-declarations-README.md`.
 
 Prior exposure does **not** automatically disqualify anyone. Copyright does not restrict what
 is in your memory. **Contract may.** If a contributor has signed or clicked through terms

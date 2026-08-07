@@ -34,7 +34,7 @@ outputs. See `validation/targets.md`.
     SOURCES.md              Source whitelist policy (binding)
     CONTRIBUTING.md         Contributor rules
     docs/canon.md           Bibliography and design-rationale sources
-    docs/exposure-declaration.md
+    docs/exposure-declarations-README.md
     ledger/schema.md        Parameter ledger field definitions
     ledger/parameters.csv   The ledger
     validation/targets.md   Challenge protocols and validation datasets

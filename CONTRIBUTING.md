@@ -3,7 +3,7 @@
 ## Before your first commit
 
 1. Read `SOURCES.md` in full.
-2. Complete `docs/exposure-declaration.md` and submit it as its own PR.
+2. Complete a prior-exposure declaration with the project lead. Declarations are NOT stored in this repository - see `docs/exposure-declarations-README.md`.
 3. Confirm you understand that the git history of this repository is the project's
    contemporaneous provenance evidence.
 

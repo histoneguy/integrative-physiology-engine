@@ -1,5 +1,5 @@
 name = "IPE"
-uuid = "00000000-0000-0000-0000-000000000000"  # TODO: generate with UUIDs.uuid4()
+uuid = "0126f89b-7ef0-4c89-b352-8fc383fedcbb"
 authors = ["TODO"]
 version = "0.0.1"
 
