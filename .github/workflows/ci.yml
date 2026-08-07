@@ -1,0 +1,26 @@
+name: CI
+on: [push, pull_request]
+
+jobs:
+  ledger:
+    name: Ledger provenance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      # Fails if any parameter lacks a citation, units, valid tier, or extraction
+      # method - and if generated code is stale relative to the ledger. This is what
+      # makes SOURCES.md mechanically enforced rather than aspirational.
+      - run: python3 tools/ledger_to_julia.py --check
+
+  test:
+    name: Julia tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
+        with: { version: '1.10' }
+      - uses: julia-actions/cache@v2
+      - uses: julia-actions/julia-buildpkg@v1
+      - uses: julia-actions/julia-runtest@v1
