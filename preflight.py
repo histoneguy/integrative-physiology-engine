@@ -78,10 +78,50 @@ def valid_reponame(v: str) -> str | None:
     return None if re.match(r"^[A-Za-z0-9._-]+$", v) else "letters, numbers, dots, dashes and underscores only"
 
 
+def _run(cmd: list[str]) -> str:
+    """Run a command, return stdout stripped, empty string on any failure."""
+    try:
+        r = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True, timeout=15)
+        return r.stdout.strip() if r.returncode == 0 else ""
+    except Exception:
+        return ""
+
+
 def git_config_get(key: str) -> str:
-    r = subprocess.run(["git", "config", "--get", key], cwd=ROOT,
-                       capture_output=True, text=True)
-    return r.stdout.strip()
+    """Read the GLOBAL git config only.
+
+    Deliberately not the repo-local config: this repository ships with a
+    placeholder identity (Project scaffold <scaffold@localhost>) from when the
+    scaffold commits were generated. Offering that as a default would quietly put
+    the wrong name on your commits.
+    """
+    return _run(["git", "config", "--global", "--get", key])
+
+
+def gh_user_field(field: str) -> str:
+    """Pull a field from the signed-in GitHub account via the gh CLI."""
+    return _run(["gh", "api", "user", "--jq", f".{field} // empty"])
+
+
+def guess_defaults() -> dict:
+    """Best-effort defaults, in order of trustworthiness."""
+    print("\n   Looking up your details...", end=" ", flush=True)
+    login = gh_user_field("login")
+    name = git_config_get("user.name") or gh_user_field("name")
+    email = git_config_get("user.email") or gh_user_field("email")
+
+    # GitHub hides real emails by default; the noreply address always works for
+    # commits and keeps your address private.
+    if not email and login:
+        uid = gh_user_field("id")
+        email = f"{uid}+{login}@users.noreply.github.com" if uid else ""
+
+    found = [k for k, v in (("name", name), ("email", email),
+                            ("GitHub username", login)) if v]
+    print("found " + (", ".join(found) if found else "nothing"))
+    if not found:
+        print("   (gh not on PATH, or not signed in - you can just type the answers)")
+    return {"name": name, "email": email, "login": login}
 
 
 def load_config() -> dict:
@@ -99,10 +139,13 @@ def load_config() -> dict:
     print("  A few questions. Press Enter to accept anything in [brackets].")
     print("-" * 70)
 
+    d = guess_defaults()
+    print()
+
     cfg = {}
-    cfg["your_name"] = ask("Your full name", git_config_get("user.name"))
-    cfg["your_email"] = ask("Your email", git_config_get("user.email"), valid_email)
-    cfg["gh_owner"] = ask("Your GitHub username", "histoneguy", valid_reponame)
+    cfg["your_name"] = ask("Your full name", d["name"])
+    cfg["your_email"] = ask("Your email", d["email"], valid_email)
+    cfg["gh_owner"] = ask("Your GitHub username", d["login"], valid_reponame)
     cfg["gh_repo"] = ask("Repository name", "integrative-physiology-engine", valid_reponame)
 
     print()
