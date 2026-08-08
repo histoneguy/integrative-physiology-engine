@@ -1,35 +1,21 @@
 #!/usr/bin/env python3
 """
-Pre-publication setup. Cross-platform replacement for setup-github.sh preflight.
+Pre-publication setup.
 
 HOW TO USE
-    1. Edit the CONFIG block below.
-    2. In VS Code, open this file and press the Run button (or F5).
-    3. Look at the Source Control panel to see what changed.
+    In VS Code, open this file and press the Run button (top right).
+    It will ask you four questions, then do the rest.
 
-This script only touches files in this folder. It does not talk to GitHub and it
-does not commit anything. Everything it does is visible in the Source Control panel
-before you decide to keep it.
+    Nothing is sent anywhere. This script only edits files in this folder,
+    and everything it changes shows up in the Source Control panel for you
+    to review before you commit.
 
-The one thing it fetches from the internet is the Apache licence text. If you have no
-connection it will tell you and carry on.
+Your answers are saved to .publish-config.json so you are only asked once.
+Delete that file if you want to change them.
 """
 
-# =============================================================================
-# CONFIG - edit these seven lines, then run
-# =============================================================================
-GH_OWNER          = "histoneguy"
-GH_REPO           = "integrative-physiology-engine"
-YOUR_NAME         = "Your Name"
-YOUR_EMAIL        = "you@example.com"
-COPYRIGHT_HOLDER  = "Your Name"
-
-# The eight scaffold parameter rows carry citations written from memory and are
-# marked TODO-VERIFY. Public git history is permanent. True = remove them now.
-STRIP_SEED_ROWS   = False
-# =============================================================================
-
 import datetime
+import json
 import re
 import subprocess
 import sys
@@ -37,6 +23,7 @@ import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
+CONFIG_FILE = ROOT / ".publish-config.json"
 YEAR = datetime.date.today().year
 TODAY = datetime.date.today().isoformat()
 
@@ -59,6 +46,77 @@ def warn(msg: str) -> None:
     print(f"   !!  {msg}")
 
 
+def ask(prompt: str, default: str = "", validate=None) -> str:
+    """Ask until we get something usable. Blank accepts the default."""
+    while True:
+        suffix = f" [{default}]" if default else ""
+        try:
+            val = input(f"   {prompt}{suffix}: ").strip()
+        except EOFError:
+            sys.exit(
+                "\nERROR: this script needs to ask you questions, but nothing is\n"
+                "       connected to type into. In VS Code use the Run button (top\n"
+                "       right) rather than 'Run Python File in Interactive Window'."
+            )
+        val = val or default
+        if not val:
+            print("       (required)")
+            continue
+        if validate:
+            err = validate(val)
+            if err:
+                print(f"       {err}")
+                continue
+        return val
+
+
+def valid_email(v: str) -> str | None:
+    return None if re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", v) else "that does not look like an email address"
+
+
+def valid_reponame(v: str) -> str | None:
+    return None if re.match(r"^[A-Za-z0-9._-]+$", v) else "letters, numbers, dots, dashes and underscores only"
+
+
+def git_config_get(key: str) -> str:
+    r = subprocess.run(["git", "config", "--get", key], cwd=ROOT,
+                       capture_output=True, text=True)
+    return r.stdout.strip()
+
+
+def load_config() -> dict:
+    if CONFIG_FILE.exists():
+        cfg = json.loads(CONFIG_FILE.read_text(encoding="utf-8"))
+        print("\nUsing saved settings from .publish-config.json:")
+        for k, v in cfg.items():
+            print(f"   {k:18} {v}")
+        ans = input("\n   Use these? [Y/n]: ").strip().lower()
+        if ans != "n":
+            return cfg
+        print()
+
+    print("\n" + "-" * 70)
+    print("  A few questions. Press Enter to accept anything in [brackets].")
+    print("-" * 70)
+
+    cfg = {}
+    cfg["your_name"] = ask("Your full name", git_config_get("user.name"))
+    cfg["your_email"] = ask("Your email", git_config_get("user.email"), valid_email)
+    cfg["gh_owner"] = ask("Your GitHub username", "histoneguy", valid_reponame)
+    cfg["gh_repo"] = ask("Repository name", "integrative-physiology-engine", valid_reponame)
+
+    print()
+    print("   The ledger has 8 placeholder parameter rows whose citations were")
+    print("   written from memory and are marked TODO-VERIFY. Published git")
+    print("   history is permanent.")
+    strip = input("   Remove them before publishing? [y/N]: ").strip().lower()
+    cfg["strip_seed_rows"] = strip == "y"
+
+    CONFIG_FILE.write_text(json.dumps(cfg, indent=2), encoding="utf-8")
+    print(f"\n   Saved to {CONFIG_FILE.name} (you will not be asked again)")
+    return cfg
+
+
 def check_location() -> None:
     if not (ROOT / "SOURCES.md").exists():
         sys.exit(
@@ -68,32 +126,23 @@ def check_location() -> None:
     if not (ROOT / ".git").exists():
         sys.exit(
             "ERROR: no .git folder here. The repository history is missing.\n"
-            "       Re-extract the tarball rather than copying loose files."
-        )
-
-
-def check_config() -> None:
-    if "Your Name" in (YOUR_NAME, COPYRIGHT_HOLDER) or "you@example.com" == YOUR_EMAIL:
-        sys.exit(
-            "ERROR: edit the CONFIG block at the top of this file first.\n"
-            "       Your name and email go into the licence and the commit history."
+            "       Re-extract the archive rather than copying loose files."
         )
 
 
 def git(*args: str) -> str:
-    return subprocess.run(
-        ["git", *args], cwd=ROOT, capture_output=True, text=True, check=False
-    ).stdout.strip()
+    return subprocess.run(["git", *args], cwd=ROOT, capture_output=True,
+                          text=True, check=False).stdout.strip()
 
 
-def set_identity() -> None:
+def set_identity(cfg) -> None:
     step("Git identity (whose name goes on commits)")
-    subprocess.run(["git", "config", "user.name", YOUR_NAME], cwd=ROOT, check=True)
-    subprocess.run(["git", "config", "user.email", YOUR_EMAIL], cwd=ROOT, check=True)
-    done(f"{YOUR_NAME} <{YOUR_EMAIL}>")
+    subprocess.run(["git", "config", "user.name", cfg["your_name"]], cwd=ROOT, check=True)
+    subprocess.run(["git", "config", "user.email", cfg["your_email"]], cwd=ROOT, check=True)
+    done(f'{cfg["your_name"]} <{cfg["your_email"]}>')
 
 
-def write_licence() -> None:
+def write_licence(cfg) -> None:
     step("Licence (Apache-2.0)")
     lic = ROOT / "LICENSE"
     if lic.exists():
@@ -113,7 +162,7 @@ def write_licence() -> None:
 
     (ROOT / "NOTICE").write_text(
         f"Integrative Physiology Engine\n"
-        f"Copyright {YEAR} {COPYRIGHT_HOLDER}\n\n"
+        f'Copyright {YEAR} {cfg["your_name"]}\n\n'
         "This product includes software developed independently from published\n"
         "peer-reviewed literature. See SOURCES.md for the source whitelist policy.\n",
         encoding="utf-8",
@@ -121,13 +170,13 @@ def write_licence() -> None:
     done("NOTICE written")
 
 
-def fix_project_toml() -> None:
+def fix_project_toml(cfg) -> None:
     step("Project.toml authors")
     p = ROOT / "Project.toml"
     s = p.read_text(encoding="utf-8")
     new = re.sub(
         r'^authors = \[.*\]$',
-        f'authors = ["{YOUR_NAME} <{YOUR_EMAIL}>"]',
+        f'authors = ["{cfg["your_name"]} <{cfg["your_email"]}>"]',
         s,
         flags=re.M,
     )
@@ -162,7 +211,7 @@ def fix_readme() -> None:
         done("already resolved")
 
 
-def write_citation() -> None:
+def write_citation(cfg) -> None:
     step("CITATION.cff")
     (ROOT / "CITATION.cff").write_text(
         "cff-version: 1.2.0\n"
@@ -172,8 +221,8 @@ def write_citation() -> None:
         "  An independent implementation of whole-body integrative human physiology,\n"
         "  built from published peer-reviewed literature with full parameter provenance.\n"
         "authors:\n"
-        f'  - name: "{COPYRIGHT_HOLDER}"\n'
-        f'repository-code: "https://github.com/{GH_OWNER}/{GH_REPO}"\n'
+        f'  - name: "{cfg["your_name"]}"\n'
+        f'repository-code: "https://github.com/{cfg["gh_owner"]}/{cfg["gh_repo"]}"\n'
         "license: Apache-2.0\n"
         "version: 0.0.1\n"
         f'date-released: "{TODAY}"\n',
@@ -182,10 +231,10 @@ def write_citation() -> None:
     done("written")
 
 
-def strip_seeds() -> None:
-    if not STRIP_SEED_ROWS:
+def strip_seeds(cfg) -> None:
+    if not cfg["strip_seed_rows"]:
         step("Scaffold ledger rows")
-        print("   --  keeping them (STRIP_SEED_ROWS = False)")
+        print("   --  keeping them (you chose not to remove them)")
         print("       They are marked TODO-VERIFY. Verify or remove before relying")
         print("       on any value. Git history is permanent once published.")
         return
@@ -217,13 +266,14 @@ def main() -> None:
     print("=" * 70)
 
     check_location()
-    check_config()
-    set_identity()
-    write_licence()
-    fix_project_toml()
+    cfg = load_config()
+
+    set_identity(cfg)
+    write_licence(cfg)
+    fix_project_toml(cfg)
     fix_readme()
-    write_citation()
-    strip_seeds()
+    write_citation(cfg)
+    strip_seeds(cfg)
     regenerate_and_check()
 
     print("\n" + "=" * 70)
@@ -233,9 +283,9 @@ def main() -> None:
     print("=" * 70)
     print(
         "\nNEXT, in VS Code:\n"
-        "  1. Open the Source Control panel (the branch icon in the left bar,\n"
-        "     or Ctrl+Shift+G). Review every changed file.\n"
-        "  2. Type a message such as: Pre-publication: licence, citation, authors\n"
+        "  1. Open the Source Control panel (Ctrl+Shift+G). Review the changed files -\n"
+        "     click any one to see old on the left, new on the right.\n"
+        "  2. Type a message: Pre-publication: licence, citation, authors\n"
         "  3. Press the Commit tick.\n"
         "  4. Press 'Publish Branch' and choose PUBLIC when asked.\n"
         "\nNothing has been sent anywhere yet. Only step 4 reaches the internet.\n"

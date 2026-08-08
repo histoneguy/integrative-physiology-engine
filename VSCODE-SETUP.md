@@ -20,11 +20,12 @@ No terminal required for any of this.
 
 ## Publishing
 
-1. **Edit `preflight.py`.** Open it from the file list. Change the seven lines in the
-   CONFIG block at the top - your name, email, GitHub username, repo name.
+1. **Open `preflight.py`** from the file list and click the ▶ button at the top
+   right. Nothing to edit - it asks you four questions in the terminal panel at the
+   bottom: your name, your email, your GitHub username, and a repository name.
+   Press Enter to accept anything shown in [brackets].
 
-2. **Run it.** With `preflight.py` open, click the ▶ button at the top right.
-   Output appears in a panel at the bottom. It only edits local files.
+   Your answers are saved, so re-running it will not ask again.
 
 3. **Review.** Click the Source Control icon in the left bar (or Ctrl+Shift+G).
    Every changed file is listed. Click any one to see exactly what changed,
