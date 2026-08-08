@@ -2,9 +2,9 @@
 
 Drop generated `.patch` files here, then:
 
-    bash signoff.sh incoming/0001-*.patch
+    python sprint.py
 
-The script shows you the diff, waits for explicit confirmation, applies with
+sprint.py shows you the diff, waits for explicit confirmation, applies with
 `git am --signoff`, runs the ledger check and tests, and pushes a PR branch.
 Nothing is applied before you confirm; nothing is pushed if verification fails.
 

@@ -15,3 +15,8 @@ results/
 .idea/
 .vscode/
 .publish-config.json
+
+# Incoming patch files are working material, not repository content.
+# They also must not register as "uncommitted changes" or sprint.py will
+# refuse to apply them.
+incoming/*.patch

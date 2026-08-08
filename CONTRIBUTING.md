@@ -46,7 +46,7 @@ will not be merged.
 ## Generated patches
 
 Changes produced outside the repo arrive as `git format-patch` series in `incoming/`
-and are applied via `bash signoff.sh`. See `incoming/README.md`.
+and are applied via `python sprint.py`. See `incoming/README.md`.
 
 Authorship is preserved; the reviewer adds `Signed-off-by`. Do not re-author a
 generated commit under your own name - the distinction between author and signer is
