@@ -1,102 +1,149 @@
 """
-Body fluid compartments - WALKING SKELETON COMPONENT.
+Body fluid and sodium balance.
 
-This is a deliberately minimal two-compartment fluid and sodium balance. It exists to
-exercise the architecture, not to make a physiological claim. It will be replaced.
+STRUCTURE SOURCES
+  Mass and volume balance: conservation laws, not taken from any source.
+  Osmotically inactive sodium storage: Rakova N et al, Long-term space flight
+    simulation reveals infradian rhythmicity in human Na+ balance,
+    Cell Metab 2013;17(1):125-131, doi:10.1016/j.cmet.2012.11.013.
+    See docs/adr/0004-sodium-storage.md for why this compartment exists.
 
-What it demonstrates, and what every real subsystem must also do:
+COMPARTMENTS
+  ICF    intracellular fluid
+  ECF    extracellular fluid (plasma + interstitial, not yet split)
+  Store  osmotically inactive sodium, largely skin and other tissue binding
 
-  1. Every constant comes from LedgerParams. No literals in the equations.
-  2. Structure is cited in this docstring, per CONTRIBUTING.md.
-  3. The component exposes a `qss` option that algebraically collapses its fast mode.
-     This is the mechanism that makes month-long runs affordable: fast loops that
-     have equilibrated contribute cost but no information.
-  4. Conservation is asserted as an observable, so the test suite can check it as a
-     hard invariant rather than eyeballing plots.
+The third compartment is the substantive departure from the classical
+two-compartment formulation. Classical models assume all body sodium is
+osmotically active, so ECF volume tracks sodium content directly. Rakova et al
+show total-body Na+ is stored, is not a simple function of intake, and is not
+tightly coupled to extracellular water. A two-compartment model cannot reproduce
+their data. Set `storage = false` for classical behaviour - that comparison is a
+validation experiment, not a fallback.
 
-STRUCTURE SOURCES: none yet - the topology here is generic mass balance and is not
-taken from any source. Real subsystems list their literature here.
+ALL constants come from LedgerParams. No literals in the equations.
 """
 
 using ModelingToolkit
 using ModelingToolkit: t_nounits as t, D_nounits as D
 
-using ..LedgerParams: BF_TBW_FRACTION, BF_ECF_FRACTION, BF_NA_PLASMA_SETPOINT,
-                      BF_ICF_OSMOTIC_EQUILIBRATION_TAU, RN_PRESSURE_NATRIURESIS_GAIN,
-                      CV_MAP_SETPOINT
+using ..LedgerParams:
+    BF_ICF_MASS_FRACTION, BF_ECF_MASS_FRACTION,
+    BF_NA_PLASMA_SETPOINT, BF_OSM_PLASMA_SETPOINT,
+    BF_NA_OSMOTICALLY_INACTIVE_FRACTION, BF_NA_STORAGE_TAU,
+    BF_ICF_ECF_OSMOTIC_TAU,
+    BF_NA_INTAKE_NOMINAL, BF_H2O_INTAKE_NOMINAL, BF_H2O_INSENSIBLE_LOSS
 
 """
-    BodyFluids(; name, qss = false, body_mass = 70.0)
+    BodyFluids(; name, body_mass = 70.0, storage = true)
 
-Two-compartment fluid/solute balance with pressure-driven sodium excretion.
+Fluid and sodium balance with optional osmotically inactive sodium storage.
 
-`qss = true` replaces the osmotic equilibration ODE with its algebraic equilibrium.
-Use for horizons long relative to `BF_ICF_OSMOTIC_EQUILIBRATION_TAU`. This removes
-the stiffest mode in the component and is the single most effective lever on
-long-horizon cost - far more so than any micro-optimisation of the RHS.
+Time base is DAYS throughout, matching the horizons this model is built for.
+Time constants held in other units in the ledger are converted here, once, visibly.
+
+Interface (see src/coupling.jl):
+  in   MAP              mmHg     from cardiovascular
+  in   Na_excr_rate     mEq/day  from renal
+  in   H2O_excr_rate    L/day    from renal
+  out  V_ecf, C_Na, Osm_ecf      to cardiovascular, renal, endocrine
 """
-function BodyFluids(; name, qss::Bool = false, body_mass = 70.0)
+function BodyFluids(; name, body_mass = 70.0, storage::Bool = true)
 
     pars = @parameters begin
-        m_body      = body_mass            # kg
-        f_tbw       = BF_TBW_FRACTION      # unitless
-        f_ecf       = BF_ECF_FRACTION      # unitless
-        C_Na_set    = BF_NA_PLASMA_SETPOINT        # mEq/L
-        tau_osm     = BF_ICF_OSMOTIC_EQUILIBRATION_TAU / 1440.0  # min -> day
-        G_pn        = RN_PRESSURE_NATRIURESIS_GAIN # (mEq/day)/mmHg
-        MAP_set     = CV_MAP_SETPOINT              # mmHg
-        Na_intake   = 150.0                        # mEq/day - protocol input, set per run
-        H2O_intake  = 2.0                          # L/day  - protocol input, set per run
+        m_body      = body_mass
+        f_icf       = BF_ICF_MASS_FRACTION
+        f_ecf       = BF_ECF_MASS_FRACTION
+        C_Na_set    = BF_NA_PLASMA_SETPOINT
+        Osm_set     = BF_OSM_PLASMA_SETPOINT
+        f_store     = BF_NA_OSMOTICALLY_INACTIVE_FRACTION
+        tau_store   = BF_NA_STORAGE_TAU                    # already days
+        tau_osm     = BF_ICF_ECF_OSMOTIC_TAU / 1440.0      # min -> day
+        Na_intake   = BF_NA_INTAKE_NOMINAL                 # protocol input
+        H2O_intake  = BF_H2O_INTAKE_NOMINAL                # protocol input
+        H2O_insens  = BF_H2O_INSENSIBLE_LOSS
     end
 
     vars = @variables begin
-        V_ecf(t)                # L      extracellular fluid volume
-        V_icf(t)                # L      intracellular fluid volume
-        Na_ecf(t)               # mEq    extracellular sodium content
-        C_Na(t)                 # mEq/L  plasma sodium concentration (observable)
-        MAP(t)                  # mmHg   mean arterial pressure (interface input)
-        Na_excr(t)              # mEq/day
-        H2O_excr(t)             # L/day
-        V_total(t)              # L      conservation observable
+        V_icf(t)            # L
+        V_ecf(t)            # L
+        Na_ecf(t)           # mEq      osmotically ACTIVE extracellular sodium
+        Na_store(t)         # mEq      osmotically INACTIVE stored sodium
+        C_Na(t)             # mEq/L
+        Osm_ecf(t)          # mOsm/kg
+        J_store(t)          # mEq/day  net flux into storage, +ve = retaining
+        J_osm(t)            # L/day    water flux ECF -> ICF
+        Na_excr_rate(t)     # mEq/day  INPUT from renal
+        H2O_excr_rate(t)    # L/day    INPUT from renal
+        MAP(t)              # mmHg     INPUT from cardiovascular
+        V_total(t)          # L        conservation observable
+        Na_total(t)         # mEq      conservation observable
     end
 
-    # Interface algebra - observables, cheap, always present
     obs = [
         C_Na    ~ Na_ecf / V_ecf,
-        V_total ~ V_ecf + V_icf,
-        # Pressure natriuresis. G_pn is CALIBRATED, not measured - see the ledger.
-        # This is exactly the coupling gain that needs a posterior, not a point value.
-        Na_excr ~ max(0.0, G_pn * (MAP - MAP_set) + Na_intake),
-        H2O_excr ~ H2O_intake,
+        # Sodium is the dominant extracellular cation; the factor of two covers
+        # accompanying anions. Standard approximation, and a known simplification -
+        # it omits glucose and urea, which matters only in states this model does
+        # not yet represent.
+        Osm_ecf ~ 2 * C_Na,
+        V_total ~ V_icf + V_ecf,
+        # Conservation observable INCLUDES stored sodium. If this is not conserved
+        # the storage compartment is leaking and the test suite fails.
+        Na_total ~ Na_ecf + Na_store,
+        J_osm   ~ (V_icf * (Osm_ecf / Osm_set - 1)) / tau_osm,
     ]
 
-    # Slow dynamics - always integrated
-    slow = [
-        D(Na_ecf) ~ Na_intake - Na_excr,
-        D(V_ecf)  ~ H2O_intake - H2O_excr - fluid_shift(V_ecf, V_icf, C_Na, C_Na_set, tau_osm, qss),
-    ]
-
-    # Fast mode - integrated, or collapsed to equilibrium
-    fast = if qss
-        # Osmotic equilibrium: ICF tracks ECF tonicity instantaneously.
-        [0 ~ V_icf - (m_body * f_tbw * (1 - f_ecf)) * (C_Na_set / C_Na)]
+    # First-order relaxation of stored sodium toward a target proportional to
+    # extracellular content. Crudest structure that can produce retention and
+    # release on the timescale Rakova et al report. tau_store and f_store are
+    # BOTH placeholders - see ADR 0004 and the ledger notes.
+    store_eqs = if storage
+        [D(Na_store) ~ J_store,
+         J_store     ~ (f_store * Na_ecf - Na_store) / tau_store]
     else
-        [D(V_icf) ~ (( m_body * f_tbw * (1 - f_ecf)) * (C_Na_set / C_Na) - V_icf) / tau_osm]
+        [D(Na_store) ~ 0.0,
+         J_store     ~ 0.0]
     end
 
-    eqs = vcat(obs, slow, fast)
+    balance = [
+        D(Na_ecf) ~ Na_intake - Na_excr_rate - J_store,
+        D(V_ecf)  ~ H2O_intake - H2O_excr_rate - H2O_insens - J_osm,
+        D(V_icf)  ~ J_osm,
+    ]
 
     defaults = Dict(
-        V_ecf  => body_mass * BF_TBW_FRACTION * BF_ECF_FRACTION,
-        V_icf  => body_mass * BF_TBW_FRACTION * (1 - BF_ECF_FRACTION),
-        Na_ecf => body_mass * BF_TBW_FRACTION * BF_ECF_FRACTION * BF_NA_PLASMA_SETPOINT,
-        MAP    => CV_MAP_SETPOINT,
+        V_icf    => body_mass * BF_ICF_MASS_FRACTION,
+        V_ecf    => body_mass * BF_ECF_MASS_FRACTION,
+        Na_ecf   => body_mass * BF_ECF_MASS_FRACTION * BF_NA_PLASMA_SETPOINT,
+        Na_store => storage ?
+                    BF_NA_OSMOTICALLY_INACTIVE_FRACTION * body_mass *
+                    BF_ECF_MASS_FRACTION * BF_NA_PLASMA_SETPOINT : 0.0,
+        MAP           => 93.0,
+        Na_excr_rate  => BF_NA_INTAKE_NOMINAL,
+        H2O_excr_rate => BF_H2O_INTAKE_NOMINAL - BF_H2O_INSENSIBLE_LOSS,
     )
 
-    return ODESystem(eqs, t, vars, pars; name, defaults)
+    return ODESystem(vcat(obs, store_eqs, balance), t, vars, pars; name, defaults)
 end
 
-"""Water flux ECF -> ICF driven by tonicity gradient. Zero under QSS."""
-function fluid_shift(V_ecf, V_icf, C_Na, C_Na_set, tau_osm, qss)
-    return qss ? 0.0 : (V_icf * (C_Na / C_Na_set - 1)) / tau_osm
+"""
+    bodyfluids_couplings()
+
+Declared connections, per src/coupling.jl.
+
+All three are instantaneous classes: concentration follows algebraically from
+content and volume, and volume drives filling hydraulically. Per ADR 0003 a
+multirate partition must NOT cut across these - anything reading C_Na or V_ecf
+shares a block with this component.
+"""
+function bodyfluids_couplings()
+    return [
+        Coupling(:bodyfluids, :renal, Conservation,
+                 note = "C_Na and V_ecf drive filtered load; algebraic, no lag"),
+        Coupling(:bodyfluids, :cardiovascular, Mechanical,
+                 note = "V_ecf -> plasma volume -> venous return; hydraulic, no lag"),
+        Coupling(:bodyfluids, :endocrine, Conservation,
+                 note = "Osm_ecf drives ADH release; algebraic at this resolution"),
+    ]
 end

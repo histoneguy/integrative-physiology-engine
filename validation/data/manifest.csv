@@ -1,1 +1,2 @@
 dataset_id,source_citation,doi,protocol,raw_resolution,averaging_window_s,digitisation_tool,read_error_estimate,notes
+mars500-unav,"Rakova N et al. Cell Metab 2013;17(1):125-131.",10.1016/j.cmet.2012.11.013,ultra-long-term sodium balance 12/9/6 g/day NaCl,daily 24-h urine,n/a,PENDING,PENDING,"NOT YET DIGITISED. Daily sampling so no cycle-averaging needed - this model is cycle-averaged but the data is already daily. Extract: cumulative Na balance per intake level, daily UNaV, body weight, and total body water where reported."
