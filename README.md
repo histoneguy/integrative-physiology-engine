@@ -1,7 +1,5 @@
 # Integrative Physiology Engine
 
-> Rename this repository and this heading before first push.
-
 An independent, high-performance implementation of whole-body integrative human physiology,
 built from the peer-reviewed literature.
 
@@ -48,4 +46,4 @@ accepted elsewhere.
 
 ## Citation
 
-TODO — CITATION.cff once the first release is tagged.
+See `CITATION.cff`.

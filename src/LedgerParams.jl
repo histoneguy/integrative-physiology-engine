@@ -7,7 +7,7 @@ Produced by tools/ledger_to_julia.py from ledger/parameters.csv.
 To change a value, edit the ledger and regenerate. This is the only
 sanctioned path from source literature to executable code.
 
-Ledger SHA256 (first 16): 329313c6fc2cb1ec
+Ledger SHA256 (first 16): a935af124cfecbd9
 Parameters: 36 (assumed=9, calibrated=2, derived=7, reported=18)
 """
 module LedgerParams

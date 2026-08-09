@@ -1,6 +1,6 @@
 name = "IPE"
 uuid = "0126f89b-7ef0-4c89-b352-8fc383fedcbb"
-authors = ["TODO"]
+authors = ["Eric George <histoneguy@hotmail.com>"]
 version = "0.0.1"
 
 [deps]

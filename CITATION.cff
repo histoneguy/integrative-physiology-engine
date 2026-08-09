@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "Integrative Physiology Engine"
+abstract: >-
+  An independent implementation of whole-body integrative human physiology,
+  built from published peer-reviewed literature with full parameter provenance.
+authors:
+  - name: "Eric George"
+repository-code: "https://github.com/histoneguy/integrative-physiology-engine"
+license: Apache-2.0
+version: 0.0.1
+date-released: "2026-08-08"
