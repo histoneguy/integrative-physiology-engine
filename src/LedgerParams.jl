@@ -7,8 +7,8 @@ Produced by tools/ledger_to_julia.py from ledger/parameters.csv.
 To change a value, edit the ledger and regenerate. This is the only
 sanctioned path from source literature to executable code.
 
-Ledger SHA256 (first 16): 90816ea80f7c83d5
-Parameters: 23 (assumed=9, derived=3, reported=11)
+Ledger SHA256 (first 16): 329313c6fc2cb1ec
+Parameters: 36 (assumed=9, calibrated=2, derived=7, reported=18)
 """
 module LedgerParams
 
@@ -123,6 +123,48 @@ Notes: Blood pressure normally dips 10-20 percent during the inactive period; 0.
 """
 const CIRC_CV_MAP_DIP_FRACTION = 0.15
 
+"""Total blood volume nominal [L] +/- 0.6 (sd)
+Source (tier B, reported): Standard physiological reference. VERIFY.
+Notes: Nominal 70 kg adult.
+"""
+const CV_BLOOD_VOLUME_NOMINAL = 5.0
+
+"""Cardiac output at rest [L/day] +/- 1150.0 (sd)
+Source (tier B, derived): Standard physiological reference. VERIFY.
+Notes: DERIVED from the conventional 5 L/min. 5 x 1440 = 7200 L/day. Units are per-day throughout the model.
+"""
+const CV_CO_NOMINAL = 7200.0
+
+"""Hematocrit [unitless] +/- 0.04 (sd)
+Source (tier B, reported): Standard physiological reference. VERIFY.
+Notes: Adult male nominal. Sex-dependent - female nominal is lower. Sex is deferred until the spine is validated.
+"""
+const CV_HEMATOCRIT_NOMINAL = 0.45
+
+"""Mean arterial pressure nominal [mmHg] +/- 8.0 (sd)
+Source (tier B, reported): Standard physiological reference. VERIFY.
+Notes: Nominal normotensive adult. NOTE this is an OUTPUT of the closed loop, not an input - it emerges from renal-body fluid feedback. It appears here as an initialisation value and a validation target, not as a setpoint the model enforces.
+"""
+const CV_MAP_SETPOINT = 93.0
+
+"""Plasma volume as fraction of extracellular fluid [unitless]
+Source (tier B, derived): Derived to close the loop at nominal.
+Notes: DERIVED: plasma = BV x (1-Hct) = 5 x 0.55 = 2.75 L; ECF at nominal = 70 x 0.208 = 14.56 L; ratio = 0.189. Rounded to 0.20. The conventional textbook figure is 0.25, and the discrepancy comes from using the measured ECF fraction (20.8% of body mass) rather than the textbook 20%. FLAG: this is exactly the kind of reconciliation that must be visible rather than absorbed.
+"""
+const CV_PLASMA_ECF_FRACTION = 0.2
+
+"""Total peripheral resistance nominal [mmHg/(L/day)]
+Source (tier B, derived): Derived from MAP and CO.
+Notes: DERIVED: TPR = MAP/CO = 93/7200. Definitional given the other two. In this minimal model TPR is a constant - it becomes a state once baroreflex and RAAS exist.
+"""
+const CV_TPR_NOMINAL = 0.012917
+
+"""Cardiac output sensitivity to blood volume [(L/day)/L]  [!] CALIBRATED
+Source (tier B, calibrated): Guyton AC, Coleman TG, Granger HJ. Annu Rev Physiol 1972;34:13-46.
+Notes: CALIBRATED, not measured. Originating model: Guyton 1972. The Frank-Starling and venous return relationships are E1; this linearised sensitivity around the operating point is a fitted constant. Second most consequential unmeasured number after the pressure natriuresis slope - together these two set the loop gain.
+"""
+const CV_VENOUS_RETURN_SENSITIVITY = 2880.0
+
 
 # --- neural ------------------------------------------------------
 """Clock to effector transcriptional delay [s]  [!] ASSUMED
@@ -163,6 +205,42 @@ Notes: ASSUMED PLACEHOLDER. The source establishes that renal plasma flow, GFR a
 """
 const CIRC_RENAL_NA_AMPLITUDE = 0.25
 
+"""Lower limit of renal autoregulation [mmHg]
+Source (tier B, reported): Standard physiological reference. VERIFY.
+Notes: GFR is approximately independent of MAP between roughly 80 and 180 mmHg. Below this GFR falls with pressure. E1 qualitatively; the exact limits vary and are convention here.
+"""
+const RN_AUTOREG_LOWER = 80.0
+
+"""Upper limit of renal autoregulation [mmHg]
+Source (tier B, reported): Standard physiological reference. VERIFY.
+Notes: See RN.AUTOREG.LOWER.
+"""
+const RN_AUTOREG_UPPER = 180.0
+
+"""Glomerular filtration rate nominal [L/day] +/- 25.0 (sd)
+Source (tier B, reported): Standard physiological reference. VERIFY.
+Notes: 125 mL/min = 180 L/day, conventional nominal adult value. Tier B pending a citable primary source; the value itself is textbook-level E1 but its provenance here is convention.
+"""
+const RN_GFR_NOMINAL = 180.0
+
+"""Obligatory urine volume at maximal concentration [L/day]
+Source (tier B, reported): Standard physiological reference. VERIFY.
+Notes: Minimum urine volume needed to excrete the daily solute load at maximal urinary concentration. Sets a floor on water excretion.
+"""
+const RN_H2O_OBLIGATORY_LOSS = 0.5
+
+"""Fractional tubular sodium reabsorption at nominal pressure [unitless]
+Source (tier B, derived): Standard physiological reference. VERIFY.
+Notes: DERIVED to close the loop at nominal: filtered load = 180 L/day x 140 mEq/L = 25200 mEq/day; excretion must equal intake of 205 mEq/day at steady state, so FR = 1 - 205/25200 = 0.99187. Rounded. This is NOT an independent measurement - it is fixed by the other three values, and that dependency must be preserved if any of them changes.
+"""
+const RN_NA_FRACTIONAL_REABSORPTION = 0.9915
+
+"""Pressure natriuresis slope [(mEq/day)/mmHg]  [!] CALIBRATED
+Source (tier B, calibrated): Guyton AC, Coleman TG, Granger HJ. Circulation: overall regulation. Annu Rev Physiol 1972;34:13-46.
+Notes: CALIBRATED, not measured. Originating model: Guyton 1972 systems analysis. The EXISTENCE and steepness of pressure natriuresis is E1 and well replicated; this particular slope is a fitted constant that propagated through the modelling literature. It is the single most consequential unmeasured number in the model - it sets the long-run pressure setpoint. Must be re-estimated with a posterior, not carried as a point value.
+"""
+const RN_PRESSURE_NATRIURESIS_SLOPE = 20.0
+
 
 # ---------------------------------------------------------------------------
 # Provenance table - queryable at runtime so any result can be traced
@@ -202,6 +280,19 @@ const PARAM_PROVENANCE = Dict{Symbol,Provenance}(
     :CIRC_PERIOD => Provenance("CIRC.PERIOD", "day", 1.0, "A", "reported", "Circadian rhythms and the kidney. Nat Rev Nephrol 2018;14:626-635.", "Free-running human period is slightly over 24 h but entrained period is 24 h. This model has no entrainment mechanism (see Circadian.jl) so the entrained value is the correct one to use. If constant-routine or shift-work protocols are ever added this must become a free-running period with an entrainment path."),
     :CIRC_RENAL_NA_ACROPHASE => Provenance("CIRC.RENAL_NA.ACROPHASE", "day", 0.33, "B", "assumed", "Impaired daytime urinary sodium excretion impacts nighttime blood pressure. PMC7400814.", "ASSUMED. Sodium excretion is maximal during daytime and minimal at night; 0.33 d = 8 h after start of active period is a placeholder consistent with that pattern but not extracted from a reported acrophase. Cosinor acrophase must be extracted properly from split-collection data."),
     :CIRC_RENAL_NA_AMPLITUDE => Provenance("CIRC.RENAL_NA.AMPLITUDE", "unitless", 0.25, "B", "assumed", "Circadian rhythms and the kidney. Nat Rev Nephrol 2018;14:626-635.", "ASSUMED PLACEHOLDER. The source establishes that renal plasma flow, GFR and tubular reabsorption peak in the active phase and decline in the inactive phase, but a single relative amplitude is not reported. MUST be estimated against split day/night UNaV data. Reported day/night UNaV ratios in human cohorts span a wide range (tertile boundaries around 0.47 and 0.84 in one CKD study), which is the data class to fit against."),
+    :CV_BLOOD_VOLUME_NOMINAL => Provenance("CV.BLOOD_VOLUME.NOMINAL", "L", 5.0, "B", "reported", "Standard physiological reference. VERIFY.", "Nominal 70 kg adult."),
+    :CV_CO_NOMINAL => Provenance("CV.CO.NOMINAL", "L/day", 7200.0, "B", "derived", "Standard physiological reference. VERIFY.", "DERIVED from the conventional 5 L/min. 5 x 1440 = 7200 L/day. Units are per-day throughout the model."),
+    :CV_HEMATOCRIT_NOMINAL => Provenance("CV.HEMATOCRIT.NOMINAL", "unitless", 0.45, "B", "reported", "Standard physiological reference. VERIFY.", "Adult male nominal. Sex-dependent - female nominal is lower. Sex is deferred until the spine is validated."),
+    :CV_MAP_SETPOINT => Provenance("CV.MAP.SETPOINT", "mmHg", 93.0, "B", "reported", "Standard physiological reference. VERIFY.", "Nominal normotensive adult. NOTE this is an OUTPUT of the closed loop, not an input - it emerges from renal-body fluid feedback. It appears here as an initialisation value and a validation target, not as a setpoint the model enforces."),
+    :CV_PLASMA_ECF_FRACTION => Provenance("CV.PLASMA.ECF_FRACTION", "unitless", 0.2, "B", "derived", "Derived to close the loop at nominal.", "DERIVED: plasma = BV x (1-Hct) = 5 x 0.55 = 2.75 L; ECF at nominal = 70 x 0.208 = 14.56 L; ratio = 0.189. Rounded to 0.20. The conventional textbook figure is 0.25, and the discrepancy comes from using the measured ECF fraction (20.8% of body mass) rather than the textbook 20%. FLAG: this is exactly the kind of reconciliation that must be visible rather than absorbed."),
+    :CV_TPR_NOMINAL => Provenance("CV.TPR.NOMINAL", "mmHg/(L/day)", 0.012917, "B", "derived", "Derived from MAP and CO.", "DERIVED: TPR = MAP/CO = 93/7200. Definitional given the other two. In this minimal model TPR is a constant - it becomes a state once baroreflex and RAAS exist."),
+    :CV_VENOUS_RETURN_SENSITIVITY => Provenance("CV.VENOUS_RETURN.SENSITIVITY", "(L/day)/L", 2880.0, "B", "calibrated", "Guyton AC, Coleman TG, Granger HJ. Annu Rev Physiol 1972;34:13-46.", "CALIBRATED, not measured. Originating model: Guyton 1972. The Frank-Starling and venous return relationships are E1; this linearised sensitivity around the operating point is a fitted constant. Second most consequential unmeasured number after the pressure natriuresis slope - together these two set the loop gain."),
+    :RN_AUTOREG_LOWER => Provenance("RN.AUTOREG.LOWER", "mmHg", 80.0, "B", "reported", "Standard physiological reference. VERIFY.", "GFR is approximately independent of MAP between roughly 80 and 180 mmHg. Below this GFR falls with pressure. E1 qualitatively; the exact limits vary and are convention here."),
+    :RN_AUTOREG_UPPER => Provenance("RN.AUTOREG.UPPER", "mmHg", 180.0, "B", "reported", "Standard physiological reference. VERIFY.", "See RN.AUTOREG.LOWER."),
+    :RN_GFR_NOMINAL => Provenance("RN.GFR.NOMINAL", "L/day", 180.0, "B", "reported", "Standard physiological reference. VERIFY.", "125 mL/min = 180 L/day, conventional nominal adult value. Tier B pending a citable primary source; the value itself is textbook-level E1 but its provenance here is convention."),
+    :RN_H2O_OBLIGATORY_LOSS => Provenance("RN.H2O.OBLIGATORY_LOSS", "L/day", 0.5, "B", "reported", "Standard physiological reference. VERIFY.", "Minimum urine volume needed to excrete the daily solute load at maximal urinary concentration. Sets a floor on water excretion."),
+    :RN_NA_FRACTIONAL_REABSORPTION => Provenance("RN.NA.FRACTIONAL_REABSORPTION", "unitless", 0.9915, "B", "derived", "Standard physiological reference. VERIFY.", "DERIVED to close the loop at nominal: filtered load = 180 L/day x 140 mEq/L = 25200 mEq/day; excretion must equal intake of 205 mEq/day at steady state, so FR = 1 - 205/25200 = 0.99187. Rounded. This is NOT an independent measurement - it is fixed by the other three values, and that dependency must be preserved if any of them changes."),
+    :RN_PRESSURE_NATRIURESIS_SLOPE => Provenance("RN.PRESSURE_NATRIURESIS.SLOPE", "(mEq/day)/mmHg", 20.0, "B", "calibrated", "Guyton AC, Coleman TG, Granger HJ. Circulation: overall regulation. Annu Rev Physiol 1972;34:13-46.", "CALIBRATED, not measured. Originating model: Guyton 1972 systems analysis. The EXISTENCE and steepness of pressure natriuresis is E1 and well replicated; this particular slope is a fitted constant that propagated through the modelling literature. It is the single most consequential unmeasured number in the model - it sets the long-run pressure setpoint. Must be re-estimated with a posterior, not carried as a point value."),
 )
 
 """

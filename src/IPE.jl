@@ -45,10 +45,13 @@ include("coupling.jl")
 include("profiling.jl")
 include("components/Circadian.jl")
 include("components/BodyFluids.jl")
+include("components/Cardiovascular.jl")
+include("components/Renal.jl")
 include("assemble.jl")
 include("ensemble.jl")
 
-export build_model, solve_individual, run_population
+export build_model, solve_individual, run_population, salt_step
+export BodyFluids, Cardiovascular, Renal
 export FullTrace, StreamingStats, EventWindows, projected_storage
 export step_distribution, cost_profile, timescale_audit, boundary_sensitivity
 export Coupling, CouplingKind, Neurohumoral, Mechanical, Conservation
