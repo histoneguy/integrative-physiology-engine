@@ -7,8 +7,8 @@ Produced by tools/ledger_to_julia.py from ledger/parameters.csv.
 To change a value, edit the ledger and regenerate. This is the only
 sanctioned path from source literature to executable code.
 
-Ledger SHA256 (first 16): bddf7a92b97fffda
-Parameters: 15 (assumed=5, derived=3, reported=7)
+Ledger SHA256 (first 16): 90816ea80f7c83d5
+Parameters: 23 (assumed=9, derived=3, reported=11)
 """
 module LedgerParams
 
@@ -110,6 +110,60 @@ Notes: Reported as 55.2 +/- 6.2 percent of body weight by bioelectrical impedanc
 const BF_TBW_MASS_FRACTION = 0.552
 
 
+# --- cardiovascular ----------------------------------------------
+"""Time of peak mean arterial pressure [day]  [!] ASSUMED
+Source (tier B, assumed): Recent advances in understanding the circadian clock in renal physiology. PMC6350809.
+Notes: ASSUMED. Placeholder consistent with pressure peaking during the active period. Must be extracted from ambulatory BP monitoring cosinor analysis. NOTE the CV and renal acrophases are deliberately independent parameters - Bmal1 knockout rats lose the renal sodium rhythm while MAP rhythm persists, so a shared phase would be structurally wrong.
+"""
+const CIRC_CV_ACROPHASE = 0.25
+
+"""Nocturnal blood pressure dip as fraction of daytime mean [unitless] +/- 0.10-0.20 (range)
+Source (tier A, reported): Recent advances in understanding the circadian clock in renal physiology. PMC6350809.
+Notes: Blood pressure normally dips 10-20 percent during the inactive period; 0.15 is the midpoint of that stated range. Loss of dipping is associated with elevated cardiovascular risk and target organ damage, so this is a clinically load-bearing parameter, not a cosmetic one.
+"""
+const CIRC_CV_MAP_DIP_FRACTION = 0.15
+
+
+# --- neural ------------------------------------------------------
+"""Clock to effector transcriptional delay [s]  [!] ASSUMED
+Source (tier B, assumed): Recent advances in understanding the circadian clock in renal physiology. PMC6350809.
+Notes: ASSUMED. The source describes Per1 as an early aldosterone target gene regulating ENaC, SGLT1, NHE3 and ET-1, and notes Per genes have short half-lives, but does not report an effector delay. 1 h is an order-of-magnitude placeholder. This is a Neurohumoral coupling tau per ADR 0003 and is what makes the clock safe to partition across.
+"""
+const CIRC_EFFECTOR_TAU = 3600.0
+
+"""Circadian period [day]
+Source (tier A, reported): Circadian rhythms and the kidney. Nat Rev Nephrol 2018;14:626-635.
+Notes: Free-running human period is slightly over 24 h but entrained period is 24 h. This model has no entrainment mechanism (see Circadian.jl) so the entrained value is the correct one to use. If constant-routine or shift-work protocols are ever added this must become a free-running period with an entrainment path.
+"""
+const CIRC_PERIOD = 1.0
+
+
+# --- renal -------------------------------------------------------
+"""BP and sodium rhythm dissociation marker [unitless]
+Source (tier A, reported): Diurnal control of blood pressure is uncoupled from sodium excretion. Hypertension.
+Notes: MARKER ROW - not a value. SPECIES: rat, whole-body Bmal1 knockout. Male knockouts showed no significant difference in baseline sodium excretion between 12-h active and inactive periods while circadian MAP rhythm remained intact. This is the evidence for independent renal and cardiovascular clock arms in Circadian.jl. No scaling applied - structural evidence only, no numeric value taken.
+"""
+const CIRC_BMAL1_DISSOCIATION_MARKER = 1.0
+
+"""Clock gene mechanism evidence marker [unitless]
+Source (tier A, reported): Recent advances in understanding the circadian clock in renal physiology. PMC6350809.
+Notes: MARKER ROW - not a value. SPECIES: mouse. Per1 knockout mice under high salt plus DOCP lose the night/day difference in sodium excretion and the inactive-period BP dip. Recorded because the clock-gene MECHANISM is rodent-derived while the human circadian sodium rhythm and BP dipping are separately documented in humans. No scaling is applied because no numeric value is taken from this - the mechanism informs structure only.
+"""
+const CIRC_PER1_MECHANISM_MARKER = 1.0
+
+"""Time of peak renal sodium excretion [day]  [!] ASSUMED
+Source (tier B, assumed): Impaired daytime urinary sodium excretion impacts nighttime blood pressure. PMC7400814.
+Notes: ASSUMED. Sodium excretion is maximal during daytime and minimal at night; 0.33 d = 8 h after start of active period is a placeholder consistent with that pattern but not extracted from a reported acrophase. Cosinor acrophase must be extracted properly from split-collection data.
+"""
+const CIRC_RENAL_NA_ACROPHASE = 0.33
+
+"""Relative amplitude of circadian modulation of renal sodium handling [unitless]  [!] ASSUMED
+Source (tier B, assumed): Circadian rhythms and the kidney. Nat Rev Nephrol 2018;14:626-635.
+Notes: ASSUMED PLACEHOLDER. The source establishes that renal plasma flow, GFR and tubular reabsorption peak in the active phase and decline in the inactive phase, but a single relative amplitude is not reported. MUST be estimated against split day/night UNaV data. Reported day/night UNaV ratios in human cohorts span a wide range (tertile boundaries around 0.47 and 0.84 in one CKD study), which is the data class to fit against.
+"""
+const CIRC_RENAL_NA_AMPLITUDE = 0.25
+
+
 # ---------------------------------------------------------------------------
 # Provenance table - queryable at runtime so any result can be traced
 # ---------------------------------------------------------------------------
@@ -140,6 +194,14 @@ const PARAM_PROVENANCE = Dict{Symbol,Provenance}(
     :BF_NA_STORAGE_TAU => Provenance("BF.NA.STORAGE_TAU", "day", 7.0, "B", "assumed", "Rakova N et al. Cell Metab 2013;17(1):125-131.", "ASSUMED PLACEHOLDER, chosen to match the reported weekly infradian rhythm period rather than derived from it. Rakova et al report 7-day and monthly rhythmicity in Na+ balance; a first-order lag with tau = 7 d is the crudest structure that can produce retention and release on that scale. This is the single most important parameter to estimate properly against the Mars500 series. See ADR 0004."),
     :BF_OSM_PLASMA_SETPOINT => Provenance("BF.OSM.PLASMA_SETPOINT", "mOsm/kg", 287.0, "B", "reported", "Standard clinical reference interval.", "VERIFY - as above. Needed to close the osmotic equilibration between ICF and ECF."),
     :BF_TBW_MASS_FRACTION => Provenance("BF.TBW.MASS_FRACTION", "unitless", 0.552, "A", "reported", "Zhang N et al. Association between the content of intracellular and extracellular fluid and the amount of water intake among Chinese college students. PMC6751809.", "Reported as 55.2 +/- 6.2 percent of body weight by bioelectrical impedance, n=159 young adults. NOTE this is below the conventional textbook 60 percent; BIA and isotope dilution disagree systematically and the cohort is young Chinese adults. VERIFY against a second population before relying on it. Candidate cross-check: ICRP 89."),
+    :CIRC_BMAL1_DISSOCIATION_MARKER => Provenance("CIRC.BMAL1.DISSOCIATION_MARKER", "unitless", 1.0, "A", "reported", "Diurnal control of blood pressure is uncoupled from sodium excretion. Hypertension.", "MARKER ROW - not a value. SPECIES: rat, whole-body Bmal1 knockout. Male knockouts showed no significant difference in baseline sodium excretion between 12-h active and inactive periods while circadian MAP rhythm remained intact. This is the evidence for independent renal and cardiovascular clock arms in Circadian.jl. No scaling applied - structural evidence only, no numeric value taken."),
+    :CIRC_CV_ACROPHASE => Provenance("CIRC.CV.ACROPHASE", "day", 0.25, "B", "assumed", "Recent advances in understanding the circadian clock in renal physiology. PMC6350809.", "ASSUMED. Placeholder consistent with pressure peaking during the active period. Must be extracted from ambulatory BP monitoring cosinor analysis. NOTE the CV and renal acrophases are deliberately independent parameters - Bmal1 knockout rats lose the renal sodium rhythm while MAP rhythm persists, so a shared phase would be structurally wrong."),
+    :CIRC_CV_MAP_DIP_FRACTION => Provenance("CIRC.CV_MAP.DIP_FRACTION", "unitless", 0.15, "A", "reported", "Recent advances in understanding the circadian clock in renal physiology. PMC6350809.", "Blood pressure normally dips 10-20 percent during the inactive period; 0.15 is the midpoint of that stated range. Loss of dipping is associated with elevated cardiovascular risk and target organ damage, so this is a clinically load-bearing parameter, not a cosmetic one."),
+    :CIRC_EFFECTOR_TAU => Provenance("CIRC.EFFECTOR.TAU", "s", 3600.0, "B", "assumed", "Recent advances in understanding the circadian clock in renal physiology. PMC6350809.", "ASSUMED. The source describes Per1 as an early aldosterone target gene regulating ENaC, SGLT1, NHE3 and ET-1, and notes Per genes have short half-lives, but does not report an effector delay. 1 h is an order-of-magnitude placeholder. This is a Neurohumoral coupling tau per ADR 0003 and is what makes the clock safe to partition across."),
+    :CIRC_PER1_MECHANISM_MARKER => Provenance("CIRC.PER1.MECHANISM_MARKER", "unitless", 1.0, "A", "reported", "Recent advances in understanding the circadian clock in renal physiology. PMC6350809.", "MARKER ROW - not a value. SPECIES: mouse. Per1 knockout mice under high salt plus DOCP lose the night/day difference in sodium excretion and the inactive-period BP dip. Recorded because the clock-gene MECHANISM is rodent-derived while the human circadian sodium rhythm and BP dipping are separately documented in humans. No scaling is applied because no numeric value is taken from this - the mechanism informs structure only."),
+    :CIRC_PERIOD => Provenance("CIRC.PERIOD", "day", 1.0, "A", "reported", "Circadian rhythms and the kidney. Nat Rev Nephrol 2018;14:626-635.", "Free-running human period is slightly over 24 h but entrained period is 24 h. This model has no entrainment mechanism (see Circadian.jl) so the entrained value is the correct one to use. If constant-routine or shift-work protocols are ever added this must become a free-running period with an entrainment path."),
+    :CIRC_RENAL_NA_ACROPHASE => Provenance("CIRC.RENAL_NA.ACROPHASE", "day", 0.33, "B", "assumed", "Impaired daytime urinary sodium excretion impacts nighttime blood pressure. PMC7400814.", "ASSUMED. Sodium excretion is maximal during daytime and minimal at night; 0.33 d = 8 h after start of active period is a placeholder consistent with that pattern but not extracted from a reported acrophase. Cosinor acrophase must be extracted properly from split-collection data."),
+    :CIRC_RENAL_NA_AMPLITUDE => Provenance("CIRC.RENAL_NA.AMPLITUDE", "unitless", 0.25, "B", "assumed", "Circadian rhythms and the kidney. Nat Rev Nephrol 2018;14:626-635.", "ASSUMED PLACEHOLDER. The source establishes that renal plasma flow, GFR and tubular reabsorption peak in the active phase and decline in the inactive phase, but a single relative amplitude is not reported. MUST be estimated against split day/night UNaV data. Reported day/night UNaV ratios in human cohorts span a wide range (tertile boundaries around 0.47 and 0.84 in one CKD study), which is the data class to fit against."),
 )
 
 """

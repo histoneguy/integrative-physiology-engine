@@ -22,8 +22,15 @@ So equivalence is defined against data, plus an explicit numerical spec (below).
 
 Declare and enforce, per subsystem:
 
-- **Steady-state tolerance.** Converged values must fall within the stated tolerance of the
-  literature reference range for a nominal adult.
+- **Cycle-averaged tolerance.** THERE IS NO STEADY STATE (ADR 0005). With an
+  endogenous circadian driver every equilibrium is a 24-hour limit cycle. Converged
+  CYCLE-AVERAGED values must fall within the stated tolerance of the literature
+  reference range for a nominal adult.
+- **Cycle amplitude and phase tolerance.** Separate from the mean. A model matching
+  the 24-h average while getting the amplitude wrong is failing at the thing the
+  circadian literature is about.
+- **Every reported value states its phase or averaging window.** A bare
+  "MAP = 93 mmHg" is ambiguous. Use `cycle_average` (src/components/Circadian.jl).
 - **Conservation invariants.** Mass, volume, and solute balance must hold to a stated
   numerical tolerance at every timestep. These are hard assertions in the test suite.
 - **Dynamic response envelopes.** For each challenge protocol, the trajectory must fall
@@ -123,3 +130,42 @@ Na+ and extracellular water are coupled.
 `validation/averaging.md` and recorded in `validation/data/manifest.csv`. Sampling is
 daily, so the cycle-averaging window question does not arise for this dataset - note
 that explicitly in the manifest.
+
+
+---
+
+## Primary circadian target: split day/night sodium excretion
+
+**Mars500 CANNOT constrain the circadian arm.** Daily 24-hour collections average the
+rhythm out entirely. This was missed when Mars500 was adopted as the body-fluid anchor
+and is recorded here so it is not missed again.
+
+Constraining the circadian arm requires **split day/night collections**.
+
+### Candidate human datasets
+
+| Dataset | n | What it gives | Status |
+|---|---|---|---|
+| Ticino Epidemiological Stiffness Study (Switzerland) | ~1062 | day/night urinary Na collections + 24-h ambulatory BP, stratified by day/night ratio quartile and age | PMC7400814, TO EXTRACT |
+| Ticino physical activity sub-analysis | 953 | day/night NaCl excretion ratio vs dipping | PMC11355672, TO EXTRACT |
+| Chinese CKD cohort | - | night/day UNaV ratio tertiles (<0.47, 0.47-0.84, >0.84) vs hypertension and target-organ damage | PMC7085274, TO EXTRACT |
+
+These give the day/night RATIO, which constrains amplitude and, weakly, phase.
+Proper acrophase extraction needs cosinor analysis of finer-grained collections -
+identify a dataset with more than two collection windows.
+
+### Required comparisons
+
+1. **Day/night UNaV ratio** at nominal salt intake, against the population
+   distribution rather than a point estimate.
+2. **Nocturnal BP dip** of 10-20% of daytime mean.
+3. **Dissociation test.** Setting `renal_gain = 0` with `cv_gain` unchanged should
+   abolish the sodium rhythm while preserving the MAP rhythm, reproducing the
+   Bmal1-/- rat phenotype. This is a falsifiable structural test of ADR 0005, not a
+   parameter fit.
+
+### Sex
+
+Endothelin B receptor effects on sodium excretion are time- AND sex-dependent, and
+Bmal1 rat findings differ by sex. Sex is a population covariate in the circadian arm,
+not a nuisance parameter. Relevant to `sample_population` in src/ensemble.jl.

@@ -1,6 +1,7 @@
 # ADR 0004: Osmotically inactive sodium storage
 
-**Status:** Accepted (structure), parameters unestimated
+**Status:** PROVISIONAL - downgraded 2026-08-08, see amendment at end
+**Default:** `storage = false`
 **Date:** 2026-08-08
 
 ## Context
@@ -76,3 +77,50 @@ than passive buffering - not that the parameters need more tuning.
 - Storage tau (7 d) sits in the slow block. Osmotic equilibration tau (30 min) is much
   faster but is still far slower than baroreflex, so it does not force the fast block
   either.
+
+
+---
+
+## Amendment, 2026-08-08: downgraded to Provisional, default off
+
+Raised in review: the skin sodium storage story attracted attention but limited
+independent uptake, and it has not been incorporated into how the field actually
+models sodium handling.
+
+That criticism is accepted. Two claims were conflated here and must be separated:
+
+- **The balance measurement** - urinary Na+ excretion not tracking intake day to day
+  under long controlled feeding - is a reasonably clean observation with good
+  collection discipline. It stands.
+- **The skin storage mechanism** - the proposed explanation - rests on small-n 23Na
+  MRI, infers a compartment rather than measuring it directly, and has attracted
+  limited independent corroboration.
+
+An architectural decision was taken on the strength of a single paper found in two
+searches. The ledger disciplines numbers; nothing disciplined the topology. That is a
+real gap in the provenance machinery and it should be treated as one.
+
+**Also a prioritisation error.** The model's spine is pressure natriuresis and the
+renal-body fluid feedback. Sodium storage is a side branch. Even if correct, a ~15%
+pool with a weekly time constant is second-order against the main loop over the
+horizons this model targets.
+
+### What changes
+
+- Default flips to `storage = false`. The classical two-compartment formulation is now
+  the baseline that gets built and validated.
+- The compartment stays, as a testable hypothesis, available once the renal loop
+  exists and can be perturbed. It costs nothing to leave in and the switch is written.
+- Mars500 remains in `validation/targets.md` - long controlled sodium feeding with
+  daily collections is a good target regardless of what one concludes about mechanism.
+
+### Superseded as the explanation for rhythmicity
+
+The infradian (7-day, monthly) rhythmicity Rakova et al report was the motivation for
+the storage lag. The far better-supported rhythm in renal sodium handling is
+**circadian**, and it now has its own decision record with a genuine mechanism behind
+it. See **ADR 0005**.
+
+Note also that a first-order storage lag never could have produced rhythmicity at
+constant intake - it has no oscillatory mode. That objection was recorded above before
+this downgrade, and it should have been enough on its own to prevent acceptance.

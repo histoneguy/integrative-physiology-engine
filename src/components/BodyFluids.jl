@@ -35,7 +35,7 @@ using ..LedgerParams:
     BF_NA_INTAKE_NOMINAL, BF_H2O_INTAKE_NOMINAL, BF_H2O_INSENSIBLE_LOSS
 
 """
-    BodyFluids(; name, body_mass = 70.0, storage = true)
+    BodyFluids(; name, body_mass = 70.0, storage = false)
 
 Fluid and sodium balance with optional osmotically inactive sodium storage.
 
@@ -48,7 +48,7 @@ Interface (see src/coupling.jl):
   in   H2O_excr_rate    L/day    from renal
   out  V_ecf, C_Na, Osm_ecf      to cardiovascular, renal, endocrine
 """
-function BodyFluids(; name, body_mass = 70.0, storage::Bool = true)
+function BodyFluids(; name, body_mass = 70.0, storage::Bool = false)
 
     pars = @parameters begin
         m_body      = body_mass
