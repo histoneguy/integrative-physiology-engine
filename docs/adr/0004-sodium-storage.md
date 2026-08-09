@@ -1,7 +1,8 @@
 # ADR 0004: Osmotically inactive sodium storage
 
-**Status:** PROVISIONAL - downgraded 2026-08-08, see amendment at end
-**Default:** `storage = false`
+**Status:** Provisional
+**Evidence tier:** E3 - single group, small-n 23Na MRI, compartment inferred not measured, limited independent uptake
+**Default:** `storage = false` (default OFF, required for E3 per ADR 0006)
 **Date:** 2026-08-08
 
 ## Context
@@ -124,3 +125,17 @@ it. See **ADR 0005**.
 Note also that a first-order storage lag never could have produced rhythmicity at
 constant intake - it has no oscillatory mode. That objection was recorded above before
 this downgrade, and it should have been enough on its own to prevent acceptance.
+
+
+## Falsifiable test
+
+Required for E3 (ADR 0006).
+
+Once the renal loop exists and can be perturbed: apply a step change in sodium intake
+and compare cumulative Na+ balance against the Mars500 series with `storage = true`
+and `storage = false`. If the storage compartment does not measurably improve the fit
+to cumulative balance, it is not earning its place and should be removed rather than
+retuned.
+
+Note the prior objection stands independently: a first-order lag cannot generate
+rhythmicity at constant intake, so it cannot explain the observation that motivated it.

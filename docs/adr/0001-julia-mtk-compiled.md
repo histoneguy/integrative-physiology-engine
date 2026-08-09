@@ -2,6 +2,7 @@
 
 **Status:** Accepted
 **Date:** 2026-08-06
+**Evidence tier:** n/a - methodological
 
 ## Context
 

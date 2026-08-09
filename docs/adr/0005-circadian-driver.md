@@ -2,7 +2,29 @@
 
 **Status:** Accepted
 **Date:** 2026-08-08
+**Evidence tier:** MIXED - see table below (E1 rhythm, E2 dissociation, E3 mechanism)
 **Supersedes:** the rhythmicity motivation in ADR 0004
+
+## Evidence
+
+| Claim | Tier | Source | Species |
+|---|---|---|---|
+| Circadian rhythm in renal Na handling exists, independent of posture and food/water intake | **E1** | Nat Rev Nephrol 2018 10.1038/s41581-018-0048-9; PMC6350809 | human |
+| Nocturnal BP dips 10-20%; loss of dipping carries CV risk | **E1** | PMC6350809; PMC7400814 | human |
+| Renal and CV rhythms are dissociable, so the arms need separate paths | **E2** | Hypertension 10.1161/HYPERTENSIONAHA.119.13908 | rat (Bmal1-/-) |
+| Clock-gene mechanism: Per1 as early aldosterone target regulating ENaC/NHE3/ET-1 | **E3** | PMC6350809 | mouse |
+| ETB receptor effects on Na excretion are time- and sex-dependent | **E2** | Am J Physiol Renal Physiol 2016;311:F991 | rat |
+
+**This ADR was originally written without splitting these tiers, which obscured that
+the two-arm structure rests on rodent data.** It is retained because independent
+parameters can always be collapsed to a shared one, whereas a shared path cannot be
+split without rework - the conservative choice under structural uncertainty. That
+reasoning should have been stated at the time and is recorded now.
+
+The E3 clock-gene mechanism claims the structure-only exemption of ADR 0006:
+**STRUCTURE ONLY - no numeric value**. It motivates having a circadian path at all,
+but the cosinor implementation does not depend on Per1 and takes no number from it.
+The two rodent ledger rows are marker rows carrying no value.
 
 ## Context
 
@@ -109,3 +131,13 @@ silent on the circadian question.
 Constraining it requires **split day/night collections**. Human population datasets
 reporting day/night UNaV ratios exist and must be added as the primary circadian
 target. See `validation/targets.md`.
+
+
+## Falsifiable test
+
+Setting `renal_gain = 0` with `cv_gain` unchanged must abolish the sodium rhythm while
+preserving the MAP rhythm, reproducing the Bmal1-/- rat phenotype. If the model cannot
+dissociate them, the two-arm structure is wrong.
+
+Separately: day/night UNaV ratio must fall within the observed human population
+distribution without tuning the CV arm.

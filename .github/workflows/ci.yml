@@ -3,7 +3,7 @@ on: [push, pull_request]
 
 jobs:
   ledger:
-    name: Ledger provenance
+    name: Provenance
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -13,6 +13,10 @@ jobs:
       # method - and if generated code is stale relative to the ledger. This is what
       # makes SOURCES.md mechanically enforced rather than aspirational.
       - run: python3 tools/ledger_to_julia.py --check
+      # Disciplines TOPOLOGY the way the ledger disciplines numbers. A wrong
+      # parameter is re-estimated; a wrong structure invalidates the estimation
+      # that rests on it. See ADR 0006.
+      - run: python3 tools/check_adrs.py
 
   test:
     name: Julia tests

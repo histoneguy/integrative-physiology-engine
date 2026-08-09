@@ -146,16 +146,27 @@ def repo_slug() -> str:
 # ---------------------------------------------------------------------------
 
 def ledger_check(fix: bool = False) -> bool:
+    """Ledger provenance (numbers) and ADR evidence tiers (topology)."""
+    ok = True
     gen = ROOT / "tools" / "ledger_to_julia.py"
-    if not gen.exists():
-        return True
-    args = [sys.executable, str(gen)] + ([] if fix else ["--check"])
-    r = run(args)
-    if r.returncode != 0:
-        print(r.stdout or "", r.stderr or "")
-        return False
-    info(r.stdout.strip() or "ledger OK")
-    return True
+    if gen.exists():
+        args = [sys.executable, str(gen)] + ([] if fix else ["--check"])
+        r = run(args)
+        if r.returncode != 0:
+            print(r.stdout or "", r.stderr or "")
+            ok = False
+        else:
+            info(r.stdout.strip() or "ledger OK")
+
+    adr = ROOT / "tools" / "check_adrs.py"
+    if adr.exists():
+        r = run([sys.executable, str(adr)])
+        if r.returncode != 0:
+            print(r.stdout or "", r.stderr or "")
+            ok = False
+        else:
+            info(r.stdout.strip() or "ADRs OK")
+    return ok
 
 
 def julia_tests() -> bool | None:
