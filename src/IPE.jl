@@ -50,7 +50,7 @@ include("components/Renal.jl")
 include("assemble.jl")
 include("ensemble.jl")
 
-export build_model, solve_individual, run_population, salt_step
+export build_model, build_raw_model, solve_individual, run_population, salt_step
 export BodyFluids, Cardiovascular, Renal
 export FullTrace, StreamingStats, EventWindows, projected_storage
 export step_distribution, cost_profile, timescale_audit, boundary_sensitivity

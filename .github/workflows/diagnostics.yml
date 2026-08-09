@@ -1,0 +1,48 @@
+name: Diagnostics
+
+# Reports model health to the job summary on every push.
+#
+# Deliberately CANNOT fail the build. Its job is to tell us what happened, not to
+# gate anything - the test workflow does the gating. The first runs are expected to
+# fail and the whole point is learning exactly where.
+#
+# Read the output under Actions > Diagnostics > Summary. No log-scrolling needed.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  diagnostics:
+    name: Model diagnostics
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '1.10'
+      - uses: julia-actions/cache@v2
+
+      - name: Instantiate
+        id: instantiate
+        continue-on-error: true
+        run: julia --project=. -e 'using Pkg; Pkg.instantiate(); Pkg.status()'
+
+      - name: Report instantiate failure
+        if: steps.instantiate.outcome == 'failure'
+        run: |
+          {
+            echo "# IPE diagnostics"
+            echo
+            echo "**Stage 0 failed: dependencies would not install.**"
+            echo
+            echo "Nothing below this point is known. Check Project.toml versions"
+            echo "against what the registry currently offers."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Run diagnostics
+        if: steps.instantiate.outcome == 'success'
+        continue-on-error: true
+        run: julia --project=. bench/diagnostics.jl

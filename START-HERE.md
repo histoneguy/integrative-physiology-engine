@@ -10,6 +10,23 @@ It works out what needs doing and asks before doing it.
 
 ---
 
+## Reading CI
+
+After every push, go to **Actions** on GitHub. Two workflows run:
+
+- **CI** — gates the build. Ledger provenance and ADR evidence tiers pass; Julia
+  tests will fail until the toolchain work is done. That is expected.
+- **Diagnostics** — never fails, always reports. Click it, then **Summary**.
+
+The Diagnostics summary answers the questions that cannot be settled by reading
+code: does the package load, does structural simplification work and how many
+states does it remove, does the closed loop integrate and settle, is the solve
+linear-algebra bound (which settles ADR 0003), where does the Jacobian spectrum
+sit, and which parameters rest on a weak basis.
+
+**The first runs will fail.** That is the point — they will say exactly where.
+Paste the summary and it can be worked from directly.
+
 ## The sprint loop
 
 **1. Ask for work.** Point at the repo:

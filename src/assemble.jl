@@ -37,7 +37,20 @@ Call once, reuse across an ensemble. Never rebuild inside a population loop -
 symbolic simplification and code generation are the expensive part and are
 identical across members.
 """
-function build_model(; body_mass = 70.0, storage::Bool = false, circadian::Bool = false)
+function build_model(; kwargs...)
+    return structural_simplify(build_raw_model(; kwargs...))
+end
+
+"""
+    build_raw_model(; body_mass = 70.0, storage = false, circadian = false)
+
+The composed system BEFORE structural simplification.
+
+Exposed so diagnostics can count how many states simplification removes - the
+figure that justifies the symbolic layer in ADR 0001. Not for general use;
+call `build_model`.
+"""
+function build_raw_model(; body_mass = 70.0, storage::Bool = false, circadian::Bool = false)
     @named bf = BodyFluids(; body_mass, storage)
     @named cv = Cardiovascular()
     @named rn = Renal()
@@ -69,7 +82,7 @@ function build_model(; body_mass = 70.0, storage::Bool = false, circadian::Bool 
     end
 
     @named model = ODESystem(connections, t; systems)
-    return structural_simplify(model)
+    return model
 end
 
 """
