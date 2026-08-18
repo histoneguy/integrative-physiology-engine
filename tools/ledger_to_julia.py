@@ -98,8 +98,20 @@ def validate(rows: list[dict]) -> None:
         raise LedgerError("\n".join(errors))
 
 
+def normalised_bytes(path: Path) -> bytes:
+    """Content with line endings normalised to LF.
+
+    Hashing raw bytes made the digest platform-dependent: a Windows checkout
+    rewriting the file produces CRLF, git normalises back to LF on commit, and
+    the recorded hash then describes a file that exists nowhere. A provenance
+    tool that gives different answers on different machines is not a provenance
+    tool. Normalise before hashing.
+    """
+    return path.read_text(encoding="utf-8").replace("\r\n", "\n").encode("utf-8")
+
+
 def render(rows: list[dict]) -> str:
-    digest = hashlib.sha256(LEDGER.read_bytes()).hexdigest()[:16]
+    digest = hashlib.sha256(normalised_bytes(LEDGER)).hexdigest()[:16]
 
     counts: dict[str, int] = {}
     for r in rows:
@@ -233,8 +245,9 @@ def main() -> int:
     rendered = render(rows)
 
     if args.check:
-        current = OUTPUT.read_text(encoding="utf-8") if OUTPUT.exists() else ""
-        if current != rendered:
+        current = (OUTPUT.read_text(encoding="utf-8").replace("\r\n", "\n")
+                   if OUTPUT.exists() else "")
+        if current != rendered.replace("\r\n", "\n"):
             print("src/LedgerParams.jl is stale. Run tools/ledger_to_julia.py.",
                   file=sys.stderr)
             return 1
@@ -242,7 +255,7 @@ def main() -> int:
         return 0
 
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
-    OUTPUT.write_text(rendered, encoding="utf-8")
+    OUTPUT.write_text(rendered, encoding="utf-8", newline="\n")
     print(f"Wrote {OUTPUT.relative_to(ROOT)} ({len(rows)} parameters).")
     return 0
 

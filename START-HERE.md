@@ -35,14 +35,18 @@ Paste the summary and it can be worked from directly.
 
 The ADRs in `docs/adr/` carry the reasoning, so no other context is needed.
 
-**2. Save the patch.** Drop the `.patch` file into `incoming/`.
+**2. Save the script.** Put the `apply-*.py` file anywhere in the project folder.
 
 **3. Run it.**
 
-    python sprint.py
+    python apply-whatever.py
 
-It shows you the change, waits for you to say yes, applies it with your
-sign-off, runs the checks, pushes a branch, and opens a pull request.
+It finds the repo root itself, shows what changes, waits for you to say yes,
+applies with your sign-off, runs the provenance checks, and offers to push and
+open a pull request. Nothing is pushed unless the checks pass.
+
+The patch is embedded in the script, so there is no separate file to place and
+no line-ending risk.
 
 That is the whole loop.
 

@@ -32,7 +32,8 @@ using ..LedgerParams:
     BF_NA_PLASMA_SETPOINT, BF_OSM_PLASMA_SETPOINT,
     BF_NA_OSMOTICALLY_INACTIVE_FRACTION, BF_NA_STORAGE_TAU,
     BF_ICF_ECF_OSMOTIC_TAU,
-    BF_NA_INTAKE_NOMINAL, BF_H2O_INTAKE_NOMINAL, BF_H2O_INSENSIBLE_LOSS
+    BF_NA_INTAKE_NOMINAL, BF_H2O_INTAKE_NOMINAL, BF_H2O_INSENSIBLE_LOSS,
+    BF_OSM_NONSODIUM
 
 """
     BodyFluids(; name, body_mass = 70.0, storage = false)
@@ -62,17 +63,32 @@ function BodyFluids(; name, body_mass = 70.0, storage::Bool = false)
         Na_intake   = BF_NA_INTAKE_NOMINAL                 # protocol input
         H2O_intake  = BF_H2O_INTAKE_NOMINAL                # protocol input
         H2O_insens  = BF_H2O_INSENSIBLE_LOSS
+        # Intracellular osmotically active solute content, CONSERVED. Set so that
+        # at nominal ICF volume the cell is iso-osmolar with plasma. Cells do not
+        # gain or lose solute on the timescales this model covers - only water
+        # moves - so this is a parameter, not a state.
+        Osm_solute_icf = BF_OSM_PLASMA_SETPOINT * body_mass * BF_ICF_MASS_FRACTION
+        Osm_other      = BF_OSM_NONSODIUM
     end
 
+    # Defaults are INLINE. MTK v10 removed `defaults` as a constructor keyword,
+    # and inline is better practice regardless - the default sits next to the
+    # variable it belongs to.
     vars = @variables begin
-        V_icf(t)            # L
-        V_ecf(t)            # L
-        Na_ecf(t)           # mEq      osmotically ACTIVE extracellular sodium
-        Na_store(t)         # mEq      osmotically INACTIVE stored sodium
+        V_icf(t)         = body_mass * BF_ICF_MASS_FRACTION            # L
+        V_ecf(t)         = body_mass * BF_ECF_MASS_FRACTION            # L
+        Na_ecf(t)        = body_mass * BF_ECF_MASS_FRACTION * BF_NA_PLASMA_SETPOINT
+        Na_store(t)      = storage ? BF_NA_OSMOTICALLY_INACTIVE_FRACTION *
+                                     body_mass * BF_ECF_MASS_FRACTION *
+                                     BF_NA_PLASMA_SETPOINT : 0.0
         C_Na(t)             # mEq/L
         Osm_ecf(t)          # mOsm/kg
+        Osm_icf(t)          # mOsm/kg
         J_store(t)          # mEq/day  net flux into storage, +ve = retaining
         J_osm(t)            # L/day    water flux ECF -> ICF
+        # NO defaults on these three: they are supplied by connection equations.
+        # A default here becomes a redundant initialization equation and makes
+        # the initialization system overdetermined.
         Na_excr_rate(t)     # mEq/day  INPUT from renal
         H2O_excr_rate(t)    # L/day    INPUT from renal
         MAP(t)              # mmHg     INPUT from cardiovascular
@@ -86,12 +102,24 @@ function BodyFluids(; name, body_mass = 70.0, storage::Bool = false)
         # accompanying anions. Standard approximation, and a known simplification -
         # it omits glucose and urea, which matters only in states this model does
         # not yet represent.
-        Osm_ecf ~ 2 * C_Na,
+        Osm_ecf ~ 2 * C_Na + Osm_other,
+        # Intracellular osmolality from a CONSERVED intracellular solute content.
+        # Cells contain a fixed osmotically active solute mass; osmolality is that
+        # mass divided by current cell water. This is what makes the compartment
+        # self-correcting: as water leaves, ICF concentrates and opposes further
+        # loss. The previous formulation drove ICF toward a fixed target volume
+        # with no such restoring term, which let it collapse to zero.
+        Osm_icf ~ Osm_solute_icf / V_icf,
         V_total ~ V_icf + V_ecf,
         # Conservation observable INCLUDES stored sodium. If this is not conserved
         # the storage compartment is leaking and the test suite fails.
         Na_total ~ Na_ecf + Na_store,
-        J_osm   ~ (V_icf * (Osm_ecf / Osm_set - 1)) / tau_osm,
+        # Water flux ECF -> ICF, driven by the osmotic gradient BETWEEN the two
+        # compartments. Positive when ICF is hypertonic relative to ECF, i.e.
+        # water enters cells. SIGN: previously this used (Osm_ecf/Osm_set - 1),
+        # which has the opposite sense - it pushed water INTO cells when the ECF
+        # was hypertonic, when water should leave cells to dilute the ECF.
+        J_osm   ~ V_icf * (Osm_icf - Osm_ecf) / Osm_set / tau_osm,
     ]
 
     # First-order relaxation of stored sodium toward a target proportional to
@@ -112,19 +140,7 @@ function BodyFluids(; name, body_mass = 70.0, storage::Bool = false)
         D(V_icf)  ~ J_osm,
     ]
 
-    defaults = Dict(
-        V_icf    => body_mass * BF_ICF_MASS_FRACTION,
-        V_ecf    => body_mass * BF_ECF_MASS_FRACTION,
-        Na_ecf   => body_mass * BF_ECF_MASS_FRACTION * BF_NA_PLASMA_SETPOINT,
-        Na_store => storage ?
-                    BF_NA_OSMOTICALLY_INACTIVE_FRACTION * body_mass *
-                    BF_ECF_MASS_FRACTION * BF_NA_PLASMA_SETPOINT : 0.0,
-        MAP           => 93.0,
-        Na_excr_rate  => BF_NA_INTAKE_NOMINAL,
-        H2O_excr_rate => BF_H2O_INTAKE_NOMINAL - BF_H2O_INSENSIBLE_LOSS,
-    )
-
-    return ODESystem(vcat(obs, store_eqs, balance), t, vars, pars; name, defaults)
+    return MTKSystem(vcat(obs, store_eqs, balance), t, vars, pars; name)
 end
 
 """
