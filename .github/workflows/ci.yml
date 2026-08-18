@@ -17,6 +17,13 @@ jobs:
       # parameter is re-estimated; a wrong structure invalidates the estimation
       # that rests on it. See ADR 0006.
       - run: python3 tools/check_adrs.py
+      # Julia refuses to load a package importing an undeclared module,
+      # including stdlibs. Catch that here rather than in a 20-minute
+      # precompile.
+      - run: python3 tools/fix_deps.py
+      # Derived values depend on each other. The ledger records provenance;
+      # this checks that numbers derived from one another still agree.
+      - run: python3 tools/check_closure.py
 
   test:
     name: Julia tests

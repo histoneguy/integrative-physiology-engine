@@ -158,6 +158,15 @@ def ledger_check(fix: bool = False) -> bool:
         else:
             info(r.stdout.strip() or "ledger OK")
 
+    clo = ROOT / "tools" / "check_closure.py"
+    if clo.exists():
+        r = run([sys.executable, str(clo)])
+        if r.returncode != 0:
+            print(r.stdout or "", r.stderr or "")
+            ok = False
+        else:
+            info("closure OK")
+
     adr = ROOT / "tools" / "check_adrs.py"
     if adr.exists():
         r = run([sys.executable, str(adr)])
@@ -213,7 +222,7 @@ def get_config() -> dict:
     info("marked TODO-VERIFY. Published history is permanent.")
     cfg["strip_seed_rows"] = confirm("Remove them before publishing?", default_yes=False)
 
-    CONFIG_FILE.write_text(json.dumps(cfg, indent=2), encoding="utf-8")
+    CONFIG_FILE.write_text(json.dumps(cfg, indent=2), encoding="utf-8", newline="\n")
     return cfg
 
 
@@ -233,7 +242,7 @@ def do_preflight(cfg: dict) -> None:
         try:
             with urllib.request.urlopen(
                     "https://www.apache.org/licenses/LICENSE-2.0.txt", timeout=20) as r:
-                lic.write_text(r.read().decode("utf-8"), encoding="utf-8")
+                lic.write_text(r.read().decode("utf-8"), encoding="utf-8", newline="\n")
             info("LICENSE downloaded (Apache-2.0)")
         except Exception as e:
             info(f"!! could not fetch licence text ({e})")
@@ -243,14 +252,14 @@ def do_preflight(cfg: dict) -> None:
         f"Integrative Physiology Engine\nCopyright {YEAR} {cfg['your_name']}\n\n"
         "This product includes software developed independently from published\n"
         "peer-reviewed literature. See SOURCES.md for the source whitelist policy.\n",
-        encoding="utf-8")
+        encoding="utf-8", newline="\n")
 
     p = ROOT / "Project.toml"
     if p.exists():
         s = p.read_text(encoding="utf-8")
         p.write_text(re.sub(r'^authors = \[.*\]$',
                             f'authors = ["{cfg["your_name"]} <{cfg["your_email"]}>"]',
-                            s, flags=re.M), encoding="utf-8")
+                            s, flags=re.M), encoding="utf-8", newline="\n")
 
     rd = ROOT / "README.md"
     s = rd.read_text(encoding="utf-8")
@@ -260,7 +269,7 @@ def do_preflight(cfg: dict) -> None:
     s = s.replace("TODO — CITATION.cff once the first release is tagged.",
                   "See `CITATION.cff`.")
     s = s.replace("> Rename this repository and this heading before first push.\n\n", "")
-    rd.write_text(s, encoding="utf-8")
+    rd.write_text(s, encoding="utf-8", newline="\n")
 
     (ROOT / "CITATION.cff").write_text(
         'cff-version: 1.2.0\nmessage: "If you use this software, please cite it as below."\n'
@@ -270,14 +279,14 @@ def do_preflight(cfg: dict) -> None:
         f'authors:\n  - name: "{cfg["your_name"]}"\n'
         f'repository-code: "https://github.com/{cfg["gh_owner"]}/{cfg["gh_repo"]}"\n'
         f'license: Apache-2.0\nversion: 0.0.1\ndate-released: "{TODAY}"\n',
-        encoding="utf-8")
+        encoding="utf-8", newline="\n")
     info("NOTICE, CITATION.cff, README, Project.toml written")
 
     if cfg.get("strip_seed_rows"):
         led = ROOT / "ledger" / "parameters.csv"
         lines = led.read_text(encoding="utf-8").splitlines(keepends=True)
         kept = [l for l in lines if "SCAFFOLD SEED" not in l]
-        led.write_text("".join(kept), encoding="utf-8")
+        led.write_text("".join(kept), encoding="utf-8", newline="\n")
         info(f"removed {len(lines)-len(kept)} placeholder ledger rows")
 
     if not ledger_check(fix=True):
