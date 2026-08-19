@@ -91,3 +91,52 @@ timescale of seconds, not days.
   parameter that determines whether the reflex stays a buffer.
 - Cardiopulmonary (low-pressure) baroreceptors are not represented. They matter for
   volume-loading and LBNP protocols and are a separate component.
+
+## Addendum, 2026-08-19 — the effector sign was inverted on merge
+
+The version merged in PR #6 had `drive ~ +sat * tanh(...)`. That is **positive**
+feedback: a rise in pressure raised `tpr_mod`, which raised TPR, which raised
+pressure.
+
+The closed-loop gain of that error is exactly `G_br`. The tanh slope at the
+operating point is `G_br / MAP_ref`, and `∂MAP/∂tpr_mod = MAP / tpr_mod ≈ MAP_ref`,
+so the product is `G_br = 2.0`. Regenerative with gain 2 is unconditionally
+unstable: `tpr_mod` ran to the saturation bound, `sp` then reset toward the new
+pressure, `err` collapsed, and the loop fell onto the opposite branch. The
+salt step returned:
+
+| intake (mEq/d) | MAP, sign inverted | MAP, correct |
+|---|---|---|
+| 205 | 95.03 | 93.0000375 |
+| 154 | **40.42** | 90.5335685 |
+| 103 | 95.81 | 88.0658713 |
+
+40 mmHg is not a survivable mean arterial pressure, and the sequence is not
+monotonic in intake.
+
+With the sign corrected, `baroreflex = true` and `baroreflex = false` agree to a
+relative 4e-7 — three orders inside the `rtol = 1e-3` of the regression test — and
+the salt-step shift is 4.9341 mmHg, matching the pre-baroreflex baseline.
+
+**The decision in this ADR is unchanged.** No parameter was implicated:
+`BR.OPEN_LOOP_GAIN` and `BR.RESET.TAU` are as recorded. This was an implementation
+sign error, not a structural or evidentiary one.
+
+### What let it through
+
+Two things, and the second is the one worth fixing.
+
+1. The `baroreflex = false` path was written and never executed before merge. It
+   turned out to be correct, but it was not known to be at the time.
+
+2. **The Diagnostics workflow reported green while printing a 40 mmHg salt-step
+   table to its own job summary.** `diagnostics.yml` sets `continue-on-error: true`
+   at both job and step level, and `bench/diagnostics.jl` calls `exit(0)` at every
+   gate. It is structurally incapable of failing. A green Diagnostics check was
+   read as evidence the model ran correctly; it is not evidence of anything.
+
+The Julia test suite *did* catch this — `CI/Julia tests` failed on PR #6, correctly,
+and the failing assertion was precisely the falsifiable claim above. The gate worked.
+What failed was reading a check that cannot fail as if it were a second opinion.
+This is the failure mode ADR 0008 was written about, recurring in the tooling ADR 0008
+produced.

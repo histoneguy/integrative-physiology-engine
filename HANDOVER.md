@@ -223,45 +223,61 @@ to classify the cost regime. The diagnostic now says so itself.
 
 ---
 
-# OPEN FAILURE AT HANDOFF — read this first
+# RESOLVED — the PR #6 baroreflex failure
 
-**Date:** 2026-08-19. **State:** PR #6 (baroreflex, ADR 0009) is merged to `main`
-at `715c1cc`, but **its CI Julia tests FAIL.**
+**Closed 2026-08-19.** The `CI/Julia tests` failure on PR #6 was an **inverted
+effector sign** in `Baroreflex.jl`: `drive ~ +sat * tanh(...)` where physiology
+requires negative feedback. Closed-loop gain was `G_br = 2.0` and regenerative, so
+`tpr_mod` ran to the saturation bound and bounced as `sp` reset. The salt step
+returned MAP 95.03 / **40.42** / 95.81 — non-monotonic in intake, and not a
+survivable pressure.
 
-    CI/Provenance              PASS  (6s)
-    Diagnostics/Model diag.    PASS  (1m21s)
-    CI/Julia tests             FAIL  (24m)
+Fixed by one character. Verified on the owner's Julia 1.12.6:
 
-Diagnostics passing means the model **builds and runs** with the baroreflex on the
-default path. The failure is in `test/runtests.jl`, and the untriaged log is at
-PR #6 on GitHub.
+| intake (mEq/d) | baroreflex on | baroreflex off | rel. diff |
+|---|---|---|---|
+| 205 | 93.0000375 | 93.0000373 | 3e-9 |
+| 154 | 90.5335685 | 90.5336049 | 4e-7 |
+| 103 | 88.0658713 | 88.0658956 | 3e-7 |
 
-**Most likely cause, unverified:** the new testset in ADR 0009 calls
-`salt_step(baroreflex = false)`. That path was added at the same time and never
-executed. `Baroreflex(; enabled = false)` emits `D(tpr_mod) ~ 0.0` and
-`D(sp) ~ 0.0`, which may leave the system structurally singular or those states
-undetermined at initialisation. The enabled path works; the disabled path is
-untested.
+Shift 4.9341 mmHg, matching the pre-baroreflex baseline. ADR 0009's falsifiable
+claim holds: the reflex resets and exerts no long-run influence on pressure. See the
+addendum in `docs/adr/0009-baroreflex.md`.
 
-**Get the log first, do not guess:**
+**Both triage hypotheses in the previous handover were wrong**, and the way they were
+wrong is worth keeping:
 
-    gh run list --limit 4 --json databaseId,workflowName,conclusion
-    gh run view <failing CI id> --log-failed
+- *"`baroreflex = false` is structurally singular."* It is not. `D(x) ~ 0.0` is a
+  well-posed constant state; the disabled branch is equation-balanced and reproduced
+  the known-good baseline to eight significant figures. It was never the problem.
+- *"Or the claim is false and `BR.RESET.TAU` / `BR.OPEN_LOOP_GAIN` need rework."*
+  Neither parameter was implicated. Both stand as recorded in the ledger.
 
-**Why this matters more than a normal test failure.** The failing test IS the
-falsifiable claim of ADR 0009: adding the baroreflex must not change the 60-day
-salt-step result (MAP 93.00 / 90.53 / 88.07). The baroreflex resets, so it is a fast
-buffer, not a long-term regulator — if it were a regulator, the Guyton claim in
-ADR 0007 would be false.
+The dichotomy was drawn without reading the component and both branches were wrong.
+The single command that settled it — run `salt_step()` and `salt_step(baroreflex =
+false)` side by side and print both — took under a minute on a warm cache and should
+have been the first move.
 
-So there are two possibilities and they must be distinguished:
+## The check that lied
 
-1. **The test harness is broken** (the `baroreflex = false` path). Fix it and the
-   claim stands.
-2. **The claim is false** — MAP actually shifted. Then ADR 0009 is wrong: either
-   `BR.RESET.TAU` (assumed, 1 day) or `BR.OPEN_LOOP_GAIN` (animal-derived, flagged)
-   is wrong, and the component needs rework.
+`Diagnostics` reported **green** on PR #6 while printing the 40 mmHg salt-step table
+to its own job summary. It sets `continue-on-error: true` at job *and* step level,
+and `bench/diagnostics.jl` calls `exit(0)` at every gate. It is structurally
+incapable of failing.
 
-**Do not start RAAS until this is resolved.** RAAS attaches to the same `tpr_mod`
-path the baroreflex now scales. Building on an unverified baroreflex compounds the
-problem.
+The previous handover then read that green tick as evidence that "the model builds
+and runs with the baroreflex on the default path." It is evidence that the workflow
+ran. Nothing more.
+
+Mitigated, not solved: the workflow is renamed **"Diagnostics (report only - never
+fails)"** and the summary now opens with a banner saying so. The numbers still have
+to be read. `CI / Julia tests` is the gate; `Provenance` is the required check.
+
+**Do not rename the `Provenance` job in `ci.yml`** — branch protection requires that
+exact string, and a rename previously deadlocked all merges (section 4).
+
+## Next
+
+Section 5 order is unchanged, and RAAS is now unblocked. It attaches to the same
+`tpr_mod` path, multiplicatively — note that path is now verified in both directions,
+which it was not before.

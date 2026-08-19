@@ -1,4 +1,4 @@
-name: Diagnostics
+name: Diagnostics (report only - never fails)
 
 # Reports model health to the job summary on every push.
 #
@@ -15,7 +15,7 @@ on:
 
 jobs:
   diagnostics:
-    name: Model diagnostics
+    name: Model diagnostics (non-gating)
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
