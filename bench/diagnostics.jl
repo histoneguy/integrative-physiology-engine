@@ -75,6 +75,12 @@ end
 
 emit("# IPE diagnostics")
 emit()
+emit("> **This check cannot fail.** It reports and exits 0 whatever it finds. A")
+emit("> green tick on Diagnostics means the workflow ran, NOT that the model is")
+emit("> correct — it has previously reported green while printing a 40 mmHg mean")
+emit("> arterial pressure below (ADR 0009 addendum). READ THE NUMBERS. The gate is")
+emit("> `CI / Julia tests`.")
+emit()
 emit("Julia $(VERSION) — $(Sys.CPU_THREADS) threads available")
 emit()
 

@@ -85,7 +85,16 @@ function Baroreflex(; name, enabled::Bool = true)
             # Saturating characteristic. The real reflex is sigmoidal; tanh gives
             # the right shape with the right slope at the operating point and
             # cannot drive TPR negative under large excursions.
-            drive ~ sat * tanh(G_br * err / (sat * MAP_ref)),
+            #
+            # THE SIGN IS NEGATIVE AND THAT IS THE WHOLE REFLEX. A rise in
+            # pressure stretches the baroreceptors, RAISES afferent firing, and
+            # INHIBITS sympathetic vasomotor outflow — so TPR falls. Positive
+            # here makes the loop regenerative: closed-loop gain is G_br = 2.0,
+            # which is unconditionally unstable, runs away to the tanh
+            # saturation bound, and then bounces off the other branch as `sp`
+            # resets. That was the state merged in PR #6 and it produced a
+            # 40 mmHg mean arterial pressure. See the addendum to ADR 0009.
+            drive ~ -sat * tanh(G_br * err / (sat * MAP_ref)),
 
             # Effector lag: 2-3 s sympathetic vasomotor response.
             D(tpr_mod) ~ ((1 + drive) - tpr_mod) / tau_br,
