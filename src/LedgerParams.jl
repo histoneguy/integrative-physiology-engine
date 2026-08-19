@@ -7,8 +7,8 @@ Produced by tools/ledger_to_julia.py from ledger/parameters.csv.
 To change a value, edit the ledger and regenerate. This is the only
 sanctioned path from source literature to executable code.
 
-Ledger SHA256 (first 16): b2848d36099755d9
-Parameters: 37 (assumed=9, calibrated=2, derived=8, reported=18)
+Ledger SHA256 (first 16): fc954485ec98b4d8
+Parameters: 41 (assumed=11, calibrated=2, derived=8, reported=20)
 """
 module LedgerParams
 
@@ -173,6 +173,30 @@ const CV_VENOUS_RETURN_SENSITIVITY = 2880.0
 
 
 # --- neural ------------------------------------------------------
+"""Sympathetic vasomotor effector time constant [s] +/- 2.0-3.0 (range)
+Source (tier A, reported): La Rovere MT, Pinna GD, Raczak G. Baroreflex sensitivity: measurement and clinical implications. Ann Noninvasive Electrocardiol 2008;13(2):191-207.
+Notes: Cardiac and vasomotor sympathetic activation occurs with a 2-3 second delay and reaches maximal effect more slowly. Parasympathetic activation is far faster (200-600 ms) but acts on heart rate, which is not a state in this cycle-averaged model (ADR 0002) - hence the lumped single-arm treatment. 3.0 s is the upper end of the stated range.
+"""
+const BR_EFFECTOR_TAU = 3.0
+
+"""Sympathetic arterial baroreflex open-loop gain [unitless] +/- 1.0-3.5 (range)
+Source (tier B, reported): Yamasaki F, Sato T, Sato K, Diedrich A. Analytic and integrative framework for understanding human sympathetic arterial baroreflex function. Front Neurosci 2021;15:707345.
+Notes: SPECIES: animal (dog, rabbit) - open-loop gain measured by perfusing vascularly isolated carotid sinus or aortic arch, reported between 1.0 and 3.5 across Kent 1972, Shoukas and Sagawa 1973, McRitchie 1976, Burattini 1994, Sato 1999, Sunagawa 2001. The source states explicitly that this invasive approach is not applicable to humans and that human open-loop gain has NOT been clarified. 2.0 is the mid-range. NO SCALING APPLIED - gain is dimensionless and the reflex architecture is conserved, but this is the weakest link in the component and must be flagged in any result.
+"""
+const BR_OPEN_LOOP_GAIN = 2.0
+
+"""Baroreflex setpoint resetting time constant [day]  [!] ASSUMED
+Source (tier B, assumed): Dampney RAL. Resetting of the baroreflex control of sympathetic vasomotor activity during natural behaviors. Front Physiol 2017.
+Notes: ASSUMED. Baroreflex resetting is well established qualitatively - the reflex re-centres on prevailing pressure over hours to days, which is WHY it cannot set long-run arterial pressure. A specific human time constant is not reported in the sources consulted. 1 day is an order-of-magnitude placeholder. CRITICAL: this parameter is what makes the baroreflex a fast buffer rather than a long-term regulator. If it were infinite the reflex would set long-run pressure and the Guyton claim in ADR 0007 would be false. Sensitivity to it must be tested.
+"""
+const BR_RESET_TAU = 1.0
+
+"""Maximum fractional change in TPR from baroreflex [unitless]  [!] ASSUMED
+Source (tier B, assumed): Saturation bound; see notes.
+Notes: ASSUMED. The baroreflex characteristic is sigmoidal and saturates; an unbounded linear gain would let TPR go negative under large pressure excursions. 0.5 means TPR can move at most +/-50 percent from baseline by reflex action alone. Placeholder chosen to keep the model well-posed under hemorrhage-scale perturbations, not extracted from a reported response range.
+"""
+const BR_TPR_MAX_FRACTION = 0.5
+
 """Clock to effector transcriptional delay [s]  [!] ASSUMED
 Source (tier B, assumed): Recent advances in understanding the circadian clock in renal physiology. PMC6350809.
 Notes: ASSUMED. The source describes Per1 as an early aldosterone target gene regulating ENaC, SGLT1, NHE3 and ET-1, and notes Per genes have short half-lives, but does not report an effector delay. 1 h is an order-of-magnitude placeholder. This is a Neurohumoral coupling tau per ADR 0003 and is what makes the clock safe to partition across.
@@ -279,6 +303,10 @@ const PARAM_PROVENANCE = Dict{Symbol,Provenance}(
     :BF_OSM_NONSODIUM => Provenance("BF.OSM.NONSODIUM", "mOsm/kg", 7.0, "B", "derived", "Derived from the standard osmolality estimate.", "DERIVED as Osm_set - 2*C_Na = 287 - 280 = 7. Represents glucose potassium urea and other solutes in the conventional estimate Osm = 2[Na] + glucose/18 + BUN/2.8. Without this term the model started 7 mOsm hypertonic at nominal and drove osmotic flux from t=0. CLOSURE constraint - recompute if BF.NA.PLASMA_SETPOINT or BF.OSM.PLASMA_SETPOINT change. Enforced by tools/check_closure.py."),
     :BF_OSM_PLASMA_SETPOINT => Provenance("BF.OSM.PLASMA_SETPOINT", "mOsm/kg", 287.0, "B", "reported", "Standard clinical reference interval.", "VERIFY - as above. Needed to close the osmotic equilibration between ICF and ECF."),
     :BF_TBW_MASS_FRACTION => Provenance("BF.TBW.MASS_FRACTION", "unitless", 0.552, "A", "reported", "Zhang N et al. Association between the content of intracellular and extracellular fluid and the amount of water intake among Chinese college students. PMC6751809.", "Reported as 55.2 +/- 6.2 percent of body weight by bioelectrical impedance, n=159 young adults. NOTE this is below the conventional textbook 60 percent; BIA and isotope dilution disagree systematically and the cohort is young Chinese adults. VERIFY against a second population before relying on it. Candidate cross-check: ICRP 89."),
+    :BR_EFFECTOR_TAU => Provenance("BR.EFFECTOR.TAU", "s", 3.0, "A", "reported", "La Rovere MT, Pinna GD, Raczak G. Baroreflex sensitivity: measurement and clinical implications. Ann Noninvasive Electrocardiol 2008;13(2):191-207.", "Cardiac and vasomotor sympathetic activation occurs with a 2-3 second delay and reaches maximal effect more slowly. Parasympathetic activation is far faster (200-600 ms) but acts on heart rate, which is not a state in this cycle-averaged model (ADR 0002) - hence the lumped single-arm treatment. 3.0 s is the upper end of the stated range."),
+    :BR_OPEN_LOOP_GAIN => Provenance("BR.OPEN_LOOP_GAIN", "unitless", 2.0, "B", "reported", "Yamasaki F, Sato T, Sato K, Diedrich A. Analytic and integrative framework for understanding human sympathetic arterial baroreflex function. Front Neurosci 2021;15:707345.", "SPECIES: animal (dog, rabbit) - open-loop gain measured by perfusing vascularly isolated carotid sinus or aortic arch, reported between 1.0 and 3.5 across Kent 1972, Shoukas and Sagawa 1973, McRitchie 1976, Burattini 1994, Sato 1999, Sunagawa 2001. The source states explicitly that this invasive approach is not applicable to humans and that human open-loop gain has NOT been clarified. 2.0 is the mid-range. NO SCALING APPLIED - gain is dimensionless and the reflex architecture is conserved, but this is the weakest link in the component and must be flagged in any result."),
+    :BR_RESET_TAU => Provenance("BR.RESET.TAU", "day", 1.0, "B", "assumed", "Dampney RAL. Resetting of the baroreflex control of sympathetic vasomotor activity during natural behaviors. Front Physiol 2017.", "ASSUMED. Baroreflex resetting is well established qualitatively - the reflex re-centres on prevailing pressure over hours to days, which is WHY it cannot set long-run arterial pressure. A specific human time constant is not reported in the sources consulted. 1 day is an order-of-magnitude placeholder. CRITICAL: this parameter is what makes the baroreflex a fast buffer rather than a long-term regulator. If it were infinite the reflex would set long-run pressure and the Guyton claim in ADR 0007 would be false. Sensitivity to it must be tested."),
+    :BR_TPR_MAX_FRACTION => Provenance("BR.TPR.MAX_FRACTION", "unitless", 0.5, "B", "assumed", "Saturation bound; see notes.", "ASSUMED. The baroreflex characteristic is sigmoidal and saturates; an unbounded linear gain would let TPR go negative under large pressure excursions. 0.5 means TPR can move at most +/-50 percent from baseline by reflex action alone. Placeholder chosen to keep the model well-posed under hemorrhage-scale perturbations, not extracted from a reported response range."),
     :CIRC_BMAL1_DISSOCIATION_MARKER => Provenance("CIRC.BMAL1.DISSOCIATION_MARKER", "unitless", 1.0, "A", "reported", "Diurnal control of blood pressure is uncoupled from sodium excretion. Hypertension.", "MARKER ROW - not a value. SPECIES: rat, whole-body Bmal1 knockout. Male knockouts showed no significant difference in baseline sodium excretion between 12-h active and inactive periods while circadian MAP rhythm remained intact. This is the evidence for independent renal and cardiovascular clock arms in Circadian.jl. No scaling applied - structural evidence only, no numeric value taken."),
     :CIRC_CV_ACROPHASE => Provenance("CIRC.CV.ACROPHASE", "day", 0.25, "B", "assumed", "Recent advances in understanding the circadian clock in renal physiology. PMC6350809.", "ASSUMED. Placeholder consistent with pressure peaking during the active period. Must be extracted from ambulatory BP monitoring cosinor analysis. NOTE the CV and renal acrophases are deliberately independent parameters - Bmal1 knockout rats lose the renal sodium rhythm while MAP rhythm persists, so a shared phase would be structurally wrong."),
     :CIRC_CV_MAP_DIP_FRACTION => Provenance("CIRC.CV_MAP.DIP_FRACTION", "unitless", 0.15, "A", "reported", "Recent advances in understanding the circadian clock in renal physiology. PMC6350809.", "Blood pressure normally dips 10-20 percent during the inactive period; 0.15 is the midpoint of that stated range. Loss of dipping is associated with elevated cardiovascular risk and target organ damage, so this is a clinically load-bearing parameter, not a cosmetic one."),

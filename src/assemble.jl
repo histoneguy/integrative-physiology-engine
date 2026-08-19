@@ -30,8 +30,11 @@ Construct and structurally simplify the closed loop.
 `storage`   - osmotically inactive sodium compartment. ADR 0004 is PROVISIONAL and
               tier E3; defaults OFF per ADR 0006.
 `circadian` - ADR 0005. Correct and well-evidenced, but it modulates renal tubular
-              reabsorption and has nothing to attach to until this loop is
-              validated. Defaults OFF. Enabling it currently does nothing.
+              reabsorption and has nothing to attach to until RAAS and ADH land.
+              Defaults OFF. Enabling it currently does nothing.
+`baroreflex` - ADR 0009. Defaults ON. Set false to recover the pre-baroreflex
+              model exactly - used by the regression test that the reflex does
+              not alter long-run pressure.
 
 Call once, reuse across an ensemble. Never rebuild inside a population loop -
 symbolic simplification and code generation are the expensive part and are
@@ -50,10 +53,12 @@ Exposed so diagnostics can count how many states simplification removes - the
 figure that justifies the symbolic layer in ADR 0001. Not for general use;
 call `build_model`.
 """
-function build_raw_model(; body_mass = 70.0, storage::Bool = false, circadian::Bool = false)
+function build_raw_model(; body_mass = 70.0, storage::Bool = false,
+                         circadian::Bool = false, baroreflex::Bool = true)
     @named bf = BodyFluids(; body_mass, storage)
     @named cv = Cardiovascular()
     @named rn = Renal()
+    @named br = Baroreflex(; enabled = baroreflex)
 
     connections = [
         # body fluids -> cardiovascular
@@ -67,9 +72,12 @@ function build_raw_model(; body_mass = 70.0, storage::Bool = false, circadian::B
         bf.H2O_excr_rate ~ rn.H2O_excr,
         # cardiovascular -> body fluids (currently unused downstream)
         bf.MAP          ~ cv.MAP,
+        # cardiovascular <-> baroreflex
+        br.MAP          ~ cv.MAP,
+        cv.tpr_mod      ~ br.tpr_mod,
     ]
 
-    systems = [bf, cv, rn]
+    systems = [bf, cv, rn, br]
 
     if circadian
         @named clk = CircadianClock()
@@ -144,11 +152,12 @@ test needs, plus a combined trajectory.
 function salt_step(; levels_mEq_day = (205.0, 154.0, 103.0),
                    days_per_level = 30.0,
                    body_mass = 70.0,
+                   baroreflex::Bool = true,
                    saveat = 0.25,
                    solver = nothing,
                    kwargs...)
 
-    sys = build_model(; body_mass)
+    sys = build_model(; body_mass, baroreflex)
     results = NamedTuple[]
     u_carry = nothing          # state carried between levels
     t0 = 0.0

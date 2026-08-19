@@ -12,10 +12,11 @@ EVIDENCE (ADR 0006)
   --  The linearised SENSITIVITY of CO to blood volume is CALIBRATED. See ledger.
 
 WHAT THIS DELIBERATELY OMITS
-  Baroreflex, heart rate, contractility, arterial and venous compliance as states,
-  regional flows, and the circadian modulation in ADR 0005. TPR is a CONSTANT here.
-  It becomes a state once baroreflex and RAAS exist - and at that point this
-  component is where they attach.
+  Heart rate, contractility, arterial and venous compliance as states, regional
+  flows, and the circadian modulation in ADR 0005.
+
+  TPR is no longer a constant - the baroreflex scales it (ADR 0009). RAAS will
+  scale it further when it lands, multiplicatively on the same tpr_mod path.
 """
 
 using ModelingToolkit
@@ -43,7 +44,7 @@ function Cardiovascular(; name)
 
     pars = @parameters begin
         CO0    = CV_CO_NOMINAL
-        TPR    = CV_TPR_NOMINAL                    # constant until baroreflex/RAAS
+        TPR0   = CV_TPR_NOMINAL                    # baseline; scaled by reflex
         BV0    = CV_BLOOD_VOLUME_NOMINAL
         Hct    = CV_HEMATOCRIT_NOMINAL
         f_pv   = CV_PLASMA_ECF_FRACTION
@@ -54,9 +55,11 @@ function Cardiovascular(; name)
         # All algebraic - no defaults. V_ecf arrives by connection; the rest
         # follow from it. Defaults here would overdetermine initialization.
         V_ecf(t)        # L        INPUT from body fluids
+        tpr_mod(t)      # unitless INPUT from baroreflex (1.0 = no reflex action)
         V_plasma(t)     # L
         V_blood(t)      # L
         CO(t)           # L/day
+        TPR(t)          # mmHg/(L/day)
         MAP(t)          # mmHg     OUTPUT
     end
 
@@ -69,6 +72,11 @@ function Cardiovascular(; name)
         # measurement - the Frank-Starling relationship it linearises is E1, the
         # slope is not.
         CO  ~ max(0.0, CO0 + G_vr * (V_blood - BV0)),
+
+        # TPR is now a STATE-DEPENDENT quantity, scaled by baroreflex outflow.
+        # It was a constant until the baroreflex landed; tpr_mod = 1.0 recovers
+        # the previous behaviour exactly.
+        TPR ~ TPR0 * tpr_mod,
 
         MAP ~ CO * TPR,
     ]
