@@ -35,7 +35,9 @@ using ModelingToolkit
 using ModelingToolkit: t_nounits as t, D_nounits as D
 using OrdinaryDiffEq
 using SciMLBase
+using ADTypes: AutoForwardDiff, AutoFiniteDiff
 
+include("mtk_compat.jl")
 include("LedgerParams.jl")
 using .LedgerParams
 
@@ -50,7 +52,8 @@ include("components/Renal.jl")
 include("assemble.jl")
 include("ensemble.jl")
 
-export build_model, build_raw_model, solve_individual, run_population, salt_step
+export MTKSystem, mtk_simplify, mtk_unknowns
+export build_model, build_raw_model, solve_individual, run_population, salt_step, check_pressure_natriuresis
 export BodyFluids, Cardiovascular, Renal
 export FullTrace, StreamingStats, EventWindows, projected_storage
 export step_distribution, cost_profile, timescale_audit, boundary_sensitivity

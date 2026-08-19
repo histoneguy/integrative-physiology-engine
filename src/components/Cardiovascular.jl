@@ -51,6 +51,8 @@ function Cardiovascular(; name)
     end
 
     vars = @variables begin
+        # All algebraic - no defaults. V_ecf arrives by connection; the rest
+        # follow from it. Defaults here would overdetermine initialization.
         V_ecf(t)        # L        INPUT from body fluids
         V_plasma(t)     # L
         V_blood(t)      # L
@@ -71,7 +73,7 @@ function Cardiovascular(; name)
         MAP ~ CO * TPR,
     ]
 
-    return ODESystem(eqs, t, vars, pars; name)
+    return MTKSystem(eqs, t, vars, pars; name)
 end
 
 """

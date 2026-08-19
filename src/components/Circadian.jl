@@ -66,11 +66,11 @@ function CircadianClock(; name, phase0 = 0.0, renal_gain = 1.0, cv_gain = 1.0)
     end
 
     vars = @variables begin
-        phase(t)          # radians, monotonically increasing
+        # All algebraic functions of t - no defaults.
+        phase(t)          # radians
         renal_mod(t)      # multiplier on tubular Na reabsorption capacity
         cv_mod(t)         # multiplier on MAP setpoint
-        clock_hour(t)     # 0-24, for reporting - every reported value must
-                          # state its phase (ADR 0005)
+        clock_hour(t)     # 0-24, for reporting (ADR 0005)
     end
 
     eqs = [
@@ -84,7 +84,7 @@ function CircadianClock(; name, phase0 = 0.0, renal_gain = 1.0, cv_gain = 1.0)
         cv_mod     ~ 1 + g_cv    * A_cv    * cos(2 * pi * (t + phi0 - acro_cv)    / T),
     ]
 
-    return ODESystem(eqs, t, vars, pars; name)
+    return MTKSystem(eqs, t, vars, pars; name)
 end
 
 """

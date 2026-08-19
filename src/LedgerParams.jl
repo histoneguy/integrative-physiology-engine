@@ -7,8 +7,8 @@ Produced by tools/ledger_to_julia.py from ledger/parameters.csv.
 To change a value, edit the ledger and regenerate. This is the only
 sanctioned path from source literature to executable code.
 
-Ledger SHA256 (first 16): a935af124cfecbd9
-Parameters: 36 (assumed=9, calibrated=2, derived=7, reported=18)
+Ledger SHA256 (first 16): b2848d36099755d9
+Parameters: 37 (assumed=9, calibrated=2, derived=8, reported=18)
 """
 module LedgerParams
 
@@ -97,6 +97,12 @@ Notes: ASSUMED PLACEHOLDER, chosen to match the reported weekly infradian rhythm
 """
 const BF_NA_STORAGE_TAU = 7.0
 
+"""Non-sodium contribution to plasma osmolality [mOsm/kg]
+Source (tier B, derived): Derived from the standard osmolality estimate.
+Notes: DERIVED as Osm_set - 2*C_Na = 287 - 280 = 7. Represents glucose potassium urea and other solutes in the conventional estimate Osm = 2[Na] + glucose/18 + BUN/2.8. Without this term the model started 7 mOsm hypertonic at nominal and drove osmotic flux from t=0. CLOSURE constraint - recompute if BF.NA.PLASMA_SETPOINT or BF.OSM.PLASMA_SETPOINT change. Enforced by tools/check_closure.py.
+"""
+const BF_OSM_NONSODIUM = 7.0
+
 """Plasma osmolality setpoint [mOsm/kg] +/- 275-295 (range)
 Source (tier B, reported): Standard clinical reference interval.
 Notes: VERIFY - as above. Needed to close the osmotic equilibration between ICF and ECF.
@@ -149,15 +155,15 @@ const CV_MAP_SETPOINT = 93.0
 
 """Plasma volume as fraction of extracellular fluid [unitless]
 Source (tier B, derived): Derived to close the loop at nominal.
-Notes: DERIVED: plasma = BV x (1-Hct) = 5 x 0.55 = 2.75 L; ECF at nominal = 70 x 0.208 = 14.56 L; ratio = 0.189. Rounded to 0.20. The conventional textbook figure is 0.25, and the discrepancy comes from using the measured ECF fraction (20.8% of body mass) rather than the textbook 20%. FLAG: this is exactly the kind of reconciliation that must be visible rather than absorbed.
+Notes: DERIVED and NOT rounded: f_pv = BV0 x (1-Hct) / V_ecf = 5.0 x 0.55 / 14.56 = 0.188874. Rounding to 0.20 put blood volume 0.295 L above nominal, which through the venous return gain produced MAP = 104 rather than 93 mmHg. The conventional textbook figure is 0.25; the discrepancy comes from using the measured ECF fraction (20.8% of body mass) rather than the textbook 20%. This is a CLOSURE constraint - if Hct BF.ECF.MASS_FRACTION or CV.BLOOD_VOLUME.NOMINAL change this must be recomputed. Enforced by tools/check_closure.py.
 """
-const CV_PLASMA_ECF_FRACTION = 0.2
+const CV_PLASMA_ECF_FRACTION = 0.188874
 
 """Total peripheral resistance nominal [mmHg/(L/day)]
 Source (tier B, derived): Derived from MAP and CO.
 Notes: DERIVED: TPR = MAP/CO = 93/7200. Definitional given the other two. In this minimal model TPR is a constant - it becomes a state once baroreflex and RAAS exist.
 """
-const CV_TPR_NOMINAL = 0.012917
+const CV_TPR_NOMINAL = 0.012916667
 
 """Cardiac output sensitivity to blood volume [(L/day)/L]  [!] CALIBRATED
 Source (tier B, calibrated): Guyton AC, Coleman TG, Granger HJ. Annu Rev Physiol 1972;34:13-46.
@@ -231,9 +237,9 @@ const RN_H2O_OBLIGATORY_LOSS = 0.5
 
 """Fractional tubular sodium reabsorption at nominal pressure [unitless]
 Source (tier B, derived): Standard physiological reference. VERIFY.
-Notes: DERIVED to close the loop at nominal: filtered load = 180 L/day x 140 mEq/L = 25200 mEq/day; excretion must equal intake of 205 mEq/day at steady state, so FR = 1 - 205/25200 = 0.99187. Rounded. This is NOT an independent measurement - it is fixed by the other three values, and that dependency must be preserved if any of them changes.
+Notes: DERIVED to close the loop at nominal: filtered load = 180 L/day x 140 mEq/L = 25200 mEq/day; excretion must equal intake of 205 mEq/day at steady state, so FR = 1 - 205/25200 = 0.9918651. NOT rounded - rounding to 0.9915 gave excretion of 214.2 vs intake 205, a 9.2 mEq/day drift that ran the model to a lethal state while reporting Success. This is NOT an independent measurement - it is fixed by the other three values, and that dependency must be preserved if any of them changes.
 """
-const RN_NA_FRACTIONAL_REABSORPTION = 0.9915
+const RN_NA_FRACTIONAL_REABSORPTION = 0.9918651
 
 """Pressure natriuresis slope [(mEq/day)/mmHg]  [!] CALIBRATED
 Source (tier B, calibrated): Guyton AC, Coleman TG, Granger HJ. Circulation: overall regulation. Annu Rev Physiol 1972;34:13-46.
@@ -270,6 +276,7 @@ const PARAM_PROVENANCE = Dict{Symbol,Provenance}(
     :BF_NA_PLASMA_SETPOINT => Provenance("BF.NA.PLASMA_SETPOINT", "mEq/L", 140.0, "B", "reported", "Standard clinical reference interval.", "VERIFY - clinical reference range, needs a citable primary source. Widely reproduced but traced here only to convention."),
     :BF_NA_SKIN_ACCUMULATION_RATE => Provenance("BF.NA.SKIN_ACCUMULATION_RATE", "mmol/(L*year)", 0.34, "A", "reported", "Titze J et al, 23Na MRI at 7.0 Tesla, n=17 men. Reported in Rakova N, Sodium Balance (dissertation), Freie Universitaet Berlin.", "Described by the source as preliminary in vivo data. Not used in the current model - recorded because it constrains the storage compartment on long horizons and will matter if the model is ever run across decades."),
     :BF_NA_STORAGE_TAU => Provenance("BF.NA.STORAGE_TAU", "day", 7.0, "B", "assumed", "Rakova N et al. Cell Metab 2013;17(1):125-131.", "ASSUMED PLACEHOLDER, chosen to match the reported weekly infradian rhythm period rather than derived from it. Rakova et al report 7-day and monthly rhythmicity in Na+ balance; a first-order lag with tau = 7 d is the crudest structure that can produce retention and release on that scale. This is the single most important parameter to estimate properly against the Mars500 series. See ADR 0004."),
+    :BF_OSM_NONSODIUM => Provenance("BF.OSM.NONSODIUM", "mOsm/kg", 7.0, "B", "derived", "Derived from the standard osmolality estimate.", "DERIVED as Osm_set - 2*C_Na = 287 - 280 = 7. Represents glucose potassium urea and other solutes in the conventional estimate Osm = 2[Na] + glucose/18 + BUN/2.8. Without this term the model started 7 mOsm hypertonic at nominal and drove osmotic flux from t=0. CLOSURE constraint - recompute if BF.NA.PLASMA_SETPOINT or BF.OSM.PLASMA_SETPOINT change. Enforced by tools/check_closure.py."),
     :BF_OSM_PLASMA_SETPOINT => Provenance("BF.OSM.PLASMA_SETPOINT", "mOsm/kg", 287.0, "B", "reported", "Standard clinical reference interval.", "VERIFY - as above. Needed to close the osmotic equilibration between ICF and ECF."),
     :BF_TBW_MASS_FRACTION => Provenance("BF.TBW.MASS_FRACTION", "unitless", 0.552, "A", "reported", "Zhang N et al. Association between the content of intracellular and extracellular fluid and the amount of water intake among Chinese college students. PMC6751809.", "Reported as 55.2 +/- 6.2 percent of body weight by bioelectrical impedance, n=159 young adults. NOTE this is below the conventional textbook 60 percent; BIA and isotope dilution disagree systematically and the cohort is young Chinese adults. VERIFY against a second population before relying on it. Candidate cross-check: ICRP 89."),
     :CIRC_BMAL1_DISSOCIATION_MARKER => Provenance("CIRC.BMAL1.DISSOCIATION_MARKER", "unitless", 1.0, "A", "reported", "Diurnal control of blood pressure is uncoupled from sodium excretion. Hypertension.", "MARKER ROW - not a value. SPECIES: rat, whole-body Bmal1 knockout. Male knockouts showed no significant difference in baseline sodium excretion between 12-h active and inactive periods while circadian MAP rhythm remained intact. This is the evidence for independent renal and cardiovascular clock arms in Circadian.jl. No scaling applied - structural evidence only, no numeric value taken."),
@@ -284,14 +291,14 @@ const PARAM_PROVENANCE = Dict{Symbol,Provenance}(
     :CV_CO_NOMINAL => Provenance("CV.CO.NOMINAL", "L/day", 7200.0, "B", "derived", "Standard physiological reference. VERIFY.", "DERIVED from the conventional 5 L/min. 5 x 1440 = 7200 L/day. Units are per-day throughout the model."),
     :CV_HEMATOCRIT_NOMINAL => Provenance("CV.HEMATOCRIT.NOMINAL", "unitless", 0.45, "B", "reported", "Standard physiological reference. VERIFY.", "Adult male nominal. Sex-dependent - female nominal is lower. Sex is deferred until the spine is validated."),
     :CV_MAP_SETPOINT => Provenance("CV.MAP.SETPOINT", "mmHg", 93.0, "B", "reported", "Standard physiological reference. VERIFY.", "Nominal normotensive adult. NOTE this is an OUTPUT of the closed loop, not an input - it emerges from renal-body fluid feedback. It appears here as an initialisation value and a validation target, not as a setpoint the model enforces."),
-    :CV_PLASMA_ECF_FRACTION => Provenance("CV.PLASMA.ECF_FRACTION", "unitless", 0.2, "B", "derived", "Derived to close the loop at nominal.", "DERIVED: plasma = BV x (1-Hct) = 5 x 0.55 = 2.75 L; ECF at nominal = 70 x 0.208 = 14.56 L; ratio = 0.189. Rounded to 0.20. The conventional textbook figure is 0.25, and the discrepancy comes from using the measured ECF fraction (20.8% of body mass) rather than the textbook 20%. FLAG: this is exactly the kind of reconciliation that must be visible rather than absorbed."),
-    :CV_TPR_NOMINAL => Provenance("CV.TPR.NOMINAL", "mmHg/(L/day)", 0.012917, "B", "derived", "Derived from MAP and CO.", "DERIVED: TPR = MAP/CO = 93/7200. Definitional given the other two. In this minimal model TPR is a constant - it becomes a state once baroreflex and RAAS exist."),
+    :CV_PLASMA_ECF_FRACTION => Provenance("CV.PLASMA.ECF_FRACTION", "unitless", 0.188874, "B", "derived", "Derived to close the loop at nominal.", "DERIVED and NOT rounded: f_pv = BV0 x (1-Hct) / V_ecf = 5.0 x 0.55 / 14.56 = 0.188874. Rounding to 0.20 put blood volume 0.295 L above nominal, which through the venous return gain produced MAP = 104 rather than 93 mmHg. The conventional textbook figure is 0.25; the discrepancy comes from using the measured ECF fraction (20.8% of body mass) rather than the textbook 20%. This is a CLOSURE constraint - if Hct BF.ECF.MASS_FRACTION or CV.BLOOD_VOLUME.NOMINAL change this must be recomputed. Enforced by tools/check_closure.py."),
+    :CV_TPR_NOMINAL => Provenance("CV.TPR.NOMINAL", "mmHg/(L/day)", 0.012916667, "B", "derived", "Derived from MAP and CO.", "DERIVED: TPR = MAP/CO = 93/7200. Definitional given the other two. In this minimal model TPR is a constant - it becomes a state once baroreflex and RAAS exist."),
     :CV_VENOUS_RETURN_SENSITIVITY => Provenance("CV.VENOUS_RETURN.SENSITIVITY", "(L/day)/L", 2880.0, "B", "calibrated", "Guyton AC, Coleman TG, Granger HJ. Annu Rev Physiol 1972;34:13-46.", "CALIBRATED, not measured. Originating model: Guyton 1972. The Frank-Starling and venous return relationships are E1; this linearised sensitivity around the operating point is a fitted constant. Second most consequential unmeasured number after the pressure natriuresis slope - together these two set the loop gain."),
     :RN_AUTOREG_LOWER => Provenance("RN.AUTOREG.LOWER", "mmHg", 80.0, "B", "reported", "Standard physiological reference. VERIFY.", "GFR is approximately independent of MAP between roughly 80 and 180 mmHg. Below this GFR falls with pressure. E1 qualitatively; the exact limits vary and are convention here."),
     :RN_AUTOREG_UPPER => Provenance("RN.AUTOREG.UPPER", "mmHg", 180.0, "B", "reported", "Standard physiological reference. VERIFY.", "See RN.AUTOREG.LOWER."),
     :RN_GFR_NOMINAL => Provenance("RN.GFR.NOMINAL", "L/day", 180.0, "B", "reported", "Standard physiological reference. VERIFY.", "125 mL/min = 180 L/day, conventional nominal adult value. Tier B pending a citable primary source; the value itself is textbook-level E1 but its provenance here is convention."),
     :RN_H2O_OBLIGATORY_LOSS => Provenance("RN.H2O.OBLIGATORY_LOSS", "L/day", 0.5, "B", "reported", "Standard physiological reference. VERIFY.", "Minimum urine volume needed to excrete the daily solute load at maximal urinary concentration. Sets a floor on water excretion."),
-    :RN_NA_FRACTIONAL_REABSORPTION => Provenance("RN.NA.FRACTIONAL_REABSORPTION", "unitless", 0.9915, "B", "derived", "Standard physiological reference. VERIFY.", "DERIVED to close the loop at nominal: filtered load = 180 L/day x 140 mEq/L = 25200 mEq/day; excretion must equal intake of 205 mEq/day at steady state, so FR = 1 - 205/25200 = 0.99187. Rounded. This is NOT an independent measurement - it is fixed by the other three values, and that dependency must be preserved if any of them changes."),
+    :RN_NA_FRACTIONAL_REABSORPTION => Provenance("RN.NA.FRACTIONAL_REABSORPTION", "unitless", 0.9918651, "B", "derived", "Standard physiological reference. VERIFY.", "DERIVED to close the loop at nominal: filtered load = 180 L/day x 140 mEq/L = 25200 mEq/day; excretion must equal intake of 205 mEq/day at steady state, so FR = 1 - 205/25200 = 0.9918651. NOT rounded - rounding to 0.9915 gave excretion of 214.2 vs intake 205, a 9.2 mEq/day drift that ran the model to a lethal state while reporting Success. This is NOT an independent measurement - it is fixed by the other three values, and that dependency must be preserved if any of them changes."),
     :RN_PRESSURE_NATRIURESIS_SLOPE => Provenance("RN.PRESSURE_NATRIURESIS.SLOPE", "(mEq/day)/mmHg", 20.0, "B", "calibrated", "Guyton AC, Coleman TG, Granger HJ. Circulation: overall regulation. Annu Rev Physiol 1972;34:13-46.", "CALIBRATED, not measured. Originating model: Guyton 1972 systems analysis. The EXISTENCE and steepness of pressure natriuresis is E1 and well replicated; this particular slope is a fitted constant that propagated through the modelling literature. It is the single most consequential unmeasured number in the model - it sets the long-run pressure setpoint. Must be re-estimated with a posterior, not carried as a point value."),
 )
 

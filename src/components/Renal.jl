@@ -54,6 +54,7 @@ function Renal(; name)
     end
 
     vars = @variables begin
+        # All algebraic - no defaults. MAP and C_Na arrive by connection.
         MAP(t)              # mmHg     INPUT from cardiovascular
         C_Na(t)             # mEq/L    INPUT from body fluids
         GFR(t)              # L/day
@@ -65,11 +66,15 @@ function Renal(; name)
     end
 
     eqs = [
-        # GFR autoregulation. Flat across the autoregulatory range, falling
-        # proportionally below it. The upper limit is represented but rarely
-        # reached in the states this model currently covers.
-        GFR ~ GFR0 * clamp(MAP, MAP_lo, MAP_hi) / MAP_ref *
-              ifelse(MAP < MAP_lo, MAP / MAP_lo, 1.0),
+        # GFR autoregulation: FLAT across the autoregulatory range, falling
+        # proportionally below it.
+        #
+        # The previous form multiplied by clamp(MAP,lo,hi)/MAP_ref, making GFR
+        # PROPORTIONAL to pressure within the range - the opposite of
+        # autoregulation, and it happened to equal GFR0 at MAP = MAP_ref so it
+        # looked correct at the operating point.
+        GFR ~ GFR0 * ifelse(MAP < MAP_lo, MAP / MAP_lo,
+                     ifelse(MAP > MAP_hi, MAP / MAP_hi, 1.0)),
 
         Na_filtered ~ GFR * C_Na,
 
@@ -91,7 +96,7 @@ function Renal(; name)
         H2O_excr ~ max(V_min, H2O_in - H2O_ins),
     ]
 
-    return ODESystem(eqs, t, vars, pars; name)
+    return MTKSystem(eqs, t, vars, pars; name)
 end
 
 """

@@ -36,14 +36,28 @@ using IPE
     end
 
     @testset "THE test: salt step re-equilibrates at a NEW pressure" begin
-        # ADR 0007 falsifiable test. Three conditions, all required:
-        #   1. transient Na retention, ECF volume rises
-        #   2. MAP rises
-        #   3. excretion returns to match intake AT A HIGHER PRESSURE
-        # Failure to re-equilibrate => loop not closed.
-        # Re-equilibration at the ORIGINAL pressure => pressure natriuresis inert.
-        # TODO: implement once parameter remake plumbing lands (salt_step).
-        @test_skip false
+        # ADR 0007 falsifiable test.
+        r = salt_step()
+        v = check_pressure_natriuresis(r)
+
+        # The loop must close: excretion returns to match intake.
+        @test v.excretion_matches_intake
+
+        # And pressure must MOVE. A model that excretes whatever it is given
+        # closes the loop trivially and has no pressure regulation in it.
+        @test v.map_shifts_between_levels
+        @test v.higher_intake_higher_pressure
+
+        @info "salt step" intakes=v.intakes maps=v.maps shift_mmHg=v.map_shift_mmHg
+    end
+
+    @testset "states stay physiological through the salt step" begin
+        r = salt_step()
+        for l in r.levels
+            @test 10.0 <= l.V_ecf_final <= 20.0
+            @test 1400.0 <= l.Na_ecf_final <= 2600.0
+            @test 60.0 <= l.MAP_final <= 140.0
+        end
     end
 
     @testset "solver agreement substitutes for external reference" begin
