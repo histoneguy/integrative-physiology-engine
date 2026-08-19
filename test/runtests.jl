@@ -1,5 +1,8 @@
 using Test
 using IPE
+using ModelingToolkit
+using OrdinaryDiffEq
+using SciMLBase
 
 @testset "IPE" begin
 
@@ -62,7 +65,8 @@ using IPE
 
     @testset "solver agreement substitutes for external reference" begin
         sys = build_model()
-        r = IPE.solver_agreement(sys; tspan_days = 10.0, saveat = 1.0)
+        r = IPE.solver_agreement(sys; solvers = [FBDF(), Rodas5P()],
+                                 tspan_days = 10.0, saveat = 1.0)
         @test r.max_rel_deviation < 1e-4
     end
 
