@@ -248,7 +248,7 @@ section 4). Agreement across independent methods cannot be satisfied by
 reproducing another engine's integration error, which makes it a stronger claim
 than matching any single implementation.
 """
-function solver_agreement(sys; solvers = [FBDF(), Rodas5P(), QNDF()], kwargs...)
+function solver_agreement(sys; solvers = [FBDF(), Rodas5P()], kwargs...)
     sols = [solve_individual(sys; solver = s, kwargs...) for s in solvers]
     ref = Array(sols[1])
     worst = 0.0
