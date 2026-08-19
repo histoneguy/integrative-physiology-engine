@@ -93,14 +93,26 @@ def main() -> int:
     if not out(["git", "rev-parse", "--git-dir"], root):
         sys.exit("ERROR: git not available, or this is not a git repository.")
 
-    # Uncommitted work would make a failed `git am` hard to unpick.
+    # Only MODIFIED TRACKED files matter. An untracked file cannot conflict
+    # with `git am` - it is simply overwritten if the patch creates it. An
+    # earlier version blocked on untracked files too, which sent the user
+    # deleting files the patch was about to create anyway.
     dirty = [l for l in out(["git", "status", "--porcelain"], root).splitlines()
-             if "incoming/" not in l and Path(__file__).name not in l]
+             if not l.startswith("??")]
     if dirty:
-        print("\\nYou have uncommitted changes:")
-        for l in dirty[:10]:
+        print("\\nYou have uncommitted changes to tracked files:")
+        for l in dirty[:12]:
             print("   " + l)
-        sys.exit("\\nCommit or discard them first, then run this again.")
+        print("\\nDiscard them with:   git checkout -- .")
+        print("Or keep them with:   git stash")
+        sys.exit("\\nThen run this again.")
+
+    # Untracked files the patch will create are fine, but say so rather than
+    # letting the user wonder.
+    untracked = [l[3:] for l in out(["git", "status", "--porcelain"], root).splitlines()
+                 if l.startswith("??")]
+    if untracked:
+        print(f"\\n   ({{len(untracked)}} untracked file(s) present - these do not block anything)")
 
     # Write the patches out byte-exact.
     tmp = Path(tempfile.mkdtemp())
@@ -169,23 +181,41 @@ def main() -> int:
         print(f"\\nApplied on branch {{br}}. No remote configured, so nothing pushed.")
         return 0
 
-    if not confirm(f"Push {{br}} and open a pull request?"):
-        print(f"\\nApplied on branch {{br}}. Push when ready:  git push -u origin {{br}}")
-        return 0
-
+    print(f"\\n>> pushing {{br}}")
     if run(["git", "push", "-u", "origin", br], root, capture=False).returncode != 0:
         sys.exit("Push failed.")
 
     import shutil
-    if shutil.which("gh"):
-        run(["gh", "pr", "create", "--fill", "--base", "main"], root, capture=False)
-        print("\\nPR opened. Merge when CI is green:")
-        print("   gh pr merge --squash --delete-branch")
-    else:
+    if not shutil.which("gh"):
         print(f"\\nPushed {{br}}. Open a PR on GitHub.")
+        run(["git", "switch", "main"], root)
+        return 0
+
+    run(["gh", "pr", "create", "--fill", "--base", "main"], root, capture=False)
+
+    # Enable auto-merge so GitHub merges this itself once checks pass. Without
+    # this the user has to come back 20 minutes later, on a branch they have
+    # since left, and run a merge command - which is exactly the step that kept
+    # getting lost. Automating six steps and leaving the seventh manual is not
+    # automation.
+    print("\\n>> enabling auto-merge")
+    am = run(["gh", "pr", "merge", "--auto", "--squash", "--delete-branch"], root)
+    if am.returncode == 0:
+        print("   enabled - GitHub will merge this automatically when CI is green")
+        print("   nothing further for you to do")
+    else:
+        msg = (am.stderr or "").strip()
+        print("   could not enable auto-merge:")
+        print("   " + msg[:300])
+        if "not enabled" in msg.lower() or "allow" in msg.lower():
+            print("\\n   Turn it on once, then this will never come up again:")
+            print("   Settings > General > Pull Requests > Allow auto-merge")
+        print("\\n   Meanwhile merge manually once CI is green:")
+        print("   gh pr merge --squash --delete-branch")
 
     run(["git", "switch", "main"], root)
-    print("Done. Back on main.")
+    run(["git", "pull", "--ff-only"], root)
+    print("\\nBack on main.")
     return 0
 
 
