@@ -220,3 +220,48 @@ to classify the cost regime. The diagnostic now says so itself.
 - Mars500 data **not yet digitised**. `validation/data/manifest.csv` has the entry.
 - `validation/averaging.md` is binding before any digitisation: fixed 10 s window,
   applied uniformly, not chosen per figure.
+
+---
+
+# OPEN FAILURE AT HANDOFF — read this first
+
+**Date:** 2026-08-19. **State:** PR #6 (baroreflex, ADR 0009) is merged to `main`
+at `715c1cc`, but **its CI Julia tests FAIL.**
+
+    CI/Provenance              PASS  (6s)
+    Diagnostics/Model diag.    PASS  (1m21s)
+    CI/Julia tests             FAIL  (24m)
+
+Diagnostics passing means the model **builds and runs** with the baroreflex on the
+default path. The failure is in `test/runtests.jl`, and the untriaged log is at
+PR #6 on GitHub.
+
+**Most likely cause, unverified:** the new testset in ADR 0009 calls
+`salt_step(baroreflex = false)`. That path was added at the same time and never
+executed. `Baroreflex(; enabled = false)` emits `D(tpr_mod) ~ 0.0` and
+`D(sp) ~ 0.0`, which may leave the system structurally singular or those states
+undetermined at initialisation. The enabled path works; the disabled path is
+untested.
+
+**Get the log first, do not guess:**
+
+    gh run list --limit 4 --json databaseId,workflowName,conclusion
+    gh run view <failing CI id> --log-failed
+
+**Why this matters more than a normal test failure.** The failing test IS the
+falsifiable claim of ADR 0009: adding the baroreflex must not change the 60-day
+salt-step result (MAP 93.00 / 90.53 / 88.07). The baroreflex resets, so it is a fast
+buffer, not a long-term regulator — if it were a regulator, the Guyton claim in
+ADR 0007 would be false.
+
+So there are two possibilities and they must be distinguished:
+
+1. **The test harness is broken** (the `baroreflex = false` path). Fix it and the
+   claim stands.
+2. **The claim is false** — MAP actually shifted. Then ADR 0009 is wrong: either
+   `BR.RESET.TAU` (assumed, 1 day) or `BR.OPEN_LOOP_GAIN` (animal-derived, flagged)
+   is wrong, and the component needs rework.
+
+**Do not start RAAS until this is resolved.** RAAS attaches to the same `tpr_mod`
+path the baroreflex now scales. Building on an unverified baroreflex compounds the
+problem.
