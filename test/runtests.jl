@@ -86,6 +86,24 @@ using SciMLBase
         @test_throws ErrorException Coupling(:a, :b, Mechanical; tau_seconds = 1.0)
     end
 
+    @testset "ADR 0009: baroreflex does not change long-run pressure" begin
+        # The baroreflex RESETS, so it is a fast buffer and not a long-term
+        # regulator. If it could set long-run pressure, the Guyton claim in
+        # ADR 0007 would be false. This is a regression test on a physiological
+        # claim, not on an implementation.
+        with_br    = salt_step()
+        without_br = salt_step(baroreflex = false)
+
+        for (a, b) in zip(with_br.levels, without_br.levels)
+            @test isapprox(a.MAP_final, b.MAP_final; rtol = 1e-3)
+            @test isapprox(a.V_ecf_final, b.V_ecf_final; rtol = 1e-3)
+        end
+
+        v = check_pressure_natriuresis(with_br)
+        @test v.pass
+        @info "baroreflex on" maps=v.maps shift=v.map_shift_mmHg
+    end
+
     @testset "modulators are off by default" begin
         # ADR 0006/0007: E3 and out-of-order components must not be on by default.
         sys = build_model()

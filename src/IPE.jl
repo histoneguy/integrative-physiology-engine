@@ -49,12 +49,13 @@ include("components/Circadian.jl")
 include("components/BodyFluids.jl")
 include("components/Cardiovascular.jl")
 include("components/Renal.jl")
+include("components/Baroreflex.jl")
 include("assemble.jl")
 include("ensemble.jl")
 
 export MTKSystem, mtk_simplify, mtk_unknowns
 export build_model, build_raw_model, solve_individual, run_population, salt_step, check_pressure_natriuresis
-export BodyFluids, Cardiovascular, Renal
+export BodyFluids, Cardiovascular, Renal, Baroreflex
 export FullTrace, StreamingStats, EventWindows, projected_storage
 export step_distribution, cost_profile, timescale_audit, boundary_sensitivity
 export Coupling, CouplingKind, Neurohumoral, Mechanical, Conservation
