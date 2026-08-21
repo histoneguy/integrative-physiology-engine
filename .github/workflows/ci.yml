@@ -24,6 +24,14 @@ jobs:
       # Derived values depend on each other. The ledger records provenance;
       # this checks that numbers derived from one another still agree.
       - run: python3 tools/check_closure.py
+      # The ledger disciplines NUMBERS; this disciplines EQUATIONS. Every `~`
+      # relation in src/components must have a row in ledger/relations.csv, and
+      # every empirical one must carry a form_citation. Forward-only: eight
+      # pre-existing unsourced relations are grandfathered inside the script and
+      # reported as debt. It fails on anything NEW, and on a grandfather entry
+      # that has gone stale. Landing it red would have deadlocked every merge,
+      # since this job is the required status check.
+      - run: python3 tools/check_relations.py --repo .
 
   test:
     name: Julia tests

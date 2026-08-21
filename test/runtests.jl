@@ -104,6 +104,24 @@ using SciMLBase
         @info "baroreflex on" maps=v.maps shift=v.map_shift_mmHg
     end
 
+    @testset "salt sensitivity pins G_pn" begin
+        # The steady-state salt sensitivity is set by RN.PRESSURE_NATRIURESIS.SLOPE
+        # ALONE. Excretion must equal intake at steady state, so
+        #   Na_excr = Na_filtered*(1 - FR_Na) + G_pn*(MAP - MAP_ref)
+        # gives dMAP ~ d(intake)/G_pn, in which CV.VENOUS_RETURN.SENSITIVITY does
+        # not appear. Verified numerically: varying G_vr over 2880 -> 600 at fixed
+        # G_pn moves the shift only 15.698 -> 12.403.
+        #
+        # WHY THIS TEST EXISTS. Every other assertion in this file passes with
+        # G_pn set to the Mizelle 1993 dog value of 5.43, which gives a 15.698 mmHg
+        # shift - salt-sensitive-hypertensive behaviour, not normotensive. The suite
+        # could not detect a 3.68x error in the model's most consequential
+        # unmeasured number. This pins it. See the ledger notes on that row before
+        # changing the expected value.
+        v = check_pressure_natriuresis(salt_step())
+        @test isapprox(v.map_shift_mmHg, 4.934; atol = 0.05)
+    end
+
     @testset "modulators are off by default" begin
         # ADR 0006/0007: E3 and out-of-order components must not be on by default.
         sys = build_model()
