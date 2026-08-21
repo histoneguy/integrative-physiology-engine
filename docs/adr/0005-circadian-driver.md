@@ -2,7 +2,7 @@
 
 **Status:** Accepted
 **Date:** 2026-08-08
-**Evidence tier:** MIXED - see table below (E1 rhythm, E2 dissociation, E3 mechanism)
+**Evidence tier:** MIXED - see table below (E1 rhythm, E2 dissociation, E2 mechanism)
 **Supersedes:** the rhythmicity motivation in ADR 0004
 
 ## Evidence
@@ -11,8 +11,8 @@
 |---|---|---|---|
 | Circadian rhythm in renal Na handling exists, independent of posture and food/water intake | **E1** | Nat Rev Nephrol 2018 10.1038/s41581-018-0048-9; PMC6350809 | human |
 | Nocturnal BP dips 10-20%; loss of dipping carries CV risk | **E1** | PMC6350809; PMC7400814 | human |
-| Renal and CV rhythms are dissociable, so the arms need separate paths | **E2** | Hypertension 10.1161/HYPERTENSIONAHA.119.13908 | rat (Bmal1-/-) |
-| Clock-gene mechanism: Per1 as early aldosterone target regulating ENaC/NHE3/ET-1 | **E3** | PMC6350809 | mouse |
+| Renal and CV rhythms are dissociable, so the arms need separate paths | **E2** | Hypertension 10.1161/HYPERTENSIONAHA.119.13908 | rat (Bmal1-/-) - knockout not performable in humans |
+| Clock-gene mechanism: Per1 as early aldosterone target regulating ENaC/NHE3/ET-1 | **E2** | PMC6350809 | mouse - human clock-gene knockout not performable (ADR 0006 amendment 2026-08-21) |
 | ETB receptor effects on Na excretion are time- and sex-dependent | **E2** | Am J Physiol Renal Physiol 2016;311:F991 | rat |
 
 **This ADR was originally written without splitting these tiers, which obscured that
@@ -141,3 +141,21 @@ dissociate them, the two-arm structure is wrong.
 
 Separately: day/night UNaV ratio must fall within the observed human population
 distribution without tuning the CV arm.
+
+---
+
+## Addendum, 2026-08-21 - re-tiered under the ADR 0006 amendment
+
+The clock-gene mechanism row moves E3 -> E2. Its rodent basis is not a weakness that
+can be remedied: human clock-gene knockout is not a study anybody may run. Under the
+amended ADR 0006 that is an ethical ceiling, recorded as such, not debt.
+
+**This does not turn the circadian arm on.** It stays `circadian = false` for the
+reason it always has - ADR 0006 rule 2, build order. It modulates renal tubular
+reabsorption, which needs RAAS and ADH before the modulation means anything. Nothing
+about the tier changes that.
+
+The structure-only exemption this ADR previously claimed for the mechanism row is now
+unnecessary, since the row is no longer E3. The claim still contributes no numeric
+value - the cosinor implementation takes nothing from Per1 - so the practical position
+is unchanged.

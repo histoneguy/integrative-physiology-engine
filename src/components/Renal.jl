@@ -18,11 +18,17 @@ STRUCTURE SOURCES
 EVIDENCE (ADR 0006)
   E1  Pressure natriuresis exists and is steep. Multiply replicated.
   E1  GFR is autoregulated over a plateau of arterial pressure.
-  --  The LIMITS of that plateau are NOT E1, and not human. No human study raises
-      arterial pressure to find where autoregulation fails; the human literature
-      only ever lowers it. The textbook "80-180 mmHg" traces to Shipley and Study
-      1951, which is DOG. This model now uses 80-160: 160 is rat (Roman 1985) and
-      80 remains unsourced debt. See ledger notes on RN.AUTOREG.UPPER and .LOWER.
+  E2  The UPPER limit is at or above 160 mmHg. Rat, Roman 1985, hormones clamped.
+      No human study raises arterial pressure to find where autoregulation fails,
+      and none may - the human literature only ever lowers it. Per ADR 0006
+      (amended 2026-08-21) that is an ETHICAL CEILING, so the rat value is
+      evidence with its species and range recorded, not debt awaiting a human
+      replacement that cannot be run. It IS censored: 160 mmHg was the highest
+      pressure tested, so the breakpoint is >= 160, not known to equal 160.
+  --  The LOWER limit of 80 mmHg is a different matter and IS debt: no primary
+      source in any species, and a 2025 human review argues the evidence for it
+      is insufficient. The piecewise FORM is likewise uncited. See the ledger
+      notes on RN.AUTOREG.LOWER and relations.csv row Renal.GFR.
   E1  Filtered load = GFR x plasma concentration; excretion = filtered - reabsorbed.
   --  The pressure natriuresis SLOPE is CALIBRATED, not measured. See ledger.
 
