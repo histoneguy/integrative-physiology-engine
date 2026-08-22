@@ -1,7 +1,7 @@
 # ADR 0007: The minimal closed loop is the model
 
 **Status:** Accepted
-**Evidence tier:** E1 - all three components rest on multiply-replicated human physiology
+**Evidence tier:** MIXED - see the addendum of 2026-08-21 (E1 phenomena, E2 animal-derived quantitative forms)
 **Date:** 2026-08-08
 
 ## Context
@@ -89,3 +89,23 @@ are early.
 3. Baroreflex (E1), which makes TPR a state.
 4. RAAS (E1), then ADH (E1), which replaces the placeholder water excretion.
 5. Only then reconnect circadian.
+
+---
+
+## Addendum, 2026-08-21 - the tier line was overstated
+
+This ADR claimed **E1 - all three components rest on multiply-replicated human
+physiology**. The phenomena do. Their quantitative forms do not.
+
+`Renal.FR_effective`, the relation this ADR exists to justify, rests on Roman & Cowley
+1985 (rat), Osborn/Francisco/DiBona 1981 (dog) and Mizelle 1993 (dog). There is no
+human primary source for the pressure-natriuresis slope and there cannot be one: it
+requires servo-controlling renal perfusion pressure for days.
+
+Under the amended ADR 0006 that is **E2 under an ethical ceiling**, which is a
+perfectly good basis to build on. What the original line did was obscure it. The
+decision of this ADR is unchanged; only the honesty of its tier line is.
+
+Note the asymmetry this exposed. `RN.PRESSURE_NATRIURESIS.SLOPE` is recorded as
+`species: human`, but it is not a human measurement - it is a fitted constant from
+Guyton 1972. The genuinely measured numbers here are the animal ones.

@@ -1,7 +1,7 @@
 # ADR 0009: Baroreflex — lumped, resetting, buffer not regulator
 
 **Status:** Accepted
-**Evidence tier:** MIXED — see table (E1 structure, animal-derived gain)
+**Evidence tier:** MIXED — see table (E1 structure, E2 animal-derived gain under an ethical ceiling)
 **Date:** 2026-08-19
 
 ## Context
@@ -17,7 +17,7 @@ disturbance had to be absorbed through fluid volume, which acts over days.
 | Sympathetic vasomotor effector delay 2–3 s | E1 | La Rovere, Ann Noninvasive Electrocardiol 2008;13:191 | human |
 | Parasympathetic response 200–600 ms, acts on heart rate | E1 | same | human |
 | The reflex RESETS toward prevailing pressure over hours to days | E1 | Dampney 2017 | mammal |
-| Open-loop gain 1.0–3.5 | — | Yamasaki, Front Neurosci 2021;15:707345 | **animal** |
+| Open-loop gain 1.0–3.5 | E2 | Yamasaki, Front Neurosci 2021;15:707345 | animal, vascularly isolated baroreceptors - not performable in humans |
 | Reset time constant value | — | **ASSUMED**, no reported human value found | — |
 
 The open-loop gain source states explicitly that the vascular-isolation method used
@@ -140,3 +140,19 @@ and the failing assertion was precisely the falsifiable claim above. The gate wo
 What failed was reading a check that cannot fail as if it were a second opinion.
 This is the failure mode ADR 0008 was written about, recurring in the tooling ADR 0008
 produced.
+
+---
+
+## Addendum, 2026-08-21 - open-loop gain tiered
+
+`BR.OPEN_LOOP_GAIN` carried **no tier at all**, which ADR 0006 rule 1 forbids and
+`check_adrs.py` does not catch, since it only reads the header line. It is now E2.
+
+The value comes from vascularly isolated baroreceptor preparations. That is not a
+study anyone may perform on a human - isolating the carotid sinus from the systemic
+circulation to open the loop is definitionally terminal. Under the amended ADR 0006
+this is an ethical ceiling, and the animal provenance is recorded rather than treated
+as a defect.
+
+`BR.RESET.TAU` is a different matter and is untouched: it is ASSUMED, with no reported
+value in any species. That remains debt.

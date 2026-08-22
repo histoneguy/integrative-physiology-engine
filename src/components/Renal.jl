@@ -5,11 +5,30 @@ STRUCTURE SOURCES
   Filtration-reabsorption arithmetic: definitional.
   Pressure natriuresis: Guyton AC, Coleman TG, Granger HJ. Circulation: overall
     regulation. Annu Rev Physiol 1972;34:13-46. doi:10.1146/annurev.ph.34.030172.000305
-  GFR autoregulation: standard renal physiology.
+  GFR autoregulation, UPPER BREAKPOINT ONLY: Roman RJ, Cowley AW Jr. Characterization
+    of a new model for the study of pressure-natriuresis in the rat. Am J Physiol
+    1985;248:F190-F198. PMID 3970209. doi:10.1152/ajprenal.1985.248.2.F190
+    Rat, denervated, vasopressin/aldosterone/corticosterone/noradrenaline clamped.
+    RPP raised 90 -> 160 mmHg with "no detectable changes in glomerular filtration
+    rate, renal blood flow, or peritubular capillary pressure". 160 mmHg is the
+    HIGHEST PRESSURE TESTED, so it is a lower bound on the true breakpoint rather
+    than a measured breakpoint. The LOWER breakpoint and the piecewise FORM below
+    are still unsourced - see ledger/relations.csv row Renal.GFR.
 
 EVIDENCE (ADR 0006)
   E1  Pressure natriuresis exists and is steep. Multiply replicated.
-  E1  GFR is autoregulated across roughly 80-180 mmHg.
+  E1  GFR is autoregulated over a plateau of arterial pressure.
+  E2  The UPPER limit is at or above 160 mmHg. Rat, Roman 1985, hormones clamped.
+      No human study raises arterial pressure to find where autoregulation fails,
+      and none may - the human literature only ever lowers it. Per ADR 0006
+      (amended 2026-08-21) that is an ETHICAL CEILING, so the rat value is
+      evidence with its species and range recorded, not debt awaiting a human
+      replacement that cannot be run. It IS censored: 160 mmHg was the highest
+      pressure tested, so the breakpoint is >= 160, not known to equal 160.
+  --  The LOWER limit of 80 mmHg is a different matter and IS debt: no primary
+      source in any species, and a 2025 human review argues the evidence for it
+      is insufficient. The piecewise FORM is likewise uncited. See the ledger
+      notes on RN.AUTOREG.LOWER and relations.csv row Renal.GFR.
   E1  Filtered load = GFR x plasma concentration; excretion = filtered - reabsorbed.
   --  The pressure natriuresis SLOPE is CALIBRATED, not measured. See ledger.
 
@@ -68,6 +87,13 @@ function Renal(; name)
     eqs = [
         # GFR autoregulation: FLAT across the autoregulatory range, falling
         # proportionally below it.
+        #
+        # MAP_hi is 160 mmHg, not the textbook 180. 180 was a dog number carrying a
+        # 'human' label and it sat OUTSIDE the 55-160 mmHg range over which the
+        # pressure-natriuresis term below is evidenced - a kink in a region where
+        # the equation it modifies has no support. Both breakpoint and natriuresis
+        # form now come from the same paper (Roman and Cowley 1985) and terminate
+        # at the same pressure. No effect at the operating point: MAP ~88-93 mmHg.
         #
         # The previous form multiplied by clamp(MAP,lo,hi)/MAP_ref, making GFR
         # PROPORTIONAL to pressure within the range - the opposite of
