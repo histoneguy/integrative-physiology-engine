@@ -61,11 +61,11 @@ two confident assertions about classic curves, both wrong, both in the same dire
 **Never write a citation you have not opened.**
 
 ### 1.6 Animal data is legitimate evidence — 2026-08-21
-*"Physiologists can't always experiment on humans to test the limits. Sometimes values
-are derived on animal data because that's the best data we can get without becoming war
-criminals. It's ok to use high quality published data from animal models where no human
-definitive data exists. Just document where the values/equations/relationships come
-from."*
+Physiologists cannot always experiment on humans to find where a mechanism fails. Some
+values are derived from animal models because that is the best evidence obtainable
+within the ethical limits of the field. **High-quality published animal data is
+acceptable where no definitive human data exists — document where the values, equations
+and relationships come from.**
 
 Judge a source on study quality, not species. Record species, preparation and tested
 range. State *why* no human study exists — an ethical ceiling and a study nobody has got
