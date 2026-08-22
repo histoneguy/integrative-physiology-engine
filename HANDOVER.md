@@ -32,33 +32,36 @@ CI is the receipt, not the loop.
 
 ## 1. BINDING DIRECTIVES
 
-Given explicitly by the owner. Several were violated repeatedly before they stuck.
+Set by the owner over several sessions. Several were violated repeatedly before they
+stuck. Paraphrased, not quoted — see §7.2 on why this file no longer puts quotation
+marks around words without a source to hand.
 
-### 1.1 Give commands, not instructions
-*"Just give me the script to copy and execute."* *"Remember I know nothing."*
-He is not a working programmer. Prefer doing the thing with tools over explaining how.
-Where he must run something, give one copy-pasteable block. Windows and PowerShell:
-`python`, not `python3`.
+### 1.1 Give runnable commands, not step-by-step instructions
+He directs this work; he is not the one writing the code, and a workflow that turns him
+into the executor of multi-step instructions wastes his time and introduces
+transcription errors. Do the thing with tools wherever possible. Where he must run
+something, hand him one block he can paste and run. Windows and PowerShell: `python`,
+not `python3`.
 
 ### 1.2 Build physiology, not process
-*"You're here to simplify and speed up."* The repo already carries five provenance
-gates and ten ADRs against five components, one of which is not even connected. Do not
-add tooling unless something breaks that cannot be worked around.
+The repo already carries five provenance gates and ten ADRs against five components,
+one of which is not even connected. That ratio is already wrong. Do not add tooling
+unless something breaks that cannot be worked around.
 
 ### 1.3 Well-established relationships first
-*"Prioritize the well established relationships first."* Build E1 before anything that
-modulates it. Two structural decisions were already walked back for violating this
-(ADR 0004 sodium storage; ADR 0005 circadian, built before the loop it modulates).
+Build E1 before anything that modulates it. Two structural decisions were already
+walked back for violating this (ADR 0004 sodium storage; ADR 0005 circadian, built
+before the loop it modulates).
 
 ### 1.4 Provenance is the point
 Every number enters via `ledger/parameters.csv` with citation, tier, extraction method,
 species and uncertainty. Every *equation* now enters via `ledger/relations.csv` too.
 Nothing is hardcoded in a component.
 
-### 1.5 Stop working from memory
-*"Stop working from memory. You're bad at it. Back up your statements."* Issued after
-two confident assertions about classic curves, both wrong, both in the same direction.
-**Never write a citation you have not opened.**
+### 1.5 Stop working from memory; back up every statement
+Issued after two confident assertions about classic curves, both asserted from memory,
+both wrong, both in the same direction — each claiming a relationship was nonlinear
+when the primary data said linear. **Never write a citation you have not opened.**
 
 ### 1.6 Animal data is legitimate evidence — 2026-08-21
 Physiologists cannot always experiment on humans to find where a mechanism fails. Some
@@ -237,6 +240,11 @@ presented as if it had been.** Mostly solved by §0. The rest are still live.
    attributed to "Yokota N et al." for two sessions — it is Kelly TM and Nelson DH. Every
    number attached to it was right. The ledger validates that a citation *exists*, not
    that it points at the right paper. Only a pre-registered stop condition caught it.
+   **The same applies to quoting the owner.** Earlier versions of this file put
+   quotation marks around directives with no source to hand, and framed them in ways he
+   would not have chosen — remarks made in frustration at a slow workflow, written up as
+   if they were statements about himself. Directives are paraphrased here for that
+   reason. Record what was decided, not a reconstruction of how it was said.
 3. **A passing test suite is not evidence about a parameter it does not assert on.**
    Every assertion passed at a 3.68× wrong slope. `test/runtests.jl` now pins salt
    sensitivity for exactly this reason.
