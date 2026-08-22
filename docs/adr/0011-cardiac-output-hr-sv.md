@@ -231,3 +231,111 @@ nothing.
 The cost it targets is measured: three pre-registered sourcing sessions were spent on a
 paradigm the model's own simplification had already excluded, and nothing in the repo
 recorded that exclusion.
+
+---
+
+## First sourcing outcome, 2026-08-22 - one direction is empty
+
+Extracted under `validation/sv_filling_prereg.md`, committed before any paper was opened.
+Reproduce with `python validation/sv_filling_extract.py`. Every citation was read from
+the PubMed record via the E-utilities API and its author list, journal, year, volume,
+issue and pages verified there, per stop condition 2. **No ledger row is created and no
+parameter is recorded.** Status stays Proposed.
+
+### Q1 is sourceable; the decision it forces is not an extraction
+
+Gonzales TI, Jeon JY, Lindsay T, Westgate K, Perez-Pozuelo I, Hollidge S, Wijndaele K,
+Rennie K, Forouhi N, Griffin S, Wareham N, Brage S. *PLoS One* 2023;18(5):e0285272,
+PMID 37167327, `10.1371/journal.pone.0285272`. n = 10,865 (5,722 women, 5,143 men),
+29-65 y. **Supine 63.5 +/- 8.9 bpm**, seated 67.6 +/- 9.8, sleeping 56.9 +/- 6.9, by
+chest sensor after at least 1 h rest with the value taken from the final 3 min of a 6 min
+recording. Supine is selected because `CV.CO.NOMINAL` is itself derived from the
+conventional resting 5 L/min, which is supine - consistency, not the value.
+
+`SV0 = CO0/HR0` = **78.74 mL**, derived, and the closure constraint follows.
+
+Three deviations are recorded rather than absorbed. It is a **general population** cohort
+from GP lists, not the health-screened sample the pre-registration specified; it is
+**53% women** while `CV.HEMATOCRIT.NOMINAL` is recorded as adult male nominal, so
+adopting both would have the cardiovascular rows describing two different populations;
+and it is `single-source`, large but one cohort. The second is a decision for the owner,
+not something extraction can settle.
+
+### Q2 removal: k = 3 on abstracts, which is not enough to record
+
+| Study | PMID | n | removed | dSV | slope | technique |
+|---|---|---|---|---|---|---|
+| Leonetti 2004, *Clin Auton Res* 14(3):176-81 | 15241646 | 12 | 375 mL | 13.3 mL | 35.47 mL/L | Modelflow, finger pressure |
+| Gybel-Brask 2020, *Transfus Med* 30(6):450-455 | 33030269 | 21 | 900 mL | 12 mL | 13.33 mL/L | not stated in abstract |
+| Epstein 2021, *Shock* 55(2):230-235 | 32769818 | 60 | 450 mL | 5.07 mL | 11.27 mL/L | whole-body bio-impedance |
+
+Blood removed **is** a measured total blood volume change, 1:1, which is why this
+direction survives inclusion criterion 2. The spread is 3.15x and **it tracks technique**
+- the single Modelflow study is three times the two impedance studies. Prereg section 3
+declared in advance that a spread tracking technique is reported and not averaged.
+
+**No parameter is recorded**, because inclusion criterion 4 requires reported elapsed
+time between perturbation and measurement and that is unverified for all three; posture
+is unverified for two of three; and two of the three measure *during* withdrawal rather
+than at the settled endpoint section 5 fixed. Gybel-Brask is the strongest design - sham-
+phlebotomised crossover control - and it also reports **no SV change at 450 mL with a
+change only at 900 mL**, a threshold signal a single slope through the operating point
+cannot carry.
+
+### Q2 addition: k = 0, and this is the finding
+
+Every candidate is excluded, and mostly on the same criterion. **Saline studies report
+infused volume, not measured blood volume.** Weiner 2010 (PMID 20826594) infused
+2.1 +/- 0.3 L and measured SV 51.3 -> 63.0 mL by echo, but 2.1 L of saline is not a 2.1 L
+rise in `V_blood`, and no plasma or blood volume was measured. Converting one to the
+other needs a retention fraction that is not in the paper - **the same unsourced scaling
+step that falsified ADR 0010's input link**, arriving from a different direction.
+
+The pre-registration foresaw the two directions *disagreeing*. It did not foresee one of
+them being **empty**, so its section 6 directional comparison cannot be run at all.
+
+### The contractility exclusion turned out to be load-bearing
+
+Kumar A, Anel R, Bunnell E, Zanotti S, Habet K, Haery C, Marshall S, Cheang M, Neumann A,
+Ali A, Kavinsky C, Parrillo JE. *Crit Care* 2004;8(3):R128-36, PMID 15153240. In 36
+healthy volunteers given 3 L of saline over 3 h, end-diastolic volumes rose only
+inconsistently while end-systolic volumes fell almost uniformly, and **the fall in
+end-systolic volume contributed 40-90% of the stroke volume response**, with ejection
+fraction and ventricular stroke work both up.
+
+Volume loading in intact humans is **not a preload-only perturbation**, and the size of
+the non-preload part is most of it. Section 0.2 of the pre-registration refused to relax
+this exclusion before knowing that. The refusal was right, and the exclusion is now
+evidence-backed rather than precautionary.
+
+### One result favours this ADR, and it is the one tension 0.1 asked about
+
+This record keeps `HR` a parameter rather than a state. Leonetti reports heart rate **not
+significantly changed** across a 375 mL withdrawal (75.2 -> 78.3 bpm), and Weiner reports
+**no change** in heart rate across a 2.1 L bolus. Holding HR fixed while `V_blood` moves
+is not obviously wrong at these perturbation sizes.
+
+### The comparison against `G_vr`, made once, after pooling
+
+Per stop condition 4, and no study was included, excluded, weighted or trimmed on it.
+Implied `G_vr = HR0 x dSV/dV_blood`: Leonetti 3243, Gybel-Brask 1219, Epstein 1030,
+n-weighted **1358 (L/day)/L** against the incumbent **2880**. The incumbent sits above
+two of three and just below the third.
+
+**Do not connect this to the 2.2x residual.** The n-weighted ratio lands near a number
+that appears elsewhere in this repo for an unrelated reason. The pre-registration states
+that nothing found here may be used to re-attribute that residual, and a numerical
+coincidence is not an exception. It is written down so that nobody discovers it later and
+mistakes it for a result.
+
+### What is needed next
+
+1. **Full text of the three removal papers**, for elapsed time, posture, SV technique in
+   Gybel-Brask, and whether Leonetti's dispersion is SD or SEM. Without these, criterion 4
+   is unmet and k is effectively 0, not 3.
+2. **A total-volume addition paradigm that measures volume**, or the acceptance that
+   there is none. Autologous blood reinfusion is the obvious candidate and was not
+   reached in this search.
+3. **Q3 remains open.** van de Velde 2018 (PMID 29016531) crosses a 500 mL phlebotomy
+   with active standing in the same subjects, which is the posture-versus-total-volume
+   comparison Q3 asks for. It is a lead, not a result.
