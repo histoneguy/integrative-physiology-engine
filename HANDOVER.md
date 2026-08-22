@@ -1,283 +1,302 @@
 # HANDOVER — Integrative Physiology Engine
 
-**Date:** 2026-08-19
+**Date:** 2026-08-22
 **Repo:** https://github.com/histoneguy/integrative-physiology-engine (public)
 **Owner:** Eric George (`histoneguy`)
-**State:** Working minimal closed-loop model on `main`. CI green. 3 PRs merged.
+**`main`:** `7cd629f` — 153/153, all five provenance gates green
+
+**Supersedes** the handover dated 2026-08-19 and the uncommitted `HANDOVER2.md`
+(session 2, which lived only in a downloads folder). Everything still live from both is
+folded in below. If you find `HANDOVER2.md` on disk, it is history, not instruction.
 
 ---
 
-## 1. USER DIRECTIVES — these are binding, read them first
+## 0. THE THING THAT CHANGED
 
-These were given explicitly during the session and were repeatedly violated before
-they stuck. Follow them.
+**Claude Code now runs locally on the owner's machine, inside the repo.** Julia 1.12.6,
+Python 3.12.10, `git`, and `gh` authenticated as `histoneguy` are all present and
+working. The full test suite runs in **~40 s warm**.
 
-### 1.1 One download, one command, one answer
-Every sprint ships as **a single self-applying Python script**. The user downloads
-it into the project folder and runs `python apply-whatever.py`. It handles fetching,
-branch switching, applying, checking, and pushing. The user answers `y` twice.
+    julia --project=. -e "using Pkg; Pkg.test()"
 
-Do NOT send: loose `.patch` files, tarballs to extract over folders, multi-step git
-sequences, or instructions to hand-edit files.
+Three sessions of this project were shaped by an assistant that could not execute
+anything, sending untested patches to the owner and using him as the test harness. That
+constraint is gone. Sections of the old handovers about Julia being uninstallable in a
+sandbox, about a domain allowlist request, and about shipping every sprint as a
+self-applying `apply-*.py` script are **obsolete**. Do not reinstate that workflow.
 
-Generate scripts with `tools/make_selfapply.py`:
-
-    python3 tools/make_selfapply.py out.py 0001-*.patch
-
-### 1.2 Give commands, not instructions
-The user has said plainly: *"just give me the script to copy and execute"* and
-*"Remember I know nothing."*
-
-Give a copy-pasteable block. Do not explain what a branch is unless asked. Do not
-say "open X and change Y" — write the command that does it.
-
-**PowerShell, not bash.** The user is on Windows. Heredocs (`<< 'EOF'`) fail.
-Use `@' ... '@ | Set-Content file.json` for multi-line input. `python`, not
-`python3`. Backslash paths in Explorer commands.
-
-### 1.3 Test before sending — non-negotiable
-The repo is public. Clone it, apply the patch, run the checks. Every time.
-
-    git clone -q https://github.com/histoneguy/integrative-physiology-engine.git /tmp/t
-    cd /tmp/t && <apply patch> && python3 tools/ledger_to_julia.py --check \
-      && python3 tools/check_closure.py && python3 tools/check_adrs.py \
-      && python3 tools/fix_deps.py
-
-Both patches that were tested this way worked first time. Every untested one failed.
-
-### 1.4 Build physiology, not process
-Direct quote: *"You're here to simplify and speed up."*
-
-The repo has 4 provenance tools and 8 ADRs against 3 physiological components. That
-ratio is already wrong. Do not add tooling unless something breaks that cannot be
-worked around. Prefer a smaller model that runs to a larger one that does not.
-
-### 1.5 Well-established relationships first
-Direct quote: *"Prioritize the well established relationships first"* and
-*"We need a basic physiology model first before we start worrying about
-circadian/sex differences."*
-
-Build E1 (multiply replicated, human, mechanistically understood) before anything
-that modulates it. See ADR 0006 for tiers, ADR 0007 for build order.
-
-Two structural decisions were already walked back for violating this: sodium storage
-(ADR 0004, downgraded to Provisional, default off) and circadian (ADR 0005, correct
-but built before the renal loop it modulates, currently unconnected).
-
-### 1.6 Provenance is the point
-Every number enters via `ledger/parameters.csv` with citation, tier, extraction
-method, species, and uncertainty. Nothing is hardcoded in a component. Generated
-commits keep their authorship with the user's `Signed-off-by` added — do not
-re-author generated work under the user's name.
+**The loop is now: edit, run the gates, run `Pkg.test()`, read the output, commit.**
+CI is the receipt, not the loop.
 
 ---
 
-## 2. WHAT EXISTS
+## 1. BINDING DIRECTIVES
 
-### The model — `src/components/`
+Given explicitly by the owner. Several were violated repeatedly before they stuck.
 
-| File | Status |
+### 1.1 Give commands, not instructions
+*"Just give me the script to copy and execute."* *"Remember I know nothing."*
+He is not a working programmer. Prefer doing the thing with tools over explaining how.
+Where he must run something, give one copy-pasteable block. Windows and PowerShell:
+`python`, not `python3`.
+
+### 1.2 Build physiology, not process
+*"You're here to simplify and speed up."* The repo already carries five provenance
+gates and ten ADRs against five components, one of which is not even connected. Do not
+add tooling unless something breaks that cannot be worked around.
+
+### 1.3 Well-established relationships first
+*"Prioritize the well established relationships first."* Build E1 before anything that
+modulates it. Two structural decisions were already walked back for violating this
+(ADR 0004 sodium storage; ADR 0005 circadian, built before the loop it modulates).
+
+### 1.4 Provenance is the point
+Every number enters via `ledger/parameters.csv` with citation, tier, extraction method,
+species and uncertainty. Every *equation* now enters via `ledger/relations.csv` too.
+Nothing is hardcoded in a component.
+
+### 1.5 Stop working from memory
+*"Stop working from memory. You're bad at it. Back up your statements."* Issued after
+two confident assertions about classic curves, both wrong, both in the same direction.
+**Never write a citation you have not opened.**
+
+### 1.6 Animal data is legitimate evidence — 2026-08-21
+*"Physiologists can't always experiment on humans to test the limits. Sometimes values
+are derived on animal data because that's the best data we can get without becoming war
+criminals. It's ok to use high quality published data from animal models where no human
+definitive data exists. Just document where the values/equations/relationships come
+from."*
+
+Judge a source on study quality, not species. Record species, preparation and tested
+range. State *why* no human study exists — an ethical ceiling and a study nobody has got
+round to are different facts, and only the second is debt. This is now encoded in ADR
+0006; see §4.
+
+---
+
+## 2. STATE
+
+`main` at `7cd629f`. **153/153 in ~40 s.** All five gates exit 0.
+
+### The model — 3 states after `structural_simplify` (`V_icf`, `V_ecf`, `Na_ecf`)
+
+| Component | Status |
 |---|---|
-| `BodyFluids.jl` | ICF/ECF volumes, sodium mass balance, osmotic equilibration. Optional inactive-Na storage compartment, **default off**. |
-| `Cardiovascular.jl` | Blood volume from ECF, cardiac output from volume, MAP = CO × TPR. TPR is a **constant** until baroreflex lands. |
-| `Renal.jl` | GFR autoregulation, filtered load, pressure natriuresis. Water excretion is a **placeholder** (intake − insensible) until ADH lands. |
-| `Circadian.jl` | Cosinor clock, independent renal and CV arms. **NOT CONNECTED.** |
+| `BodyFluids.jl` | ICF/ECF volumes, sodium mass balance, osmotic equilibration. Inactive-Na storage compartment **default off** (ADR 0004). |
+| `Cardiovascular.jl` | Blood volume from ECF, CO from volume, MAP = CO × TPR. TPR scaled by `tpr_mod`. |
+| `Renal.jl` | GFR autoregulation (80–160 mmHg), filtered load, pressure natriuresis. Water excretion still a **placeholder** until ADH. |
+| `Baroreflex.jl` | Lumped, resetting. Verified in both directions. |
+| `Circadian.jl` | Cosinor clock. **NOT CONNECTED**, default off — build order, not tier. |
+| `incoming/Raas.jl` | Written, tested nowhere, **not wired in**. Parked deliberately: the relations gate globs `src/components/*.jl`, so a component parked there reads as undocumented relations. |
 
-`src/assemble.jl` closes the loop, `salt_step()` runs the Mars500 protocol,
-`check_pressure_natriuresis()` evaluates the ADR 0007 test.
+### The result, unchanged all day and bit-identical across every commit
 
-### The result
+| intake (mEq/d) | MAP (mmHg) |
+|---|---|
+| 205 | 93.00003751695675 |
+| 154 | 90.53356850133511 |
+| 103 | 88.06587129611133 |
 
-Structural simplification: **38 states → 3** (`V_icf`, `V_ecf`, `Na_ecf`).
+Shift **4.934166220845427 mmHg**. Arterial pressure is nowhere regulated in this model;
+it lands at a stable intake-dependent value through renal–body fluid feedback alone.
 
-Salt step, 30 days per level, state carried across:
-
-| intake (mEq/d) | excretion | ECF (L) | MAP (mmHg) |
-|---|---|---|---|
-| 205 | 205.0 | 14.560 | 93.00 |
-| 154 | 154.0 | 14.367 | 90.53 |
-| 103 | 103.0 | 14.174 | 88.07 |
-
-4.93 mmHg across a 102 mEq/day range (~2.5 mmHg per 50 mEq), consistent with human
-salt-sensitivity data for normotensive adults. **Reproduced identically on CI**
-(MAP 93.00003726, shift 4.9341416) — machine-independent.
-
-Arterial pressure is nowhere regulated in this model. It lands at a stable
-intake-dependent value through renal–body fluid feedback alone. That is the Guyton
-claim demonstrated rather than asserted.
-
-### Tooling — `tools/`
+### Gates — all in the `Provenance` CI job
 
 | Tool | Purpose |
 |---|---|
-| `ledger_to_julia.py` | Ledger → `src/LedgerParams.jl`. Validates citation, units, tier, method. `--check` for CI. |
-| `check_closure.py` | Seven relationships derived values must satisfy. **Exists because rounding three of them independently produced a lethal model that reported Success.** |
-| `check_adrs.py` | Evidence tiers on ADRs. E3 requires a falsifiable test and must default off. |
-| `fix_deps.py` | Syncs `Project.toml` with actual imports. Adds stdlibs; reports third-party without adding. |
-| `make_selfapply.py` | Patch series → one runnable script. |
+| `ledger_to_julia.py --check` | numbers: citation, units, tier, method; generated code not stale |
+| `check_relations.py --repo .` | **equations**: every `~` relation has a ledger row; empirical ones need a `form_citation` |
+| `check_closure.py` | seven derived relationships must stay mutually consistent |
+| `check_adrs.py` | evidence tiers; E3 needs a falsifiable test and must default off |
+| `fix_deps.py` | `Project.toml` matches actual imports |
 
-All four run in CI (job name: **Provenance**) and in `sprint.py`.
+**Never rename the `Provenance` job in `ci.yml`.** Branch protection requires that
+exact string and a rename once deadlocked every merge.
 
-### ADRs — `docs/adr/`
-
-0001 Julia/MTK/adaptive stiff · 0002 cycle-averaged · 0003 multirate **Deferred**
-· 0004 Na storage **Provisional, default off** · 0005 circadian **built, not
-connected** · 0006 evidence tiers · 0007 minimal closed loop · 0008 diagnostic
-confidence
-
----
-
-## 3. WHY THINGS KEPT BREAKING
-
-Root cause: **code was written that could not be executed, then presented as if it
-had been.** The user became the test harness.
-
-Four modes, all still live risks:
-
-1. **Unverified environment assumptions.** Wrote against ModelingToolkit v9 when the
-   registry serves v11. Pinned CI to Julia 1.10 while the user runs 1.12. Assumed
-   bash on Windows. **Check the registry and the user's actual versions first.**
-
-2. **Derived values drifting out of consistency.** `FR_Na`, `f_pv` and the
-   osmolality relation were each computed correctly then rounded independently.
-   Individually plausible, collectively lethal — the model drove intracellular water
-   to zero and reported `retcode: Success` with settling tolerance 1.13e-6.
-   `check_closure.py` now catches this class. **Run it after any ledger change.**
-
-3. **Process built instead of physiology when blocked.** See directive 1.4.
-
-4. **Diagnostics asserting beyond their evidence.** Three confident wrong findings in
-   consecutive runs: a "missing Jacobian" that was the diagnostic's own omitted
-   kwarg, a "spectral gap" at 18,000 years from inverting a conserved quantity's zero
-   eigenvalue, and a cost-regime verdict from 22 RHS evaluations. ADR 0008 fixes the
-   tooling. **The habit is the assistant's — state evidence, refuse to conclude
-   below threshold.**
+`check_relations.py` is **forward-only**: eight pre-existing unsourced relations are
+grandfathered inside the script and printed as `DEBT`. The list shrinks only — the gate
+fails on a new unsourced relation, on an entry no longer in the code, and on an entry
+that has since been sourced. Both failure paths were tested before it was wired in.
 
 ---
 
-## 4. ENVIRONMENT
+## 3. THE TWO LOAD-BEARING FINDINGS
 
-**Julia is NOT available in the assistant's sandbox.** `julialang-s3.julialang.org`
-returns `x-deny-reason: host_not_allowed`. Building from source is not viable in a
-container that resets between sessions.
+### 3.1 `G_pn` alone sets salt sensitivity — this corrects the old handover
 
-**REQUESTED ALLOWLIST** (user considers the 20-minute CI loop unacceptable):
+At steady state excretion equals intake, so
 
-    julialang-s3.julialang.org    binaries
-    pkg.julialang.org             registry and packages
-    cache.julialang.org           artifacts
+    Na_excr = Na_filtered·(1 − FR_Na) + G_pn·(MAP − MAP_ref)
 
-Caveat, stated to the user: the container wipes between sessions, so each session
-would pay ~20 min for install plus ModelingToolkit precompile — about one CI cycle.
-Every run after that drops to seconds.
+gives `ΔMAP ≈ Δintake / G_pn`, in which `CV.VENOUS_RETURN.SENSITIVITY` **does not
+appear**. Measured: the 205→103 step gives 4.934 mmHg at `G_pn = 20.0` and 15.698 at
+`G_pn = 5.43`, while sweeping `G_vr` 2880→600 at fixed `G_pn` moves it only
+15.698→12.403 and drives `V_ecf` to 9.889 L, under the 10 L floor.
 
-**Until then:** most failures were catchable without executing Julia — wrong API
-version, undeclared imports, argument order, inconsistent constants. Read the
-registry, read the source, run `check_closure.py`, and always apply patches to a
-fresh clone first.
+The previous handover said the two gains "together *are* the loop gain". **They are
+not.** They are separately identified — `G_pn` by the pressure shift, `G_vr` by ECF
+volume. That is *better* news for estimating them: a joint posterior is tractable rather
+than degenerate.
 
-**What IS available:** `git clone` of the public repo (verified), `web_search`,
-`web_fetch`. GitHub API is rate-limited from the shared sandbox IP — have the user
-run `gh` commands instead.
+**`RN.PRESSURE_NATRIURESIS.SLOPE` stays at 20.0.** Mizelle 1993 puts it 3.68× too steep,
+but adopting that alone forces 15.7 mmHg across a 102 mEq/day range — salt-sensitive
+hypertensive behaviour, not normotensive. Read the ledger note on that row before
+touching it.
 
-**User's machine:** Windows, PowerShell, Julia 1.12.6, Python 3.12, `gh` authed as
-`histoneguy`. Project at `C:\Users\histo\Downloads\files (27)\ipe-repo\ipe`.
+### 3.2 The 3.68× gap is only ~40% explained by the missing ANP path
 
-**Branch protection on `main`:** requires PR, required status check **`Provenance`**,
-linear history, no force push, `enforce_admins: true`. Note: the required check was
-originally named "Ledger provenance" and a rename deadlocked all merges — if merges
-are ever blocked by a check that never reports, that is the cause.
+De Nicola 1997 puts ANP at ~40% of the natriuretic increment. If ANP carries 40% and IPE
+lacks it, the pressure term inflates by 1/(1−0.4) = **1.67×**. Observed inflation is
+**3.68×**. On a log basis ANP accounts for about 0.39 of it.
 
----
-
-## 5. NEXT — in this order
-
-1. **Baroreflex** (E1). Makes TPR a state instead of a constant. The most thoroughly
-   characterised control loop in integrative physiology.
-2. **RAAS** (E1). Renin, angiotensin II, aldosterone — the slow arm.
-3. **ADH / osmoregulation** (E1). Replaces the placeholder water excretion.
-4. **Re-estimate the two calibrated gains** against Mars500 as posteriors, not point
-   values. `RN.PRESSURE_NATRIURESIS.SLOPE` and `CV.VENOUS_RETURN.SENSITIVITY`
-   together *are* the loop gain — everything the model claims about long-run pressure
-   regulation currently rests on two numbers fitted in 1972.
-5. **Only then** reconnect circadian (ADR 0005).
-
-**Do not close ADR 0003** (multirate) on current evidence — 3 states is far too small
-to classify the cost regime. The diagnostic now says so itself.
+**A residual factor of ~2.2× is unexplained.** Candidates, none investigated: NCC
+downregulation; renal sympathetic nerves; the dog→human filtered-load scaling; the
+original calibration target; or the distal-delivery effect in §5. **Do not attribute the
+residual to any of them without doing the work.**
 
 ---
 
-## 6. OPEN ITEMS
+## 4. ADR 0006 WAS AMENDED — RETROSPECTIVE
 
-- 11 of 37 parameters are `assumed` or `calibrated`. `unledgered_check()` lists them.
-- Two ledger values traced only to clinical convention and needing a primary source:
-  `BF.NA.PLASMA_SETPOINT`, `BF.OSM.PLASMA_SETPOINT`.
-- The ECW quantile equations (*Physiol Meas* 2007, n=1538, isotope dilution + ⁴⁰K)
-  would give a population **distribution** rather than the BIA-derived point
-  estimates currently used. Full text not retrieved.
-- TBW fraction in the ledger is 55.2%, not the textbook 60% — different method, young
-  cohort. Flagged in the ledger rather than averaged away.
-- Mars500 data **not yet digitised**. `validation/data/manifest.csv` has the entry.
-- `validation/averaging.md` is binding before any digitisation: fixed 10 s window,
-  applied uniformly, not chosen per figure.
+The tier table made species a proxy for quality: `species-extrapolated` sat in E3, which
+forces default OFF. Taken literally it would have forced ANP to default off because
+Seeliger's servo-control is dog, and demoted Roman & Cowley (rat), Mizelle (dog) and
+Hall (dog) — the entire primary basis of `Renal.FR_effective`. Meanwhile
+`RN.PRESSURE_NATRIURESIS.SLOPE` sat unchallenged labelled `species: human`, when it is
+not a human measurement at all but a fitted constant from Guyton 1972.
+
+**The rule protected the fitted number and penalised the measured ones.**
+
+E2 now admits animal data where the human experiment is not ethically performable, with
+species, preparation and range recorded. E3 keeps species-extrapolation only where human
+data exist and disagree, or the animal model is a poor homologue. Re-tiered: ADR 0005
+clock-gene mechanism E3→E2; ADR 0009 open-loop gain *no tier at all*→E2; ADR 0007
+E1→MIXED (its "rests on multiply-replicated human physiology" line was overstated).
+
+**ADR 0004 stays E3 and default off.** Its weakness is single-group small-*n* with the
+compartment inferred, in *human* subjects. Species was never its problem. The amendment
+is narrow and deliberately does not rescue it.
 
 ---
 
-# RESOLVED — the PR #6 baroreflex failure
+## 5. ADR 0010 (ANP) — PROPOSED, THREE NAMED BLOCKERS
 
-**Closed 2026-08-19.** The `CI/Julia tests` failure on PR #6 was an **inverted
-effector sign** in `Baroreflex.jl`: `drive ~ +sat * tanh(...)` where physiology
-requires negative feedback. Closed-loop gain was `G_br = 2.0` and regenerative, so
-`tpr_mod` ran to the saturation bound and bounced as `sp` reset. The salt step
-returned MAP 95.03 / **40.42** / 95.81 — non-monotonic in intake, and not a
-survivable pressure.
+Sourced across two pre-registered searches (`validation/anp_sourcing_prereg.md`,
+`validation/anp_input_link_prereg.md`). Both fixed pooling rules and stop conditions
+before any paper was read. Keep doing this.
 
-Fixed by one character. Verified on the owner's Julia 1.12.6:
+**The design got simpler as evidence came in.** Rabelink 1989 matched a 3 h head-out
+immersion against a natriuresis-matched ANP infusion: immersion gave *equal* natriuresis
+at **one-fifth** the plasma ANP rise, while raising renal plasma flow and lowering
+fractional lithium reabsorption. ANP is not the proportional carrier — volume expansion
+independently raises distal sodium delivery.
 
-| intake (mEq/d) | baroreflex on | baroreflex off | rel. diff |
-|---|---|---|---|
-| 205 | 93.0000375 | 93.0000373 | 3e-9 |
-| 154 | 90.5335685 | 90.5336049 | 4e-7 |
-| 103 | 88.0658713 | 88.0658956 | 3e-7 |
+IPE has no proximal/distal partition, so it **cannot represent that mechanism**. A
+mechanistic plasma-ANP pathway would be precision the surrounding model cannot support.
+The component is therefore a **lumped volume-keyed natriuretic term, algebraic in
+`V_blood`, with no ANP state**. Model stays at 3 states.
 
-Shift 4.9341 mmHg, matching the pre-baroreflex baseline. ADR 0009's falsifiable
-claim holds: the reflex resets and exerts no long-run influence on pressure. See the
-addendum in `docs/adr/0009-baroreflex.md`.
+Blocking Accepted:
 
-**Both triage hypotheses in the previous handover were wrong**, and the way they were
-wrong is worth keeping:
+1. **Pool the k primary immersion papers** behind Epstein's 2.5–3× range. `pooling.md`
+   prohibits `range-midpoint`, so there is currently a magnitude, not a number.
+2. **Source the central→total blood volume mapping.** Immersion translocates volume
+   centrally; `V_blood` is total. Nothing found maps one to the other.
+3. **The 2.2× residual** (§3.2).
 
-- *"`baroreflex = false` is structurally singular."* It is not. `D(x) ~ 0.0` is a
-  well-posed constant state; the disabled branch is equation-balanced and reproduced
-  the known-good baseline to eight significant figures. It was never the problem.
-- *"Or the claim is false and `BR.RESET.TAU` / `BR.OPEN_LOOP_GAIN` need rework."*
-  Neither parameter was implicated. Both stand as recorded in the ledger.
+---
 
-The dichotomy was drawn without reading the component and both branches were wrong.
-The single command that settled it — run `salt_step()` and `salt_step(baroreflex =
-false)` side by side and print both — took under a minute on a warm cache and should
-have been the first move.
+## 6. NEXT, IN ORDER
 
-## The check that lied
+1. **The three ADR 0010 blockers.** Then ANP lands under a live gate.
+2. **The 2.2× residual.** The sharpest open question in the model.
+3. **RAAS.** `incoming/Raas.jl` is written and parked. It attaches to `FR_effective` via
+   `fr_aldo` and to TPR via `tpr_mod`. It deliberately carries **no escape term** —
+   escape emerges from pressure natriuresis alone at the current slope (99% of intake by
+   day 2.9 against Hall's days 2–4). Adding ANP will change that; check the escape
+   pressure cost *between* the two changes, or the errors cancel and hide each other.
+4. **Digitise Mars500.** It gates the joint `G_pn` / ANP-gain re-estimation, which is the
+   only way either becomes a posterior rather than a point value.
+   `validation/averaging.md` is binding first: fixed 10 s window, applied uniformly.
+5. **`check_closure.py` will break before the others.** It hand-codes seven
+   relationships and does not scale past ~20. The owner has committed to hundreds of
+   variables. Not urgent; do not let it be a surprise.
+6. **Circadian last.** ADR 0005 is sound but its dependencies (RAAS, ADH) do not exist.
 
-`Diagnostics` reported **green** on PR #6 while printing the 40 mmHg salt-step table
-to its own job summary. It sets `continue-on-error: true` at job *and* step level,
-and `bench/diagnostics.jl` calls `exit(0)` at every gate. It is structurally
-incapable of failing.
+---
 
-The previous handover then read that green tick as evidence that "the model builds
-and runs with the baroreflex on the default path." It is evidence that the workflow
-ran. Nothing more.
+## 7. HOW THINGS BREAK HERE
 
-Mitigated, not solved: the workflow is renamed **"Diagnostics (report only - never
-fails)"** and the summary now opens with a banner saying so. The numbers still have
-to be read. `CI / Julia tests` is the gate; `Provenance` is the required check.
+Root cause across four sessions: **code written that could not be executed, then
+presented as if it had been.** Mostly solved by §0. The rest are still live.
 
-**Do not rename the `Provenance` job in `ci.yml`** — branch protection requires that
-exact string, and a rename previously deadlocked all merges (section 4).
+1. **Exit codes swallowed by pipes.** `cmd | tail` reports `tail`'s status. This happened
+   again on 2026-08-21, one message after the trap was quoted aloud. Check exit codes
+   explicitly; never infer success from output that looks clean.
+2. **A wrong author on correct data is invisible to every check.** PMID 2966064 was
+   attributed to "Yokota N et al." for two sessions — it is Kelly TM and Nelson DH. Every
+   number attached to it was right. The ledger validates that a citation *exists*, not
+   that it points at the right paper. Only a pre-registered stop condition caught it.
+3. **A passing test suite is not evidence about a parameter it does not assert on.**
+   Every assertion passed at a 3.68× wrong slope. `test/runtests.jl` now pins salt
+   sensitivity for exactly this reason.
+4. **`Diagnostics` cannot fail.** `continue-on-error` at job *and* step level, and
+   `bench/diagnostics.jl` calls `exit(0)` at every gate. It once reported green while
+   printing a 40 mmHg salt-step table to its own summary. It is a report. Read the
+   numbers.
+5. **Derived values drifting apart.** `FR_Na`, `f_pv` and the osmolality relation were
+   each rounded correctly and independently, and collectively drove intracellular water
+   to zero while reporting `retcode: Success`. Run `check_closure.py` after any ledger
+   change.
+6. **Silent string replacements.** Three of five `str_replace` calls failed silently in
+   one session because whitespace assumptions were wrong. Assert on every replacement.
 
-## Next
+---
 
-Section 5 order is unchanged, and RAAS is now unblocked. It attaches to the same
-`tpr_mod` path, multiplicatively — note that path is now verified in both directions,
-which it was not before.
+## 8. SETTLED — DO NOT RELITIGATE
+
+- **Julia stays.** Porting was considered and rejected: the friction it would solve is
+  already gone; `OrdinaryDiffEq`'s stiff suite has no Python equal; and nothing in Python
+  replicates `structural_simplify`'s alias elimination, index reduction and tearing,
+  which is what pays at hundreds of variables. The one scenario that could revisit it is
+  **ensembles** — JAX + diffrax `vmap` over 1000 members on GPU — and only once ensembles
+  are the bottleneck. They are not.
+- **The `Provenance` job name.** See §2.
+- **ADR 0004 default off.** See §4.
+- **Pre-register before extracting.** Three times now it has caught something the
+  extraction itself would have missed.
+
+---
+
+## 9. OPEN ITEMS
+
+- **13 of 41 ledger parameters** are `assumed` or `calibrated`. `unledgered_check()`
+  lists them.
+- **`RN.AUTOREG.LOWER = 80` is genuine debt** — no primary source in any species, and a
+  2025 human review argues the evidence for it is insufficient. Its upper counterpart is
+  now sourced to Roman & Cowley 1985 at 160 mmHg, but that is a **censored** observation:
+  160 was the highest pressure tested, so the true breakpoint is ≥160.
+- **The piecewise GFR autoregulation FORM is uncited** and derivative-discontinuous at
+  both breakpoints. `Renal.GFR` stays grandfathered in the relations gate because what
+  was sourced is a *number*, not the equation.
+- **`BF.NA.PLASMA_SETPOINT` and `BF.OSM.PLASMA_SETPOINT`** trace only to clinical
+  convention.
+- **Eight relations carry no `form_citation`** and are grandfathered as tracked debt.
+- **Mars500 not digitised.** `validation/data/manifest.csv` has the entry.
+- **`pooling.md` requires `pooling_rule`, `n_studies` and `pooling_notes` columns** that
+  `ledger/parameters.csv` does not yet have. The policy is binding; the schema has not
+  caught up. Rules have been recorded in prose in the meantime.
+
+---
+
+## 10. ENVIRONMENT
+
+**Owner's machine:** Windows 11, PowerShell, Julia 1.12.6, Python 3.12.10, `gh` authed as
+`histoneguy`. Repo at `C:\Users\histo\Claude Coding\integrative-physiology-engine`.
+
+**Branch protection on `main`:** PR required, required status check **`Provenance`**,
+linear history (squash merges), no force push, `enforce_admins: true`.
+
+**Harness note:** bash heredocs containing backticks and apostrophes fail in this
+environment. Write the script to a file and run it instead. Also, `python` cannot read
+Git Bash paths like `/tmp/x` — pass Windows paths.
