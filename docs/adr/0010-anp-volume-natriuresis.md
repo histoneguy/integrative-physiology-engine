@@ -16,6 +16,19 @@ volume-keyed rather than pressure-keyed signalling carries physiological natriur
 > stretch to plasma ANP concentration in humans, and that is the link the component
 > needs. Status stays Proposed.
 
+> **UPDATED 2026-08-22, THIRD SOURCING — THE SENSED VARIABLE IS FALSIFIED.** See the
+> third addendum. Blocker 1 is closed: k=7 primaries pooled, `pooled-geometric` 2.191x,
+> and **the review's 2.5-3x range is not supported by its own primaries** (6 of 7 fall
+> below it). Blocker 2 is closed **as falsified, not as sourced** — Norsk 1986
+> (PMID 3745047) held plasma volume approximately constant across three immersion depths
+> while natriuresis graded with depth, so total blood volume does not drive the response.
+> The "identical to 2 litres of saline" equivalence this record has been leaning on is a
+> claim about **central** volume and cannot be read as a total-volume change. **Immersion
+> is therefore the wrong calibration paradigm for a `V_blood`-keyed term**, though the
+> model's own salt step is not a redistribution and a `V_blood`-keyed term is not itself
+> refuted. Status stays Proposed; the component is further from being written than
+> before, which is the correct direction.
+
 ## Context
 
 The model has exactly one natriuretic path: the pressure term in `Renal.FR_effective`.
@@ -154,7 +167,11 @@ sensitivity precisely because every other assertion passed at a 3.68x wrong slop
 
 - **The sensed variable.** `V_blood` is proposed as the atrial-stretch proxy. Whether
   ECF volume, blood volume or a filling-pressure surrogate is right is open, and the
-  choice needs its own `form_citation`.
+  choice needs its own `form_citation`. **Narrowed 2026-08-22 by the third addendum:
+  `V_blood` cannot be calibrated against head-out immersion, because immersion
+  redistributes volume centrally at approximately constant total volume and IPE has no
+  central compartment. This closes off a paradigm, not the variable — a sodium-loading
+  or isotonic-expansion paradigm remains open and is now blocker 4.**
 - **Functional form of the ANP effect on reabsorption** - linear, saturating or
   threshold. Unknown until the dose-response row is sourced.
 - **Secretion kinetics.** Time constant unsourced. ANP's plasma half-life is short
@@ -342,3 +359,196 @@ supports.
    delivery effect is a *candidate* for part of that residual - IPE forces through
    `FR_effective` what the real kidney also does by changing delivery - but that is a
    hypothesis, not a finding, and it needs its own work.
+
+---
+
+## Third sourcing outcome, 2026-08-22: the pooling, and a falsified sensed variable
+
+Extracted under `validation/immersion_pooling_prereg.md`, written and **committed before
+any paper was opened** (`49c2165`). Computation is reproducible: `python
+validation/immersion_pool.py`. Every citation below was fetched from the PubMed record
+and its author list, journal, year, volume and pages verified, per stop condition 2.
+
+**Blocker 1 closes on the letter and fails on the substance. Blocker 2 does not close,
+and the reason it does not close falsifies this ADR's sensed variable.**
+
+### 0. The blocker list contained a quantity the component does not use
+
+The 2026-08-22 revision dropped the ANP state — the component became a lumped
+volume-keyed natriuretic term algebraic in `V_blood`, calibrated against
+volume-expansion natriuresis rather than against a plasma concentration. In the same
+addendum, blocker 1 asked for the primaries behind Epstein's 2.5-3x to be pooled. But
+that range is the **plasma ANP fold-rise**, and under the revised design no state carries
+it and nothing multiplies it.
+
+Pooling it would have produced a correctly-sourced number the component does not use,
+which is worse than an unsourced one because it looks finished. The pre-registration
+therefore extracted **both** the ANP fold-rise (Q1, closing blocker 1 as written and
+auditing the review against its own primaries) and the natriuretic response (Q2, the
+quantity the component needs), from the same papers.
+
+### 1. Q1 — the primaries do NOT support the review's range
+
+Sampling frame: primaries at or before 1989, i.e. those Epstein 1989 could have been
+summarising. Endpoint fixed in advance at 180 min of immersion over the same subjects'
+pre-immersion baseline, with per-paper peaks recorded but **not** pooled — per-paper
+maxima would bias every estimate upward, which is the defect being tested for.
+
+| Study | PMID | n | Duration | ANP fold-rise |
+|---|---|---|---|---|
+| Epstein M, Loutzenhiser R, Friedland E, Aceto RM, Camargo MJ, Atlas SA. *J Clin Invest* 1987;79:738-745, `10.1172/JCI112879` | 2950133 | 13 | 3 h | **2.487** (7.8+/-1.8 -> 19.4+/-3.8 fmol/ml) |
+| Anderson JV, Millar ND, O'Hare JP, Mackenzie JC, Corrall RJ, Bloom SR. *Clin Sci* 1986;71:319-322, `10.1042/cs0710319` | 2944688 | n/s | n/s | **2.00** ("twofold") |
+| Pendergast DR, de Bold AJ, Pazik M, Hong SK. *Proc Soc Exp Biol Med* 1987;184:429-435, `10.3181/00379727-184-42497` | 2951741 | 6 | 3 h | **1.50** (~80 -> ~120 pg/ml) |
+| Ogihara T, Shima J, Hara H, Tabuchi Y, Hashizume K, Kumahara Y, Kangawa K, Matsuo H. *Jpn Heart J* 1987;28:41-51, `10.1536/ihj.28.41` | 2955141 | 7 | 1 h | **1.593** (246+/-12 -> 392+/-32 pg/ml) |
+| Miki K, Shiraki K, Sagawa S, de Bold AJ, Hong SK. *Am J Physiol* 1988;254:R235-R241 | 2964206 | 6 | 3 h | **2.00** (maintained across the 3 h) |
+| Tajima F, Sagawa S, Iwamoto J, Miki K, Claybaugh JR, Shiraki K. *Am J Physiol* 1988;254:R977-R983 | 2968055 | 8 (young arm) | 3 h | **3.00** |
+| Gerbes AL, Vollmar AM. *Biochem Biophys Res Commun* 1988;156:228-232 | 2972285 | 9 | 1 h | **2.417** (C-terminal, 4.8+/-0.5 -> 11.6+/-2.3 fmol/ml) |
+
+**k = 7 independent studies. `pooled-geometric` per `pooling.md` rule 4 (ratio
+quantity), computed in log space: 2.191x n-weighted, 2.087x unweighted, geometric SD
+1.282, range of contributing estimates 1.50-3.00.**
+
+**Epstein 1989 reports "rising 2.5- to 3-fold by the end of the 2nd or 3rd h". Six of
+the seven primaries fall below 2.5x. Only one lands inside the review's range.**
+
+`pooling.md` is explicit that when a heavily-cited review and its own primaries
+disagree, **the primary source wins and the divergence is logged**. It is logged here.
+The likely mechanism is the one the pre-registration was written to defend against: a
+review quoting per-study peak values, and drawing on the hydrated-subject studies, where
+the fixed common endpoint gives a materially lower number. `range-midpoint` was
+prohibited in advance and **2.75x is not recorded anywhere**.
+
+Excluded, each on a criterion declared before extraction:
+
+- **Patient populations** — the Kokot series (renal failure, transplant, diabetic),
+  Skorecki 1988, Campbell 1988, Legault 1993, Vesely 1991 (cirrhotic), Doniec-Ulman 1987
+  (gestosis), Hwang 1991 (nephrotic), Wiecek 1991 and Coruzzi 1993 (hypertensive),
+  Tajima 1990 (quadriplegic), Rabelink 1993 and al-Haidary 1990 (transplant).
+- **Species** — Miki 1986, Sondeen 1990, Krasney 1991 (dog).
+- **Protocol** — Viti 1989 (PMID 2534120): 20 min, 28 C water, horizontal. Fails
+  duration, thermoneutrality and head-out on three separate declared criteria. Wolf 1990
+  (PMID 2149337): 20 min, below the 60 min minimum.
+- **Cohort overlap**, per the independence rule declared in advance — Epstein 1986
+  (PMID 2941549, 4 subjects) against Epstein 1987 (13 subjects), same authors, same
+  institution, same protocol; Ogihara 1986 (PMID 2941635, 5 men, 1 h) against Ogihara
+  1987 (7 men, 1 h); Gerbes 1986 (PMID 2945039) against Gerbes 1988. In each case the
+  more complete report was taken and the other recorded as excluded-for-overlap.
+- **Not extractable** — Vesely 1989 (PMID 2532366) reports timing but no ANP values, and
+  additionally shares Epstein as senior author with a 7-subject "seated sodium-replete
+  normal" cohort against Epstein 1987's 13, so it fails independence as well. Rabelink
+  1989 (PMID 2528914) reports only that the immersion ANP rise was about five times
+  smaller than the matched infusion — no baseline-referenced fold-change.
+- **Different analyte, not pooled** — Gerbes 1988's N-terminal proANF fragment rose
+  1.625x in the same subjects whose C-terminal ANP rose 2.417x. That single paper
+  demonstrates why `pooling.md` forbids mixing assays: the two numbers describe the same
+  event and differ by 49%.
+
+**One independence judgement is recorded rather than hidden.** Miki 1988 and Tajima 1988
+come from the same laboratory (Shiraki, Sagawa, Miki), the same journal and volume, and
+the same 3 h / 34.5 C hydropenic protocol. They were counted as **independent** because
+n differs (6 vs 8) and the subject-selection criteria differ (a day-night comparison
+versus young-versus-elderly). This is the least secure call in the set, and it matters:
+Tajima's young arm is the single highest estimate, so collapsing the two would move the
+pooled value further below the review's range, not toward it.
+
+### 2. Q2 — BLOCKED at k = 2, and the stop condition is honoured
+
+Extractable UNaV fold-changes against the same subjects' control: Epstein 1987, 2.076
+(92+/-12 -> 191+/-15 ueq/min); Anderson 1986, 2.00 ("a doubling"). Pendergast 1987
+reports **fractional** excretion (1.0 -> 1.8%), a different measurement, and
+`pooling.md` prohibits pooling across incompatible measurement methods, so it is
+recorded and not pooled.
+
+**k = 2. The pre-registration required k >= 3 before any parameter is recorded. No
+ledger row is created.** Two studies do not become a pooled value; they become
+`single-source` twice over. The geometric mean of the two is 2.038 and it is written
+here only so that nobody re-derives it later and mistakes it for an adopted value.
+
+**And it would not have mattered if k had been 3**, for the reason in the next section:
+without Q3 there is nothing to divide by.
+
+### 3. Q3 — THE SENSED VARIABLE IS FALSIFIED, NOT MERELY UNSOURCED
+
+The pre-registration declared that Q3 could sink this, that no fallback would be
+declared for it, and (§8) that if the immersion natriuresis tracked central
+redistribution rather than a volume the model can compute, then **`V_blood` is the wrong
+sensed variable and this ADR's Decision is wrong on its input side**.
+
+That is what the evidence says. Three independent human studies, none of them
+previously read into this repo:
+
+| Source | Design | Result |
+|---|---|---|
+| **Norsk P, Bonde-Petersen F, Warberg J.** *J Appl Physiol* 1986;61:565-574, PMID 3745047, `10.1152/jappl.1986.61.2.565` | 10 normal males, **graded** immersion to umbilicus, chest and neck, 34.5 C, 4 h | Cardiac output, stroke volume and **plasma volume increased to approximately the same level at all three depths**, while CVP rose only at chest and neck, and **diuresis and natriuresis increased gradually with depth** |
+| **Greenleaf JE, Shvartz E, Kravik S, Keil IC.** *J Appl Physiol Respir Environ Exerc Physiol* 1980;48:79-88, PMID 6986349, `10.1152/jappl.1980.48.1.79` | 4 men, 8 h immersion at 34.4 C vs chair rest | Immersion **plasma volume loss of 12.6%** (0.43 L) with ECV down 2,230 ml/8 h, while natriuresis and diuresis were sustained |
+| **Simanonok KE, Bernauer E.** *Aviat Space Environ Med* 1993;64:139-145, PMID 8431188 | 6 healthy men, bled **15% of total blood volume** before 7 h seated immersion, own controls | Cardiac output returned to dry-control level, but sodium excretion was still **+120%** above dry control (vs +200% unbled) |
+
+**Norsk 1986 is the decisive one.** It is a graded-dose human experiment in which the
+model's candidate sensed variable is held approximately constant while the response
+varies monotonically. Plasma volume was the same at all three immersion depths; the
+natriuresis was not. Whatever grades the response, it is not total intravascular volume.
+Greenleaf shows total volume moving *downward* while the response persists, and
+Simanonok shows the response largely surviving a deliberate 15% reduction in total blood
+volume.
+
+**The mapping ADR 0010 needed does not merely lack a source — it is contradicted.**
+
+**And this exposes an inference this ADR was already resting on.** Epstein 1986 and
+Vesely 1989 both state that immersion provides a volume stimulus "identical to that
+produced by 2 liters of saline". That equivalence, quoted approvingly in the second
+sourcing outcome, is a claim about the **central** stimulus. It has been read here as
+though it licensed a **total** volume change of 2 L. It does not, and Norsk 1986 is the
+direct evidence that it does not. That step was the unsourced scaling all along; the
+search for a "central-to-total mapping" was looking for a source for an inference the
+literature contradicts.
+
+### 4. Consequence: immersion is the wrong calibration paradigm for this component
+
+This is narrower than "ANP cannot be modelled here", and the distinction matters.
+
+IPE is cycle-averaged (ADR 0002) with a single blood volume and no central compartment,
+so it cannot represent a redistribution at constant total volume. Head-out immersion is
+**precisely** a redistribution at approximately constant total volume. The paradigm and
+the model variable are mismatched, and no amount of further immersion sourcing fixes it.
+
+But the perturbation the model actually runs — a sodium intake step — is **not** a
+redistribution. It genuinely changes ECF and total blood volume. So a `V_blood`-keyed
+natriuretic term is not thereby refuted; what is refuted is calibrating it against
+immersion.
+
+**The already-sourced anchor is the right one.** De Nicola 1997 (PMID 9071713) puts ANP
+at ~40% of the natriuretic increment for a **sodium diet shift**, 35 -> 235 mEq/day —
+a total-volume perturbation of the same kind as the model's own salt step, and the
+figure the revised Decision named as the calibration target. Ogihara 1987 additionally
+provides a quantified total-volume perturbation in the same paper as its immersion arm
+(1 L saline over 1 h raised hANP to a peak of 305+/-30 pg/ml from 246+/-12, 1.24x; 1 L
+over 2 h, 285+/-25, 1.16x), and is a lead for that paradigm rather than this one. k = 1;
+it sets no parameter.
+
+### 5. Status
+
+**Stays Proposed.** No `Anp` component is written, no ledger row is added, and no
+parameter is recorded. Revised blocker list:
+
+1. ~~Pool the k primary immersion papers behind Epstein's 2.5-3x.~~ **Done.** k = 7,
+   `pooled-geometric` 2.191x n-weighted. The review's range is not supported by its
+   primaries and the divergence is logged. **The number is not a model parameter** and
+   closing this blocker does not advance the component.
+2. ~~Source the central-to-total blood volume mapping.~~ **Closed as falsified, not as
+   sourced.** Total blood volume does not grade the immersion response. `V_blood` is not
+   defensible as the sensed variable for an immersion-calibrated term, and the "2 L of
+   saline" equivalence cannot be read as a total-volume change.
+3. **The 2.2x residual** — untouched, as declared. Nothing here may be used to
+   re-attribute it. Note that Rabelink's distal-delivery effect and Norsk's
+   redistribution finding are the *same* mechanism seen from two directions, which
+   strengthens it as a *candidate* for part of the residual. It remains a hypothesis and
+   needs its own pre-registered work.
+4. **NEW — re-source the input link against a total-volume paradigm.** Sodium loading or
+   isotonic saline expansion with quantified volume and measured natriuresis, not
+   immersion. Until then the component's input has no defensible calibration.
+
+**What this costs.** The `Anp` component is further from being written than it was this
+morning, and that is the correct direction: the previous position rested on a mapping
+that is contradicted rather than merely missing. Falsifiable test 1 in this ADR
+(pressure-clamped natriuresis, Seeliger's experiment in silico) is unaffected and remains
+the discriminator the day a component exists.
