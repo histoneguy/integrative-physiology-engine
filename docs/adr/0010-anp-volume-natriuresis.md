@@ -538,11 +538,12 @@ parameter is recorded. Revised blocker list:
    sourced.** Total blood volume does not grade the immersion response. `V_blood` is not
    defensible as the sensed variable for an immersion-calibrated term, and the "2 L of
    saline" equivalence cannot be read as a total-volume change.
-3. **The 2.2x residual** — untouched, as declared. Nothing here may be used to
-   re-attribute it. Note that Rabelink's distal-delivery effect and Norsk's
-   redistribution finding are the *same* mechanism seen from two directions, which
-   strengthens it as a *candidate* for part of the residual. It remains a hypothesis and
-   needs its own pre-registered work.
+3. **The 2.2x residual** — not re-attributed, as declared, but **audited**: see section
+   6 below. The figure is not a 2.2x-shaped fact. Nothing found in the immersion search
+   was used to re-attribute it. Note separately that Rabelink's distal-delivery effect
+   and Norsk's redistribution finding are the *same* mechanism seen from two directions,
+   which strengthens it as a *candidate* for part of whatever residual survives the
+   audit. It remains a hypothesis and needs its own pre-registered work.
 4. **NEW — re-source the input link against a total-volume paradigm.** Sodium loading or
    isotonic saline expansion with quantified volume and measured natriuresis, not
    immersion. Until then the component's input has no defensible calibration.
@@ -552,3 +553,74 @@ morning, and that is the correct direction: the previous position rested on a ma
 that is contradicted rather than merely missing. Falsifiable test 1 in this ADR
 (pressure-clamped natriuresis, Seeliger's experiment in silico) is unaffected and remains
 the discriminator the day a component exists.
+
+### 6. Blocker 3 — the 2.2x residual is not a 2.2x-shaped fact
+
+Audited on the same day, reproducibly: `python validation/residual_audit.py`. **No
+literature was extracted for this** — it is arithmetic on numbers already in the repo,
+plus one verification of a citation the ledger has already adopted. Nothing here is
+recorded as a parameter.
+
+The audit reproduces both published figures exactly (3.6843 against the quoted 3.68x,
+2.2106 against the quoted ~2.2x), which confirms the derivation was correctly
+identified before it was taken apart. It then finds that the 3.68x rests on two choices
+that are not measurements, plus one bias that was never in the comparison at all.
+
+**(a) The dog GFR is uncited, and the ratio is exactly proportional to it.** The
+comparison is between *fractions of filtered load*, so the dog's filtered load enters as
+`GFR_dog x C_Na`. `validation/pn_data.py` supplies `DOG_GFR = 115.0` L/day from a
+parenthetical — "dog ~20 kg, GFR ~115 L/day" — with no citation and no source in
+Mizelle. The relation is `inflation = 0.03204 x GFR_dog(L/day)`. The assumed value
+corresponds to 3.99 mL/min/kg, at the **top** of the conventional canine range of
+2.5-4.5 mL/min/kg. Across that range the inflation is 2.31-4.15x and the residual after
+ANP is **1.38-2.49x**.
+
+**(b) Mizelle's own three points disagree with each other by 2.28x.** The adopted slope
+(1.734 mmol/day/mmHg per kidney, from the two simultaneous 12-day kidneys) is one of
+three defensible readings: the low segment gives 1.280, the high segment 2.917. Those
+imply inflations of 4.99x, 3.68x and 2.19x respectively, i.e. residuals of 3.00x, 2.21x
+and 1.31x. `pn_data.py` already flags the segment disagreement as "suggestive of
+steepening, NOT evidence of it" — but the ADR then quotes the value derived from one
+reading as though the disagreement had been resolved.
+
+Propagating (a) and (b) together, **the residual is 0.82-3.37x, not 2.2x.** At the
+favourable corner ANP accounts for the entire discrepancy and there is nothing left to
+explain. This does *not* show the residual is zero: holding the adopted slope, it would
+take a canine GFR of 52 L/day (1.81 mL/min/kg) to erase it, which is below the plausible
+range. Something is probably there. Its size is simply not known to be 2.2x.
+
+**(c) A bias the comparison never accounted for, and it points the wrong way.**
+Mizelle's abstract, verified against the PubMed record on 2026-08-22 (PMID 8319986,
+`10.1161/01.hyp.22.1.102`, **Mizelle HL, Montani JP, Hester RL, Didlake RH, Hall JE**,
+*Hypertension* 1993;22:102-110 — all three RPP/UNaV points in `pn_data.py` reproduce
+exactly, so the transcription is sound), states:
+
+> "in the low-pressure kidney, glomerular filtration rate was slightly but significantly
+> lower (approximately 8%) than in the contralateral kidney"
+
+**The filtered load was not constant between the two kidneys, and the comparison assumes
+it was.** IPE's `G_pn` is a slope at *constant* filtered load — `Na_excr =
+Na_filtered*(1 - FR_Na) + G_pn*(MAP - MAP_ref)`, with GFR flat over 80-160 mmHg — so the
+model's parameter contains no filtered-load term, while Mizelle's raw between-kidney
+`dUNaV/dRPP` does. Removing it drops the dog's pressure-only slope from 1.734 to 1.480
+per kidney and moves the inflation **3.68x -> 4.32x**, the residual **2.21x -> 2.59x**.
+
+Unlike (a) and (b) this is a bias rather than an uncertainty, and it makes the model look
+*more* inflated, not less. It has been sitting in the comparison in the favourable
+direction.
+
+**What this changes about the next step.** The handover lists five uninvestigated
+candidates for the residual — NCC downregulation, renal sympathetic nerves, the
+dog-to-human scaling, the calibration target, and the distal-delivery effect — and warns
+against attributing the residual to any of them without doing the work. That warning
+stands. But the cheapest way to sharpen the residual is none of the five: it is to
+**open Mizelle 1993 in full text and read the body weights and absolute GFRs actually
+reported**, which collapses (a) outright, and to recover enough of the dataset to settle
+(b). Only then is a mechanistic hunt worth starting. Two of the five candidates — the
+dog-to-human scaling, and the calibration target — are partly *this* problem rather than
+physiology.
+
+Blocker 3 therefore stays open, but it is now a **specific, cheap, bounded task** rather
+than an open-ended mechanistic search. The 2.2x figure should not be quoted as a
+quantity anywhere until it is redone; `HANDOVER.md` section 3.2 and the Context section
+of this ADR both currently state it without uncertainty.
