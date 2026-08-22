@@ -85,6 +85,16 @@ measurement, and must be declared as such in `ledger/relations.csv` with
 `class=empirical` and its own `form_citation`** - the relations gate is live and will
 fail the build otherwise.
 
+**REVISED 2026-08-22 - no plasma ANP state.** The input-link sourcing (see the second
+addendum) found that the natriuretic effect of a given plasma ANP concentration is
+**not fixed**: it depends on distal sodium delivery, which IPE does not model. Carrying
+an explicit ANP concentration state would therefore add a variable the model cannot use
+correctly, plus secretion and clearance constants nobody has measured for this
+formulation. The component becomes a **lumped volume-keyed natriuretic term**, algebraic
+in `V_blood`, with ANP as its named evidence base rather than as a state. Fewer
+unsourced links, no extra state, and it matches what the human studies actually
+measure.
+
 **Default ON.** The buildable claims are E1/E2. The E3 rows contribute no value and
 take the structure-only exemption, so nothing here needs to default off.
 
@@ -96,9 +106,9 @@ are separately identified, so a joint posterior is tractable rather than degener
 
 ## Consequences
 
-- **Adds at least one state** (plasma ANP, with a secretion-clearance lag), taking the
-  model from 3 states to 4 or more. ADR 0003 (multirate) stays Deferred - still far too
-  small to classify the cost regime, and the diagnostic now says so itself.
+- **Adds NO state** (revised 2026-08-22). The term is algebraic in `V_blood`. The model
+  stays at 3 states, so ADR 0003 (multirate) stays Deferred for the same reason as
+  before - far too small to classify the cost regime.
 - **Makes the `G_pn` re-estimation real work.** Once a second natriuretic path exists,
   the calibrated slope is not merely unsourced, it is over-determined.
 - **Blocks nothing for RAAS.** RAAS attaches to the same path via `fr_aldo` and
@@ -238,3 +248,97 @@ residual to any of these without doing the work.**
 Caveat on the comparison: De Nicola's 40% is for a 35 -> 235 mEq/day shift, wider than
 the model's 103 -> 205 mEq/day step, and fractional contributions need not be constant
 across that range. The 1.67x is an order-of-magnitude argument, not an estimate.
+---
+
+## Second sourcing outcome, 2026-08-22: the INPUT link
+
+Extracted under `validation/anp_input_link_prereg.md`. Every citation below was fetched
+and its author list, journal and year verified against the record, per stop condition 3
+- which exists because PMID 2966064 carried the wrong authors for two sessions.
+
+### The link is sourceable in humans, but only to an order of magnitude
+
+Head-out water immersion is the human volume-perturbation model, and it is well
+characterised.
+
+| Source | Design | Finding |
+|---|---|---|
+| Vesely DL, Norsk P, Winters CJ, Rico DM, Sallman AL, Epstein M. *Proc Soc Exp Biol Med* 1989;192:230-235, PMID 2532366, `10.3181/00379727-192-42990` | 7 seated sodium-replete normals, 3 h neck immersion | NI gives "acute central volume expansion **identical to that produced by 2 liters of saline** but without plasma compositional change". ANF C-terminus and N-terminus both rose promptly, peaking at 1 h |
+| Epstein M, Norsk P, Loutzenhiser R. *Am J Nephrol* 1989;9:1-24, PMID 2524162, `10.1159/000167929` - **review** | synthesis of the immersion literature | ANP rises during the 1st hour, "**rising 2.5- to 3-fold** by the end of the 2nd or 3rd h"; returns promptly on recovery |
+
+So the order of magnitude is roughly **2.5-3x plasma ANP for a central volume expansion
+equivalent to 2 L of saline**.
+
+**That is not yet a usable gain, and the declared rules are why.** Epstein 1989 is a
+review reporting a *range across studies*. `pooling.md` prohibits `range-midpoint` for
+new entries: taking 2.75x would use two numbers and discard every other study. The rule
+requires going to the k primary papers and pooling their point estimates. **That work is
+not done here.** This sources the FORM and the magnitude, not the number.
+
+**A second caveat the sources do not resolve.** Immersion produces *central* volume
+expansion by translocating blood from the periphery, not by adding it. IPE's `V_blood`
+is total blood volume. Mapping one to the other needs an assumption none of these papers
+supplies.
+
+### The finding that matters: ANP-only is contradicted, in humans, with an isolation design
+
+**Rabelink TJ, Koomans HA, Boer P, Gaillard CA, Dorhout Mees EJ.** *Am J Physiol*
+1989;257:F375-82, PMID 2528914, `10.1152/ajprenal.1989.257.3.f375`. Seven healthy
+subjects on 100 mmol sodium, 3 h immersion compared against a **deliberately
+natriuresis-matched** ANP infusion, both repeated under enalapril.
+
+> "HOI caused a natriuresis equal to that of ANP infusion despite an **about five times
+> smaller rise in plasma ANP**."
+
+Immersion *increased* renal plasma flow and *decreased* fractional lithium reabsorption
+- a proximal reabsorption marker. ANP infusion did neither. The authors conclude the
+data "speak against an exclusive role" for ANP, and Epstein's review says the same
+independently: it is "simplistic to consider the WI-induced augmentation of ANP to be
+the sole, or even the prepotent, mediator".
+
+### A conflict between sources, recorded rather than averaged
+
+Stop condition 4 required this be reported as a conflict.
+
+| Source | Species | ANP's share of volume-expansion natriuresis |
+|---|---|---|
+| De Nicola 1997, PMID 9071713 | human | ~40% of the UNaV increment, low to normal sodium diet |
+| Schwab TR, Edwards BS, Heublein DM, Burnett JC. *Am J Physiol* 1986;251:R310-3, PMID 2943167, `10.1152/ajpregu.1986.251.2.r310` | **rat**, anaesthetised, SHAM n=6 vs right atrial appendectomy n=12, isoncotic albumin | ~50%: delta UNaV 9.48 +/- 1.01 to 4.77 +/- 1.03 ueq/min |
+| Rabelink 1989, PMID 2528914 | human | matched natriuresis at **one fifth** the ANP rise |
+
+The first two agree at 40-50%. The third appears to contradict them. **The reading that
+reconciles all three, and it has a modelling consequence:** ANP may well be necessary
+for 40-50% of the response while volume expansion *simultaneously* raises distal sodium
+delivery, making a given ANP concentration far more effective. Rabelink's own lithium
+and ERPF data say exactly that.
+
+Note Schwab is rat with atrial appendectomy - not performable in humans, so legitimate
+E2 under ADR 0006 as amended. It is recorded as a comparator and **not pooled** with the
+human values.
+
+### Consequence: this is why the component carries no ANP state
+
+**IPE has no proximal/distal partition.** `FR_effective` is a single lumped fractional
+reabsorption. The model therefore *cannot represent* the mechanism by which immersion
+achieves full natriuresis at one fifth the ANP.
+
+Building a mechanistic ANP-concentration pathway into that structure would be precision
+the surrounding model cannot support: a sourced concentration driving an effect whose
+true gain varies with a variable the model does not have. The Decision above is revised
+accordingly - a **lumped volume-keyed natriuretic term**, algebraic in `V_blood`, whose
+magnitude is calibrated against volume-expansion natriuresis *as a whole* (the 40-50%
+figure) rather than against a plasma concentration.
+
+That is a weaker claim than the original ADR made, and it is the one the evidence
+supports.
+
+### Still blocking Accepted
+
+1. **The k primary immersion papers behind Epstein's 2.5-3x** must be pooled properly
+   under `pooling.md`. Until then there is no number, only a magnitude.
+2. **The central-to-total blood volume mapping** is unsourced.
+3. The **2.2x residual** from the first sourcing outcome is untouched by any of this.
+   Nothing found here should be used to re-attribute it. If anything, Rabelink's
+   delivery effect is a *candidate* for part of that residual - IPE forces through
+   `FR_effective` what the real kidney also does by changing delivery - but that is a
+   hypothesis, not a finding, and it needs its own work.
