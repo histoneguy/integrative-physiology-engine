@@ -132,6 +132,23 @@ usually reported beat-to-beat. They are disqualified here for a **different and
 additional** reason - a 10 s averaging window fixes the sampling objection and does not
 fix this one. Do not read one exclusion as covering the other.
 
+### The admissible list partly violates the exclusion above - recorded, not resolved
+
+Caught by `validation/sv_filling_prereg.md`, written against this record before any
+paper was opened. A 15% withdrawal of total blood volume provokes sympathetic
+activation, which raises contractility. **The named example fails the stated rule**, and
+so will most volume perturbations large enough to produce a measurable SV signal. The
+exclusion is not relaxed to accommodate it. The consequences fixed there are:
+sympathetic state recorded per study as an uncontrolled covariate; sources reporting
+autonomic blockade or contractility indices preferred, declared before seeing which
+exist; and a parameter pooled from confounded studies tiered **E2 with a stated
+confound**, never written up as measured at constant contractility.
+
+This is structurally the same defect as the filtered-load term sitting inside `G_pn` - a
+quantity the model does not represent, hiding inside a number meant to represent
+something else. Recording it does not remove it. It makes it visible the next time the
+residual is audited.
+
 ## Consequences
 
 **Ledger.** Adds approximately two sourced rows (resting HR nominal; the SV-filling
@@ -187,8 +204,12 @@ construction cannot be evidence that its own structure is right.
 ## What is NOT decided
 
 - **The functional form of `SV(V_blood)`** - linear about the operating point, saturating,
-  or otherwise. Pre-register before extracting, per the standing rule.
-- **The numeric value of resting HR.** Not in the ledger and not asserted here.
+  or otherwise. Pre-registered in `validation/sv_filling_prereg.md`, which also fixes the
+  pooling rule, the endpoint, and the condition that the result may not be selected for
+  agreement with `G_vr` or with the 4.934 mmHg salt step. Nothing has been extracted.
+- **The numeric value of resting HR.** Not in the ledger and not asserted here. Q1 of the
+  same pre-registration; note the open question there about whether the nominal
+  population matches `CV.HEMATOCRIT.NOMINAL`, which is recorded as adult male.
 - **HR as a state.** Requires chronotropic baroreflex, which requires its own evidence
   and would extend ADR 0009's effector set.
 - **Contractility**, in any form.
