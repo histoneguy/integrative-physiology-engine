@@ -13,10 +13,19 @@ STRUCTURE SOURCES
   Aldosterone vs angiotensin: COMPRESSIVE power law, log-log slope 0.54,
     derived from a 5-fold aldosterone rise against a 20-fold PRA rise
     (PMID 773568). A linear gain would be wrong.
-  Escape: Yokota N et al. PMID 2966064 -- urinary sodium fell 27% acutely
-    under fludrocortisone at 180 mEq/day intake and returned to baseline in
-    an average of 5 days. Corroborated by Knox FG et al. Kidney Int 1980 and
-    Wang XY et al. J Clin Invest 2001;108:215 (10.1172/JCI10366).
+  Escape: Kelly TM, Nelson DH. Endocr Res 1987;13(4):363-383, PMID 2966064,
+    doi 10.3109/07435808709035463 -- 0.3-0.5 mg/day fludrocortisone for 18
+    days in four healthy males at 180 +/- 2 mEq/day sodium intake; urinary
+    sodium fell 27% acutely and returned to baseline in an average of 5 days,
+    with plasma ANP rising 91.7 +/- 13.0 -> 179.7 +/- 39.2 pg/ml.
+    ATTRIBUTION CORRECTED 2026-08-21. This citation previously read "Yokota N
+    et al." That was wrong. The DATA were right -- every number above checks
+    out against the abstract -- but the authors were not, and the error
+    travelled from a chat session into this docstring and on into ADR 0010
+    without anyone opening the paper. The ledger validates that a citation
+    exists, not that it points at the right one. n=4, single study.
+    Corroborated by Knox FG et al. Kidney Int 1980 and Wang XY et al.
+    J Clin Invest 2001;108:215 (10.1172/JCI10366).
   Effector lag: renin-limited, not angiotensin-limited. Plasma AngII half-
     life is under 1 min (PMC6050881); renin release is measurable within 60 s
     and maximal near 5 min (Hofbauer KG et al. Pflugers Arch 1975).
