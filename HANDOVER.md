@@ -3,7 +3,8 @@
 **Date:** 2026-08-22
 **Repo:** https://github.com/histoneguy/integrative-physiology-engine (public)
 **Owner:** Eric George (`histoneguy`)
-**`main`:** `7cd629f` — 153/153, all five provenance gates green
+**`main`:** `31a1154`, plus the squash of PR #14 (`work/adr0010-blockers`) — 153/153,
+all five provenance gates green, verified locally before the merge
 
 **Supersedes** the handover dated 2026-08-19 and the uncommitted `HANDOVER2.md`
 (session 2, which lived only in a downloads folder). Everything still live from both is
@@ -79,7 +80,10 @@ round to are different facts, and only the second is debt. This is now encoded i
 
 ## 2. STATE
 
-`main` at `7cd629f`. **153/153 in ~40 s.** All five gates exit 0.
+`main` at `31a1154` + PR #14. **153/153 in ~40 s warm** (2m01 cold). All five gates exit
+0. **No source file changed on 2026-08-22** — that day's work is an ADR addendum, a
+pre-registration, two reproducible analysis scripts (`validation/immersion_pool.py`,
+`validation/residual_audit.py`) and this file. No component, no ledger row, no parameter.
 
 ### The model — 3 states after `structural_simplify` (`V_icf`, `V_ecf`, `Na_ecf`)
 
@@ -141,21 +145,53 @@ not.** They are separately identified — `G_pn` by the pressure shift, `G_vr` b
 volume. That is *better* news for estimating them: a joint posterior is tractable rather
 than degenerate.
 
-**`RN.PRESSURE_NATRIURESIS.SLOPE` stays at 20.0.** Mizelle 1993 puts it 3.68× too steep,
-but adopting that alone forces 15.7 mmHg across a 102 mEq/day range — salt-sensitive
-hypertensive behaviour, not normotensive. Read the ledger note on that row before
-touching it.
+**`RN.PRESSURE_NATRIURESIS.SLOPE` stays at 20.0.** The comparison against Mizelle 1993
+puts it 3.68× too steep, and adopting *that* alone forces 15.7 mmHg across a 102 mEq/day
+range — salt-sensitive hypertensive behaviour, not normotensive. The decision to stay at
+20.0 is unaffected by §3.2; what §3.2 removes is the precision of the 3.68×, not its
+sign. Read the ledger note on that row before touching it.
 
-### 3.2 The 3.68× gap is only ~40% explained by the missing ANP path
+### 3.2 The gap is real, but neither the 3.68× nor the 2.2× is a measured quantity
 
 De Nicola 1997 puts ANP at ~40% of the natriuretic increment. If ANP carries 40% and IPE
-lacks it, the pressure term inflates by 1/(1−0.4) = **1.67×**. Observed inflation is
-**3.68×**. On a log basis ANP accounts for about 0.39 of it.
+lacks it, the pressure term inflates by 1/(1−0.4) = **1.67×**. Set against a nominal
+observed inflation of 3.68×, ANP accounts for about 0.39 of it on a log basis, leaving
+~2.2×.
 
-**A residual factor of ~2.2× is unexplained.** Candidates, none investigated: NCC
-downregulation; renal sympathetic nerves; the dog→human filtered-load scaling; the
-original calibration target; or the distal-delivery effect in §5. **Do not attribute the
-residual to any of them without doing the work.**
+**Both figures were audited on 2026-08-22 and neither survives as a point value.**
+Reproduce with `python validation/residual_audit.py`; the full write-up is ADR 0010 §6.
+The audit reproduces the published 3.6843 and 2.2106 exactly — confirming the derivation
+was correctly identified before it was taken apart — and then finds three things:
+
+- **The dog GFR is uncited and the ratio is exactly proportional to it.** The comparison
+  is between *fractions of filtered load*, so the dog's filtered load enters as
+  `GFR_dog × C_Na`. `validation/pn_data.py` supplies `DOG_GFR = 115.0` L/day from a
+  parenthetical, with no citation and none in Mizelle. `inflation = 0.03204 × GFR_dog`.
+  115 L/day is 3.99 mL/min/kg — the **top** of the conventional canine range. Across
+  2.5–4.5 mL/min/kg the residual is **1.38–2.49×**.
+- **Mizelle's own three points disagree by 2.28×.** The adopted slope (1.734
+  mmol/day/mmHg per kidney) is one of three defensible readings; the low and high
+  segments give 1.280 and 2.917, i.e. residuals of **3.00×, 2.21× and 1.31×**.
+  `pn_data.py` already flags the segment disagreement as suggestive of steepening rather
+  than evidence of it — the ADR then quoted one reading as if that were settled.
+- **A bias never in the comparison at all, pointing the wrong way.** Mizelle's
+  low-pressure kidney had ~8% lower GFR (verified against PMID 8319986). IPE's `G_pn` is
+  a slope at *constant* filtered load, so the model's parameter carries no filtered-load
+  term while Mizelle's raw between-kidney `dUNaV/dRPP` does. Removing it moves the
+  inflation **3.68× → 4.32×** and the residual **2.21× → 2.59×**.
+
+Propagated, **the residual is 0.82–3.37×**. That is not a claim it is zero: holding the
+adopted slope, erasing it needs a canine GFR of 52 L/day (1.81 mL/min/kg), below the
+plausible range. Something is probably there; its size is not known.
+
+**Do not quote 2.2× as a quantity.** The five candidates — NCC downregulation, renal
+sympathetic nerves, the dog→human scaling, the original calibration target, the
+distal-delivery effect in §5 — remain uninvestigated, and the standing rule against
+attributing the residual to any of them without doing the work still holds. But two of
+the five are partly *this* arithmetic rather than physiology, and the cheapest next move
+is none of them: **open Mizelle 1993 in full text**, read the reported body weights and
+absolute GFRs, and recover enough of the dataset to settle the segment question. That
+collapses the first finding outright. Only then is a mechanistic hunt worth starting.
 
 ---
 
@@ -182,11 +218,13 @@ is narrow and deliberately does not rescue it.
 
 ---
 
-## 5. ADR 0010 (ANP) — PROPOSED, THREE NAMED BLOCKERS
+## 5. ADR 0010 (ANP) — STILL PROPOSED, AND FURTHER AWAY THAN IT WAS
 
-Sourced across two pre-registered searches (`validation/anp_sourcing_prereg.md`,
-`validation/anp_input_link_prereg.md`). Both fixed pooling rules and stop conditions
-before any paper was read. Keep doing this.
+Sourced across three pre-registered searches (`validation/anp_sourcing_prereg.md`,
+`validation/anp_input_link_prereg.md`, `validation/immersion_pooling_prereg.md`). All
+three fixed pooling rules and stop conditions before any paper was read. Keep doing this;
+the third one falsified the component's input side, which no amount of care *after*
+extraction would have caught.
 
 **The design got simpler as evidence came in.** Rabelink 1989 matched a 3 h head-out
 immersion against a natriuresis-matched ANP infusion: immersion gave *equal* natriuresis
@@ -199,20 +237,86 @@ mechanistic plasma-ANP pathway would be precision the surrounding model cannot s
 The component is therefore a **lumped volume-keyed natriuretic term, algebraic in
 `V_blood`, with no ANP state**. Model stays at 3 states.
 
-Blocking Accepted:
+### 5.1 The sensed variable is falsified — 2026-08-22
 
-1. **Pool the k primary immersion papers** behind Epstein's 2.5–3× range. `pooling.md`
-   prohibits `range-midpoint`, so there is currently a magnitude, not a number.
-2. **Source the central→total blood volume mapping.** Immersion translocates volume
-   centrally; `V_blood` is total. Nothing found maps one to the other.
-3. **The 2.2× residual** (§3.2).
+`V_blood` does not grade the immersion response. Three human studies, none previously
+read into this repo, and the first is decisive because it is a graded-dose design that
+holds the candidate variable roughly constant while the response varies:
+
+- **Norsk 1986** (PMID 3745047), 10 males, graded immersion to umbilicus / chest / neck:
+  plasma volume rose to about the same level at **all three depths** while diuresis and
+  natriuresis increased **gradually with depth**.
+- **Greenleaf 1980** (PMID 6986349): 8 h immersion produced a **12.6% plasma volume
+  loss** while the natriuresis was sustained — total volume moving the wrong way.
+- **Simanonok 1993** (PMID 8431188): subjects bled **15% of total blood volume** before
+  immersion still excreted **+120%** above dry control (+200% unbled).
+
+**The mapping this ADR needed is contradicted, not merely missing.** And it exposes an
+inference the record was already resting on: Epstein 1986 and Vesely 1989 both describe
+immersion as a stimulus identical to 2 L of saline, which was read here as licensing a
+**total** volume change of 2 L. It is a claim about the **central** stimulus. That step
+was the unsourced scaling all along — the hunt for a central→total mapping was looking
+for a source for something the literature refutes.
+
+**What this does and does not kill.** Head-out immersion is precisely a redistribution at
+approximately constant total volume, and IPE is cycle-averaged with one blood volume and
+no central compartment, so the paradigm and the model variable are mismatched and no
+further immersion sourcing fixes it. But the perturbation the model actually runs — a
+sodium intake step — is *not* a redistribution; it genuinely moves ECF and total blood
+volume. A `V_blood`-keyed term is not refuted. **Calibrating it against immersion is.**
+The right anchor is the one already sourced: De Nicola 1997 (PMID 9071713), ANP at ~40%
+of the natriuretic increment for a 35→235 mEq/day **diet shift** — the same kind of
+total-volume perturbation as the model's own salt step.
+
+### 5.2 Blocker list, revised
+
+1. ~~Pool the k primary immersion papers behind Epstein's 2.5–3× range.~~ **Done, and it
+   audits the review against itself.** k = 7, `pooled-geometric` **2.191×** n-weighted;
+   **6 of 7 primaries fall below the review's 2.5–3×**, which its own sources do not
+   support. Reproduce with `python validation/immersion_pool.py`. But the pooled figure
+   is the plasma ANP fold-rise, and under the revised design **no state carries it and
+   nothing multiplies it** — closing this blocker does not advance the component. The
+   pre-registration caught that before extraction and pulled the natriuretic response
+   (Q2) from the same papers as well.
+2. ~~Source the central→total blood volume mapping.~~ **Closed as falsified, not as
+   sourced** — §5.1.
+3. **The 2.2× residual** — audited, not re-attributed; §3.2. Now a specific, cheap,
+   bounded task instead of an open-ended mechanistic search. Separately: Rabelink's
+   distal-delivery effect and Norsk's redistribution finding are the *same* mechanism
+   from two directions, which strengthens it as a **candidate** for part of whatever
+   residual survives. It is a hypothesis and needs its own pre-registration.
+4. **NEW — re-source the input link against a total-volume paradigm.** Sodium loading or
+   isotonic saline expansion with quantified volume and measured natriuresis, not
+   immersion. Until then the component's input has no defensible calibration. Ogihara
+   1987 is a lead (1 L saline over 1 h, hANP 246±12 → 305±30 pg/ml, 1.24×), k = 1, sets
+   nothing.
+
+Q2 — the natriuretic response, the quantity the component actually needs — **stopped at
+k = 2** against a pre-registered k ≥ 3. Epstein 1987 gives 2.076, Anderson 1986 gives
+2.00; Pendergast 1987 reports *fractional* excretion and `pooling.md` forbids pooling
+across incompatible measurement methods. Their geometric mean is 2.038 and it is written
+here **only so nobody re-derives it later and mistakes it for an adopted value**.
+
+**The component is further from being written than it was that morning, and that is the
+correct direction** — the previous position rested on a mapping that is contradicted
+rather than absent. Falsifiable test 1 (pressure-clamped natriuresis, Seeliger's
+experiment in silico) is untouched and remains the discriminator the day a component
+exists. No `Anp` component, no ledger row, no parameter.
 
 ---
 
 ## 6. NEXT, IN ORDER
 
-1. **The three ADR 0010 blockers.** Then ANP lands under a live gate.
-2. **The 2.2× residual.** The sharpest open question in the model.
+Reordered on 2026-08-22. ANP has moved **back**, not forward: its input side needs
+re-sourcing from scratch against a different paradigm (§5.2 item 4), which is a search,
+while the residual has become a short bounded task.
+
+1. **Open Mizelle 1993 (PMID 8319986) in full text.** Body weights and absolute GFRs
+   collapse the uncited `DOG_GFR`; enough of the dataset settles the segment
+   disagreement. Cheapest move in the model and it sharpens the sharpest open question.
+   §3.2.
+2. **Re-source the ANP input link against a total-volume paradigm.** Pre-register first.
+   Sodium loading or isotonic saline expansion, not immersion. §5.2 item 4.
 3. **RAAS.** `incoming/Raas.jl` is written and parked. It attaches to `FR_effective` via
    `fr_aldo` and to TPR via `tpr_mod`. It deliberately carries **no escape term** —
    escape emerges from pressure natriuresis alone at the current slope (99% of intake by
@@ -271,8 +375,10 @@ presented as if it had been.** Mostly solved by §0. The rest are still live.
   are the bottleneck. They are not.
 - **The `Provenance` job name.** See §2.
 - **ADR 0004 default off.** See §4.
-- **Pre-register before extracting.** Three times now it has caught something the
-  extraction itself would have missed.
+- **Pre-register before extracting.** Four times now it has caught something the
+  extraction itself would have missed. The fourth is the largest: it noticed the blocker
+  list was asking for a quantity the component does not use, and it carried a declared
+  stop condition that turned a missing source into a falsified one (§5.1).
 
 ---
 
@@ -294,6 +400,15 @@ presented as if it had been.** Mostly solved by §0. The rest are still live.
 - **`pooling.md` requires `pooling_rule`, `n_studies` and `pooling_notes` columns** that
   `ledger/parameters.csv` does not yet have. The policy is binding; the schema has not
   caught up. Rules have been recorded in prose in the meantime.
+- **`DOG_GFR = 115.0` in `validation/pn_data.py` is uncited** — a parenthetical, not a
+  measurement, and the whole 3.68× is exactly proportional to it. §3.2.
+- **The 2.2× residual has been withdrawn as a quantity**, replaced by 0.82–3.37×. Any
+  text still stating it as a point value is stale. §3.2.
+- **ADR 0010's input link has no defensible calibration** and immersion cannot supply
+  one. §5.
+- **`validation/immersion_pool.py` and `validation/residual_audit.py` are analysis
+  scripts, not gates.** Nothing runs them in CI and nothing depends on their output. They
+  exist so both results are reproducible rather than asserted.
 
 ---
 
