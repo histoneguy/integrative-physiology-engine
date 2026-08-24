@@ -261,26 +261,56 @@ adopting both would have the cardiovascular rows describing two different popula
 and it is `single-source`, large but one cohort. The second is a decision for the owner,
 not something extraction can settle.
 
-### Q2 removal: k = 3 on abstracts, which is not enough to record
+### Q2 removal: k = 2 admissible, and stop condition 1 fires
 
-| Study | PMID | n | removed | dSV | slope | technique |
-|---|---|---|---|---|---|---|
-| Leonetti 2004, *Clin Auton Res* 14(3):176-81 | 15241646 | 12 | 375 mL | 13.3 mL | 35.47 mL/L | Modelflow, finger pressure |
-| Gybel-Brask 2020, *Transfus Med* 30(6):450-455 | 33030269 | 21 | 900 mL | 12 mL | 13.33 mL/L | not stated in abstract |
-| Epstein 2021, *Shock* 55(2):230-235 | 32769818 | 60 | 450 mL | 5.07 mL | 11.27 mL/L | whole-body bio-impedance |
+Revised 2026-08-24 after the owner supplied full text for two of the three. Both clear
+inclusion criterion 4 outright and **the endpoint objection raised on 2026-08-22 was
+wrong for both**.
+
+| Study | PMID | n | removed | dSV | slope | posture | technique |
+|---|---|---|---|---|---|---|---|
+| Gybel-Brask 2020, *Transfus Med* 30(6):450-455 | 33030269 | 21 | 900 mL | 12 mL (sham-corrected) | 13.33 mL/L | ~30 deg, 30 min rest | finger volume-clamp (COtrek/Nexfin) |
+| Epstein 2021, *Shock* 55(2):230-235 | 32769818 | 60 | 450 mL | 4.57 mL (control-corrected) | 10.16 mL/L | supine | whole-body bio-impedance (NiCaS) |
+| Leonetti 2004, *Clin Auton Res* 14(3):176-81 | 15241646 | 12 | 375 mL | 13.3 mL | 35.47 mL/L | **unverified** | finger volume-clamp (Finometer) |
 
 Blood removed **is** a measured total blood volume change, 1:1, which is why this
-direction survives inclusion criterion 2. The spread is 3.15x and **it tracks technique**
-- the single Modelflow study is three times the two impedance studies. Prereg section 3
-declared in advance that a spread tracking technique is reported and not averaged.
+direction survives inclusion criterion 2. Gybel-Brask measures within 5 min of each
+donation; Epstein measures immediately before and after against a 20-subject control
+re-measured at 10 min without phlebotomy. Epstein's figure here is **control-corrected**
+from Table 2 (donors 90.37 -> 85.32 mL, controls 98.91 -> 98.43); the abstract's 5.07 mL
+is not.
 
-**No parameter is recorded**, because inclusion criterion 4 requires reported elapsed
-time between perturbation and measurement and that is unverified for all three; posture
-is unverified for two of three; and two of the three measure *during* withdrawal rather
-than at the settled endpoint section 5 fixed. Gybel-Brask is the strongest design - sham-
-phlebotomised crossover control - and it also reports **no SV change at 450 mL with a
-change only at 900 mL**, a threshold signal a single slope through the operating point
-cannot carry.
+**Leonetti remains unobtained and is not admissible**, so `k = 2` against a
+pre-registered `k >= 3`. **Stop condition 1 fires. No parameter is recorded and `G_vr`
+stays.** The n-weighted value over the two admissible studies is 10.979 mL/L, written
+here only so nobody re-derives it later and mistakes it for an adopted value.
+
+Note the pattern: Q2 of `immersion_pooling_prereg.md` also stopped at `k = 2`. Twice now
+the admissible human literature has come up one study short of the threshold this repo
+set for itself. That is a fact about the threshold meeting the literature, and it is
+worth watching rather than adjusting.
+
+Gybel-Brask additionally reports **no SV change at 450 mL with a change only at 900 mL**,
+a threshold signal a single slope through the operating point cannot carry.
+
+#### Correction: the spread does not track technique
+
+The 2026-08-22 version of this section said the spread tracked measurement technique -
+one Modelflow study against two impedance studies - and invoked prereg section 3's
+report-do-not-average clause on that basis. **That was wrong.** Gybel-Brask measures
+stroke volume by finger volume-clamp pulse wave analysis, the same family as Leonetti's
+Finometer; the thoracic electrical impedance in its title is for **central blood volume**,
+not stroke volume. The two finger-pulse-contour studies therefore disagree with *each
+other* by 2.7x, and the one genuine impedance study sits at the bottom alongside the
+lower of them. Section 3's clause was invoked in error.
+
+#### What does hold across all three: the baselines do not match the model
+
+Baseline stroke volumes are 94, 118 and 90 mL against the `SV0 = 78.74 mL` this record
+derives, and baseline cardiac outputs are 6.9 and 6.03 L/min against the model's 5.0.
+A slope can be right while the offset is wrong, so this does not invalidate the slopes -
+but these devices are not reading the resting operating point the ledger describes, and
+that is recorded rather than reconciled.
 
 ### Q2 addition: k = 0, and this is the finding
 
@@ -310,10 +340,12 @@ evidence-backed rather than precautionary.
 
 ### One result favours this ADR, and it is the one tension 0.1 asked about
 
-This record keeps `HR` a parameter rather than a state. Leonetti reports heart rate **not
-significantly changed** across a 375 mL withdrawal (75.2 -> 78.3 bpm), and Weiner reports
-**no change** in heart rate across a 2.1 L bolus. Holding HR fixed while `V_blood` moves
-is not obviously wrong at these perturbation sizes.
+This record keeps `HR` a parameter rather than a state. Epstein tabulates heart rate
+**67 (13) -> 68 (11) bpm** across a 450 mL withdrawal with controls flat at 56 (7);
+Leonetti reports heart rate **not significantly changed** across 375 mL (75.2 -> 78.3);
+and Weiner reports **no change** across a 2.1 L bolus. Three independent studies, two
+directions of perturbation, three different measurement techniques. Holding HR fixed
+while `V_blood` moves is defensible at these perturbation sizes.
 
 ### The comparison against `G_vr`, made once, after pooling
 
@@ -330,9 +362,11 @@ mistakes it for a result.
 
 ### What is needed next
 
-1. **Full text of the three removal papers**, for elapsed time, posture, SV technique in
-   Gybel-Brask, and whether Leonetti's dispersion is SD or SEM. Without these, criterion 4
-   is unmet and k is effectively 0, not 3.
+1. **Leonetti 2004 full text** (`10.1007/s10286-004-0191-1`) - posture, whether its
+   dispersion is SD or SEM, and whether the post-withdrawal value is a settled endpoint
+   or a during-withdrawal regression. It is the single item between `k = 2` and the
+   `k >= 3` that would let a parameter be recorded. Everything else in the removal
+   direction is now resolved.
 2. **A total-volume addition paradigm that measures volume**, or the acceptance that
    there is none. Autologous blood reinfusion is the obvious candidate and was not
    reached in this search.

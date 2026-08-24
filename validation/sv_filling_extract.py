@@ -72,47 +72,62 @@ Q1_POSTURE = "supine"
 
 Q2_REMOVAL = [
     dict(
-        label="Leonetti 2004", pmid="15241646",
+        label="Leonetti 2004", pmid="15241646", admissible=False,
         citation=("Leonetti P, Audat F, Girard A, Laude D, Lefrere F, Elghozi JL. "
                   "Clin Auton Res 2004;14(3):176-81"),
-        doi=None, n=12, ml_removed=375.0, dsv_ml=13.3,
-        technique="Modelflow from finger arterial pressure (Finometer/Beatscope)",
-        posture="NOT STATED IN ABSTRACT",
+        doi="10.1007/s10286-004-0191-1", n=12, ml_removed=375.0, dsv_ml=13.3,
+        baseline_sv=94.0,
+        technique="finger volume-clamp pulse contour (Finometer/Beatscope Modelflow)",
+        posture="STILL UNVERIFIED",
         hr_response="75.2+/-3.7 -> 78.3+/-4.5 bpm, NOT significant",
-        unresolved=("Dispersion is '+/- 5.2' on a mean of 94.0 at n=12 - almost "
-                    "certainly SEM, not SD, but UNVERIFIED. Subjects are "
-                    "asymptomatic hereditary haemochromatosis on regular "
-                    "phlebotomy, with normal cardiac function stated; permitted by "
-                    "inclusion criterion 1 as a recorded disease state. Elapsed "
-                    "time is the 6.4 min withdrawal itself - continuous beat-to-beat "
-                    "regression, not a settled post-perturbation endpoint."),
+        unresolved=("STILL NOT ADMISSIBLE - full text not obtained. Dispersion "
+                    "'+/- 5.2' on a mean of 94.0 at n=12 is almost certainly SEM "
+                    "rather than SD, but UNVERIFIED. Posture UNVERIFIED. Elapsed "
+                    "time appears to be the 6.4 min withdrawal itself - a continuous "
+                    "beat-to-beat regression rather than the settled endpoint "
+                    "section 5 fixed - but that too is UNVERIFIED. Subjects are "
+                    "asymptomatic hereditary haemochromatosis on regular phlebotomy "
+                    "with normal cardiac function stated, permitted by inclusion "
+                    "criterion 1 as a recorded disease state."),
     ),
     dict(
-        label="Gybel-Brask 2020", pmid="33030269",
+        label="Gybel-Brask 2020", pmid="33030269", admissible=True,
         citation=("Gybel-Brask M, Nordsborg NB, Goetze JP, Johansson PI, "
                   "Secher NH, Bejder J. Transfus Med 2020;30(6):450-455"),
         doi="10.1111/tme.12727", n=21, ml_removed=900.0, dsv_ml=12.0,
-        technique="NOT STATED IN ABSTRACT",
-        posture="semi-recumbent",
-        hr_response="monitored; values NOT IN ABSTRACT",
-        unresolved=("Strongest design in the set: randomised, single-blinded, "
-                    "crossover, SHAM-PHLEBOTOMISED control, so the -12 mL is "
-                    "already sham-corrected. Healthy men only. SD 12 mL on a mean "
-                    "of 12 mL. SV UNCHANGED at 450 mL and changed only at 900 mL - "
-                    "a threshold or nonlinearity signal that a single slope through "
-                    "the operating point cannot carry. Elapsed time NOT VERIFIED."),
+        baseline_sv=118.0,
+        technique=("finger volume-clamp pulse wave analysis (COtrek/Nexfin, BMeye), "
+                   "60 s average, reference sensor at the 4th intercostal space"),
+        posture="bed with upper body elevated ~30 deg, after 30 min of rest",
+        hr_response="baseline 58 +/- 8 bpm (SD); post-donation values not tabulated",
+        unresolved=("RESOLVED FROM FULL TEXT. Elapsed time: measurements taken "
+                    "WITHIN 5 MINUTES of completing each donation, each donation "
+                    "lasting 5-8 min, the two separated by ~5 min. Criterion 4 met. "
+                    "Baseline mean +/- SD: HR 58 +/- 8, SV 118 +/- 11 mL, CO 6.9 "
+                    "+/- 1.1 L/min. Strongest design in the set - randomised, "
+                    "single-blinded, SHAM-PHLEBOTOMISED crossover at least 4 months "
+                    "apart - so -12 mL is already sham-corrected. Total blood volume "
+                    "separately measured by CO rebreathing in 9 of the 21. SV "
+                    "UNCHANGED at 450 mL, changed only at 900 mL: a threshold signal "
+                    "a single slope through the operating point cannot carry."),
     ),
     dict(
-        label="Epstein 2021", pmid="32769818",
+        label="Epstein 2021", pmid="32769818", admissible=True,
         citation=("Epstein D, Guinzburg A, Sharon S, Kiso S, Glick Y, Marcusohn E, "
                   "Glass YD, Miller A, Minha S, Furer A. Shock 2021;55(2):230-235"),
-        doi="10.1097/SHK.0000000000001621", n=60, ml_removed=450.0, dsv_ml=5.07,
-        technique="whole-body bio-impedance",
-        posture="NOT STATED IN ABSTRACT",
-        hr_response="reported only inside shock index (HR/SBP); HR NOT IN ABSTRACT",
-        unresolved=("Largest n and carries a 20-subject non-donating control arm. "
-                    "95% CI 3.21-6.92 mL. Measured DURING phlebotomy, so the same "
-                    "endpoint objection as Leonetti. Elapsed time NOT VERIFIED."),
+        doi="10.1097/SHK.0000000000001621", n=60, ml_removed=450.0, dsv_ml=4.57,
+        baseline_sv=90.37,
+        technique="whole-body bio-impedance (NiCaS), wrist and contralateral ankle",
+        posture="supine",
+        hr_response="67 (13) -> 68 (11) bpm; control 56 (7) -> 56 (7). Unchanged.",
+        unresolved=("RESOLVED FROM FULL TEXT. Elapsed time: immediately before to "
+                    "immediately after a 450 mL donation over ~10 min; the 20-subject "
+                    "control was re-measured after 10 min without phlebotomy. "
+                    "Criterion 4 met. Table 2, mean (SD): donors SV 90.37 (16.57) -> "
+                    "85.32 (17.5), i.e. -5.05 mL; controls 98.91 (11.74) -> 98.43 "
+                    "(11.48), i.e. -0.48 mL. CONTROL-CORRECTED dSV = 4.57 mL, which "
+                    "is what is used here - the abstract's 5.07 mL is uncorrected. "
+                    "Healthy young adult male military donors."),
     ),
 ]
 
@@ -252,32 +267,54 @@ def main() -> None:
     for s in Q2_REMOVAL:
         slope = s["dsv_ml"] / (s["ml_removed"] / 1000.0)      # mL SV per L blood
         rows.append((s, slope))
-        print(f"  {s['label']:20s} PMID {s['pmid']}  n={s['n']}")
+        flag = "ADMISSIBLE" if s["admissible"] else "NOT ADMISSIBLE"
+        print(f"  {s['label']:20s} PMID {s['pmid']}  n={s['n']}   [{flag}]")
         print(f"    {s['citation']}")
-        if s["doi"]:
-            print(f"    doi:{s['doi']}")
+        print(f"    doi:{s['doi']}")
         print(f"    -{s['ml_removed']:.0f} mL blood  ->  dSV = -{s['dsv_ml']:.2f} mL"
               f"   slope = {slope:.2f} mL/L")
+        print(f"    baseline SV: {s['baseline_sv']:.2f} mL")
         print(f"    technique : {s['technique']}")
         print(f"    posture   : {s['posture']}")
         print(f"    HR        : {s['hr_response']}")
-        print(f"    UNRESOLVED: {s['unresolved']}")
+        print(f"    NOTES     : {s['unresolved']}")
         print()
 
-    slopes = [sl for _, sl in rows]
-    lo, hi = min(slopes), max(slopes)
-    n_tot = sum(s["n"] for s, _ in rows)
-    n_w = sum(s["n"] * sl for s, sl in rows) / n_tot
-    unw = sum(slopes) / len(slopes)
-    print(f"  k = {len(rows)}, total n = {n_tot}")
-    print(f"  spread {lo:.2f} to {hi:.2f} mL/L  =  {hi / lo:.2f}x")
-    print(f"  n-weighted   {n_w:.3f} mL/L   (pooling.md rule 3)")
-    print(f"  unweighted   {unw:.3f} mL/L   (pooling.md rule 5)")
+    adm = [(s, sl) for s, sl in rows if s["admissible"]]
+    slopes = [sl for _, sl in adm]
+    n_tot = sum(s["n"] for s, _ in adm)
+    n_w = sum(s["n"] * sl for s, sl in adm) / n_tot
+
+    print("  *** STOP CONDITION 1 FIRES ***")
+    print(f"  k_admissible = {len(adm)}. The pre-registration requires k >= 3")
+    print("  independent studies before any parameter is recorded for Q2. Two")
+    print("  studies do not become a pooled value; they become single-source twice")
+    print("  over, and pooling.md forbids dressing that as consensus.")
+    print("  NO LEDGER PARAMETER IS RECORDED. G_vr stays in place.")
     print()
-    print("  THE SPREAD TRACKS TECHNIQUE. The one Modelflow study is 3x the two")
-    print("  impedance studies. Prereg section 3 declared in advance that if the")
-    print("  spread tracked technique it is REPORTED, NOT AVERAGED. k=3 is also the")
-    print("  bare minimum, so one technique artefact would carry the pooled value.")
+    print(f"  For the record only, so nobody re-derives it and mistakes it for an")
+    print(f"  adopted value: n-weighted over the two admissible studies is")
+    print(f"  {n_w:.3f} mL/L (from {slopes[0]:.2f} and {slopes[1]:.2f}).")
+    print()
+    print("  CORRECTION TO THE 2026-08-22 WRITE-UP. It said the spread tracked")
+    print("  measurement technique - one Modelflow study against two impedance")
+    print("  studies. THAT WAS WRONG. Gybel-Brask measures SV by finger volume-clamp")
+    print("  pulse wave analysis (COtrek/Nexfin), the same family as Leonetti's")
+    print("  Finometer; the thoracic impedance in its title is for CENTRAL BLOOD")
+    print("  VOLUME, not stroke volume. So the two finger-pulse-contour studies")
+    print("  disagree with EACH OTHER by 2.7x, and the one true impedance study sits")
+    print("  at the bottom with the lower of them. The spread does NOT track")
+    print("  technique, and prereg section 3's clause was invoked in error.")
+    print()
+    print("  WHAT DOES SHOW UP ACROSS ALL THREE: every baseline SV is well above the")
+    baselines = " / ".join("%.0f" % s["baseline_sv"] for s, _ in rows)
+    print(f"  operating point this model derives. {baselines} mL against"
+          f" SV0 = {sv0_l * 1000:.1f} mL,")
+    print("  and Gybel-Brask's baseline CO of 6.9 L/min and Epstein's 6.03 L/min")
+    print("  against the model's 5.0 L/min. A slope can be right while the offset is")
+    print("  wrong, so this does not invalidate the slopes - but these devices are")
+    print("  not reading the same resting operating point the ledger describes, and")
+    print("  that is recorded rather than reconciled.")
     print()
 
     print("=" * w)
@@ -304,10 +341,11 @@ def main() -> None:
     print()
     for s, sl in rows:
         implied = beats_per_day * sl / 1000.0
+        tag = "" if s["admissible"] else "   [not admissible]"
         print(f"    {s['label']:20s} {implied:8.1f} (L/day)/L"
-              f"   incumbent/implied = {G_VR_INCUMBENT / implied:.3f}")
+              f"   incumbent/implied = {G_VR_INCUMBENT / implied:.3f}{tag}")
     implied_nw = beats_per_day * n_w / 1000.0
-    print(f"    {'n-weighted':20s} {implied_nw:8.1f} (L/day)/L"
+    print(f"    {'k=2, not recorded':20s} {implied_nw:8.1f} (L/day)/L"
           f"   incumbent/implied = {G_VR_INCUMBENT / implied_nw:.3f}")
     print(f"    {'INCUMBENT G_vr':20s} {G_VR_INCUMBENT:8.1f} (L/day)/L  CALIBRATED")
     print()
@@ -325,12 +363,21 @@ def main() -> None:
     print("      NOT YET A LEDGER ROW - the sex-composition mismatch against")
     print("      CV.HEMATOCRIT.NOMINAL is a decision, not an extraction.")
     print()
-    print("  Q2 REMOVAL  k = 3 on abstracts, WHICH IS NOT ENOUGH TO RECORD.")
-    print("      Inclusion criterion 4 requires reported elapsed time between")
-    print("      perturbation and measurement. It is UNVERIFIED for all three, and")
-    print("      posture is unverified for two of three. Two of the three measure")
-    print("      DURING withdrawal rather than at a settled endpoint, which is not")
-    print("      the endpoint section 5 fixed. NO PARAMETER IS RECORDED.")
+    print("  Q2 REMOVAL  k_admissible = 2. STOP CONDITION 1 FIRES.")
+    print("      Full text of Gybel-Brask and Epstein was read on 2026-08-24 and")
+    print("      both clear inclusion criterion 4 outright - Gybel-Brask measures")
+    print("      within 5 min of each donation, Epstein immediately before and after")
+    print("      against a 10-min time-matched control. Posture is semi-recumbent at")
+    print("      ~30 deg and supine respectively. Neither is a during-withdrawal")
+    print("      regression, so the endpoint objection was wrong for both.")
+    print("      Leonetti is the only one left unresolved, and k stalls at 2.")
+    print("      NO PARAMETER IS RECORDED. G_vr stays.")
+    print()
+    print("      Note the pattern: Q2 of the immersion pre-registration also stopped")
+    print("      at k = 2. Twice now the admissible human literature has come up one")
+    print("      study short of the threshold this repo set for itself. That is a")
+    print("      fact about the threshold meeting the literature, not about either")
+    print("      search, and it is worth watching rather than adjusting.")
     print()
     print("  Q2 ADDITION  BLOCKED, k = 0, and this is the finding of the search.")
     print("      Saline studies report INFUSED volume, not measured blood volume.")
@@ -349,25 +396,25 @@ def main() -> None:
     print("      perturbation. Prereg section 0.2 refused to relax that exclusion")
     print("      before knowing this; the refusal was right.")
     print()
-    print("  FULL-TEXT ACCESS, ATTEMPTED 2026-08-22 AND BLOCKED. Recorded so the")
-    print("      next session does not repeat the search:")
-    print("      - All three are subscription-only in Europe PMC (isOpenAccess=N,")
-    print("        inPMC=N). None has a PMC or repository deposit.")
-    print("      - Leonetti: a public PDF copy exists but its text layer is a")
-    print("        subset-encoded font, no PDF library is installed on this machine,")
-    print("        and the browser treats the URL as a download rather than a page.")
-    print("      - Gybel-Brask: no accepted manuscript at the University of")
-    print("        Copenhagen portal, but that portal INDEPENDENTLY CONFIRMS the")
-    print("        bibliographic record - authors, 2020, 30(6):450-455, the DOI.")
-    print("        The citation is now verified against two records, not one.")
-    print("      - Epstein: subscription only, no deposit found.")
+    print("  FULL-TEXT ACCESS. All three are subscription-only in Europe PMC")
+    print("      (isOpenAccess=N, inPMC=N) with no PMC or repository deposit.")
+    print("      - Gybel-Brask and Epstein: full text supplied 2026-08-24 and read.")
+    print("        Both now satisfy inclusion criterion 4. The Copenhagen research")
+    print("        portal also independently confirms the Gybel-Brask record, so")
+    print("        that citation is verified against two records.")
+    print("      - Leonetti: STILL NOT OBTAINED. A public PDF copy exists but its")
+    print("        text layer is a subset-encoded font, and the browser treats the")
+    print("        URL as a download rather than a page. This is the single item")
+    print("        standing between k=2 and k=3.")
     print()
-    print("  ONE RESULT FAVOURS ADR 0011 AND SHOULD BE SAID PLAINLY. The ADR keeps")
-    print("      HR a parameter rather than a state. Leonetti reports HR NOT")
-    print("      significantly changed across a 375 mL withdrawal, and Weiner")
-    print("      reports NO CHANGE in HR across a 2.1 L bolus. Holding HR fixed")
-    print("      while V_blood moves is not obviously wrong for perturbations of")
-    print("      this size, which is what tension 0.1 of the prereg asked.")
+    print("  ONE RESULT FAVOURS ADR 0011 AND IS NOW THREE-DEEP. The ADR keeps HR a")
+    print("      parameter rather than a state. Epstein tabulates HR 67 (13) -> 68")
+    print("      (11) bpm across a 450 mL withdrawal with controls flat at 56 (7);")
+    print("      Leonetti reports HR not significantly changed across 375 mL; Weiner")
+    print("      reports no change across a 2.1 L bolus. Three independent studies,")
+    print("      two directions, measured three different ways. Holding HR fixed")
+    print("      while V_blood moves is defensible at these perturbation sizes,")
+    print("      which is what tension 0.1 of the pre-registration asked.")
 
 
 if __name__ == "__main__":
