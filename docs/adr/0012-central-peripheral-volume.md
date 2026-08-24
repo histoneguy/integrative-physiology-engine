@@ -207,8 +207,9 @@ quasi-static split does not.
 ### Land it in two stages, and the first stage is numerically inert
 
 **Stage 1: `f_central` is a constant, set to its supine value for the baseline
-protocol.** Every result of *that* protocol is unchanged bit for bit, because a constant
-input scaling is absorbed by reparameterising the filling function.
+protocol.** Every result of *that* protocol is unchanged to within solver reassociation,
+because a constant input scaling is absorbed by reparameterising the filling function.
+See falsifiable test 3 for why "unchanged" is not "bit-identical".
 
 Note that this is **not** a linearity assumption, and it survives the concavity
 requirement above: a constant input scale can be absorbed by reparameterisation for any
@@ -279,10 +280,39 @@ with a central compartment still cannot, then the natriuretic pathway is not key
 central volume either, and ADR 0010's premise fails on its input side for a second and
 final time.
 
-**3. Stage 1 must be bit-identical.** If fixing `f_central` at supine changes any
-simulated result, the partition has been implemented as something other than a rescaling
-and the implementation is wrong. This is a cheap and total check, and it should be run
-before stage 2 touches anything.
+**3. Stage 1 must not change behaviour.** If introducing `f_central` moves any simulated
+result by more than solver reassociation, the partition has been implemented as something
+other than a rescaling and the implementation is wrong. Run before stage 2 touches
+anything.
+
+> **CORRECTED 2026-08-24 ON FIRST IMPLEMENTATION. This test originally demanded
+> BIT-IDENTITY, and that was an unachievable bar rather than a strict one.** Adding two
+> equations changes what `structural_simplify` emits, so the generated code orders its
+> arithmetic differently, the adaptive solver takes fractionally different steps, and the
+> trajectories separate in the last few digits - even though the algebra is exactly
+> equivalent. Measured on introduction: **2.1e-15 to 2.2e-14 relative on the three MAP
+> levels, 3.5e-13 on the shift**, which is 1.7e-12 mmHg.
+>
+> The achievable and still-meaningful bar is agreement to **1e-9 relative**, which is what
+> `test/runtests.jl` now asserts against the values recorded before the partition existed.
+> That is eight orders of magnitude tighter than any physiological claim this model makes
+> and still robust to a solver version bump.
+>
+> Recorded rather than quietly relaxed, because a test whose bar is lowered after it fails
+> is worth nothing unless the reason is written down. The reason here is that the original
+> bar was wrong on numerical grounds, not that the result was disappointing.
+>
+> **Both directions were then verified by perturbation rather than argued.** A 10% error in
+> `G_vc` moves the MAP levels by 8e-5 relative - caught by this assertion easily, and
+> caught independently by `check_closure.py`, so a broken partition fails two gates. And
+> moving `f_central` from 0.25 to 0.30 with both derived values recomputed moves the shift
+> by 3.7e-10 relative, confirming the partition is inert to the placeholder's value.
+>
+> One thing that finding exposed, and it was not anticipated: **0.25 is a power of two and
+> therefore exact in binary**, which is why it deviates by 3.5e-13 where 0.30 deviates by
+> 3.7e-10 - a thousandfold difference arising purely from representability. The margin
+> between 3.7e-10 and the 1e-9 bar is only about 3x. When `f_central` is replaced by a
+> sourced value at stage 2, this tolerance must be re-measured, not assumed to hold.
 
 ## Consequences
 

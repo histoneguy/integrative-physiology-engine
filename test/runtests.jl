@@ -122,6 +122,51 @@ using SciMLBase
         @test isapprox(v.map_shift_mmHg, 4.934; atol = 0.05)
     end
 
+    @testset "ADR 0012 stage 1 is a change of variables, not of behaviour" begin
+        # The central/peripheral partition is introduced with f_central CONSTANT,
+        # and VC0 = f_c*BV0 and G_vc = G_vr/f_c derived from it, so that
+        #   G_vc*(V_central - VC0) == G_vr*(V_blood - BV0)
+        # algebraically for any f_c. The whole claim of stage 1 is that the model
+        # therefore does not move. This pins that against the values recorded
+        # before the partition existed.
+        #
+        # THE ADR ORIGINALLY DEMANDED BIT-IDENTITY AND THAT WAS THE WRONG BAR.
+        # Adding two equations changes what structural_simplify emits, so the
+        # generated code orders its arithmetic differently, the adaptive solver
+        # takes fractionally different steps, and the trajectories separate at the
+        # last few digits. Measured on introduction: 2.1e-15 to 2.2e-14 relative
+        # on the three MAP levels and 3.5e-13 on the shift, which is a difference
+        # of 1.7e-12 mmHg. That is reassociation, not physiology.
+        #
+        # 1e-9 is the bar: eight orders of magnitude tighter than any physiological
+        # claim, and still loose enough not to fail on a solver version bump. If it
+        # EVER fails, the partition has stopped being a change of variables - check
+        # G_vc*f_c == G_vr in the ledger first, which check_closure.py also asserts.
+        #
+        # BOTH DIRECTIONS WERE VERIFIED BY PERTURBATION ON 2026-08-24 RATHER THAN
+        # ASSUMED.
+        #   sensitive: G_vc wrong by 10% moves the MAP levels 8e-5 relative, which
+        #     this assertion catches easily. check_closure.py catches it too, so a
+        #     broken partition fails two independent gates.
+        #   inert:     f_central 0.25 -> 0.30 with both derived values recomputed
+        #     moves the shift 3.7e-10 relative. Still passes, but note the margin to
+        #     the 1e-9 bar is only about 3x. That is because 0.25 is a power of two
+        #     and exact in binary; a non-power-of-two f_central is equally correct
+        #     algebraically and about a thousand times noisier. If f_central is ever
+        #     changed to a sourced value, EXPECT to re-measure this tolerance rather
+        #     than assume 1e-9 still holds.
+        pre_partition = (205.0 => 93.00003751695675,
+                         154.0 => 90.53356850133511,
+                         103.0 => 88.06587129611133)
+        r = salt_step()
+        for (lvl, expected) in pre_partition
+            got = only(l.MAP_final for l in r.levels if l.level == lvl)
+            @test isapprox(got, expected; rtol = 1e-9)
+        end
+        @test isapprox(check_pressure_natriuresis(r).map_shift_mmHg,
+                       4.934166220845427; rtol = 1e-9)
+    end
+
     @testset "modulators are off by default" begin
         # ADR 0006/0007: E3 and out-of-order components must not be on by default.
         sys = build_model()
