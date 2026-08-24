@@ -12,6 +12,14 @@ sourcing task and the paradigm that may be used for it, and stops there.
 > build order is satisfied: `CO = HR x SV` is better established than the linearisation
 > it displaces, not less.
 
+> **SUPERSEDED ON ITS INPUT SIDE BY ADR 0012, 2026-08-24.** The Q3 finding below - that
+> the stroke volume response to a fixed blood loss orders monotonically with posture -
+> is the falsification signature this record's own section 8 declared in advance, and it
+> says `V_blood` is the wrong filling variable. ADR 0012 introduces a central/peripheral
+> partition and the decision becomes `SV ~ f(V_central)`. **The `CO = HR x SV`
+> decomposition below is untouched and survives intact**; only the input variable
+> changes. Read the two together. Nothing here is retracted.
+
 ## Context
 
 `Cardiovascular.jl` collapses the entire volume-to-flow limb into one line:
