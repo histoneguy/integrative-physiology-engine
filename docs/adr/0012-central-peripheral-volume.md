@@ -2,10 +2,18 @@
 
 **Status:** Proposed
 **Date:** 2026-08-24
-**Evidence tier:** MIXED - E1 for the existence of a central/peripheral blood volume
-distribution and for its shift with posture and with water immersion. **NO TIER IS
-CLAIMED for the quantitative partition fraction**, which this ADR does not assert. It
-creates the variable and names the sourcing task.
+**Evidence tier:** MIXED - E1, E2, E3. See the table and the correction below.
+
+- **E1** - the existence of a central/peripheral blood volume distribution, its shift with
+  posture, and the concavity of the Frank-Starling relation.
+- **E2** - total intravascular volume does not grade the immersion natriuresis. Three
+  independent human groups, converging by different designs.
+- **E3** - the graded-depth result specifically, which is Norsk 1986 alone, n=10, single
+  group. Retained as `STRUCTURE ONLY - no numeric value` under the ADR 0006 exemption.
+- **NO TIER CLAIMED** for the quantitative partition fraction, which this ADR does not
+  assert.
+
+An earlier draft tiered the E3 row **E1**, and the ADR gate passed *because* of that.
 
 > This is a refinement of the SPINE, not a modulator. ADR 0006 build order is satisfied:
 > the existence of a central compartment is better established than the single lumped
@@ -48,12 +56,30 @@ separate open question.
 | Claim | Tier | Source | Species |
 |---|---|---|---|
 | Blood volume is distributed between an intrathoracic central compartment and a peripheral one | E1 | standard cardiovascular physiology | human |
-| Posture shifts volume between them, peripherally when upright | E1 | standard; and the ADR 0011 posture gradient is consistent with it | human |
-| Water immersion translocates volume centrally at approximately constant total volume | E1 | Norsk 1986 PMID 3745047, graded to three depths; Greenleaf 1980 PMID 6986349 | human |
-| Natriuresis grades with immersion depth while plasma volume does not | E1 | Norsk 1986 | human |
-| The natriuretic response largely survives a 15% reduction in total blood volume | E2 | Simanonok 1993 PMID 8431188, n=6 | human |
+| Posture shifts volume between them, peripherally when upright | E1 | standard cardiovascular physiology | human |
+| Water immersion translocates volume centrally | E1 | standard; the premise of the whole immersion literature | human |
+| **The Frank-Starling relation is CONCAVE over the physiological filling range** | E1 | standard cardiovascular physiology; textbook | human, mammalian |
 | Cardiopulmonary receptors and atrial ANP release respond to CENTRAL filling | E1 | standard; the basis of ADR 0010's own premise | human, mammalian |
+| Total intravascular volume does not grade the immersion natriuresis | **E2** | three independent groups, converging by different designs: Norsk 1986 PMID 3745047; Greenleaf 1980 PMID 6986349 (plasma volume falls 12.6% while natriuresis persists); Simanonok 1993 PMID 8431188 (response largely survives a 15% bleed) | human |
+| Natriuresis grades specifically with immersion DEPTH at constant plasma volume | **E3** | Norsk 1986 alone, n=10, single group, graded to three depths | human |
 | The numeric central fraction at any posture | **NOT ASSERTED** | requires a pre-registered search | - |
+
+The E3 row contributes no state, component or numeric value to this record - it
+motivates having a partition at all, and the partition takes no number from it. It is
+retained as **`STRUCTURE ONLY - no numeric value`** under the ADR 0006 exemption, claimed
+here deliberately rather than avoided by mislabelling.
+
+### Correction, 2026-08-24: this table was wrong on its first draft
+
+The row now tiered E3 was originally tiered **E1**, and `check_adrs.py` returned OK
+*because* of that. ADR 0006 defines E1 as multiply replicated in humans and textbook
+level, and puts single-group small-n at E3 with a default-off or structure-only
+requirement. Norsk 1986 is one group of ten.
+
+The gate did not fail to catch an error; it was **told** the wrong tier and had nothing
+to check against. This is the same failure the ADR 0006 amendment was written about - a
+tier line that protects a weakness instead of exposing it - occurring in the record that
+cites that amendment. Recorded rather than quietly fixed.
 
 ## The two arguments that decide this
 
@@ -84,6 +110,22 @@ structural change converts work already done and currently unusable back into us
 evidence.** ADR 0010's blocker 4 - re-source the input link against a total-volume
 paradigm - is probably the wrong instruction and should be revisited once this lands.
 
+**Narrowed, 2026-08-24.** An earlier draft of this section overclaimed, and did so by
+failing to propagate its own correction. Having just separated Rabelink 1989 (a *nephron*
+partition) from Norsk (a *vascular* one), it then treated the vascular fix as though it
+unlocked immersion outright. It does not. There were two obstacles and this removes one:
+
+- **The sensed-variable obstacle is removed.** Immersion perturbs central volume, and
+  central volume is now a model variable with a receptor behind it.
+- **The nephron-partition obstacle remains.** Rabelink showed volume expansion raises
+  distal sodium delivery independently of ANP, and IPE still has no proximal/distal
+  split. That is untouched here.
+
+So immersion becomes usable for calibrating a **lumped** natriuretic term keyed to
+`V_central`. It does not restore a mechanistic ANP pathway, and the term stays lumped for
+exactly the reason ADR 0010 already gave. That is still a large gain - ADR 0010's revised
+design is a lumped term - but it is one obstacle cleared, not two.
+
 ### What central/peripheral is NOT
 
 It is **not** the stressed/unstressed distinction, and it does not substitute for it.
@@ -105,15 +147,53 @@ Add an **algebraic** partition of blood volume:
     V_central    ~ f_central * V_blood
     V_peripheral ~ V_blood - V_central
 
-`f_central` is a parameter, not a state. **The model stays at 3 states.**
+`f_central` is a parameter, constant in time within a run. **The model stays at 3
+states.**
 
 Filling-dependent quantities key off `V_central` rather than `V_blood`. Concretely this
 revises ADR 0011's Decision on its input side only:
 
-    SV ~ <filling function of V_central>        # was V_blood
+    SV ~ g(V_central)        # was a filling function of V_blood
 
 **ADR 0011's `CO = HR x SV` decomposition is untouched and survives intact.** Only the
 input variable changes. That record stays Proposed and carries a pointer to this one.
+
+### `g` must be CONCAVE, and this is part of the decision, not a detail left downstream
+
+Added 2026-08-24 after the first draft was checked against the evidence it claims to
+explain. **The partition alone predicts the posture gradient backwards.**
+
+    dSV/dV_blood  =  g'(V_central) * f_central
+
+Upright posture pools volume peripherally, so `f_seat < f_sup`. With `g` **linear**,
+`g'` is constant and the ratio of the two slopes is just
+
+    (dSV/dV_blood)_seated / (dSV/dV_blood)_supine  =  f_seat / f_sup  <  1
+
+The model would predict the seated response is **smaller** than supine. ADR 0011 measured
+it as **2.76x larger** (28.00 against 10.16 mL/L). The sign is wrong, for any partition
+fractions whatever - no choice of `f_central` rescues it.
+
+What resolves it is that the seated operating point sits at **lower** central filling, so
+on a concave curve its **local slope is steeper**. The requirement is
+
+    g'(V_central,seated) / g'(V_central,supine)  >=  2.76 * (f_sup / f_seat)
+
+Since `f_sup / f_seat > 1`, **the required curvature ratio is at least 2.76 and grows
+with the size of the postural shift.**
+
+Two things follow, and both are load-bearing.
+
+**Concavity is not an extra assumption.** The Frank-Starling relation is concave over the
+physiological range, and that is E1 textbook physiology. The partition and the curvature
+are each independently well established; it is their *combination* that predicts the
+gradient, and neither does it alone.
+
+**This constrains ADR 0011.** That record explicitly left the functional form of the
+filling relation undecided - "linear about the operating point, saturating, or
+otherwise". This decides it: **linear is excluded.** The thing to source is a curve with
+a specified shape over a specified range, not a slope, which is materially harder and
+changes what `sv_filling_prereg.md` should ask for on its next revision.
 
 ### Why algebraic rather than a state
 
@@ -126,14 +206,26 @@ quasi-static split does not.
 
 ### Land it in two stages, and the first stage is numerically inert
 
-**Stage 1: `f_central` fixed at its supine value.** Every simulated result is unchanged,
-bit for bit, because a fixed fraction of `V_blood` is just a rescaling absorbed by the
-filling function. What changes is that **the variable exists**, so ANP and the
-cardiopulmonary receptors have something to key off, and immersion becomes expressible as
-a change in `f_central` at fixed `V_blood`.
+**Stage 1: `f_central` is a constant, set to its supine value for the baseline
+protocol.** Every result of *that* protocol is unchanged bit for bit, because a constant
+input scaling is absorbed by reparameterising the filling function.
 
-**Stage 2: `f_central` responds to posture**, and later to venous tone when RAAS lands.
-That is a modulator and belongs after the spine, per directive 1.3.
+Note that this is **not** a linearity assumption, and it survives the concavity
+requirement above: a constant input scale can be absorbed by reparameterisation for any
+functional family closed under input scaling - linear, power-law, saturating alike.
+
+**Constant in time is not the same as fixed at one value forever, and the distinction is
+load-bearing.** An earlier draft ran the two together and then claimed stage 1 makes
+immersion expressible. It does not, if `f_central` never varies - immersion *is* a change
+in `f_central`. What stage 1 gives is a parameter that can be **set per protocol**: an
+immersion run is the same model with a different constant `f_central` at unchanged
+`V_blood`, which is exactly the perturbation IPE previously could not express. That works
+because immersion is a sustained state and this model is cycle-averaged, so no dynamic
+translocation is needed to represent it.
+
+**Stage 2: `f_central` responds to posture** as a model input rather than a per-protocol
+constant, and later to venous tone when RAAS lands. That is a modulator and belongs after
+the spine, per directive 1.3.
 
 Stage 1 is the whole structural commitment. Stage 2 is where the numbers come in. Nothing
 in stage 1 requires a sourced value, which is why it can land before the partition
@@ -160,15 +252,26 @@ posture. The last of these is the ADR 0011 removal set, which is already extract
 
 ## Falsifiable test
 
-**1. The posture gradient must fall out, not be fitted in.** With `f_central` set from
-posture, the same absolute blood loss must cost more stroke volume seated than supine, in
-the observed direction and of roughly the observed size. If a central partition cannot
-produce a monotonic gradient in the right direction without tuning, the partition is not
-the mechanism the gradient is evidence for.
+**1. The curvature required to reproduce the posture gradient must be one the
+Frank-Starling literature supports.** Rewritten 2026-08-24; the first version of this
+test asked whether the gradient "falls out", and the answer is that it cannot, because
+the partition alone predicts it backwards. The real test is quantitative:
 
-Note this is a genuine prediction rather than a restatement: the gradient was measured
-across three studies that had nothing to do with this model, and the direction is fixed
-by the physiology, not by a free parameter.
+    required  g'(V_central,seated) / g'(V_central,supine)  >=  2.76 * (f_sup / f_seat)
+
+Source `f_sup` and `f_seat`, source the curvature of the filling relation, and check.
+**If the curvature the gradient demands exceeds what the Frank-Starling literature
+supports at these operating points, the partition is not the explanation for the
+gradient** and the gradient needs a different one - venous tone, population differences
+between the three studies, or the gradient not being real at all.
+
+This is a test that can fail, which the first version was not. It is also a genuine
+prediction rather than a restatement: the gradient was measured across three studies that
+had nothing to do with this model, and both the direction and the required magnitude are
+fixed before any parameter here is chosen.
+
+Note the dependency this creates. Test 1 now needs `f_central` at two postures **and** a
+sourced curvature, none of which exist. It is a stage-2 test and cannot be run at stage 1.
 
 **2. Immersion must produce natriuresis at constant total blood volume.** The current
 model cannot do this at all - it has no way to express the perturbation. If the model
