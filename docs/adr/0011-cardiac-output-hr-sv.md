@@ -261,37 +261,84 @@ adopting both would have the cardiovascular rows describing two different popula
 and it is `single-source`, large but one cohort. The second is a decision for the owner,
 not something extraction can settle.
 
-### Q2 removal: k = 2 admissible, and stop condition 1 fires
+### Q2 removal: k = 3 admissible, and the count was never the real problem
 
-Revised 2026-08-24 after the owner supplied full text for two of the three. Both clear
-inclusion criterion 4 outright and **the endpoint objection raised on 2026-08-22 was
-wrong for both**.
+Revised 2026-08-24 after the owner supplied all three full texts. All three clear
+inclusion criterion 4, and **the endpoint objection raised on 2026-08-22 was wrong for
+all three**.
 
-| Study | PMID | n | removed | dSV | slope | posture | technique |
-|---|---|---|---|---|---|---|---|
-| Gybel-Brask 2020, *Transfus Med* 30(6):450-455 | 33030269 | 21 | 900 mL | 12 mL (sham-corrected) | 13.33 mL/L | ~30 deg, 30 min rest | finger volume-clamp (COtrek/Nexfin) |
-| Epstein 2021, *Shock* 55(2):230-235 | 32769818 | 60 | 450 mL | 4.57 mL (control-corrected) | 10.16 mL/L | supine | whole-body bio-impedance (NiCaS) |
-| Leonetti 2004, *Clin Auton Res* 14(3):176-81 | 15241646 | 12 | 375 mL | 13.3 mL | 35.47 mL/L | **unverified** | finger volume-clamp (Finometer) |
+| Study | PMID | n | posture | removed | dSV | slope |
+|---|---|---|---|---|---|---|
+| Leonetti 2004, *Clin Auton Res* 14(3):176-81 | 15241646 | 12 | **seated** | 375 mL | 10.5 mL | 28.00 mL/L |
+| Gybel-Brask 2020, *Transfus Med* 30(6):450-455 | 33030269 | 21 | **~30 deg**, 30 min rest | 900 mL | 12 mL (sham-corrected) | 13.33 mL/L |
+| Epstein 2021, *Shock* 55(2):230-235 | 32769818 | 60 | **supine** | 450 mL | 4.57 mL (control-corrected) | 10.16 mL/L |
 
 Blood removed **is** a measured total blood volume change, 1:1, which is why this
 direction survives inclusion criterion 2. Gybel-Brask measures within 5 min of each
-donation; Epstein measures immediately before and after against a 20-subject control
-re-measured at 10 min without phlebotomy. Epstein's figure here is **control-corrected**
-from Table 2 (donors 90.37 -> 85.32 mL, controls 98.91 -> 98.43); the abstract's 5.07 mL
-is not.
+donation; Epstein immediately before and after against a 20-subject control re-measured
+at 10 min without phlebotomy; Leonetti over the last 60 s of a recovery period ending
+5 min after completion.
 
-**Leonetti remains unobtained and is not admissible**, so `k = 2` against a
-pre-registered `k >= 3`. **Stop condition 1 fires. No parameter is recorded and `G_vr`
-stays.** The n-weighted value over the two admissible studies is 10.979 mL/L, written
-here only so nobody re-derives it later and mistakes it for an adopted value.
-
-Note the pattern: Q2 of `immersion_pooling_prereg.md` also stopped at `k = 2`. Twice now
-the admissible human literature has come up one study short of the threshold this repo
-set for itself. That is a fact about the threshold meeting the literature, and it is
-worth watching rather than adjusting.
+**The pre-registered endpoint rule moved Leonetti's number by 21%.** Its Table 1 reports
+three periods - pre 94.0, end-of-phlebotomy 80.7, post-phlebotomy 83.5 mL - and the
+abstract quotes 94.0 -> 80.7. But 80.7 is the last minute *of* the withdrawal, and
+section 5 fixed the endpoint as the settled post-perturbation value. **dSV = 10.5 mL, not
+13.3.** Dispersion is confirmed **SEM**, so SD = 5.2·√12 = 18.0 mL. A confound is
+recorded: total peripheral resistance rose 0.73 -> 0.79 significantly, so the vascular
+state did not hold still, and per pre-registration section 0.2 this is **E2 with a stated
+confound**, not E1.
 
 Gybel-Brask additionally reports **no SV change at 450 mL with a change only at 900 mL**,
 a threshold signal a single slope through the operating point cannot carry.
+
+#### Correction: the spread does not track technique
+
+The 2026-08-22 version said the spread tracked measurement technique and invoked prereg
+section 3's report-do-not-average clause on that basis. **That was wrong.** Gybel-Brask
+measures stroke volume by finger volume-clamp pulse wave analysis, the same family as
+Leonetti's Finometer; the thoracic electrical impedance in its title is for **central
+blood volume**. Section 3's clause was invoked in error. What actually orders the spread
+is below.
+
+### Q3: the falsification signature fires
+
+Section 8 of the pre-registration, written before any paper was opened, said that if
+comparable total-volume changes at different posture gave materially different SV
+changes, then total blood volume is not what sets filling.
+
+**The three slopes order monotonically with uprightness: 28.00 seated, 13.33 at 30
+degrees, 10.16 supine. Seated is 2.8x supine.** The direction is the physiologically
+expected one - the more upright, the more of the blood volume sits in dependent veins,
+the less of it is stressed, and the more a fixed absolute loss costs in filling.
+
+**The two obvious alternatives do not order it.** Technique: Leonetti and Gybel-Brask use
+the *same* finger volume-clamp family and still differ 2.1x, while the one bio-impedance
+study sits closest to Gybel-Brask rather than furthest. Dose: the slope is already per
+litre, and if saturation drove it the 900 mL study would give the smallest per-litre
+value - it gives the middle one.
+
+**What it does not rule out, stated because three studies cannot settle it.** Population
+and age differ across the three - haemochromatosis patients on regular phlebotomy,
+healthy men, young military donors - and posture is perfectly confounded with study. This
+is a **between-study gradient, not a controlled comparison. Suggestive, not decisive.**
+
+**The consequence is not a count problem.** `k = 3` is met. But pooling these three would
+average across the very variable Q3 nominates as the effect modifier and produce a
+correctly-sourced number describing no posture in particular - worse than an unsourced
+one because it looks finished. That is the same failure the immersion pre-registration
+caught on the ANP fold-rise. **No parameter is recorded. `G_vr` stays.**
+
+**If Q3 holds, this ADR is wrong on its input side in exactly the way ADR 0010 was:** the
+model variable is total blood volume, the physiological variable is the *stressed*
+fraction, and posture moves one without moving the other. The stressed/unstressed split
+would not be optional - which is precisely what this record's own falsifiable test said
+its likely failure mode would be. It has arrived during sourcing, at the cost of a
+search, rather than after a component was built.
+
+**The confirmatory study is already identified.** van de Velde 2018 (PMID 29016531)
+crosses a 500 mL phlebotomy with active standing **in the same subjects** - the
+within-subject posture-by-volume design this gradient needs. It was flagged as a Q3 lead
+on 2026-08-22, before any of this was visible.
 
 #### Correction: the spread does not track technique
 
@@ -362,14 +409,25 @@ mistakes it for a result.
 
 ### What is needed next
 
-1. **Leonetti 2004 full text** (`10.1007/s10286-004-0191-1`) - posture, whether its
-   dispersion is SD or SEM, and whether the post-withdrawal value is a settled endpoint
-   or a during-withdrawal regression. It is the single item between `k = 2` and the
-   `k >= 3` that would let a parameter be recorded. Everything else in the removal
-   direction is now resolved.
-2. **A total-volume addition paradigm that measures volume**, or the acceptance that
-   there is none. Autologous blood reinfusion is the obvious candidate and was not
-   reached in this search.
-3. **Q3 remains open.** van de Velde 2018 (PMID 29016531) crosses a 500 mL phlebotomy
-   with active standing in the same subjects, which is the posture-versus-total-volume
-   comparison Q3 asks for. It is a lead, not a result.
+All three removal full texts have been read. The removal direction is resolved as far as
+this pre-registration can take it, and what remains is no longer a sourcing backlog.
+
+1. **Settle Q3, because everything else waits on it.** van de Velde 2018
+   (PMID 29016531) crosses a 500 mL phlebotomy with active standing **in the same
+   subjects** and is the within-subject test the between-study gradient needs. It needs
+   its own pre-registration - the question is now specific enough to state in advance,
+   which the 2026-08-22 version was not. If posture governs, no single `SV(V_blood)`
+   slope is recordable at any `k` and this ADR needs its Decision revised before more
+   searching, not after.
+2. **A total-volume addition paradigm that measures volume**, or the recorded acceptance
+   that there is none. Autologous blood reinfusion is the obvious candidate and was not
+   reached. Note it is only worth running **after** Q3 - if posture governs, an addition
+   study at an unrecorded posture adds nothing.
+3. **Decide the Q1 population question.** The Fenland cohort is 53% women while
+   `CV.HEMATOCRIT.NOMINAL` is adult male nominal. That is a decision, not an extraction,
+   and it is the only thing standing between Q1 and a ledger row.
+4. **The baseline mismatch is unexplained and is not part of Q3.** Baseline stroke
+   volumes of 94, 118 and 90 mL against the 78.74 mL this record derives, and cardiac
+   outputs of 6.9 and 6.03 against 5.0 L/min, are a separate discrepancy between what
+   these devices read and what the ledger's operating point asserts. It does not
+   invalidate a slope. It has not been investigated.

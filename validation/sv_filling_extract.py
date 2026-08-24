@@ -72,30 +72,41 @@ Q1_POSTURE = "supine"
 
 Q2_REMOVAL = [
     dict(
-        label="Leonetti 2004", pmid="15241646", admissible=False,
+        label="Leonetti 2004", pmid="15241646", admissible=True,
         citation=("Leonetti P, Audat F, Girard A, Laude D, Lefrere F, Elghozi JL. "
                   "Clin Auton Res 2004;14(3):176-81"),
-        doi="10.1007/s10286-004-0191-1", n=12, ml_removed=375.0, dsv_ml=13.3,
-        baseline_sv=94.0,
+        doi="10.1007/s10286-004-0191-1", n=12, ml_removed=375.0, dsv_ml=10.5,
+        baseline_sv=94.0, upright_deg=90,
         technique="finger volume-clamp pulse contour (Finometer/Beatscope Modelflow)",
-        posture="STILL UNVERIFIED",
-        hr_response="75.2+/-3.7 -> 78.3+/-4.5 bpm, NOT significant",
-        unresolved=("STILL NOT ADMISSIBLE - full text not obtained. Dispersion "
-                    "'+/- 5.2' on a mean of 94.0 at n=12 is almost certainly SEM "
-                    "rather than SD, but UNVERIFIED. Posture UNVERIFIED. Elapsed "
-                    "time appears to be the 6.4 min withdrawal itself - a continuous "
-                    "beat-to-beat regression rather than the settled endpoint "
-                    "section 5 fixed - but that too is UNVERIFIED. Subjects are "
-                    "asymptomatic hereditary haemochromatosis on regular phlebotomy "
-                    "with normal cardiac function stated, permitted by inclusion "
-                    "criterion 1 as a recorded disease state."),
+        posture="SEATED",
+        hr_response="75.2 -> 78.3 -> 75.9 bpm, NOT significant at any timepoint",
+        unresolved=("RESOLVED FROM FULL TEXT 2026-08-24, and the endpoint rule "
+                    "CHANGES THE EXTRACTED VALUE. Table 1 reports three periods, "
+                    "each averaged over the LAST 60 s of that period: pre 94.0, "
+                    "end-of-phlebotomy 80.7, post-phlebotomy 83.5 mL. The abstract "
+                    "quotes 94.0 -> 80.7, but 80.7 is the last minute OF the "
+                    "withdrawal, not a post-perturbation value. Section 5 fixed the "
+                    "endpoint as the earliest post-perturbation timepoint the source "
+                    "reports as settled, which is the 83.5 mL recovery period ending "
+                    "5 min after completion - and the paper states the change was "
+                    "'still present 4-5 min after completion'. dSV = 10.5 mL, NOT "
+                    "13.3. Dispersion is SEM, confirmed twice ('Data are expressed "
+                    "as the mean +/- SEM' and the table note), so SD = 5.2*sqrt(12) "
+                    "= 18.0 mL. Volume withdrawn 375 +/- 14 mL over 6.4 +/- 0.3 min "
+                    "= 8.8 +/- 0.3% of an ESTIMATED total blood volume (height/weight "
+                    "formula, mean 4274 mL) - the withdrawn volume is measured, the "
+                    "denominator is not. CONFOUND, RECORDED: total peripheral "
+                    "resistance rose 0.73 -> 0.79 significantly, so the vascular "
+                    "state did not hold still; the paper also cites Fortrat finding "
+                    "raised catecholamines after donation without an HR change. Per "
+                    "prereg 0.2 this is E2 with a stated confound, not E1."),
     ),
     dict(
         label="Gybel-Brask 2020", pmid="33030269", admissible=True,
         citation=("Gybel-Brask M, Nordsborg NB, Goetze JP, Johansson PI, "
                   "Secher NH, Bejder J. Transfus Med 2020;30(6):450-455"),
         doi="10.1111/tme.12727", n=21, ml_removed=900.0, dsv_ml=12.0,
-        baseline_sv=118.0,
+        baseline_sv=118.0, upright_deg=30,
         technique=("finger volume-clamp pulse wave analysis (COtrek/Nexfin, BMeye), "
                    "60 s average, reference sensor at the 4th intercostal space"),
         posture="bed with upper body elevated ~30 deg, after 30 min of rest",
@@ -116,7 +127,7 @@ Q2_REMOVAL = [
         citation=("Epstein D, Guinzburg A, Sharon S, Kiso S, Glick Y, Marcusohn E, "
                   "Glass YD, Miller A, Minha S, Furer A. Shock 2021;55(2):230-235"),
         doi="10.1097/SHK.0000000000001621", n=60, ml_removed=450.0, dsv_ml=4.57,
-        baseline_sv=90.37,
+        baseline_sv=90.37, upright_deg=0,
         technique="whole-body bio-impedance (NiCaS), wrist and contralateral ankle",
         posture="supine",
         hr_response="67 (13) -> 68 (11) bpm; control 56 (7) -> 56 (7). Unchanged.",
@@ -285,26 +296,63 @@ def main() -> None:
     n_tot = sum(s["n"] for s, _ in adm)
     n_w = sum(s["n"] * sl for s, sl in adm) / n_tot
 
-    print("  *** STOP CONDITION 1 FIRES ***")
-    print(f"  k_admissible = {len(adm)}. The pre-registration requires k >= 3")
-    print("  independent studies before any parameter is recorded for Q2. Two")
-    print("  studies do not become a pooled value; they become single-source twice")
-    print("  over, and pooling.md forbids dressing that as consensus.")
-    print("  NO LEDGER PARAMETER IS RECORDED. G_vr stays in place.")
+    print(f"  k_admissible = {len(adm)}. The count threshold of stop condition 1 is")
+    print("  MET. All three now clear inclusion criterion 4 from full text.")
     print()
-    print(f"  For the record only, so nobody re-derives it and mistakes it for an")
-    print(f"  adopted value: n-weighted over the two admissible studies is")
-    print(f"  {n_w:.3f} mL/L (from {slopes[0]:.2f} and {slopes[1]:.2f}).")
+    print(f"  n-weighted over all three: {n_w:.3f} mL/L. IT IS NOT ADOPTED, for the")
+    print("  reason in the next block, which is a stronger objection than the count.")
     print()
     print("  CORRECTION TO THE 2026-08-22 WRITE-UP. It said the spread tracked")
     print("  measurement technique - one Modelflow study against two impedance")
     print("  studies. THAT WAS WRONG. Gybel-Brask measures SV by finger volume-clamp")
     print("  pulse wave analysis (COtrek/Nexfin), the same family as Leonetti's")
     print("  Finometer; the thoracic impedance in its title is for CENTRAL BLOOD")
-    print("  VOLUME, not stroke volume. So the two finger-pulse-contour studies")
-    print("  disagree with EACH OTHER by 2.7x, and the one true impedance study sits")
-    print("  at the bottom with the lower of them. The spread does NOT track")
-    print("  technique, and prereg section 3's clause was invoked in error.")
+    print("  VOLUME, not stroke volume. Prereg section 3's clause was invoked in")
+    print("  error. The real ordering is in the next block.")
+    print()
+    print("=" * w)
+    print("Q3 - THE FALSIFICATION SIGNATURE FIRES. POSTURE ORDERS THE SLOPE.")
+    print("=" * w)
+    print("  Section 8 of the pre-registration, written before any paper was opened:")
+    print("  if comparable total-volume changes at different posture give materially")
+    print("  different SV changes, total blood volume is not what sets filling.")
+    print()
+    print("    posture              upright   removed    slope")
+    for s, sl in sorted(adm, key=lambda r: -r[0]["upright_deg"]):
+        print(f"    {s['posture'][:26]:28s} {s['upright_deg']:3d} deg"
+              f"   {s['ml_removed']:5.0f} mL   {sl:6.2f} mL/L")
+    print()
+    print("  MONOTONIC IN UPRIGHTNESS, and in the physiologically expected")
+    print("  direction: the more upright, the more of the blood volume sits in")
+    print("  dependent veins, the less of it is stressed, and the more a fixed")
+    print("  absolute loss costs in filling. Seated is 2.8x supine.")
+    print()
+    print("  THE TWO OBVIOUS ALTERNATIVE EXPLANATIONS DO NOT ORDER IT:")
+    print("   - Technique. Leonetti (seated) and Gybel-Brask (30 deg) use the SAME")
+    print("     finger volume-clamp family and still differ 2.1x, while Epstein's")
+    print("     bio-impedance sits closest to Gybel-Brask, not furthest.")
+    print("   - Dose. The slope is already per litre. If saturation were driving it,")
+    print("     the 900 mL study would give the SMALLEST per-litre slope; it gives")
+    print("     the middle one, and the 375 mL and 450 mL studies bracket it.")
+    print()
+    print("  WHAT IT DOES NOT RULE OUT - stated because three studies cannot settle")
+    print("  this: population and age differ (haemochromatosis patients on regular")
+    print("  phlebotomy; healthy men; young military donors), and posture is")
+    print("  perfectly confounded with study. This is a BETWEEN-STUDY gradient, not")
+    print("  a controlled comparison. It is suggestive, not decisive.")
+    print()
+    print("  CONSEQUENCE, AND IT IS NOT A COUNT PROBLEM. Pooling these three would")
+    print("  average across the very variable Q3 nominates as the effect modifier,")
+    print("  and would produce a correctly-sourced number describing no posture in")
+    print("  particular. That is worse than an unsourced one because it looks")
+    print("  finished - the same failure the immersion pre-registration caught.")
+    print("  NO PARAMETER IS RECORDED. G_vr stays in place.")
+    print()
+    print("  THE CONFIRMATORY STUDY IS ALREADY IDENTIFIED. van de Velde 2018")
+    print("  (PMID 29016531) crosses a 500 mL phlebotomy WITH active standing IN THE")
+    print("  SAME SUBJECTS. That is the within-subject posture-by-volume design this")
+    print("  gradient needs, and it was flagged as a Q3 lead on 2026-08-22 before")
+    print("  any of this was visible. It needs its own extraction.")
     print()
     print("  WHAT DOES SHOW UP ACROSS ALL THREE: every baseline SV is well above the")
     baselines = " / ".join("%.0f" % s["baseline_sv"] for s, _ in rows)
@@ -363,21 +411,27 @@ def main() -> None:
     print("      NOT YET A LEDGER ROW - the sex-composition mismatch against")
     print("      CV.HEMATOCRIT.NOMINAL is a decision, not an extraction.")
     print()
-    print("  Q2 REMOVAL  k_admissible = 2. STOP CONDITION 1 FIRES.")
-    print("      Full text of Gybel-Brask and Epstein was read on 2026-08-24 and")
-    print("      both clear inclusion criterion 4 outright - Gybel-Brask measures")
-    print("      within 5 min of each donation, Epstein immediately before and after")
-    print("      against a 10-min time-matched control. Posture is semi-recumbent at")
-    print("      ~30 deg and supine respectively. Neither is a during-withdrawal")
-    print("      regression, so the endpoint objection was wrong for both.")
-    print("      Leonetti is the only one left unresolved, and k stalls at 2.")
-    print("      NO PARAMETER IS RECORDED. G_vr stays.")
+    print("  Q2 REMOVAL  k_admissible = 3. The COUNT threshold is met - all three")
+    print("      clear inclusion criterion 4 from full text. NO PARAMETER IS")
+    print("      RECORDED ANYWAY, and for a better reason than the count: the three")
+    print("      slopes order monotonically with posture, 28.0 seated / 13.3 at")
+    print("      30 deg / 10.2 supine, which is the falsification signature section 8")
+    print("      declared in advance. Pooling them would average across the effect")
+    print("      modifier and produce a number describing no posture at all.")
+    print("      G_vr stays.")
     print()
-    print("      Note the pattern: Q2 of the immersion pre-registration also stopped")
-    print("      at k = 2. Twice now the admissible human literature has come up one")
-    print("      study short of the threshold this repo set for itself. That is a")
-    print("      fact about the threshold meeting the literature, not about either")
-    print("      search, and it is worth watching rather than adjusting.")
+    print("      IF Q3 HOLDS, ADR 0011 IS WRONG ON ITS INPUT SIDE in the same way")
+    print("      ADR 0010 was: the model variable is total blood volume, the")
+    print("      physiological variable is the STRESSED fraction, and posture moves")
+    print("      one without moving the other. The stressed/unstressed split would")
+    print("      not be optional. Three between-study points cannot establish that -")
+    print("      van de Velde 2018 (PMID 29016531) is the within-subject test.")
+    print()
+    print("      Note also that Leonetti's extracted value CHANGED on reading the")
+    print("      full text: 10.5 mL, not the abstract's 13.3, because the abstract")
+    print("      quotes the last minute OF the withdrawal and section 5 fixed the")
+    print("      endpoint as the settled post-perturbation value. The pre-registered")
+    print("      endpoint rule moved the number by 21%.")
     print()
     print("  Q2 ADDITION  BLOCKED, k = 0, and this is the finding of the search.")
     print("      Saline studies report INFUSED volume, not measured blood volume.")
