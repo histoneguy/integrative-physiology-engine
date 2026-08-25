@@ -356,3 +356,97 @@ the model. The bill for this change was mostly paid before it was proposed.
   within-subject test. **This ADR does not depend on that test passing** - Norsk alone
   establishes that redistribution at constant total volume drives a renal response - but
   falsifiable test 1 does.
+
+---
+
+## Q3 outcome, 2026-08-24: confirmed in direction, and it brings a new problem
+
+Extracted under `validation/q3_posture_prereg.md`, committed at `7d97d65` **before the
+full text was opened**. Reproduce with `python validation/q3_posture_extract.py`.
+
+**van de Velde L, Eeftinck Schattenkerk DW, Venema PAHT, Best HJ, van den Bogaard B,
+Stok WJ, Westerhof BE, van den Born BJH.** *J Hypertens* 2018;36(3):544-551,
+PMID 29016531, `10.1097/HJH.0000000000001583`. Green OA under the Taverne licence.
+n = 31, within-subject, 500 mL over 15-30 min, 10 min supine then 5 min active standing,
+before and after.
+
+### The 2x2 exists, and posture modifies the response
+
+| SV (mL) | before | after | change |
+|---|---|---|---|
+| supine | 69.5 ± 17.5 | 66.7 ± 18.2 | **2.8 mL** |
+| standing | 55.2 ± 17.4 | 44.6 ± 14.9 | **10.6 mL** |
+
+**R = 3.79**, against a pre-registered threshold of 1 for confirmation and 2.76 for
+"partial". The direction is confirmed *within subjects* - study, population, age and
+device are all removed from the comparison - and the magnitude **exceeds** the
+between-study gradient rather than falling short. Standing is more upright than seated,
+which is the direction the mechanism predicts.
+
+**Falsifiable test 1 keeps its motivation. The concavity requirement stands.**
+
+### The pre-registration's own bar is not met, and that is recorded rather than waived
+
+Section 3 required `R > 1` *with the paper's own reported dispersion excluding 1*. That
+cannot be computed. Table 2 reports SDs of the four cell means, not of the two paired
+differences, and no paired correlation. Worse, the footnotes show the **supine phlebotomy
+effect is not tested at all** - the asterisks mark posture contrasts and the last column
+marks the phlebotomy effect *in standing*. So the numerator is significant at P < 0.001
+and the denominator is untested: 2.8 mL against a cell SD near 18.
+
+If the true supine response is near zero, `R` is unbounded rather than 3.79 - more
+extreme in the confirming direction, so the finding survives. But **`R` is a point
+estimate with no interval and must not be quoted as though it had one.** This is a fourth
+outcome the pre-registration did not name; it anticipated dispersion *spanning* 1, not
+dispersion being *unavailable*.
+
+### The confirmation arrives attached to a mechanism this model has excluded
+
+| HR (bpm) | before | after | change |
+|---|---|---|---|
+| supine | 66.0 | 65.2 | −0.8 |
+| standing | 74.8 | 85.5 | **+10.7 (+14.3%)** |
+
+The standing arm gains 10.7 bpm across the phlebotomy; the supine arm loses 0.8. Shorter
+diastolic filling at the higher rate lowers stroke volume by itself, so part of the
+10.6 mL is **rate-mediated rather than filling-mediated**.
+
+The same comparison on cardiac output makes it sharp: `dCO_supine` 0.20 and
+`dCO_standing` 0.30 L/min give **R_CO = 1.50 against R_SV = 3.79**. ADR 0011 holds `HR` a
+parameter, so **with HR fixed those two numbers are identical by construction** and the
+model cannot produce the divergence. A model with HR as a parameter cannot reproduce this
+experiment even if the partition and the curvature are both right.
+
+**What this does and does not do to ADR 0011.** It does not refute HR-as-parameter for
+the perturbations that record was reasoning about - in *supine* phlebotomy HR moved
+66.0 → 65.2, consistent with the three studies already cited there. It shows
+HR-as-parameter fails **under orthostatic stress**, a paradigm ADR 0011 had already
+excluded from calibration for an unrelated reason. That exclusion turns out to have been
+protecting something real.
+
+### What it does not establish
+
+Per section 4 of the pre-registration, fixed in advance: **this does not establish that
+the central/peripheral partition is the mechanism.** Standing moves venous tone and
+sympathetic outflow as well as volume distribution. The result is *consistent with* this
+ADR and does not select it over its rivals. It is the same error ADR 0010 made in reading
+"identical to 2 litres of saline" as a claim about total volume.
+
+### Checks the pre-registration demanded in advance
+
+**Section 7, the measurement artefact: passes.** SV is Nexfin volume-clamp with
+Modelflow - exactly the posture-sensitive family flagged before reading - but the hand was
+maintained at **heart level** throughout, and the paper cites Modelflow CO as validated
+against thermodilution under supine *and orthostatic* stress. The hydrostatic artefact
+that could have manufactured `R > 1` is controlled.
+
+**Contractility is stable** (`dP/dtmax` 399/436/413/445, no significant difference), which
+Kumar 2004 had made a live worry.
+
+**Population recorded:** patients on regular phlebotomy on medical grounds, mean age 57,
+with 6 of 31 on cardioactive drugs including two on beta-blockers - which blunts exactly
+the chronotropic response above.
+
+**k = 1 and it stays k = 1. No ledger parameter is recorded**, per stop condition 3:
+active standing is an excluded calibration paradigm under ADR 0011 and this
+pre-registration did not lift that.
