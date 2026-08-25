@@ -439,3 +439,54 @@ this pre-registration can take it, and what remains is no longer a sourcing back
    outputs of 6.9 and 6.03 against 5.0 L/min, are a separate discrepancy between what
    these devices read and what the ledger's operating point asserts. It does not
    invalidate a slope. It has not been investigated.
+
+---
+
+## The sourcing set was drawn from the wrong kind of study — 2026-08-24
+
+Directive 1.7 was issued after reviewing what this record's pre-registration actually
+returned. **Every study in `sv_filling_extract.py` is one where the cardiovascular
+relationship is the instrument rather than the subject**: can bio-impedance *detect*
+blood loss (Epstein), does Modelflow SV *mirror* withdrawn volume (Leonetti), does
+preload *confound* augmentation index (van de Velde), is LV torsion preload-dependent
+(Weiner), comparing four resuscitation fluids (Bihari). Median year 2018, nothing before
+2004.
+
+That is why every extraction arrived with a confound attached — contractility with
+saline, tachycardia with standing, rising TPR with bleeding. Not bad luck. A study built
+around a stressor as its endpoint returns a stressor-contaminated number.
+
+**The extractions are not withdrawn.** The numbers were read correctly, the citations are
+verified, and the Q3 posture finding stands on its own. What is withdrawn is the claim
+that this set is the right evidence base for the filling relation.
+
+### What should have been searched, and the repo already said so
+
+`ledger/relations.csv` carries the correct kind of source for `Cardiovascular.CO`
+already — **Guyton AC, Lindsey AW, Abernathy B, Richardson T**, *Venous return at various
+right atrial pressures and the normal venous return curve*, Am J Physiol 1957;189:609-615,
+`10.1152/ajplegacy.1957.189.3.609`. That is a stress study characterising a baseline
+relationship, which is precisely what directive 1.7 asks for.
+
+And that row's own note names the gap:
+
+> this relation is CO vs blood VOLUME, not VR vs RAP. It composes volume->Pms (venous
+> compliance) with Pms-RAP->VR (resistance). It is linear only if venous compliance is
+> linear over the range.
+
+**The unsourced piece is venous compliance — volume to mean circulatory filling
+pressure.** That is a characterised relationship with its own classical literature. The
+pre-registration went looking for phlebotomy stroke-volume studies instead, and the
+relations note had said what was missing before the search began.
+
+### Consequence for the next pre-registration
+
+Re-aim at the relationship, not the variable: **venous compliance and the cardiac
+function curve**, sourced from studies designed to characterise them, new or old.
+ADR 0012 additionally requires the filling relation to be **concave**, so what is wanted
+is a curve over a stated range.
+
+Note also the live controversy already recorded on that row: Beard and Feigl 2011
+(`10.1152/ajpheart.00228.2011`) argue Guyton's interpretation interchanges independent
+and dependent variables. That belongs in the next pre-registration as a declared conflict
+to record rather than resolve.

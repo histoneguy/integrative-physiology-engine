@@ -76,6 +76,56 @@ range. State *why* no human study exists — an ethical ceiling and a study nobo
 round to are different facts, and only the second is debt. This is now encoded in ADR
 0006; see §4.
 
+### 1.7 Fundamental studies. New or old — 2026-08-24
+Prefer studies that characterise **baseline physiological relationships**. The test is
+not the publication year and it is **not whether a stressor was used**. A stressor is a
+legitimate instrument for exposing a baseline relationship — Guyton 1957 varied right
+atrial pressure precisely in order to trace the venous return curve, and that is exactly
+the kind of study wanted.
+
+The test is what the experiment was **designed to establish**. Ask of any candidate:
+
+> If the physiology had come out differently, what would this paper's conclusion have
+> been?
+
+If the answer is *"the device would have failed validation"*, or *"the index would have
+been unconfounded"*, or *"the fluid would not have been recommended"*, then the
+relationship is the **instrument** and not the subject. Such a paper can still be
+correct, and its numbers can still be right, but it was not built to measure what we are
+sourcing and it carries whatever its own design needed.
+
+**Why this became a directive.** Everything sourced between 22 and 24 August came from
+the second kind: can bio-impedance *detect* blood loss; does Modelflow SV *mirror*
+withdrawn volume; does preload *confound* augmentation index; is LV torsion
+preload-dependent; comparing four resuscitation fluids. Median year 2018, nothing before
+2004, and the ledger as a whole sits at eight 2010s citations against three from before
+1990.
+
+And every single extraction came back with a confound baked in — contractility with
+saline, tachycardia with standing, rising TPR and sympathetic activation with bleeding.
+That was recorded at the time as bad luck. **It was not bad luck.** A study built around
+a stressor as its endpoint delivers a stressor-contaminated number; a study built to
+characterise a relationship delivers the relationship.
+
+**The retrievability trap underneath it.** Modern stressor studies have structured
+abstracts with the numbers in them, are indexed, and resolve to a DOI. Foundational
+measurements often do not. A search ranked by what extracts easily selects
+systematically *against* the data actually wanted, and it does so invisibly. Search for
+**relationships, not variables** — `venous return curve`, `vascular compliance`,
+`pressure-natriuresis relationship`, not `"stroke volume" AND "blood volume"`.
+
+**Age is orthogonal but correlated**, because the era of foundational human measurement
+has largely passed and many of those experiments can no longer be performed. Record the
+year; do not weight on it. This does not soften §1.5 — an old classic is still not
+quotable from memory, and this repo has already been burned twice doing exactly that.
+
+**Where a non-fundamental study is used anyway, say why in the ledger note.** The default
+now runs the other way.
+
+This is the ADR 0006 amendment one axis over. That one stopped us judging sources by
+species instead of quality. This one stops us judging by retrievability instead of
+design.
+
 ---
 
 ## 2. STATE
@@ -422,7 +472,40 @@ a fourth ADR.** Between 21 and 24 August this project produced ~1,500 lines of d
 and zero lines of Julia; ADR 0012 stage 1 broke that. Directive 1.2 is not satisfied by
 good documents.
 
-1. **ADR 0012 stage 2, or settle Q3 first — this is the live decision.** Stage 2 makes
+0. **Re-source the filling relation under directive 1.7, and re-aim it.** The
+   `sv_filling_prereg.md` set was drawn entirely from studies where the relationship is
+   the instrument, not the subject — see the 2026-08-24 addendum to ADR 0011. The
+   unsourced piece is **venous compliance**, volume to mean circulatory filling pressure,
+   and `relations.csv` had said so before that search began. Search the relationship, not
+   the variable. ADR 0012 requires the curve to be concave, so a curve over a stated
+   range is what is wanted. Record Beard and Feigl 2011 as a declared conflict.
+
+1. **ADR 0012 stage 2 is NOT posture, and is not next.** Superseded by the scope call of
+   2026-08-24: posture is a TODO challenge protocol in `targets.md`, not a target of this
+   model, and `ensemble.jl` states the primary workload as many virtual individuals over
+   long horizons. `f_central` should vary with **venous tone**, which is slow and belongs
+   behind RAAS. The HR-as-parameter worry raised by the Q3 result applies only under
+   orthostatic stress and is therefore closed. What survives from the posture work is
+   diagnostic: `V_blood` is not the filling variable, and the filling relation is concave
+   — the latter matters for population sims because virtual individuals sit at different
+   operating points and therefore have different local slopes.
+
+2. **Mars500 is not the right primary target and should be demoted.** `targets.md` names
+   it the anchor, but its required comparisons are sodium balance, steady-state UNaV and
+   rhythmicity — **no blood pressure**. The model's central claim is that pressure is an
+   OUTPUT, and ADR 0007's falsifiable test ends at a new higher pressure. Mars500 cannot
+   test that. It anchors ADR 0004's storage question, which is E3 and parked. Promote a
+   salt-loading-with-BP target in normotensive humans, and **pre-register the selection
+   before searching** — the model already predicts 4.934 mmHg and it would be very easy
+   to pick the study that agrees.
+
+   Note what this does to the residual: `G_pn`'s model-level consequence is ΔMAP per
+   Δintake, which has been measured in humans repeatedly. The 3.68x/2.2x saga has been
+   reverse-engineering that from a dog preparation at servo-controlled perfusion pressure.
+   Source the human quantity directly and the dog slope becomes a cross-check rather than
+   the load-bearing number.
+
+3. **(superseded) ADR 0012 stage 2, or settle Q3 first — resolved, see items 1 and 2.** Stage 2 makes
    `f_central` posture-dependent and needs `f_central` at two postures *plus* a sourced
    curvature for the filling relation. Before spending that, van de Velde 2018
    (PMID 29016531) crosses a 500 mL phlebotomy with active standing **in the same
