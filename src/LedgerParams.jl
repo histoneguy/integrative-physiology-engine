@@ -7,8 +7,8 @@ Produced by tools/ledger_to_julia.py from ledger/parameters.csv.
 To change a value, edit the ledger and regenerate. This is the only
 sanctioned path from source literature to executable code.
 
-Ledger SHA256 (first 16): 71895d0cc1d45585
-Parameters: 41 (assumed=11, calibrated=2, derived=8, reported=20)
+Ledger SHA256 (first 16): 348a6bd3c0058bf2
+Parameters: 44 (assumed=12, calibrated=2, derived=10, reported=20)
 """
 module LedgerParams
 
@@ -134,6 +134,24 @@ Source (tier B, reported): Standard physiological reference. VERIFY.
 Notes: Nominal 70 kg adult.
 """
 const CV_BLOOD_VOLUME_NOMINAL = 5.0
+
+"""Cardiac output sensitivity to central blood volume [(L/day)/L]
+Source (tier C, derived): Derived from CV.VENOUS_RETURN.SENSITIVITY and CV.CENTRAL.FRACTION.
+Notes: DERIVED: G_vc = G_vr / f_central = 2880 / 0.25. This is what makes ADR 0012 stage 1 a change of variables rather than a change of behaviour - G_vc x (V_central - VC0) equals G_vr x (V_blood - BV0) identically. VERIFIED 2026-08-24 that breaking it is caught twice: a 10% error fails tools/check_closure.py outright and moves the salt-step MAP levels by 8e-5 relative, which the 1e-9 assertion in test/runtests.jl also catches. INHERITS EVERY WEAKNESS OF G_vr, which is CALIBRATED, not measured, and which ADR 0011 is in the process of replacing.
+"""
+const CV_CENTRAL_CO_SENSITIVITY = 11520.0
+
+"""Central (intrathoracic) blood volume as fraction of total [unitless]  [!] ASSUMED
+Source (tier C, assumed): 
+Notes: PLACEHOLDER, NOT SOURCED, AND INERT AT ADR 0012 STAGE 1. Do not quote this number anywhere. Stage 1 introduces the central/peripheral partition as a change of variables only: CV.CENTRAL.CO_SENSITIVITY and CV.CENTRAL.VOLUME_NOMINAL are both derived from this value so that it cancels out of the CO relation algebraically. VERIFIED 2026-08-24 by perturbation: setting f_central to 0.30 with both derived values recomputed moves the salt-step shift by 3.7e-10 relative, i.e. not at all physiologically. 0.25 IS NOT AN ARBITRARY READABLE VALUE - it is a power of two and therefore exact in binary, which is why it deviates from the pre-partition result by only 3.5e-13 where 0.30 deviates by 3.7e-10. A non-power-of-two placeholder is equally correct algebraically but noisier. IT MUST BE SOURCED UNDER A PRE-REGISTRATION BEFORE STAGE 2, when f_central becomes posture-dependent and stops cancelling. At that point this row is load-bearing and this note must be replaced, not amended.
+"""
+const CV_CENTRAL_FRACTION = 0.25
+
+"""Central blood volume at the nominal operating point [L]
+Source (tier C, derived): Derived from CV.CENTRAL.FRACTION and CV.BLOOD_VOLUME.NOMINAL.
+Notes: DERIVED: VC0 = f_central x BV0 = 0.25 x 5. Closure constraint - if either factor changes this must be recomputed. Enforced by tools/check_closure.py.
+"""
+const CV_CENTRAL_VOLUME_NOMINAL = 1.25
 
 """Cardiac output at rest [L/day] +/- 1150.0 (sd)
 Source (tier B, derived): Standard physiological reference. VERIFY.
@@ -316,6 +334,9 @@ const PARAM_PROVENANCE = Dict{Symbol,Provenance}(
     :CIRC_RENAL_NA_ACROPHASE => Provenance("CIRC.RENAL_NA.ACROPHASE", "day", 0.33, "B", "assumed", "Impaired daytime urinary sodium excretion impacts nighttime blood pressure. PMC7400814.", "ASSUMED. Sodium excretion is maximal during daytime and minimal at night; 0.33 d = 8 h after start of active period is a placeholder consistent with that pattern but not extracted from a reported acrophase. Cosinor acrophase must be extracted properly from split-collection data."),
     :CIRC_RENAL_NA_AMPLITUDE => Provenance("CIRC.RENAL_NA.AMPLITUDE", "unitless", 0.25, "B", "assumed", "Circadian rhythms and the kidney. Nat Rev Nephrol 2018;14:626-635.", "ASSUMED PLACEHOLDER. The source establishes that renal plasma flow, GFR and tubular reabsorption peak in the active phase and decline in the inactive phase, but a single relative amplitude is not reported. MUST be estimated against split day/night UNaV data. Reported day/night UNaV ratios in human cohorts span a wide range (tertile boundaries around 0.47 and 0.84 in one CKD study), which is the data class to fit against."),
     :CV_BLOOD_VOLUME_NOMINAL => Provenance("CV.BLOOD_VOLUME.NOMINAL", "L", 5.0, "B", "reported", "Standard physiological reference. VERIFY.", "Nominal 70 kg adult."),
+    :CV_CENTRAL_CO_SENSITIVITY => Provenance("CV.CENTRAL.CO_SENSITIVITY", "(L/day)/L", 11520.0, "C", "derived", "Derived from CV.VENOUS_RETURN.SENSITIVITY and CV.CENTRAL.FRACTION.", "DERIVED: G_vc = G_vr / f_central = 2880 / 0.25. This is what makes ADR 0012 stage 1 a change of variables rather than a change of behaviour - G_vc x (V_central - VC0) equals G_vr x (V_blood - BV0) identically. VERIFIED 2026-08-24 that breaking it is caught twice: a 10% error fails tools/check_closure.py outright and moves the salt-step MAP levels by 8e-5 relative, which the 1e-9 assertion in test/runtests.jl also catches. INHERITS EVERY WEAKNESS OF G_vr, which is CALIBRATED, not measured, and which ADR 0011 is in the process of replacing."),
+    :CV_CENTRAL_FRACTION => Provenance("CV.CENTRAL.FRACTION", "unitless", 0.25, "C", "assumed", "", "PLACEHOLDER, NOT SOURCED, AND INERT AT ADR 0012 STAGE 1. Do not quote this number anywhere. Stage 1 introduces the central/peripheral partition as a change of variables only: CV.CENTRAL.CO_SENSITIVITY and CV.CENTRAL.VOLUME_NOMINAL are both derived from this value so that it cancels out of the CO relation algebraically. VERIFIED 2026-08-24 by perturbation: setting f_central to 0.30 with both derived values recomputed moves the salt-step shift by 3.7e-10 relative, i.e. not at all physiologically. 0.25 IS NOT AN ARBITRARY READABLE VALUE - it is a power of two and therefore exact in binary, which is why it deviates from the pre-partition result by only 3.5e-13 where 0.30 deviates by 3.7e-10. A non-power-of-two placeholder is equally correct algebraically but noisier. IT MUST BE SOURCED UNDER A PRE-REGISTRATION BEFORE STAGE 2, when f_central becomes posture-dependent and stops cancelling. At that point this row is load-bearing and this note must be replaced, not amended."),
+    :CV_CENTRAL_VOLUME_NOMINAL => Provenance("CV.CENTRAL.VOLUME_NOMINAL", "L", 1.25, "C", "derived", "Derived from CV.CENTRAL.FRACTION and CV.BLOOD_VOLUME.NOMINAL.", "DERIVED: VC0 = f_central x BV0 = 0.25 x 5. Closure constraint - if either factor changes this must be recomputed. Enforced by tools/check_closure.py."),
     :CV_CO_NOMINAL => Provenance("CV.CO.NOMINAL", "L/day", 7200.0, "B", "derived", "Standard physiological reference. VERIFY.", "DERIVED from the conventional 5 L/min. 5 x 1440 = 7200 L/day. Units are per-day throughout the model."),
     :CV_HEMATOCRIT_NOMINAL => Provenance("CV.HEMATOCRIT.NOMINAL", "unitless", 0.45, "B", "reported", "Standard physiological reference. VERIFY.", "Adult male nominal. Sex-dependent - female nominal is lower. Sex is deferred until the spine is validated."),
     :CV_MAP_SETPOINT => Provenance("CV.MAP.SETPOINT", "mmHg", 93.0, "B", "reported", "Standard physiological reference. VERIFY.", "Nominal normotensive adult. NOTE this is an OUTPUT of the closed loop, not an input - it emerges from renal-body fluid feedback. It appears here as an initialisation value and a validation target, not as a setpoint the model enforces."),

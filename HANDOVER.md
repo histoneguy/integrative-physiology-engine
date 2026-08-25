@@ -1,10 +1,10 @@
 # HANDOVER — Integrative Physiology Engine
 
-**Date:** 2026-08-22
+**Date:** 2026-08-24
 **Repo:** https://github.com/histoneguy/integrative-physiology-engine (public)
 **Owner:** Eric George (`histoneguy`)
-**`main`:** `31a1154`, plus the squash of PR #14 (`work/adr0010-blockers`) — 153/153,
-all five provenance gates green, verified locally before the merge
+**`main`:** `67ca26c` (ADR 0012), plus the squash of PR #17 which carries this file —
+**166/166**, all five provenance gates green, verified locally before the merge
 
 **Supersedes** the handover dated 2026-08-19 and the uncommitted `HANDOVER2.md`
 (session 2, which lived only in a downloads folder). Everything still live from both is
@@ -80,23 +80,26 @@ round to are different facts, and only the second is debt. This is now encoded i
 
 ## 2. STATE
 
-`main` at `31a1154` + PR #14. **153/153 in ~40 s warm** (2m01 cold). All five gates exit
-0. **No source file changed on 2026-08-22** — that day's work is an ADR addendum, a
-pre-registration, two reproducible analysis scripts (`validation/immersion_pool.py`,
-`validation/residual_audit.py`) and this file. No component, no ledger row, no parameter.
+`main` at `67ca26c` + PR #17. **166/166 in ~60 s warm.** All five gates exit 0.
+
+**The model gained a central/peripheral volume partition on 2026-08-24 (ADR 0012), and
+it is the first source change since 21 August.** Everything between was documents: two
+ADRs, two pre-registrations, three analysis scripts, ~1,500 lines and zero Julia. That
+was not waste — it prevented two wrong components and caught a sign error — but read §6
+before adding a third ADR ahead of any code.
 
 ### The model — 3 states after `structural_simplify` (`V_icf`, `V_ecf`, `Na_ecf`)
 
 | Component | Status |
 |---|---|
 | `BodyFluids.jl` | ICF/ECF volumes, sodium mass balance, osmotic equilibration. Inactive-Na storage compartment **default off** (ADR 0004). |
-| `Cardiovascular.jl` | Blood volume from ECF, CO from volume, MAP = CO × TPR. TPR scaled by `tpr_mod`. |
+| `Cardiovascular.jl` | Blood volume from ECF, **partitioned into `V_central`/`V_periph` (ADR 0012)**, CO from CENTRAL filling, MAP = CO × TPR. TPR scaled by `tpr_mod`. `f_central` is constant, so the partition is currently a change of variables and nothing else. |
 | `Renal.jl` | GFR autoregulation (80–160 mmHg), filtered load, pressure natriuresis. Water excretion still a **placeholder** until ADH. |
 | `Baroreflex.jl` | Lumped, resetting. Verified in both directions. |
 | `Circadian.jl` | Cosinor clock. **NOT CONNECTED**, default off — build order, not tier. |
 | `incoming/Raas.jl` | Written, tested nowhere, **not wired in**. Parked deliberately: the relations gate globs `src/components/*.jl`, so a component parked there reads as undocumented relations. |
 
-### The result, unchanged all day and bit-identical across every commit
+### The result, unchanged since the loop first closed
 
 | intake (mEq/d) | MAP (mmHg) |
 |---|---|
@@ -106,6 +109,18 @@ pre-registration, two reproducible analysis scripts (`validation/immersion_pool.
 
 Shift **4.934166220845427 mmHg**. Arterial pressure is nowhere regulated in this model;
 it lands at a stable intake-dependent value through renal–body fluid feedback alone.
+
+**These values were bit-identical across every commit until 2026-08-24, and are no longer.**
+The ADR 0012 partition is algebraically an identity but adds two equations, so
+`structural_simplify` emits differently ordered arithmetic and the adaptive solver takes
+fractionally different steps. Measured deviation: **2.1e-15 to 2.2e-14 relative on the
+three levels, 3.5e-13 on the shift** — 1.7e-12 mmHg.
+
+`test/runtests.jl` now pins the table above at **1e-9 relative** rather than by equality.
+Do not restore a bit-identity check; it is unachievable across a structural change in an
+adaptive solver, and the reason is written up in ADR 0012 falsifiable test 3. The free
+integrity check the old bit-identity gave is spent — that is a real loss, and the 1e-9
+pin is what replaces it.
 
 ### Gates — all in the `Provenance` CI job
 
@@ -303,32 +318,140 @@ rather than absent. Falsifiable test 1 (pressure-clamped natriuresis, Seeliger's
 experiment in silico) is untouched and remains the discriminator the day a component
 exists. No `Anp` component, no ledger row, no parameter.
 
+### 5.3 ADR 0012 REOPENS THIS — READ BEFORE ACTING ON ANY OF THE ABOVE
+
+The central/peripheral partition (§5A) removes **one of the two obstacles** that shelved
+immersion. Blocker 2 was closed as falsified because IPE could not represent a
+redistribution at constant total volume; it now can. Blocker 4 — re-source the input link
+against a total-volume paradigm — is **probably the wrong instruction** and should be
+revisited rather than executed.
+
+What is NOT removed is Rabelink's nephron-partition obstacle. Immersion becomes usable
+for calibrating a **lumped** natriuretic term keyed to `V_central`. It does not restore a
+mechanistic ANP pathway. Everything above about the term staying lumped still holds.
+
+---
+
+## 5A. ADR 0011 AND ADR 0012 — THE CARDIOVASCULAR TURN, 2026-08-22 to 08-24
+
+### ADR 0011: `CO = HR x SV`, Proposed, superseded on its input side
+
+`G_vr` is `calibrated`, load-bearing, and does not refine — a fitted constant has no
+principled decomposition when compliances eventually separate. `CO = HR x SV` is no
+heavier, adds no state, and its halves are separately measurable in humans. **A lump
+whose pieces can be measured separately is a temporary convenience; one whose pieces
+cannot is a permanent commitment in disguise.**
+
+Sourced under `validation/sv_filling_prereg.md`. Reproduce with
+`python validation/sv_filling_extract.py`.
+
+- **Q1 sourced.** Fenland (PMID 37167327), n=10,865, **supine 63.5 ± 8.9 bpm**. Supine
+  chosen because `CO0` derives from the conventional supine 5 L/min — consistency, not
+  value. `SV0 = CO0/HR0 = 78.74 mL`, derived, closure constraint follows. **Not yet a
+  ledger row**: the cohort is 53% women while `CV.HEMATOCRIT.NOMINAL` is male nominal.
+  That is a decision for the owner, not an extraction.
+- **Q2 addition direction is EMPTY, k = 0.** Saline studies report *infused* volume, not
+  measured blood volume. Converting needs a retention fraction that is the same unsourced
+  scaling that falsified ADR 0010's input link, arriving from a different direction.
+- **The contractility exclusion is evidence-backed, not precautionary.** Kumar 2004
+  (PMID 15153240): **40–90% of the SV response to 3 L of saline** came from a fall in
+  end-systolic volume, not a rise in end-diastolic volume.
+- **HR holds still.** Epstein 67→68 bpm across 450 mL with controls flat; Leonetti not
+  significant across 375 mL; Weiner no change across a 2.1 L bolus. Three studies, two
+  directions, three techniques. HR-as-parameter is defensible at these sizes.
+
+### The finding that redirected the project
+
+Q2's removal direction reached k = 3 and **still recorded nothing**, for a better reason
+than the count. The slopes order monotonically with posture:
+
+| posture | upright | removed | slope |
+|---|---|---|---|
+| seated | 90° | 375 mL | **28.00 mL/L** |
+| ~30°, 30 min rest | 30° | 900 mL | **13.33 mL/L** |
+| supine | 0° | 450 mL | **10.16 mL/L** |
+
+Seated is **2.8× supine**. Neither technique nor dose orders it — the two
+finger-volume-clamp studies differ 2.1× from each other, and the 900 mL study gives the
+*middle* per-litre value. Population and age remain confounded with posture, so this is a
+**between-study gradient: suggestive, not decisive.** Pooling across it would produce a
+correctly-sourced number describing no posture in particular.
+
+**The pre-registered endpoint rule moved Leonetti's number by 21%** — its abstract quotes
+the last minute *of* withdrawal (80.7 mL), while §5 of the prereg fixed the settled
+post-perturbation value (83.5 mL). Write the rule first; it changes extractions.
+
+### ADR 0012: the central/peripheral partition, stage 1 built
+
+`V_blood` is **not a sensed variable anywhere in the body**. Cardiopulmonary receptors and
+atrial ANP release respond to *central* filling. ADR 0010's unsourceable input link was a
+category error, not a gap in the literature.
+
+    V_central ~ f_c * V_blood
+    V_periph  ~ V_blood - V_central
+    CO        ~ max(0.0, CO0 + G_vc * (V_central - VC0))
+
+`VC0 = f_c*BV0` and `G_vc = G_vr/f_c` are derived from `f_c`, so stage 1 is a **change of
+variables**. Model stays at 3 states.
+
+**THE PARTITION ALONE PREDICTS THE POSTURE GRADIENT BACKWARDS.** With `g` linear,
+`dSV/dV_blood = g'·f_central`, and seated has the *lower* `f_central`, so the model
+predicts seated < supine against a measured 2.76× larger. Resolving it requires
+`g'(seated)/g'(supine) ≥ 2.76·(f_sup/f_seat)` — i.e. **the filling relation must be
+CONCAVE, and linear is excluded.** Concavity is E1 textbook, so this is not an added
+assumption; but the partition and the curvature each fail alone and only predict the
+gradient together. What ADR 0011 must source is a **curve over a range, not a slope.**
+
+**`f_central` is `assumed`, inert, and 0.25 for a numerical reason.** It is a power of two
+and exact in binary, which is why it deviates from the pre-partition result by 3.5e-13
+where 0.30 deviates by 3.7e-10. The margin to the 1e-9 test bar is only ~3×. **When
+`f_central` becomes a sourced value at stage 2, re-measure that tolerance rather than
+assuming it holds.**
+
+Two gates catch a broken partition independently: `check_closure.py` asserts
+`G_vc·f_central == G_vr`, and the 1e-9 pin in `test/runtests.jl` catches an 8e-5 shift.
+Both verified by perturbation, not assumed.
+
+
 ---
 
 ## 6. NEXT, IN ORDER
 
-Reordered on 2026-08-22. ANP has moved **back**, not forward: its input side needs
-re-sourcing from scratch against a different paradigm (§5.2 item 4), which is a search,
-while the residual has become a short bounded task.
+Reordered 2026-08-24, after the cardiovascular turn in §5A. **Read this before starting
+a fourth ADR.** Between 21 and 24 August this project produced ~1,500 lines of documents
+and zero lines of Julia; ADR 0012 stage 1 broke that. Directive 1.2 is not satisfied by
+good documents.
 
-1. **Open Mizelle 1993 (PMID 8319986) in full text.** Body weights and absolute GFRs
+1. **ADR 0012 stage 2, or settle Q3 first — this is the live decision.** Stage 2 makes
+   `f_central` posture-dependent and needs `f_central` at two postures *plus* a sourced
+   curvature for the filling relation. Before spending that, van de Velde 2018
+   (PMID 29016531) crosses a 500 mL phlebotomy with active standing **in the same
+   subjects** — the within-subject test the between-study gradient needs. One
+   pre-registration, one extraction. If it refutes the gradient, the curvature
+   requirement loses its motivation and ADR 0011 proceeds to a parameter. If it confirms,
+   stage 2 rests on a controlled comparison rather than a three-study coincidence.
+2. **Decide the Q1 population question.** Fenland is 53% women; `CV.HEMATOCRIT.NOMINAL`
+   is male nominal. It is the only thing between Q1 and a ledger row, and it is a
+   decision, not a search.
+3. **Open Mizelle 1993 (PMID 8319986) in full text.** Body weights and absolute GFRs
    collapse the uncited `DOG_GFR`; enough of the dataset settles the segment
    disagreement. Cheapest move in the model and it sharpens the sharpest open question.
-   §3.2.
-2. **Re-source the ANP input link against a total-volume paradigm.** Pre-register first.
-   Sodium loading or isotonic saline expansion, not immersion. §5.2 item 4.
-3. **RAAS.** `incoming/Raas.jl` is written and parked. It attaches to `FR_effective` via
+   §3.2. Unaffected by everything above — it can be done in any order.
+4. **Revisit ADR 0010 rather than execute its blocker 4.** §5.3. Do not reopen it until
+   stage 1 is merged and its 1e-9 test passes on `main`.
+5. **RAAS.** `incoming/Raas.jl` is written and parked. It attaches to `FR_effective` via
    `fr_aldo` and to TPR via `tpr_mod`. It deliberately carries **no escape term** —
    escape emerges from pressure natriuresis alone at the current slope (99% of intake by
    day 2.9 against Hall's days 2–4). Adding ANP will change that; check the escape
    pressure cost *between* the two changes, or the errors cancel and hide each other.
-4. **Digitise Mars500.** It gates the joint `G_pn` / ANP-gain re-estimation, which is the
+6. **Digitise Mars500.** It gates the joint `G_pn` / ANP-gain re-estimation, which is the
    only way either becomes a posterior rather than a point value.
    `validation/averaging.md` is binding first: fixed 10 s window, applied uniformly.
-5. **`check_closure.py` will break before the others.** It hand-codes seven
-   relationships and does not scale past ~20. The owner has committed to hundreds of
-   variables. Not urgent; do not let it be a surprise.
-6. **Circadian last.** ADR 0005 is sound but its dependencies (RAAS, ADH) do not exist.
+7. **`check_closure.py` is now filling up.** It hand-codes NINE relationships as of ADR
+   0012 and does not scale past ~20. The owner has committed to hundreds of variables.
+   The cardiovascular refinement is what starts filling it; treat the warning as live
+   rather than distant.
+8. **Circadian last.** ADR 0005 is sound but its dependencies (RAAS, ADH) do not exist.
 
 ---
 
@@ -362,6 +485,13 @@ presented as if it had been.** Mostly solved by §0. The rest are still live.
    change.
 6. **Silent string replacements.** Three of five `str_replace` calls failed silently in
    one session because whitespace assumptions were wrong. Assert on every replacement.
+7. **A gate cannot check a label you supplied.** ADR 0012's first draft tiered its
+   load-bearing row E1 when the source is one group of ten, and `check_adrs.py` returned
+   OK *because* of that. The gate did not miss an error; it was told the wrong tier. Same
+   shape as the misattributed citation: the tooling validates form, never the claim.
+8. **Do not run experiments on uncommitted work.** Perturbing the ledger to verify the
+   partition, then `git checkout`-ing it back, discarded three rows that had never been
+   committed. Recovered with no loss, but commit first and perturb second.
 
 ---
 
@@ -375,8 +505,10 @@ presented as if it had been.** Mostly solved by §0. The rest are still live.
   are the bottleneck. They are not.
 - **The `Provenance` job name.** See §2.
 - **ADR 0004 default off.** See §4.
-- **Pre-register before extracting.** Four times now it has caught something the
-  extraction itself would have missed. The fourth is the largest: it noticed the blocker
+- **Pre-register before extracting.** Five times now it has caught something the
+  extraction itself would have missed. The fifth changed a number rather than a
+  conclusion: the endpoint rule fixed in advance moved Leonetti's extraction 21% off what
+  its own abstract quotes. The fourth is the largest: it noticed the blocker
   list was asking for a quantity the component does not use, and it carried a declared
   stop condition that turned a missing source into a falsified one (§5.1).
 
@@ -384,8 +516,14 @@ presented as if it had been.** Mostly solved by §0. The rest are still live.
 
 ## 9. OPEN ITEMS
 
-- **13 of 41 ledger parameters** are `assumed` or `calibrated`. `unledgered_check()`
-  lists them.
+- **14 of 45 ledger parameters** are `assumed` or `calibrated`. `unledgered_check()`
+  lists them. The newest is `CV.CENTRAL.FRACTION`, which is **inert today and
+  load-bearing at ADR 0012 stage 2** — see §5A.
+- **The ADR 0011 filling relation must be CONCAVE and is still linear in the code.**
+  `Cardiovascular.CO` records this as known-insufficient. Nothing is wrong at stage 1,
+  because the partition is inert; it becomes wrong the moment `f_central` varies.
+- **Q1 (resting HR) is sourced but unentered** pending the sex-composition decision, §6
+  item 2.
 - **`RN.AUTOREG.LOWER = 80` is genuine debt** — no primary source in any species, and a
   2025 human review argues the evidence for it is insufficient. Its upper counterpart is
   now sourced to Roman & Cowley 1985 at 160 mmHg, but that is a **censored** observation:

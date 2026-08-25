@@ -121,6 +121,32 @@ def main() -> int:
           "otherwise the operating point is not a fixed point.",
           errors, tol=1e-4)
 
+    # --- central/peripheral partition, ADR 0012 stage 1 --------------------
+    #
+    # These two are what make the partition a change of variables rather than a
+    # change of behaviour. If either drifts, stage 1 stops being inert and the
+    # bit-identity assertion in the test suite is the only thing left holding
+    # it - which is exactly the situation that produced this gate in the first
+    # place. Keep them here.
+    f_c = p["CV.CENTRAL.FRACTION"]
+
+    check("central volume from fraction",
+          p["CV.CENTRAL.VOLUME_NOMINAL"],
+          f_c * p["CV.BLOOD_VOLUME.NOMINAL"],
+          "VC0 = f_central * BV0. If this drifts, the central operating point "
+          "is not the image of the blood-volume operating point and the CO term "
+          "no longer vanishes at nominal.",
+          errors)
+
+    check("central CO sensitivity closes",
+          p["CV.CENTRAL.CO_SENSITIVITY"] * f_c,
+          p["CV.VENOUS_RETURN.SENSITIVITY"],
+          "G_vc * f_central = G_vr. This is the whole content of ADR 0012 stage "
+          "1: the partition must reproduce the pre-partition slope exactly. If "
+          "it fails, results have silently changed while the ledger still claims "
+          "the sensitivity is Guyton's calibrated value.",
+          errors)
+
     print()
     if errors:
         print("CLOSURE CHECK FAILED:\n", file=sys.stderr)
