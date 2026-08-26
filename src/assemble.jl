@@ -55,12 +55,13 @@ call `build_model`.
 """
 function build_raw_model(; body_mass = 70.0, storage::Bool = false,
                          circadian::Bool = false, baroreflex::Bool = true,
-                         raas::Bool = true)
+                         raas::Bool = true, adh::Bool = true)
     @named bf = BodyFluids(; body_mass, storage)
     @named cv = Cardiovascular()
     @named rn = Renal()
     @named br = Baroreflex(; enabled = baroreflex)
     @named ra = Raas(; enabled = raas)
+    @named ad = Adh(; enabled = adh)
 
     connections = [
         # body fluids -> cardiovascular
@@ -80,9 +81,12 @@ function build_raw_model(; body_mass = 70.0, storage::Bool = false,
         # cardiovascular -> raas -> renal
         ra.MAP          ~ cv.MAP,
         rn.fr_mod       ~ ra.fr_mod,
+        # body fluids -> adh -> renal (osmoregulation)
+        ad.Osm_ecf      ~ bf.Osm_ecf,
+        rn.u_osm        ~ ad.u_osm,
     ]
 
-    systems = [bf, cv, rn, br, ra]
+    systems = [bf, cv, rn, br, ra, ad]
 
     if circadian
         @named clk = CircadianClock()
@@ -159,11 +163,12 @@ function salt_step(; levels_mEq_day = (205.0, 154.0, 103.0),
                    body_mass = 70.0,
                    baroreflex::Bool = true,
                    raas::Bool = true,
+                   adh::Bool = true,
                    saveat = 0.25,
                    solver = nothing,
                    kwargs...)
 
-    sys = build_model(; body_mass, baroreflex, raas)
+    sys = build_model(; body_mass, baroreflex, raas, adh)
     results = NamedTuple[]
     u_carry = nothing          # state carried between levels
     t0 = 0.0

@@ -7,8 +7,8 @@ Produced by tools/ledger_to_julia.py from ledger/parameters.csv.
 To change a value, edit the ledger and regenerate. This is the only
 sanctioned path from source literature to executable code.
 
-Ledger SHA256 (first 16): be90760635548eef
-Parameters: 50 (assumed=15, calibrated=2, derived=12, reported=21)
+Ledger SHA256 (first 16): 9b73889972b51725
+Parameters: 56 (assumed=17, calibrated=2, derived=15, reported=22)
 """
 module LedgerParams
 
@@ -17,6 +17,38 @@ export PARAM_PROVENANCE, provenance, unledgered_check
 # ---------------------------------------------------------------------------
 # Values
 # ---------------------------------------------------------------------------
+
+# --- adh ---------------------------------------------------------
+"""Normalised antidiuretic activity per mOsm/kg above threshold [1/(mOsm/kg)]
+Source (tier C, derived): Derived to close baseline water balance; see notes.
+Notes: DERIVED, not fitted and not assumed. Forced by requiring that at the plasma osmolality setpoint the model excretes exactly intake minus insensible loss, which is what the pre-ADH placeholder did. k_adh = ((solute/(intake-insensible)) - U_min) / ((U_max - U_min) * (Osm_set - Osm_thr)) = 0.08780904 per mOsm/kg, giving antidiuretic activity 0.263427 at baseline - a quarter of maximal, with room to move both ways. Closure constraint enforced by tools/check_closure.py. THIS IS NOT ZERBE'S SENSITIVITY: that is 0.12-1.66 pg/ml per mOsm/kg and this is a normalised 0-1 activity, because no sourced map from plasma vasopressin to urine osmolality was found.
+"""
+const ADH_OSM_SENSITIVITY = 0.08780903665814152
+
+"""Osmotic threshold for vasopressin release [mOsm/kg] +/- 280.0-288.0 (range)
+Source (tier A, reported): Zerbe RL, Miller JZ, Robertson GL. The reproducibility and heritability of individual differences in osmoregulatory function in normal human subjects. J Lab Clin Med 1991;117(1):51-59.
+Notes: Linear regression of plasma vasopressin on plasma osmolality during hypertonic saline infusion. Individual thresholds ranged 280 to 288 mOsm/kg and the frequency distribution across 80 healthy adults was essentially normal, so the MIDPOINT 284.0 is adopted and the range is carried as the uncertainty rather than an SD, which the paper does not give in a poolable form. Thresholds correlated within monozygotic but not dizygotic twins. NOTE the companion SENSITIVITY spans 0.12 to 1.66 pg/ml per mOsm/kg - fourteen-fold, and highly reproducible within a subject at r = 0.94 - which is NOT used here because this model carries no plasma vasopressin concentration. That spread is the obvious population covariate for src/ensemble.jl. Verified against PMID 1987308 on 2026-08-25.
+"""
+const ADH_OSM_THRESHOLD = 284.0
+
+"""Urine osmolality reproducing the pre-ADH placeholder [mOsm/kg]
+Source (tier C, derived): Derived from RN.URINE.SOLUTE_LOAD, BF.H2O.INTAKE_NOMINAL and BF.H2O.INSENSIBLE_LOSS.
+Notes: DERIVED: solute load / (intake - insensible loss) = 600 / 1.7 = 352.941176. Used ONLY by the disabled branch, where it holds urine osmolality at the value that reproduces the old placeholder water excretion exactly, so enabled=false recovers pre-ADH behaviour. Closure constraint enforced by tools/check_closure.py.
+"""
+const ADH_URINE_OSM_BASELINE = 352.94117647058823
+
+"""Maximum urine osmolality at maximal antidiuresis [mOsm/kg]
+Source (tier C, derived): Derived from RN.URINE.SOLUTE_LOAD and RN.H2O.OBLIGATORY_LOSS.
+Notes: DERIVED: U_max = solute load / obligatory minimum urine volume = 600 / 0.5 = 1200. At maximal antidiuresis the urine volume must equal the obligatory minimum already in the ledger, so this is forced rather than chosen. Closure constraint enforced by tools/check_closure.py. The resulting 1200 mOsm/kg is the conventional human maximum, which is a check on the assumed solute load rather than a coincidence - had the load been assumed at 850 this would have come out at 1700 and been out of range.
+"""
+const ADH_URINE_OSM_MAX = 1200.0
+
+"""Minimum urine osmolality at full water diuresis [mOsm/kg]  [!] ASSUMED
+Source (tier C, assumed): 
+Notes: ASSUMED and NOT SOURCED. A relationship-shaped search for maximal and minimal urinary concentrating ability in healthy humans returned lithium cohorts, hydration indices and clinical case series - none characterising the limit in a healthy population in a form this model can consume. 50 mOsm/kg is the conventional figure and it is recorded as an assumption rather than dressed in a textbook citation nobody opened. IT SETS THE MAXIMAL DIURESIS: with the assumed solute load it gives 12.0 L/day, which is plausible but unverified. Source this before using the component near the dilute end.
+"""
+const ADH_URINE_OSM_MIN = 50.0
+
 
 # --- body-fluids -------------------------------------------------
 """Extracellular fluid as fraction of body mass [unitless] +/- 0.023 (sd)
@@ -327,6 +359,12 @@ Notes: CALIBRATED, not measured. VALUE UNCHANGED AT 20.0 - read the identifiabil
 """
 const RN_PRESSURE_NATRIURESIS_SLOPE = 20.0
 
+"""Daily urinary solute excretion [mOsm/day]  [!] ASSUMED
+Source (tier C, assumed): 
+Notes: ASSUMED and NOT SOURCED, and it is the load-bearing assumption of the ADH component - urine volume is this divided by urine osmolality, so it scales the whole water-excretion limb. 600 mOsm/day is a conventional adult figure. It is HELD CONSTANT, which is itself a modelling choice: in reality it tracks protein and salt intake, so a salt step should move it and here it does not. That omission makes the model under-respond to a salt load on the water side. Source it, and consider making it depend on Na_excr, before trusting any water result under a changed diet.
+"""
+const RN_URINE_SOLUTE_LOAD = 600.0
+
 
 # ---------------------------------------------------------------------------
 # Provenance table - queryable at runtime so any result can be traced
@@ -343,6 +381,11 @@ struct Provenance
 end
 
 const PARAM_PROVENANCE = Dict{Symbol,Provenance}(
+    :ADH_OSM_SENSITIVITY => Provenance("ADH.OSM.SENSITIVITY", "1/(mOsm/kg)", 0.08780903665814152, "C", "derived", "Derived to close baseline water balance; see notes.", "DERIVED, not fitted and not assumed. Forced by requiring that at the plasma osmolality setpoint the model excretes exactly intake minus insensible loss, which is what the pre-ADH placeholder did. k_adh = ((solute/(intake-insensible)) - U_min) / ((U_max - U_min) * (Osm_set - Osm_thr)) = 0.08780904 per mOsm/kg, giving antidiuretic activity 0.263427 at baseline - a quarter of maximal, with room to move both ways. Closure constraint enforced by tools/check_closure.py. THIS IS NOT ZERBE'S SENSITIVITY: that is 0.12-1.66 pg/ml per mOsm/kg and this is a normalised 0-1 activity, because no sourced map from plasma vasopressin to urine osmolality was found."),
+    :ADH_OSM_THRESHOLD => Provenance("ADH.OSM.THRESHOLD", "mOsm/kg", 284.0, "A", "reported", "Zerbe RL, Miller JZ, Robertson GL. The reproducibility and heritability of individual differences in osmoregulatory function in normal human subjects. J Lab Clin Med 1991;117(1):51-59.", "Linear regression of plasma vasopressin on plasma osmolality during hypertonic saline infusion. Individual thresholds ranged 280 to 288 mOsm/kg and the frequency distribution across 80 healthy adults was essentially normal, so the MIDPOINT 284.0 is adopted and the range is carried as the uncertainty rather than an SD, which the paper does not give in a poolable form. Thresholds correlated within monozygotic but not dizygotic twins. NOTE the companion SENSITIVITY spans 0.12 to 1.66 pg/ml per mOsm/kg - fourteen-fold, and highly reproducible within a subject at r = 0.94 - which is NOT used here because this model carries no plasma vasopressin concentration. That spread is the obvious population covariate for src/ensemble.jl. Verified against PMID 1987308 on 2026-08-25."),
+    :ADH_URINE_OSM_BASELINE => Provenance("ADH.URINE.OSM_BASELINE", "mOsm/kg", 352.94117647058823, "C", "derived", "Derived from RN.URINE.SOLUTE_LOAD, BF.H2O.INTAKE_NOMINAL and BF.H2O.INSENSIBLE_LOSS.", "DERIVED: solute load / (intake - insensible loss) = 600 / 1.7 = 352.941176. Used ONLY by the disabled branch, where it holds urine osmolality at the value that reproduces the old placeholder water excretion exactly, so enabled=false recovers pre-ADH behaviour. Closure constraint enforced by tools/check_closure.py."),
+    :ADH_URINE_OSM_MAX => Provenance("ADH.URINE.OSM_MAX", "mOsm/kg", 1200.0, "C", "derived", "Derived from RN.URINE.SOLUTE_LOAD and RN.H2O.OBLIGATORY_LOSS.", "DERIVED: U_max = solute load / obligatory minimum urine volume = 600 / 0.5 = 1200. At maximal antidiuresis the urine volume must equal the obligatory minimum already in the ledger, so this is forced rather than chosen. Closure constraint enforced by tools/check_closure.py. The resulting 1200 mOsm/kg is the conventional human maximum, which is a check on the assumed solute load rather than a coincidence - had the load been assumed at 850 this would have come out at 1700 and been out of range."),
+    :ADH_URINE_OSM_MIN => Provenance("ADH.URINE.OSM_MIN", "mOsm/kg", 50.0, "C", "assumed", "", "ASSUMED and NOT SOURCED. A relationship-shaped search for maximal and minimal urinary concentrating ability in healthy humans returned lithium cohorts, hydration indices and clinical case series - none characterising the limit in a healthy population in a form this model can consume. 50 mOsm/kg is the conventional figure and it is recorded as an assumption rather than dressed in a textbook citation nobody opened. IT SETS THE MAXIMAL DIURESIS: with the assumed solute load it gives 12.0 L/day, which is plausible but unverified. Source this before using the component near the dilute end."),
     :BF_ECF_MASS_FRACTION => Provenance("BF.ECF.MASS_FRACTION", "unitless", 0.208, "A", "reported", "Zhang N et al. PMC6751809.", "20.8 +/- 2.3 percent of body weight, same cohort and method. Sums with ICF to TBW."),
     :BF_ECW_QUANTILE_REFERENCE => Provenance("BF.ECW.QUANTILE_REFERENCE", "unitless", 1.0, "A", "reported", "Extracellular water across the adult lifespan: reference values for adults. Physiol Meas 2007;28(5).", "MARKER ROW - not a value. n=1538 multi-ethnic adults, ECW from isotope dilution and whole-body 40K counting, conditional quantile equations by weight height age sex race. This is the better source for a POPULATION DISTRIBUTION than any point estimate and should replace the BIA-derived fractions above once the equations are extracted. Extraction blocked: full text not retrieved."),
     :BF_H2O_INSENSIBLE_LOSS => Provenance("BF.H2O.INSENSIBLE_LOSS", "L/day", 0.8, "B", "assumed", "Convention pending primary source.", "ASSUMED. Respiratory plus transepidermal, sedentary thermoneutral adult. Needs a primary source; varies strongly with ambient conditions and activity, so a single constant is a known simplification."),
@@ -393,6 +436,7 @@ const PARAM_PROVENANCE = Dict{Symbol,Provenance}(
     :RN_H2O_OBLIGATORY_LOSS => Provenance("RN.H2O.OBLIGATORY_LOSS", "L/day", 0.5, "B", "reported", "Standard physiological reference. VERIFY.", "Minimum urine volume needed to excrete the daily solute load at maximal urinary concentration. Sets a floor on water excretion."),
     :RN_NA_FRACTIONAL_REABSORPTION => Provenance("RN.NA.FRACTIONAL_REABSORPTION", "unitless", 0.9918651, "B", "derived", "Standard physiological reference. VERIFY.", "DERIVED to close the loop at nominal: filtered load = 180 L/day x 140 mEq/L = 25200 mEq/day; excretion must equal intake of 205 mEq/day at steady state, so FR = 1 - 205/25200 = 0.9918651. NOT rounded - rounding to 0.9915 gave excretion of 214.2 vs intake 205, a 9.2 mEq/day drift that ran the model to a lethal state while reporting Success. This is NOT an independent measurement - it is fixed by the other three values, and that dependency must be preserved if any of them changes."),
     :RN_PRESSURE_NATRIURESIS_SLOPE => Provenance("RN.PRESSURE_NATRIURESIS.SLOPE", "(mEq/day)/mmHg", 20.0, "B", "calibrated", "Guyton AC, Coleman TG, Granger HJ. Circulation: overall regulation. Annu Rev Physiol 1972;34:13-46.", "CALIBRATED, not measured. VALUE UNCHANGED AT 20.0 - read the identifiability result below before altering it. Originating model: Guyton 1972 systems analysis; the EXISTENCE and steepness of pressure natriuresis is E1 and well replicated, this particular slope is a fitted constant that propagated through the modelling literature. FORM: LINEAR, AND NOW SOURCED. Roman RJ, Cowley AW Jr, Am J Physiol 1985, PMID 3970209 (rat, denervated, vasopressin/aldosterone/corticosterone/noradrenaline clamped) report the relation as the slope of a LINE, 2 uL/min/kidney/mmHg over RPP 90-160 mmHg. Osborn/Francisco/DiBona, Proc Soc Exp Biol Med 1981, independently report UNaV falling LINEARLY over dog RPP 137-55 mmHg. An earlier note in relations.csv called the curve 'markedly nonlinear'; that was asserted from memory and is RETRACTED. VALIDITY RANGE roughly 55-160 mmHg. RN.AUTOREG.UPPER was 180, outside that range; moved to 160 on 2026-08-21 and cited to the same paper. MAGNITUDE CROSS-CHECK: Mizelle HL et al, Hypertension 1993;22:102-110 (dog, split bladder, bilateral servo-control, 12 d - the cleanest isolation of pressure per se) gives 3.468 mmol/day/mmHg whole animal = 2.154e-4 of filtered load per mmHg against this row's 7.937e-4, so the calibrated value is 3.68x STEEPER than the animal datum on a scaling-free basis. That is the range in uncertainty_value; 5.43 is the Mizelle-consistent value. SINGLE SOURCE, k=1, DOG - per validation/pooling.md that is animal-derived, may not be pooled with a human value, and is recorded as a comparator rather than adopted. IDENTIFIABILITY (measured 2026-08-20 on IPE at 9a6fa42): this parameter ALONE fixes the model's salt sensitivity. At steady state excretion equals intake, so Na_excr = Na_filtered*(1-FR_Na) + G_pn*(MAP-MAP_ref) gives dMAP ~ d(intake)/G_pn, in which CV.VENOUS_RETURN.SENSITIVITY does not appear. Confirmed numerically: the 205->103 mEq/day step gives 4.934 mmHg at G_pn=20.0 and 15.698 mmHg at G_pn=5.43, while varying G_vr over 2880->600 at fixed G_pn=5.43 moves the shift only 15.698->12.403 and drives V_ecf to 9.889 L, below the 10 L floor asserted in test/runtests.jl. The residual departure from an exact 1/G_pn law is C_Na drift. CONSEQUENCE, correcting HANDOVER.md section 5 item 4: G_pn and G_vr are NOT jointly identified as one lumped loop gain. G_pn is identified by the salt-sensitivity shift and G_vr by ECF volume, separately. Adopting the Mizelle value in isolation re-balances nothing - it forces a 15.7 mmHg shift across a 102 mEq/day range, which is salt-sensitive-hypertensive behaviour, not normotensive. WHY THE GAP IS PROBABLY REAL RATHER THAN AN ERROR: IPE has NO volume-sensing natriuretic path. Seeliger et al, J Physiol 2004;559:939-951, servo-controlled RPP during saline loading in freely moving dogs with NO reduction in peak or cumulative natriuresis, and Bie 2018 (10.1152/ajpregu.00363.2017) argues excretion is keyed to extracellular volume rather than pressure. With ANP absent, all sodium regulation is forced through this one term, so an inflated G_pn is the expected COMPENSATION for the missing path. DO NOT lower this to 5.43 before a volume-sensing natriuretic path exists - doing so degrades the only behaviour the model has ever reproduced. Re-estimate G_pn and the ANP gain JOINTLY against digitised Mars500, as posteriors, not this value alone and not as a point value."),
+    :RN_URINE_SOLUTE_LOAD => Provenance("RN.URINE.SOLUTE_LOAD", "mOsm/day", 600.0, "C", "assumed", "", "ASSUMED and NOT SOURCED, and it is the load-bearing assumption of the ADH component - urine volume is this divided by urine osmolality, so it scales the whole water-excretion limb. 600 mOsm/day is a conventional adult figure. It is HELD CONSTANT, which is itself a modelling choice: in reality it tracks protein and salt intake, so a salt step should move it and here it does not. That omission makes the model under-respond to a salt load on the water side. Source it, and consider making it depend on Na_excr, before trusting any water result under a changed diet."),
 )
 
 """
