@@ -210,7 +210,8 @@ not.** They are separately identified — `G_pn` by the pressure shift, `G_vr` b
 volume. That is *better* news for estimating them: a joint posterior is tractable rather
 than degenerate.
 
-> **SUPERSEDED 2026-08-25 — READ `validation/salt_sensitivity_extract.py` BEFORE
+> **SUPERSEDED 2026-08-25 — see ADR 0013, and read
+> `validation/salt_sensitivity_extract.py` BEFORE
 > ACTING ON ANYTHING IN §3.** The human normotensive literature puts the MAP response at
 > **0.25–2.30 mmHg per 100 mmol/day**. The model gives **4.84**. It is **2.1× to 19× too
 > salt-sensitive**, and its salt sensitivity sits in the **hypertensive** range. `G_pn`
