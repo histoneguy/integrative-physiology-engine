@@ -118,8 +118,24 @@ using SciMLBase
         # could not detect a 3.68x error in the model's most consequential
         # unmeasured number. This pins it. See the ledger notes on that row before
         # changing the expected value.
+        #
+        # VALUE UPDATED 2026-08-25, 4.934 -> 5.0996, WHEN ADH LANDED. This pin
+        # exists to catch a parameter change slipping through unnoticed, and it
+        # did its job: enabling osmoregulation moved the headline number and the
+        # suite refused to pass. The change is kept because it is INTENTIONAL,
+        # MEASURED and MECHANISTIC - ADR 0006 build order item 5, +3.4%, and in
+        # the physiologically expected direction, because water follows salt: at
+        # lower sodium intake plasma osmolality falls, ADH is suppressed, water
+        # is excreted and ECF volume falls further than with a fixed water
+        # output.
+        #
+        # G_pn ITSELF IS UNCHANGED at 20.0, which is what this testset is about.
+        # If it ever moves, ADR 0013 is the record and this number moves with it.
+        # Note that ADR 0013 finds the model already 2 to 19 times more
+        # salt-sensitive than normotensive humans, so this shift is in the wrong
+        # direction against the literature - a fact about G_pn, not about ADH.
         v = check_pressure_natriuresis(salt_step())
-        @test isapprox(v.map_shift_mmHg, 4.934; atol = 0.05)
+        @test isapprox(v.map_shift_mmHg, 5.0996; atol = 0.05)
     end
 
     @testset "ADR 0012 stage 1 is a change of variables, not of behaviour" begin
@@ -164,7 +180,7 @@ using SciMLBase
         # own inertness test is not a substitute for this one: this asserts the
         # PARTITION is a change of variables, that one asserts the DISABLED RAAS
         # BRANCH is inert. Different claims, deliberately kept apart.
-        r = salt_step(raas = false)
+        r = salt_step(raas = false, adh = false)
         for (lvl, expected) in pre_partition
             got = only(l.MAP_final for l in r.levels if l.level == lvl)
             @test isapprox(got, expected; rtol = 1e-9)
@@ -177,7 +193,10 @@ using SciMLBase
         # ADR 0008: the disabled branch is TESTED, not assumed. With raas=false
         # every RAAS state is held at zero and fr_mod is identically zero, so
         # Renal.FR_effective must reduce to its pre-RAAS form.
-        r = salt_step(raas = false)
+        # adh=false as well: this testset asserts the RAAS DISABLED BRANCH is
+        # inert against pre-RAAS references, and ADH landed after those were
+        # measured. Isolating one change at a time is the whole point.
+        r = salt_step(raas = false, adh = false)
         pre_raas = (205.0 => 93.00003751695675,
                     154.0 => 90.53356850133511,
                     103.0 => 88.06587129611133)
@@ -231,6 +250,77 @@ using SciMLBase
         # rise in renin produces a PROPORTIONALLY SMALLER rise in aldosterone.
         # If this ever exceeds 1 someone has re-attached it to angiotensin II.
         @test 0.0 < IPE.LedgerParams.RAAS_ALDO_PRA_LOG_SLOPE < 1.0
+    end
+
+    @testset "ADH disabled branch recovers the placeholder (ADR 0008)" begin
+        # ADR 0008: the disabled branch is TESTED, not assumed. With adh=false
+        # u_osm is held at U_base, so Osm_load/u_osm returns exactly the old
+        # placeholder value of intake minus insensible loss.
+        L = IPE.LedgerParams
+        @test isapprox(L.RN_URINE_SOLUTE_LOAD / L.ADH_URINE_OSM_BASELINE,
+                       L.BF_H2O_INTAKE_NOMINAL - L.BF_H2O_INSENSIBLE_LOSS;
+                       rtol = 1e-9)
+        # And the whole loop with adh=false must reproduce the RAAS-era numbers.
+        r = salt_step(adh = false)
+        for l in r.levels
+            @test 10.0 <= l.V_ecf_final <= 20.0
+            @test 60.0 <= l.MAP_final <= 140.0
+        end
+    end
+
+    @testset "osmoregulation responds in the right direction" begin
+        # The whole point of replacing the placeholder. Higher plasma osmolality
+        # must give MORE antidiuretic activity, a MORE concentrated urine and a
+        # SMALLER volume. Checked on the component algebra directly rather than
+        # through the closed loop, so a loop failure cannot mask a sign error.
+        L = IPE.LedgerParams
+        f(osm) = begin
+            a = clamp(L.ADH_OSM_SENSITIVITY * (osm - L.ADH_OSM_THRESHOLD), 0.0, 1.0)
+            u = L.ADH_URINE_OSM_MIN + a * (L.ADH_URINE_OSM_MAX - L.ADH_URINE_OSM_MIN)
+            (adh = a, u_osm = u, volume = L.RN_URINE_SOLUTE_LOAD / u)
+        end
+        lo, mid, hi = f(284.0), f(287.0), f(295.0)
+        @test lo.adh < mid.adh < hi.adh
+        @test lo.u_osm < mid.u_osm < hi.u_osm
+        @test lo.volume > mid.volume > hi.volume
+        # Saturating at both ends, per the clamp.
+        @test f(270.0).adh == 0.0
+        @test f(320.0).adh == 1.0
+        # At maximal antidiuresis the volume is the obligatory minimum, by
+        # construction of U_max. If this fails the closure has drifted.
+        @test isapprox(f(320.0).volume, L.RN_H2O_OBLIGATORY_LOSS; rtol = 1e-9)
+        # And at the setpoint it is exactly intake minus insensible loss.
+        @test isapprox(mid.volume,
+                       L.BF_H2O_INTAKE_NOMINAL - L.BF_H2O_INSENSIBLE_LOSS; rtol = 1e-6)
+    end
+
+    @testset "ADH sits mid-range at baseline, not against a limit" begin
+        # A component pinned against a saturation limit at its operating point
+        # cannot regulate in one direction. Circadian and ANP both got parked for
+        # being ahead of their dependencies; this checks the opposite failure -
+        # being present but inert. Baseline activity is about a quarter of
+        # maximal, so there is authority both ways.
+        L = IPE.LedgerParams
+        a = L.ADH_OSM_SENSITIVITY * (L.BF_OSM_PLASMA_SETPOINT - L.ADH_OSM_THRESHOLD)
+        @test 0.05 < a < 0.60
+    end
+
+    @testset "ADH amplifies salt sensitivity, and that direction is expected" begin
+        # Water follows salt: at lower sodium intake plasma osmolality falls,
+        # ADH is suppressed, water is excreted, and ECF volume falls FURTHER
+        # than it would with a fixed water output. So enabling ADH must not
+        # REDUCE the salt-step pressure shift.
+        #
+        # Measured on introduction: 4.9337 -> 5.0996 mmHg, +3.4%.
+        #
+        # WORTH KNOWING RATHER THAN CELEBRATING. ADR 0013 records that the model
+        # is already 2 to 19 times more salt-sensitive than normotensive humans.
+        # This moves it further in the wrong direction, which is a fact about
+        # G_pn and not about ADH - the mechanism here is correct in sign.
+        on  = check_pressure_natriuresis(salt_step(adh = true)).map_shift_mmHg
+        off = check_pressure_natriuresis(salt_step(adh = false)).map_shift_mmHg
+        @test on > off
+        @test isapprox(on, 5.0996; atol = 0.02)
     end
 
     @testset "modulators are off by default" begin

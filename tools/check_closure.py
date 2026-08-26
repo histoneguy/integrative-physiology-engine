@@ -147,6 +147,51 @@ def main() -> int:
           "the sensitivity is Guyton's calibrated value.",
           errors)
 
+    # --- osmoregulation, ADR 0006 build order item 5 -----------------------
+    #
+    # ADH replaced a placeholder that reproduced baseline water balance by
+    # construction. Three derived values keep that true. If any drifts, the
+    # model silently stops excreting what it takes in, which is precisely the
+    # class of failure this gate was written for.
+    solute = p["RN.URINE.SOLUTE_LOAD"]
+    u_min  = p["ADH.URINE.OSM_MIN"]
+    v_base = p["BF.H2O.INTAKE_NOMINAL"] - p["BF.H2O.INSENSIBLE_LOSS"]
+
+    check("max urine osmolality from obligatory volume",
+          p["ADH.URINE.OSM_MAX"],
+          solute / p["RN.H2O.OBLIGATORY_LOSS"],
+          "U_max = solute load / obligatory minimum urine volume. At maximal "
+          "antidiuresis urine volume must equal the obligatory minimum already "
+          "in the ledger, so U_max is forced, not chosen.",
+          errors)
+
+    check("baseline urine osmolality closes water balance",
+          p["ADH.URINE.OSM_BASELINE"], solute / v_base,
+          "U_base = solute load / (intake - insensible loss). Used by the "
+          "disabled branch to reproduce the pre-ADH placeholder exactly.",
+          errors)
+
+    check("ADH sensitivity closes at the setpoint",
+          p["ADH.OSM.SENSITIVITY"],
+          ((solute / v_base) - u_min) /
+          ((p["ADH.URINE.OSM_MAX"] - u_min) *
+           (p["BF.OSM.PLASMA_SETPOINT"] - p["ADH.OSM.THRESHOLD"])),
+          "k_adh is DERIVED by requiring that at the plasma osmolality setpoint "
+          "the model excretes exactly intake minus insensible loss. If this "
+          "drifts the operating point moves and every salt-step level moves "
+          "with it.",
+          errors)
+
+    # And the thing all three exist to guarantee, checked directly.
+    adh_base = p["ADH.OSM.SENSITIVITY"] * (p["BF.OSM.PLASMA_SETPOINT"] -
+                                           p["ADH.OSM.THRESHOLD"])
+    u_base_from_adh = u_min + adh_base * (p["ADH.URINE.OSM_MAX"] - u_min)
+    check("water out at the osmotic setpoint",
+          solute / u_base_from_adh, v_base,
+          "Composed end to end: osmolality -> antidiuretic activity -> urine "
+          "osmolality -> volume must return intake minus insensible loss.",
+          errors)
+
     print()
     if errors:
         print("CLOSURE CHECK FAILED:\n", file=sys.stderr)

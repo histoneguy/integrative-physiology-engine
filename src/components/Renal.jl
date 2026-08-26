@@ -43,6 +43,7 @@ using ModelingToolkit: t_nounits as t, D_nounits as D
 
 using ..LedgerParams:
     RN_GFR_NOMINAL, RN_NA_FRACTIONAL_REABSORPTION, RN_PRESSURE_NATRIURESIS_SLOPE,
+    RN_URINE_SOLUTE_LOAD,
     RN_AUTOREG_LOWER, RN_AUTOREG_UPPER, RN_H2O_OBLIGATORY_LOSS,
     CV_MAP_SETPOINT, BF_H2O_INTAKE_NOMINAL, BF_H2O_INSENSIBLE_LOSS
 
@@ -68,6 +69,7 @@ function Renal(; name)
         MAP_hi   = RN_AUTOREG_UPPER
         MAP_ref  = CV_MAP_SETPOINT
         V_min    = RN_H2O_OBLIGATORY_LOSS
+        Osm_load = RN_URINE_SOLUTE_LOAD
         H2O_in   = BF_H2O_INTAKE_NOMINAL
         H2O_ins  = BF_H2O_INSENSIBLE_LOSS
     end
@@ -77,6 +79,7 @@ function Renal(; name)
         MAP(t)              # mmHg     INPUT from cardiovascular
         C_Na(t)             # mEq/L    INPUT from body fluids
         fr_mod(t)           # unitless INPUT from RAAS (0.0 = no RAAS action)
+        u_osm(t)            # mOsm/kg  INPUT from ADH (urine osmolality)
         GFR(t)              # L/day
         Na_filtered(t)      # mEq/day
         Na_reabsorbed(t)    # mEq/day
@@ -121,11 +124,17 @@ function Renal(; name)
         Na_reabsorbed ~ FR_effective * Na_filtered,
         Na_excr       ~ Na_filtered - Na_reabsorbed,
 
-        # Water excretion is a placeholder: intake minus insensible loss, floored
-        # at the obligatory minimum. This is NOT osmoregulation - ADH does not
-        # exist yet. It holds water balance closed so the sodium loop can be
-        # tested. Replace when ADH lands.
-        H2O_excr ~ max(V_min, H2O_in - H2O_ins),
+        # OSMOREGULATION (ADR 0006 build order item 5). The placeholder that
+        # stood here - intake minus insensible loss, floored - was replaced on
+        # 2026-08-25 when ADH landed.
+        #
+        # Urine volume is solute excretion divided by urine concentration, and
+        # ADH sets the concentration. That is where the nonlinearity lives: the
+        # same change in u_osm moves litres at the dilute end and millilitres at
+        # the concentrated end. The floor at V_min is retained as a guard; at
+        # u_osm = U_max the division already gives exactly V_min, so it should
+        # never bind, and if it ever does the ADH closure has drifted.
+        H2O_excr ~ max(V_min, Osm_load / u_osm),
     ]
 
     return MTKSystem(eqs, t, vars, pars; name)
