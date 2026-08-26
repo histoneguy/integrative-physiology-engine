@@ -450,3 +450,80 @@ the chronotropic response above.
 **k = 1 and it stays k = 1. No ledger parameter is recorded**, per stop condition 3:
 active standing is an excluded calibration paradigm under ADR 0011 and this
 pre-registration did not lift that.
+
+---
+
+## THE CONCAVITY REQUIREMENT IS REFUTED — 2026-08-24
+
+Sourced under `validation/venous_compliance_prereg.md`, committed at `d811ca0` before
+any paper was opened. Reproduce with `python validation/venous_compliance_extract.py`.
+
+**The systemic pressure–volume relationship is LINEAR over the physiological range**, and
+so is the cardiac function curve. The composed filling relation `g` is therefore linear,
+and the concavity this record requires is not there.
+
+| Source | Species | Compliance | Shape |
+|---|---|---|---|
+| Lee 1988, PMID 3337249 | dog, ganglion-blocked | 2.09 mL/mmHg/kg | **linear** MCFP 5–12 mmHg, R²=0.992; exponential *below* 5 |
+| Rothe & Gaddis 1990, PMID 2297840 | dog | 1.80 ± 0.35 | unchanged by reflex blockade |
+| Ogilvie 1990, PMID 2360680 | pig | 2.1 ± 0.3 | three methods span 2.1–3.5 |
+| Cha 1992, PMID 1423008 | guinea pig | 2.1 ± 0.1 | unchanged by pregnancy |
+| Ogilvie 1992, PMID 1288839 | dog | 3.4 ± 0.5 | unchanged by volume loading alone |
+| **Maas 2012, PMID 22763909** | **human**, n=15 | 0.97 ± 0.49 mL/mmHg/kg PBW | **"Csys was linear"** |
+
+Pinsky 1984 (PMID 6368503) reports the stroke-volume-to-`Pra` relation as "a straight
+line". Greene & Shoukas 1986 (PMID 3740285) report a *slope* for the cardiac function
+curve.
+
+Non-linearity is real and **out of range**: Lee 1988 finds an exponential relation below
+MCFP 5 mmHg. The model sits near 7–8 mmHg and its salt step moves blood volume by 2.7%.
+
+**Section 0.3 of the pre-registration declared this outcome in advance** as a real result
+and the more consequential one, with an instruction not to go looking for a more curved
+source. That instruction is being followed.
+
+### The literature names the mechanism it should have been
+
+**Greene & Shoukas 1986 is decisive.** Carotid sinus pressure 50 → 200 mmHg moved the
+venous return curve's **zero-flow intercept** 15.37 → 11.94 mmHg with **no change in
+slope**, and they conclude that changes in vascular *capacity* are the primary route by
+which reflexes change cardiac output.
+
+So the posture gradient is a shift in **unstressed volume**, not a slide along a curve.
+Upright posture provokes reflex venoconstriction, converting unstressed volume to stressed
+volume and moving the intercept. Compliance — the slope — does not change, and Rothe &
+Gaddis measured that directly.
+
+Rothe 1976 (PMID 975458) puts maximal active venoconstriction at 9.0 mL/kg. Greenway &
+Lautt 1986 (PMID 3730923) put ~60% of blood volume in the unstressed reserve at minimal
+tone, and Maas 2012 measures human stressed volume at 28.5 ± 15% of total blood volume —
+the same statement from the other side.
+
+### Consequence for this ADR
+
+**The distinction the evidence supports is stressed/unstressed, not central/peripheral.**
+
+This record chose central/peripheral on the grounds that it was "the cut the evidence in
+this repo is actually about". That was true of the evidence in the repo at the time —
+Norsk's graded immersion is an anatomical translocation. It is not true of the
+pressure–volume literature, which is unanimous that the operative variable is the stressed
+fraction and that reflexes act on the unstressed reserve.
+
+**What survives:** stage 1 is inert and harmless, `V_blood` is still not the filling
+variable, and the two arguments in favour of a partition — that the model needs a variable
+with a receptor behind it, and that redistribution at constant total volume must be
+expressible — both stand.
+
+**What does not:** falsifiable test 1, and the concavity requirement it imposed on
+ADR 0011. **ADR 0011's filling relation may be linear**, which is a substantial
+simplification of what that record has to source.
+
+**Not decided here.** Whether to re-cut the partition as stressed/unstressed, or to carry
+both, or to leave stage 1 as it is and put the reflex-controlled unstressed volume behind
+RAAS where §6 item 1 already places venous tone. That is a decision, not an extraction,
+and it should not be made inside a sourcing addendum.
+
+**Coincidence, flagged so it is not exploited:** the placeholder `f_central = 0.25` sits
+close to Maas's 28.5% stressed fraction. **They are different quantities** — central
+volume is anatomical, stressed volume is mechanical. Do not quietly reinterpret one as the
+other.
