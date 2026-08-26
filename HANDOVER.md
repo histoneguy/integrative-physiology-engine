@@ -210,6 +210,15 @@ not.** They are separately identified — `G_pn` by the pressure shift, `G_vr` b
 volume. That is *better* news for estimating them: a joint posterior is tractable rather
 than degenerate.
 
+> **SUPERSEDED 2026-08-25 — READ `validation/salt_sensitivity_extract.py` BEFORE
+> ACTING ON ANYTHING IN §3.** The human normotensive literature puts the MAP response at
+> **0.25–2.30 mmHg per 100 mmol/day**. The model gives **4.84**. It is **2.1× to 19× too
+> salt-sensitive**, and its salt sensitivity sits in the **hypertensive** range. `G_pn`
+> should be **larger** than 20 — the five qualifying meta-analyses imply **44 to 393** —
+> not smaller. **The Mizelle comparison below points the wrong way**, and the 3.68× / 2.2×
+> residual is an argument about moving a number in a direction the human evidence does not
+> support. The audit of it stands as arithmetic; it is off the critical path.
+
 **`RN.PRESSURE_NATRIURESIS.SLOPE` stays at 20.0.** The comparison against Mizelle 1993
 puts it 3.68× too steep, and adopting *that* alone forces 15.7 mmHg across a 102 mEq/day
 range — salt-sensitive hypertensive behaviour, not normotensive. The decision to stay at
