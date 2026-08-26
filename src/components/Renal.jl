@@ -76,6 +76,7 @@ function Renal(; name)
         # All algebraic - no defaults. MAP and C_Na arrive by connection.
         MAP(t)              # mmHg     INPUT from cardiovascular
         C_Na(t)             # mEq/L    INPUT from body fluids
+        fr_mod(t)           # unitless INPUT from RAAS (0.0 = no RAAS action)
         GFR(t)              # L/day
         Na_filtered(t)      # mEq/day
         Na_reabsorbed(t)    # mEq/day
@@ -110,7 +111,12 @@ function Renal(; name)
         #
         # G_pn is normalised by filtered load so the slope is expressed in
         # mEq/day per mmHg of excretion, matching how it is reported.
-        FR_effective ~ clamp(FR_Na - G_pn * (MAP - MAP_ref) / Na_filtered, 0.0, 1.0),
+        # fr_mod is the RAAS tubular increment (ADR 0006 build order item 4).
+        # It is ADDITIVE and escape drives it to zero at steady state, so it
+        # moves the transient and leaves every steady state exactly where it
+        # was. fr_mod = 0.0 recovers the pre-RAAS equation identically.
+        FR_effective ~ clamp(FR_Na + fr_mod - G_pn * (MAP - MAP_ref) / Na_filtered,
+                             0.0, 1.0),
 
         Na_reabsorbed ~ FR_effective * Na_filtered,
         Na_excr       ~ Na_filtered - Na_reabsorbed,

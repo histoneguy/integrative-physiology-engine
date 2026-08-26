@@ -158,13 +158,79 @@ using SciMLBase
         pre_partition = (205.0 => 93.00003751695675,
                          154.0 => 90.53356850133511,
                          103.0 => 88.06587129611133)
-        r = salt_step()
+        # raas=false ISOLATES what this testset is about. The reference values
+        # were measured before RAAS existed, so comparing against a model that
+        # now includes it would be testing two changes at once. RAAS having its
+        # own inertness test is not a substitute for this one: this asserts the
+        # PARTITION is a change of variables, that one asserts the DISABLED RAAS
+        # BRANCH is inert. Different claims, deliberately kept apart.
+        r = salt_step(raas = false)
         for (lvl, expected) in pre_partition
             got = only(l.MAP_final for l in r.levels if l.level == lvl)
             @test isapprox(got, expected; rtol = 1e-9)
         end
         @test isapprox(check_pressure_natriuresis(r).map_shift_mmHg,
                        4.934166220845427; rtol = 1e-9)
+    end
+
+    @testset "RAAS disabled branch is exactly inert (ADR 0008)" begin
+        # ADR 0008: the disabled branch is TESTED, not assumed. With raas=false
+        # every RAAS state is held at zero and fr_mod is identically zero, so
+        # Renal.FR_effective must reduce to its pre-RAAS form.
+        r = salt_step(raas = false)
+        pre_raas = (205.0 => 93.00003751695675,
+                    154.0 => 90.53356850133511,
+                    103.0 => 88.06587129611133)
+        for (lvl, expected) in pre_raas
+            got = only(l.MAP_final for l in r.levels if l.level == lvl)
+            @test isapprox(got, expected; rtol = 1e-9)
+        end
+    end
+
+    @testset "RAAS escape leaves every steady state where it was" begin
+        # THE DESIGN CLAIM OF THE COMPONENT. esc chases fr_raw, so fr_mod is full
+        # on arrival and zero at steady state - aldosterone does not permanently
+        # retain sodium in vivo and must not here. The salt-step levels are 30-day
+        # steady states, so wiring RAAS in must not move them.
+        #
+        # The bar is 1e-3 mmHg rather than exact: escape has tau = 1.669 day, so
+        # 30 days leaves a residual of order exp(-18), and the extra states change
+        # what structural_simplify emits and hence the solver trajectory. Measured
+        # on introduction: the largest level moved 4.3e-4 mmHg and the shift moved
+        # 4.3e-4. If this EVER fails by more than a few mmHg, escape has stopped
+        # working and RAAS is permanently retaining sodium.
+        on  = salt_step(raas = true)
+        off = salt_step(raas = false)
+        for (a, b) in zip(on.levels, off.levels)
+            @test a.level == b.level
+            @test isapprox(a.MAP_final, b.MAP_final; atol = 1e-3)
+        end
+        @test isapprox(check_pressure_natriuresis(on).map_shift_mmHg,
+                       check_pressure_natriuresis(off).map_shift_mmHg; atol = 1e-3)
+    end
+
+    @testset "RAAS still closes the loop" begin
+        # Excretion must equal intake at every level with RAAS on. A component
+        # that retained sodium indefinitely would show up here first.
+        r = salt_step(raas = true)
+        for l in r.levels
+            @test isapprox(l.Na_excr_final, l.level; rtol = 2e-2)
+        end
+    end
+
+    @testset "RAAS rectification is one-sided (van Ochten threshold)" begin
+        # renin_drive ~ ifelse(MAP < P_thr, (P_thr - MAP)/MAP_ref, 0.0).
+        # P_thr = 93.0 and the model operating point is 93.0, so RAAS is inactive
+        # at and above baseline BY CONSTRUCTION and active only when pressure
+        # falls. This asserts the SIGN of that asymmetry, which is the part the
+        # meta-analysis actually supports.
+        @test IPE.LedgerParams.RAAS_RENIN_PRESSURE_THRESHOLD == 93.0
+        @test IPE.LedgerParams.RAAS_RENIN_PRESSURE_THRESHOLD ==
+              IPE.LedgerParams.CV_MAP_SETPOINT
+        # Compressive adrenal response: exponent strictly between 0 and 1, so a
+        # rise in renin produces a PROPORTIONALLY SMALLER rise in aldosterone.
+        # If this ever exceeds 1 someone has re-attached it to angiotensin II.
+        @test 0.0 < IPE.LedgerParams.RAAS_ALDO_PRA_LOG_SLOPE < 1.0
     end
 
     @testset "modulators are off by default" begin

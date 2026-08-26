@@ -54,11 +54,13 @@ figure that justifies the symbolic layer in ADR 0001. Not for general use;
 call `build_model`.
 """
 function build_raw_model(; body_mass = 70.0, storage::Bool = false,
-                         circadian::Bool = false, baroreflex::Bool = true)
+                         circadian::Bool = false, baroreflex::Bool = true,
+                         raas::Bool = true)
     @named bf = BodyFluids(; body_mass, storage)
     @named cv = Cardiovascular()
     @named rn = Renal()
     @named br = Baroreflex(; enabled = baroreflex)
+    @named ra = Raas(; enabled = raas)
 
     connections = [
         # body fluids -> cardiovascular
@@ -75,9 +77,12 @@ function build_raw_model(; body_mass = 70.0, storage::Bool = false,
         # cardiovascular <-> baroreflex
         br.MAP          ~ cv.MAP,
         cv.tpr_mod      ~ br.tpr_mod,
+        # cardiovascular -> raas -> renal
+        ra.MAP          ~ cv.MAP,
+        rn.fr_mod       ~ ra.fr_mod,
     ]
 
-    systems = [bf, cv, rn, br]
+    systems = [bf, cv, rn, br, ra]
 
     if circadian
         @named clk = CircadianClock()
@@ -153,11 +158,12 @@ function salt_step(; levels_mEq_day = (205.0, 154.0, 103.0),
                    days_per_level = 30.0,
                    body_mass = 70.0,
                    baroreflex::Bool = true,
+                   raas::Bool = true,
                    saveat = 0.25,
                    solver = nothing,
                    kwargs...)
 
-    sys = build_model(; body_mass, baroreflex)
+    sys = build_model(; body_mass, baroreflex, raas)
     results = NamedTuple[]
     u_carry = nothing          # state carried between levels
     t0 = 0.0
@@ -257,14 +263,30 @@ section 4). Agreement across independent methods cannot be satisfied by
 reproducing another engine's integration error, which makes it a stronger claim
 than matching any single implementation.
 """
-function solver_agreement(sys; solvers = [FBDF(), Rodas5P()], kwargs...)
+function solver_agreement(sys; solvers = [FBDF(), Rodas5P()], atol = 1e-6, kwargs...)
     sols = [solve_individual(sys; solver = s, kwargs...) for s in solvers]
     ref = Array(sols[1])
     worst = 0.0
     for s in sols[2:end]
         A = Array(s)
         size(A) == size(ref) || error("solver_agreement requires identical saveat grids")
-        worst = max(worst, maximum(abs.(A .- ref) ./ max.(abs.(ref), 1e-12)))
+        # MIXED absolute/relative, not pure relative. The denominator floor is
+        # `atol`, not machine epsilon.
+        #
+        # WHY, recorded 2026-08-25 when this bit. The floor was 1e-12, which makes
+        # the metric a pure ratio for any state that legitimately sits at zero.
+        # RAAS has one: `esc` is identically zero at the operating point, because
+        # MAP equals the rectification threshold so renin drive is zero. Its value
+        # was 2.2e-17 and the two solvers disagreed by 2.1e-11 in ABSOLUTE terms -
+        # utterly negligible - which the old metric reported as a relative
+        # deviation of 20.5 and failed the suite on. Every state carrying real
+        # magnitude agreed to 1e-7 or better at the same time.
+        #
+        # This is a defect in the metric that RAAS exposed rather than caused, and
+        # any future component with a zero-valued state would have hit it too. A
+        # deviation below `atol` is below any physiological meaning for every state
+        # in this model - the largest, Na_ecf, is order 2000.
+        worst = max(worst, maximum(abs.(A .- ref) ./ max.(abs.(ref), atol)))
     end
     return (max_rel_deviation = worst, solutions = sols)
 end
