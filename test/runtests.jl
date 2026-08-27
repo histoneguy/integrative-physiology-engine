@@ -185,8 +185,20 @@ using SciMLBase
             got = only(l.MAP_final for l in r.levels if l.level == lvl)
             @test isapprox(got, expected; rtol = 1e-9)
         end
+        # TOLERANCE LOOSENED 2026-08-25 FROM 1e-9 TO 1e-5, AND ONLY HERE.
+        # check_pressure_natriuresis became PHASE-AWARE when the circadian clock
+        # was connected: it now reads MAP_cycavg, a mean over the final day,
+        # rather than the instantaneous endpoint. The two differ by 7.4e-7
+        # relative because the trajectory is still settling very slowly, so a
+        # one-day mean is not the endpoint even with no clock running.
+        #
+        # The MAP_final assertions above KEEP rtol = 1e-9 - they are what
+        # actually test the ADR 0012 partition, and they still hold exactly.
+        # This line tests a derived summary whose definition changed, so the
+        # reference is no longer bit-comparable and pretending otherwise would
+        # mean reverting a genuine improvement to keep a number stable.
         @test isapprox(check_pressure_natriuresis(r).map_shift_mmHg,
-                       4.934166220845427; rtol = 1e-9)
+                       4.934166220845427; rtol = 1e-5)
     end
 
     @testset "RAAS disabled branch is exactly inert (ADR 0008)" begin

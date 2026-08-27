@@ -19,13 +19,43 @@ circadian MAP rhythms remained intact. The rhythms are dissociable, so the model
 be able to dissociate them. Disabling `renal_gain` alone should reproduce that
 phenotype - a falsifiable test, not a convenience.
 
-STRUCTURE SOURCES
-  Circadian rhythms and the kidney. Nat Rev Nephrol 2018. 10.1038/s41581-018-0048-9
-  Recent advances in understanding the circadian clock in renal physiology. PMC6350809
-  Johnston JG, Speed JS, Jin C, Pollock DM. Am J Physiol Renal Physiol
-    2016;311:F991-F998. 10.1152/ajprenal.00103.2016
-  Diurnal control of blood pressure is uncoupled from sodium excretion (Bmal1-/- rat).
-    10.1161/HYPERTENSIONAHA.119.13908
+STRUCTURE SOURCES - corrected 2026-08-25 by a citation audit. Every entry here
+previously carried a title with NO AUTHOR LIST, which is the exact shape that let a
+misattribution survive two sessions on PMID 2966064.
+
+  Firsov D, Bonny O. Circadian rhythms and the kidney. Nat Rev Nephrol
+    2018;14(10):626-635. 10.1038/s41581-018-0048-9
+  Johnston JG, Speed JS, Jin C, Pollock DM. Loss of endothelin B receptor function
+    impairs sodium excretion in a time- and sex-dependent manner. Am J Physiol Renal
+    Physiol 2016;311(5):F991-F998. 10.1152/ajprenal.00103.2016
+    NOTE THE ACTUAL TITLE. This is an endothelin-B knockout study, not a general
+    characterisation of the renal circadian rhythm. It supports time-of-day
+    dependence in sodium excretion; it does not supply an amplitude or a phase.
+  Johnston JG, Speed JS, Becker BK, Kasztan M, Soliman RH, Rhoads MK, Tao B, Jin C,
+    et al. Diurnal control of blood pressure is uncoupled from sodium excretion.
+    Hypertension 2020;75(6):1624-1634. 10.1161/HYPERTENSIONAHA.119.13908
+    YEAR IS 2020, not 2019 - the .119. in the DOI is a submission-year convention.
+
+  ENDOGENEITY OF THE RENAL ARM, which is the claim ADR 0005 rests on:
+  el-Hajj Fuleihan G, Klerman EB, Brown EN, Choe Y, Brown EM, Czeisler CA.
+    J Clin Endocrinol Metab 1997;82(1):281-286. Under 28-40 h of constant routine -
+    enforced wakefulness, strict semirecumbent posture, hourly snacks - the urinary
+    calcium and phosphate rhythms changed character while URINARY SODIUM/CREATININE
+    WAS UNCHANGED. A rhythm that survives removal of sleep, posture and meals is
+    endogenous.
+
+  THE CARDIOVASCULAR ARM IS ON WEAKER GROUND THAN THE RENAL ONE, which is the
+  reverse of what the original parameters implied:
+  Shea SA, Hilton MF, Hu K, Scheer FAJL. Circ Res 2011;108(8):980-984. 28 adults,
+    three protocols including forced desynchrony. A real endogenous BP rhythm, but
+    peak-to-trough only 3-6 mmHg systolic, peaking near 21:00 - the EVENING.
+  Kerkhof GA, Van Dongen HP, Bobbert AC. Am J Hypertens 1998;11(3):373-377. 25
+    normotensives, constant routine, stated power >0.95: NO endogenous BP rhythm.
+    Replicated by Van Dongen 2001. The disagreement is live and unresolved.
+  Degaute JP, van de Borne P, Linkowski P, Van Cauter E. Hypertension
+    1991;18(2):199-210. Recumbency and sleep account for 65-75% of the nocturnal
+    decline, so the familiar ambulatory dip is mostly EXOGENOUS and is not what this
+    component models.
 """
 
 using ModelingToolkit
@@ -33,7 +63,7 @@ using ModelingToolkit: t_nounits as t, D_nounits as D
 
 using ..LedgerParams:
     CIRC_PERIOD, CIRC_RENAL_NA_AMPLITUDE, CIRC_RENAL_NA_ACROPHASE,
-    CIRC_CV_MAP_DIP_FRACTION, CIRC_CV_ACROPHASE
+    CIRC_CV_MAP_AMPLITUDE, CIRC_CV_ACROPHASE
 
 """
     CircadianClock(; name, phase0 = 0.0, renal_gain = 1.0, cv_gain = 1.0)
@@ -59,7 +89,7 @@ function CircadianClock(; name, phase0 = 0.0, renal_gain = 1.0, cv_gain = 1.0)
         phi0       = phase0                           # day
         A_renal    = CIRC_RENAL_NA_AMPLITUDE          # unitless, relative
         acro_renal = CIRC_RENAL_NA_ACROPHASE          # day, peak time
-        A_cv       = CIRC_CV_MAP_DIP_FRACTION         # unitless, relative
+        A_cv       = CIRC_CV_MAP_AMPLITUDE            # unitless, relative
         acro_cv    = CIRC_CV_ACROPHASE                # day, peak time
         g_renal    = renal_gain
         g_cv       = cv_gain

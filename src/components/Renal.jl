@@ -80,6 +80,7 @@ function Renal(; name)
         C_Na(t)             # mEq/L    INPUT from body fluids
         fr_mod(t)           # unitless INPUT from RAAS (0.0 = no RAAS action)
         u_osm(t)            # mOsm/kg  INPUT from ADH (urine osmolality)
+        renal_mod(t)        # unitless INPUT from circadian clock (1.0 = no rhythm)
         GFR(t)              # L/day
         Na_filtered(t)      # mEq/day
         Na_reabsorbed(t)    # mEq/day
@@ -118,8 +119,17 @@ function Renal(; name)
         # It is ADDITIVE and escape drives it to zero at steady state, so it
         # moves the transient and leaves every steady state exactly where it
         # was. fr_mod = 0.0 recovers the pre-RAAS equation identically.
-        FR_effective ~ clamp(FR_Na + fr_mod - G_pn * (MAP - MAP_ref) / Na_filtered,
-                             0.0, 1.0),
+        # renal_mod IS APPLIED TO THE EXCRETED FRACTION, NOT TO REABSORPTION.
+        # The component docstring calls it a multiplier on tubular reabsorption
+        # CAPACITY, and taken literally that is unusable: FR_Na is 0.9919 and the
+        # ledger amplitude is 0.25, so FR_Na*1.25 = 1.24 clamps to 1.0 and sodium
+        # excretion stops dead. The measured rhythm is a rhythm in EXCRETION -
+        # cosinor studies report peak-to-trough ratios in UNaV - so it belongs on
+        # (1 - FR_Na), which is 0.0081. A 25% swing there is a 25% swing in
+        # excretion and a 0.2% swing in reabsorption, which is the physiological
+        # reading. renal_mod = 1.0 recovers the previous equation exactly.
+        FR_effective ~ clamp(1.0 - (1.0 - FR_Na) * renal_mod + fr_mod -
+                             G_pn * (MAP - MAP_ref) / Na_filtered, 0.0, 1.0),
 
         Na_reabsorbed ~ FR_effective * Na_filtered,
         Na_excr       ~ Na_filtered - Na_reabsorbed,
