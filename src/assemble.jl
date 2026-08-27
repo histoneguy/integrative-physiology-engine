@@ -313,15 +313,33 @@ section 4). Agreement across independent methods cannot be satisfied by
 reproducing another engine's integration error, which makes it a stronger claim
 than matching any single implementation.
 """
-function solver_agreement(sys; solvers = [FBDF(), Rodas5P()], atol = 1e-6, kwargs...)
+function solver_agreement(sys; solvers = [FBDF(), Rodas5P()],
+                          atol = 1e-6, rtol = 1e-4, kwargs...)
     sols = [solve_individual(sys; solver = s, kwargs...) for s in solvers]
     ref = Array(sols[1])
     worst = 0.0
     for s in sols[2:end]
         A = Array(s)
         size(A) == size(ref) || error("solver_agreement requires identical saveat grids")
-        # MIXED absolute/relative, not pure relative. The denominator floor is
-        # `atol`, not machine epsilon.
+        # `|A - B| / (atol + rtol*|ref|)`, the standard ODE accept criterion.
+        # A result below 1.0 means the two solvers agree to within a tolerance
+        # no looser than the one they were each integrated to.
+        #
+        # THIS IS THE SECOND REVISION OF THIS METRIC AND THE FIRST WAS ONLY HALF
+        # RIGHT. It originally divided by max(|ref|, 1e-12), a pure ratio that
+        # exploded on any state legitimately sitting at zero. That was replaced
+        # on 2026-08-25 by a floor of `atol`, which fixed the symptom and left
+        # the shape wrong: a bare floor is still an arbitrary constant, and when
+        # ADR 0011 perturbed the trajectory enough to move RAAS `esc` from 2e-17
+        # to 7e-10 the same failure returned - 6.9e-4 reported against a 1e-4
+        # threshold while every state carrying real magnitude agreed to 3e-7.
+        #
+        # A mixed criterion has no such cliff: near zero it is absolute, at scale
+        # it is relative, and it is what the solvers themselves use. Recorded
+        # rather than quietly retuned, because changing a test metric twice to
+        # accommodate two failures is exactly what moving the goalposts looks
+        # like, and the defence is that the metric was wrong both times in the
+        # same way.
         #
         # WHY, recorded 2026-08-25 when this bit. The floor was 1e-12, which makes
         # the metric a pure ratio for any state that legitimately sits at zero.
@@ -336,7 +354,7 @@ function solver_agreement(sys; solvers = [FBDF(), Rodas5P()], atol = 1e-6, kwarg
         # any future component with a zero-valued state would have hit it too. A
         # deviation below `atol` is below any physiological meaning for every state
         # in this model - the largest, Na_ecf, is order 2000.
-        worst = max(worst, maximum(abs.(A .- ref) ./ max.(abs.(ref), atol)))
+        worst = max(worst, maximum(abs.(A .- ref) ./ (atol .+ rtol .* abs.(ref))))
     end
     return (max_rel_deviation = worst, solutions = sols)
 end

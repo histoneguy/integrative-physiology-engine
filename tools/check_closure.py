@@ -150,6 +150,19 @@ def _check_one(p: dict[str, float]) -> int:
           "otherwise the operating point is not a fixed point.",
           errors, tol=1e-4)
 
+    # --- ADR 0011: CO = HR x SV -------------------------------------------
+    #
+    # SV0 is DERIVED from CO0 and HR0, and HR0 is sex-specific, so this closure
+    # is the reason the check runs per sex at all. Sourcing SV independently as
+    # well would overdetermine the operating point.
+    check("stroke volume from CO and heart rate",
+          p["CV.SV.NOMINAL"],
+          p["CV.CO.NOMINAL"] / (p["CV.HR.NOMINAL"] * 1440.0) * 1000.0,
+          "SV0 = CO0 / (HR0 * 1440) in mL. If this drifts the heart rate and "
+          "stroke volume no longer multiply to the nominal cardiac output and "
+          "the operating point moves for that sex only.",
+          errors, tol=1e-4)
+
     # --- central/peripheral partition, ADR 0012 stage 1 --------------------
     #
     # These two are what make the partition a change of variables rather than a

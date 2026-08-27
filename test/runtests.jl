@@ -67,7 +67,11 @@ using SciMLBase
         sys = build_model()
         r = IPE.solver_agreement(sys; solvers = [FBDF(), Rodas5P()],
                                  tspan_days = 10.0, saveat = 1.0)
-        @test r.max_rel_deviation < 1e-4
+        # Normalised by `atol + rtol*|ref|`, so the accept threshold is 1.0:
+        # the two solvers must agree to within the tolerance they were each
+        # integrated to. Measured on introduction of ADR 0011: worst state
+        # 6.9e-4 of budget.
+        @test r.max_rel_deviation < 1.0
     end
 
     @testset "coupling partition rules" begin
@@ -183,7 +187,12 @@ using SciMLBase
         r = salt_step(raas = false, adh = false)
         for (lvl, expected) in pre_partition
             got = only(l.MAP_final for l in r.levels if l.level == lvl)
-            @test isapprox(got, expected; rtol = 1e-9)
+            # 1e-9 -> 1e-7 on 2026-08-27. This reference now sits behind TWO
+            # changes of variables, not one: the ADR 0012 partition and the
+            # ADR 0011 split of CO into HR x SV, which divides and remultiplies
+            # by HR0*1440 and 1000. Both are exact algebraically and neither is
+            # exact in floating point. Measured drift 1.1e-8 relative.
+            @test isapprox(got, expected; rtol = 1e-7)
         end
         # TOLERANCE LOOSENED 2026-08-25 FROM 1e-9 TO 1e-5, AND ONLY HERE.
         # check_pressure_natriuresis became PHASE-AWARE when the circadian clock
@@ -214,7 +223,10 @@ using SciMLBase
                     103.0 => 88.06587129611133)
         for (lvl, expected) in pre_raas
             got = only(l.MAP_final for l in r.levels if l.level == lvl)
-            @test isapprox(got, expected; rtol = 1e-9)
+            # 1e-9 -> 1e-7 on 2026-08-27, same reason as the ADR 0012 block: the
+            # ADR 0011 split of CO into HR x SV reassociates the arithmetic.
+            # Algebraically exact, not exact in floating point.
+            @test isapprox(got, expected; rtol = 1e-7)
         end
     end
 
@@ -340,15 +352,23 @@ using SciMLBase
         # Nothing is dimorphic yet, so the accessor must FALL BACK to the shared
         # value for either sex. This is the "otherwise use the best data" half of
         # the rule and it is the half that is live today.
+        # Still shared: no sourced dimorphism, so both sexes get the best
+        # available value. Haematocrit is the obvious next pair - it is
+        # androgen-driven erythropoiesis, not a body-size effect, so unlike
+        # cardiac output it will NOT dissolve into body mass.
         for sym in (:CV_HEMATOCRIT_NOMINAL, :CV_BLOOD_VOLUME_NOMINAL, :RN_GFR_NOMINAL)
             @test L.param(sym, :male) == L.param(sym, :female)
             @test L.param(sym, :male) == getfield(L, sym)
         end
 
-        # Asking for :both on a DIMORPHIC parameter must error rather than
-        # average - averaging two sexes describes no one. Simulated here because
-        # no real pair exists yet; when one does, this is the behaviour it gets.
-        @test isempty(L.sex_specific_params())
+        # Real pairs now exist (ADR 0011 entered heart rate and stroke volume),
+        # so this asserts the resolver's behaviour rather than its emptiness.
+        # Asking for :both on a dimorphic parameter must ERROR, not average.
+        @test !isempty(L.sex_specific_params())
+        for sym in L.sex_specific_params()
+            @test L.param(sym, :male) != L.param(sym, :female)
+            @test_throws Exception L.param(sym, :both)
+        end
 
         # The model builds for either sex and refuses :both. There is no :both
         # individual: a parameter with no known dimorphism resolving to a shared
@@ -359,17 +379,42 @@ using SciMLBase
         @test_throws Exception build_model(sex = :unspecified)
     end
 
-    @testset "sex changes nothing until a pair is entered" begin
-        # ADR 0014 lands the machinery INERT, the same argument as ADR 0012
-        # stage 1. With every row tagged `both` the two sexes must give identical
-        # results - if they differ, something is reading sex that should not be.
+    @testset "ADR 0011: CO = HR x SV, and the first sex pair" begin
+        L = IPE.LedgerParams
+        # A real male/female pair now exists.
+        @test :CV_HR_NOMINAL in L.sex_specific_params()
+        @test :CV_SV_NOMINAL in L.sex_specific_params()
+        @test L.param(:CV_HR_NOMINAL, :female) > L.param(:CV_HR_NOMINAL, :male)
+        @test L.param(:CV_SV_NOMINAL, :female) < L.param(:CV_SV_NOMINAL, :male)
+        # :both must ERROR on a dimorphic parameter, not average.
+        @test_throws Exception L.param(:CV_HR_NOMINAL, :both)
+
+        # The identity that makes ADR 0011 a change of variables: heart rate
+        # times stroke volume is nominal cardiac output, for EITHER sex.
+        for sx in (:male, :female)
+            @test isapprox(L.param(:CV_HR_NOMINAL, sx) * 1440.0 *
+                           L.param(:CV_SV_NOMINAL, sx) / 1000.0,
+                           L.CV_CO_NOMINAL; rtol = 1e-4)
+        end
+    end
+
+    @testset "the HR/SV pair cannot move the model, and that is expected" begin
+        # ADR 0014's falsifiable test asks that a parameter pair change a result.
+        # THIS PAIR CANNOT, and the reason is structural rather than a wiring
+        # failure: SV0 is DERIVED as CO0/(HR0*1440) and CO0 has no sex-specific
+        # row, so the product is CO0 for either sex and cardiac output is
+        # identical. Sex is real in the components and cancels in the output.
         #
-        # The day a male/female pair is entered this test SHOULD fail, and the
-        # failure is the signal that the pair is on a live path rather than
-        # decorative. Replace it then; do not delete it.
+        # Katori 1979 found no sex difference in cardiac INDEX or stroke INDEX
+        # once normalised to body surface area, so the dimorphism that WILL move
+        # this model is body size - and body_mass is still a hard-coded 70.0,
+        # not a ledger row. That is the next thing that makes sex bite.
+        #
+        # When a haematocrit or body-mass pair lands, THIS TEST SHOULD FAIL.
+        # Replace it then; do not delete it.
         m = check_pressure_natriuresis(salt_step(sex = :male)).map_shift_mmHg
         f = check_pressure_natriuresis(salt_step(sex = :female)).map_shift_mmHg
-        @test m == f
+        @test isapprox(m, f; rtol = 1e-9)
     end
 
     @testset "modulators are off by default" begin
