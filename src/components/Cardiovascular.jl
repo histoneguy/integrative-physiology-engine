@@ -17,9 +17,15 @@ STRUCTURE (ADR 0012)
   central fraction is constant, so the partition is a change of variables and
   every result is bit-identical - see the note on the CO equation.
 
+STRUCTURE (ADR 0011)
+  Cardiac output is HEART RATE x STROKE VOLUME. Heart rate is a parameter,
+  not a state, until a chronotropic baroreflex exists. Stroke volume carries
+  the filling dependence and is the quantity reconstruct.jl has needed since
+  the repository began.
+
 WHAT THIS DELIBERATELY OMITS
-  Heart rate, contractility, arterial and venous compliance as states, regional
-  flows, and the circadian modulation in ADR 0005.
+  Contractility, arterial and venous compliance as states, regional flows,
+  and the circadian modulation in ADR 0005.
 
   Splanchnic and limb capacitance are ONE peripheral compartment and cannot be
   told apart. Per ADR 0012 that disqualifies any paradigm which dissociates them
@@ -32,6 +38,7 @@ WHAT THIS DELIBERATELY OMITS
 using ModelingToolkit
 using ModelingToolkit: t_nounits as t, D_nounits as D
 
+using ..LedgerParams
 using ..LedgerParams:
     CV_CO_NOMINAL, CV_TPR_NOMINAL, CV_BLOOD_VOLUME_NOMINAL,
     CV_HEMATOCRIT_NOMINAL, CV_PLASMA_ECF_FRACTION, CV_VENOUS_RETURN_SENSITIVITY,
@@ -51,18 +58,24 @@ regulates it. Its stability comes entirely from renal pressure natriuresis actin
 through fluid volume - which is the central claim of the Guyton formulation and is
 what this minimal model exists to demonstrate.
 """
-function Cardiovascular(; name)
+function Cardiovascular(; name, sex::Symbol = :male)
 
     pars = @parameters begin
         CO0    = CV_CO_NOMINAL
         TPR0   = CV_TPR_NOMINAL                    # baseline; scaled by reflex
         BV0    = CV_BLOOD_VOLUME_NOMINAL
-        Hct    = CV_HEMATOCRIT_NOMINAL
+        # Resolved through the sex-aware accessor rather than read as a bare
+        # constant. While CV.HEMATOCRIT.NOMINAL carries a single `both` row this
+        # returns that value for either sex; the moment a male/female pair is
+        # entered it starts returning the right one, with no change here.
+        Hct    = LedgerParams.param(:CV_HEMATOCRIT_NOMINAL, sex)
         f_pv   = CV_PLASMA_ECF_FRACTION
         G_vr   = CV_VENOUS_RETURN_SENSITIVITY      # CALIBRATED - see ledger
         f_c    = CV_CENTRAL_FRACTION               # PLACEHOLDER - cancels, see below
         VC0    = CV_CENTRAL_VOLUME_NOMINAL         # DERIVED = f_c * BV0
         G_vc   = CV_CENTRAL_CO_SENSITIVITY         # DERIVED = G_vr / f_c
+        HR0    = LedgerParams.param(:CV_HR_NOMINAL, sex)   # 1/min, SEX-SPECIFIC
+        SV0    = LedgerParams.param(:CV_SV_NOMINAL, sex)   # mL,    DERIVED per sex
     end
 
     vars = @variables begin
@@ -74,6 +87,7 @@ function Cardiovascular(; name)
         V_blood(t)      # L
         V_central(t)    # L        intrathoracic; the filling variable (ADR 0012)
         V_periph(t)     # L        everything else; V_central + V_periph = V_blood
+        SV(t)           # mL       stroke volume (ADR 0011)
         CO(t)           # L/day
         TPR(t)          # mmHg/(L/day)
         MAP(t)          # mmHg     OUTPUT
@@ -100,12 +114,33 @@ function Cardiovascular(; name)
         V_central ~ f_c * V_blood,
         V_periph  ~ V_blood - V_central,
 
-        # Linearised venous return, now keyed to central filling. G_vr is a
-        # fitted constant, not a measurement - the Frank-Starling relationship it
-        # linearises is E1, the slope is not. ADR 0012 additionally requires this
-        # relation to be CONCAVE, not linear, before the posture gradient can be
-        # reproduced; that is stage 2 work and this line is still linear.
-        CO  ~ max(0.0, CO0 + G_vc * (V_central - VC0)),
+        # ADR 0011: CARDIAC OUTPUT IS HEART RATE TIMES STROKE VOLUME.
+        #
+        # Stroke volume carries the filling dependence; heart rate is a parameter
+        # until a chronotropic baroreflex exists (ADR 0009 gives the reflex one
+        # effector, tpr_mod, and a second is its own decision).
+        #
+        # G_vc is a sensitivity of CO to central volume in (L/day)/L, so dividing
+        # by beats per day converts it to a stroke-volume sensitivity, and the
+        # 1000 puts SV in mL. Written this way the identity
+        #
+        #     HR0 * 1440 * SV == CO0 + G_vc * (V_central - VC0)
+        #
+        # holds exactly, so this is a CHANGE OF VARIABLES like ADR 0012 stage 1
+        # and moves nothing. What it buys is that HR and SV EXIST: separately
+        # measurable in humans where G_vr never was, a stroke volume for
+        # reconstruct.jl which has taken one as an argument since the repo began,
+        # and the variable a chronotropic reflex will act on.
+        #
+        # SEX ENTERS HERE AND CURRENTLY CANCELS. HR0 and SV0 are a male/female
+        # pair, but SV0 is DERIVED as CO0/(HR0*1440) and CO0 is shared, so their
+        # product is CO0 for either sex and the model does not move. That is not a
+        # failure of the wiring - it is what it means for cardiac output to have
+        # no sex-specific row yet. Katori 1979 found no sex difference in cardiac
+        # INDEX or stroke INDEX once normalised to body surface area, so the real
+        # dimorphism is body size, and body_mass is still a hard-coded 70.0.
+        SV  ~ max(0.0, SV0 + (G_vc / (HR0 * 1440.0)) * (V_central - VC0) * 1000.0),
+        CO  ~ HR0 * 1440.0 * SV / 1000.0,
 
         # TPR is now a STATE-DEPENDENT quantity, scaled by baroreflex outflow.
         # It was a constant until the baroreflex landed; tpr_mod = 1.0 recovers

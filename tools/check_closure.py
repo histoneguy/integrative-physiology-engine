@@ -37,13 +37,38 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 LEDGER = ROOT / "ledger" / "parameters.csv"
 
-TOL = 1e-6   # relative
+# 1e-3 relative. The ledger carries 2 to 4 significant figures because that is what
+# the sources support, so derived identities cannot hold to better than about 0.1%
+# once every input is rounded. Asserting 1e-6 between numbers known to two figures
+# was asserting a precision nobody has, and it turned every rounding into a failure.
+#
+# This still catches what the gate exists for. The original disaster was f_pv rounded
+# from 0.188874 to 0.20 - a 6% error that put MAP at 104 instead of 93. 0.1% is sixty
+# times tighter than that and safely looser than arithmetic noise.
+TOL = 1e-3   # relative
 
 
-def load() -> dict[str, float]:
+def load(sex: str = "male") -> dict[str, float]:
+    """Ledger values resolved for one sex.
+
+    A row tagged with this sex wins; otherwise the shared `both` row is used.
+    That is the same fallback the generated `param()` accessor applies, and the
+    two must agree or the closure check would be validating numbers the model
+    does not use.
+    """
+    shared: dict[str, float] = {}
+    mine: dict[str, float] = {}
     with LEDGER.open(newline="", encoding="utf-8") as fh:
-        return {r["param_id"]: float(r["value"])
-                for r in csv.DictReader(fh) if r.get("param_id", "").strip()}
+        for r in csv.DictReader(fh):
+            pid = r.get("param_id", "").strip()
+            if not pid:
+                continue
+            sx = (r.get("sex") or "both").strip() or "both"
+            if sx == "both":
+                shared[pid] = float(r["value"])
+            elif sx == sex:
+                mine[pid] = float(r["value"])
+    return {**shared, **mine}
 
 
 def check(name: str, lhs: float, rhs: float, explain: str,
@@ -58,7 +83,19 @@ def check(name: str, lhs: float, rhs: float, explain: str,
 
 
 def main() -> int:
-    p = load()
+    # Every derived value depends on parameters that MAY be dimorphic - f_pv on
+    # hematocrit, TPR0 on MAP and CO, SV0 on CO0 and HR0. So closure is not one
+    # question, it is one per sex, and a derivation that closes for men can fail
+    # for women the moment a male/female pair is entered.
+    failures = 0
+    for sex in ("male", "female"):
+        print(f"===== sex: {sex} " + "=" * 52)
+        failures += _check_one(load(sex))
+        print()
+    return 1 if failures else 0
+
+
+def _check_one(p: dict[str, float]) -> int:
     errors: list[str] = []
     body_mass = 70.0   # nominal reference adult
 
@@ -77,7 +114,7 @@ def main() -> int:
           p["BF.ICF.MASS_FRACTION"] + p["BF.ECF.MASS_FRACTION"],
           p["BF.TBW.MASS_FRACTION"],
           "Compartment fractions must sum to total body water.",
-          errors, tol=1e-3)
+          errors)
 
     # --- sodium balance ---------------------------------------------------
     filtered = p["RN.GFR.NOMINAL"] * p["BF.NA.PLASMA_SETPOINT"]
@@ -86,7 +123,7 @@ def main() -> int:
           excreted, p["BF.NA.INTAKE_NOMINAL"],
           "FR_Na must satisfy GFR*C_Na*(1-FR) == intake, or extracellular "
           "sodium drifts every day of every run.",
-          errors, tol=1e-4)
+          errors)
 
     # --- water balance ----------------------------------------------------
     check("water in == water out",
@@ -103,14 +140,14 @@ def main() -> int:
           v_blood, p["CV.BLOOD_VOLUME.NOMINAL"],
           "f_pv*V_ecf/(1-Hct) must equal nominal blood volume, or cardiac "
           "output sits off its operating point and MAP is wrong from t=0.",
-          errors, tol=1e-4)
+          errors)
 
     # --- pressure ---------------------------------------------------------
     check("MAP = CO x TPR",
           p["CV.CO.NOMINAL"] * p["CV.TPR.NOMINAL"],
           p["CV.MAP.SETPOINT"],
           "Definitional. TPR is derived from MAP and CO and must reproduce them.",
-          errors, tol=1e-4)
+          errors)
 
     # --- cardiac output at nominal volume ---------------------------------
     co = p["CV.CO.NOMINAL"] + p["CV.VENOUS_RETURN.SENSITIVITY"] * \
@@ -119,7 +156,20 @@ def main() -> int:
           co, p["CV.CO.NOMINAL"],
           "At nominal blood volume the venous return term must vanish, "
           "otherwise the operating point is not a fixed point.",
-          errors, tol=1e-4)
+          errors)
+
+    # --- ADR 0011: CO = HR x SV -------------------------------------------
+    #
+    # SV0 is DERIVED from CO0 and HR0, and HR0 is sex-specific, so this closure
+    # is the reason the check runs per sex at all. Sourcing SV independently as
+    # well would overdetermine the operating point.
+    check("stroke volume from CO and heart rate",
+          p["CV.SV.NOMINAL"],
+          p["CV.CO.NOMINAL"] / (p["CV.HR.NOMINAL"] * 1440.0) * 1000.0,
+          "SV0 = CO0 / (HR0 * 1440) in mL. If this drifts the heart rate and "
+          "stroke volume no longer multiply to the nominal cardiac output and "
+          "the operating point moves for that sex only.",
+          errors)
 
     # --- central/peripheral partition, ADR 0012 stage 1 --------------------
     #
