@@ -27,6 +27,7 @@ OUTPUT = ROOT / "src" / "LedgerParams.jl"
 
 VALID_TIERS = {"A", "B", "C"}
 VALID_METHODS = {"reported", "digitized", "derived", "assumed", "calibrated"}
+VALID_SEX = {"both", "male", "female"}
 ID_PATTERN = re.compile(r"^[A-Z][A-Z0-9]*(\.[A-Z][A-Z0-9_]*)+$")
 
 
@@ -56,9 +57,12 @@ def validate(rows: list[dict]) -> None:
 
         if not ID_PATTERN.match(pid):
             errors.append(f"line {i}: param_id {pid!r} must be DOTTED.UPPER_CASE")
-        if pid in seen:
-            errors.append(f"line {i}: duplicate param_id {pid!r}")
-        seen.add(pid)
+        sex = (r.get("sex") or "both").strip() or "both"
+        if sex not in VALID_SEX:
+            errors.append(f"line {i}: {pid} sex {sex!r} not in {sorted(VALID_SEX)}")
+        if (pid, sex) in seen:
+            errors.append(f"line {i}: duplicate (param_id, sex) ({pid!r}, {sex!r})")
+        seen.add((pid, sex))
 
         try:
             float(r["value"])
@@ -93,6 +97,24 @@ def validate(rows: list[dict]) -> None:
                     f"line {i}: {pid} is non-human ({r['species']}) "
                     "and must state scaling in notes"
                 )
+
+    # A parameter is either shared (one `both` row) or dimorphic (a male row AND
+    # a female row). A lone sexed row would silently apply one sex's data to the
+    # other, which is the failure this column exists to prevent. Where only one
+    # sex has been studied the row stays `both` with the cohort recorded in its
+    # notes - that is what "use the best data available" means in practice.
+    bysex = {}
+    for r in rows:
+        pid2 = r.get("param_id", "").strip()
+        if pid2:
+            bysex.setdefault(pid2, set()).add((r.get("sex") or "both").strip() or "both")
+    for pid2, sexes in sorted(bysex.items()):
+        if sexes in ({"both"}, {"male", "female"}):
+            continue
+        errors.append(
+            f"{pid2}: sex rows are {sorted(sexes)}. A parameter needs exactly one "
+            "'both' row OR both a 'male' and a 'female' row."
+        )
 
     if errors:
         raise LedgerError("\n".join(errors))
@@ -134,6 +156,7 @@ def render(rows: list[dict]) -> str:
         "module LedgerParams",
         "",
         "export PARAM_PROVENANCE, provenance, unledgered_check",
+        "export SEX_SPECIFIC, param, sex_specific_params",
         "",
         "# ---------------------------------------------------------------------------",
         "# Values",
@@ -141,8 +164,15 @@ def render(rows: list[dict]) -> str:
         "",
     ]
 
-    by_subsystem: dict[str, list[dict]] = {}
+    shared = [r for r in rows if (r.get("sex") or "both").strip() in ("", "both")]
+    sexed = {}
     for r in rows:
+        sx = (r.get("sex") or "both").strip()
+        if sx in ("male", "female"):
+            sexed.setdefault(r["param_id"], {})[sx] = r
+
+    by_subsystem: dict[str, list[dict]] = {}
+    for r in shared:
         by_subsystem.setdefault(r.get("subsystem", "unclassified"), []).append(r)
 
     for subsystem in sorted(by_subsystem):
@@ -167,6 +197,55 @@ def render(rows: list[dict]) -> str:
 
     lines += [
         "# ---------------------------------------------------------------------------",
+        "# Sex-specific values",
+        "#",
+        "# A parameter appears here ONLY when male and female values are separately",
+        "# sourced. Everything else is a shared constant above - where only one sex",
+        "# has been studied the value is shared and the cohort is recorded in notes.",
+        "# ---------------------------------------------------------------------------",
+        "",
+        "const SEX_SPECIFIC = Dict{Symbol,NamedTuple{(:male, :female),Tuple{Float64,Float64}}}(",
+    ]
+    for pid3 in sorted(sexed):
+        pr = sexed[pid3]
+        if "male" in pr and "female" in pr:
+            lines.append("    :%s => (male = %r, female = %r)," % (
+                julia_symbol(pid3), float(pr["male"]["value"]), float(pr["female"]["value"])))
+    lines += [
+        ")",
+        "",
+        '"""',
+        "    param(sym::Symbol, sex::Symbol = :both)",
+        "",
+        "Resolve a ledger value for a given sex. Sex-specific where the literature",
+        "supplies it, shared otherwise.",
+        "",
+        "Asking for `:both` on a dimorphic parameter is an ERROR, not an average:",
+        "averaging two sexes produces a number describing no one, the same objection",
+        "pooling.md raises against averaging across species.",
+        '"""',
+        "function param(sym::Symbol, sex::Symbol = :both)",
+        "    if haskey(SEX_SPECIFIC, sym)",
+        "        sex === :male   && return SEX_SPECIFIC[sym].male",
+        "        sex === :female && return SEX_SPECIFIC[sym].female",
+        "        error(\"$sym is sex-specific; ask for :male or :female, not \" *",
+        "              \":$sex. Averaging the two would describe no one.\")",
+        "    end",
+        "    isdefined(@__MODULE__, sym) || error(\"unknown parameter $sym\")",
+        "    return getfield(@__MODULE__, sym)::Float64",
+        "end",
+        "",
+        '"""',
+        "    sex_specific_params()",
+        "",
+        "Parameters for which male and female values are separately sourced.",
+        '"""',
+        "sex_specific_params() = sort!(collect(keys(SEX_SPECIFIC)))",
+        "",
+    ]
+
+    lines += [
+        "# ---------------------------------------------------------------------------",
         "# Provenance table - queryable at runtime so any result can be traced",
         "# ---------------------------------------------------------------------------",
         "",
@@ -182,8 +261,9 @@ def render(rows: list[dict]) -> str:
         "",
         "const PARAM_PROVENANCE = Dict{Symbol,Provenance}(",
     ]
-    for r in sorted(rows, key=lambda x: x["param_id"]):
-        sym = julia_symbol(r["param_id"])
+    for r in sorted(rows, key=lambda x: (x["param_id"], x.get("sex", ""))):
+        sx = (r.get("sex") or "both").strip()
+        sym = julia_symbol(r["param_id"]) + ("" if sx in ("", "both") else "_" + sx.upper())
 
         def esc(s: str) -> str:
             return s.replace("\\", "\\\\").replace('"', '\\"')

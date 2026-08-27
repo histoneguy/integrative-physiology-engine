@@ -55,9 +55,14 @@ call `build_model`.
 """
 function build_raw_model(; body_mass = 70.0, storage::Bool = false,
                          circadian::Bool = false, baroreflex::Bool = true,
-                         raas::Bool = true, adh::Bool = true)
+                         raas::Bool = true, adh::Bool = true,
+                         sex::Symbol = :male)
     @named bf = BodyFluids(; body_mass, storage)
-    @named cv = Cardiovascular()
+    sex in (:male, :female) ||
+        error("sex must be :male or :female, got :$sex. There is no :both " *
+              "individual - a parameter with no known dimorphism resolves to its " *
+              "shared value for either sex, which is not the same thing.")
+    @named cv = Cardiovascular(; sex)
     @named rn = Renal()
     @named br = Baroreflex(; enabled = baroreflex)
     @named ra = Raas(; enabled = raas)
@@ -184,11 +189,12 @@ function salt_step(; levels_mEq_day = (205.0, 154.0, 103.0),
                    raas::Bool = true,
                    adh::Bool = true,
                    circadian::Bool = false,
+                   sex::Symbol = :male,
                    saveat = 0.25,
                    solver = nothing,
                    kwargs...)
 
-    sys = build_model(; body_mass, baroreflex, raas, adh, circadian)
+    sys = build_model(; body_mass, baroreflex, raas, adh, circadian, sex)
     results = NamedTuple[]
     u_carry = nothing          # state carried between levels
     t0 = 0.0

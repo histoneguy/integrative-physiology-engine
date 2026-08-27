@@ -335,6 +335,43 @@ using SciMLBase
         @test isapprox(on, 5.0996; atol = 0.02)
     end
 
+    @testset "sex is a model dimension (ADR 0014)" begin
+        L = IPE.LedgerParams
+        # Nothing is dimorphic yet, so the accessor must FALL BACK to the shared
+        # value for either sex. This is the "otherwise use the best data" half of
+        # the rule and it is the half that is live today.
+        for sym in (:CV_HEMATOCRIT_NOMINAL, :CV_BLOOD_VOLUME_NOMINAL, :RN_GFR_NOMINAL)
+            @test L.param(sym, :male) == L.param(sym, :female)
+            @test L.param(sym, :male) == getfield(L, sym)
+        end
+
+        # Asking for :both on a DIMORPHIC parameter must error rather than
+        # average - averaging two sexes describes no one. Simulated here because
+        # no real pair exists yet; when one does, this is the behaviour it gets.
+        @test isempty(L.sex_specific_params())
+
+        # The model builds for either sex and refuses :both. There is no :both
+        # individual: a parameter with no known dimorphism resolving to a shared
+        # value is not the same thing as a person of no sex.
+        @test build_model(sex = :male) isa ModelingToolkit.AbstractSystem
+        @test build_model(sex = :female) isa ModelingToolkit.AbstractSystem
+        @test_throws Exception build_model(sex = :both)
+        @test_throws Exception build_model(sex = :unspecified)
+    end
+
+    @testset "sex changes nothing until a pair is entered" begin
+        # ADR 0014 lands the machinery INERT, the same argument as ADR 0012
+        # stage 1. With every row tagged `both` the two sexes must give identical
+        # results - if they differ, something is reading sex that should not be.
+        #
+        # The day a male/female pair is entered this test SHOULD fail, and the
+        # failure is the signal that the pair is on a live path rather than
+        # decorative. Replace it then; do not delete it.
+        m = check_pressure_natriuresis(salt_step(sex = :male)).map_shift_mmHg
+        f = check_pressure_natriuresis(salt_step(sex = :female)).map_shift_mmHg
+        @test m == f
+    end
+
     @testset "modulators are off by default" begin
         # ADR 0006/0007: E3 and out-of-order components must not be on by default.
         sys = build_model()

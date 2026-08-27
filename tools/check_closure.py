@@ -40,10 +40,27 @@ LEDGER = ROOT / "ledger" / "parameters.csv"
 TOL = 1e-6   # relative
 
 
-def load() -> dict[str, float]:
+def load(sex: str = "male") -> dict[str, float]:
+    """Ledger values resolved for one sex.
+
+    A row tagged with this sex wins; otherwise the shared `both` row is used.
+    That is the same fallback the generated `param()` accessor applies, and the
+    two must agree or the closure check would be validating numbers the model
+    does not use.
+    """
+    shared: dict[str, float] = {}
+    mine: dict[str, float] = {}
     with LEDGER.open(newline="", encoding="utf-8") as fh:
-        return {r["param_id"]: float(r["value"])
-                for r in csv.DictReader(fh) if r.get("param_id", "").strip()}
+        for r in csv.DictReader(fh):
+            pid = r.get("param_id", "").strip()
+            if not pid:
+                continue
+            sx = (r.get("sex") or "both").strip() or "both"
+            if sx == "both":
+                shared[pid] = float(r["value"])
+            elif sx == sex:
+                mine[pid] = float(r["value"])
+    return {**shared, **mine}
 
 
 def check(name: str, lhs: float, rhs: float, explain: str,
@@ -58,7 +75,19 @@ def check(name: str, lhs: float, rhs: float, explain: str,
 
 
 def main() -> int:
-    p = load()
+    # Every derived value depends on parameters that MAY be dimorphic - f_pv on
+    # hematocrit, TPR0 on MAP and CO, SV0 on CO0 and HR0. So closure is not one
+    # question, it is one per sex, and a derivation that closes for men can fail
+    # for women the moment a male/female pair is entered.
+    failures = 0
+    for sex in ("male", "female"):
+        print(f"===== sex: {sex} " + "=" * 52)
+        failures += _check_one(load(sex))
+        print()
+    return 1 if failures else 0
+
+
+def _check_one(p: dict[str, float]) -> int:
     errors: list[str] = []
     body_mass = 70.0   # nominal reference adult
 

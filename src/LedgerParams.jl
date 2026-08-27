@@ -7,12 +7,13 @@ Produced by tools/ledger_to_julia.py from ledger/parameters.csv.
 To change a value, edit the ledger and regenerate. This is the only
 sanctioned path from source literature to executable code.
 
-Ledger SHA256 (first 16): 624df4d505c408be
+Ledger SHA256 (first 16): 32b7ed848c70cc94
 Parameters: 57 (assumed=16, calibrated=2, derived=17, reported=22)
 """
 module LedgerParams
 
 export PARAM_PROVENANCE, provenance, unledgered_check
+export SEX_SPECIFIC, param, sex_specific_params
 
 # ---------------------------------------------------------------------------
 # Values
@@ -373,6 +374,45 @@ Notes: ASSUMED and NOT SOURCED, and it is the load-bearing assumption of the ADH
 """
 const RN_URINE_SOLUTE_LOAD = 600.0
 
+
+# ---------------------------------------------------------------------------
+# Sex-specific values
+#
+# A parameter appears here ONLY when male and female values are separately
+# sourced. Everything else is a shared constant above - where only one sex
+# has been studied the value is shared and the cohort is recorded in notes.
+# ---------------------------------------------------------------------------
+
+const SEX_SPECIFIC = Dict{Symbol,NamedTuple{(:male, :female),Tuple{Float64,Float64}}}(
+)
+
+"""
+    param(sym::Symbol, sex::Symbol = :both)
+
+Resolve a ledger value for a given sex. Sex-specific where the literature
+supplies it, shared otherwise.
+
+Asking for `:both` on a dimorphic parameter is an ERROR, not an average:
+averaging two sexes produces a number describing no one, the same objection
+pooling.md raises against averaging across species.
+"""
+function param(sym::Symbol, sex::Symbol = :both)
+    if haskey(SEX_SPECIFIC, sym)
+        sex === :male   && return SEX_SPECIFIC[sym].male
+        sex === :female && return SEX_SPECIFIC[sym].female
+        error("$sym is sex-specific; ask for :male or :female, not " *
+              ":$sex. Averaging the two would describe no one.")
+    end
+    isdefined(@__MODULE__, sym) || error("unknown parameter $sym")
+    return getfield(@__MODULE__, sym)::Float64
+end
+
+"""
+    sex_specific_params()
+
+Parameters for which male and female values are separately sourced.
+"""
+sex_specific_params() = sort!(collect(keys(SEX_SPECIFIC)))
 
 # ---------------------------------------------------------------------------
 # Provenance table - queryable at runtime so any result can be traced

@@ -32,6 +32,7 @@ WHAT THIS DELIBERATELY OMITS
 using ModelingToolkit
 using ModelingToolkit: t_nounits as t, D_nounits as D
 
+using ..LedgerParams
 using ..LedgerParams:
     CV_CO_NOMINAL, CV_TPR_NOMINAL, CV_BLOOD_VOLUME_NOMINAL,
     CV_HEMATOCRIT_NOMINAL, CV_PLASMA_ECF_FRACTION, CV_VENOUS_RETURN_SENSITIVITY,
@@ -51,13 +52,17 @@ regulates it. Its stability comes entirely from renal pressure natriuresis actin
 through fluid volume - which is the central claim of the Guyton formulation and is
 what this minimal model exists to demonstrate.
 """
-function Cardiovascular(; name)
+function Cardiovascular(; name, sex::Symbol = :male)
 
     pars = @parameters begin
         CO0    = CV_CO_NOMINAL
         TPR0   = CV_TPR_NOMINAL                    # baseline; scaled by reflex
         BV0    = CV_BLOOD_VOLUME_NOMINAL
-        Hct    = CV_HEMATOCRIT_NOMINAL
+        # Resolved through the sex-aware accessor rather than read as a bare
+        # constant. While CV.HEMATOCRIT.NOMINAL carries a single `both` row this
+        # returns that value for either sex; the moment a male/female pair is
+        # entered it starts returning the right one, with no change here.
+        Hct    = LedgerParams.param(:CV_HEMATOCRIT_NOMINAL, sex)
         f_pv   = CV_PLASMA_ECF_FRACTION
         G_vr   = CV_VENOUS_RETURN_SENSITIVITY      # CALIBRATED - see ledger
         f_c    = CV_CENTRAL_FRACTION               # PLACEHOLDER - cancels, see below
