@@ -77,12 +77,24 @@ DIVERGENCES LOGGED
      lacks neural and systemic input. This model follows the meta-analysis.
   3. ADRENAL LAG IS ABSENT. Aldosterone is algebraic in the renin signal. No
      primary source for the adrenal time constant was found.
-  4. THE THRESHOLD COINCIDES WITH THE OPERATING POINT AND THAT IS FRAGILE.
-     `P_thr` is 93 mmHg from van Ochten and `CV.MAP.SETPOINT` is 93 mmHg
-     whose ledger citation reads "Standard physiological reference. VERIFY."
-     So the model sits exactly ON the rectification threshold, and RAAS is
-     inactive at and above baseline by construction. That coincidence is
-     doing structural work and rests on one unverified number.
+  4. THE COINCIDENCE BROKE ON 2026-08-27, EXACTLY AS THIS NOTE WARNED.
+     `P_thr` is 93 mmHg from van Ochten and `CV.MAP.SETPOINT` WAS also 93,
+     under the citation "Standard physiological reference. VERIFY." So the
+     model sat exactly ON the rectification threshold and RAAS was inactive
+     at baseline by construction - structural work resting on one unverified
+     number.
+
+     That number was the textbook BRACHIAL 120/80 convention. Sourcing
+     central pressure moved the setpoint to 87.0, so the model now sits
+     6 mmHg BELOW threshold and RAAS IS ACTIVE AT REST: renin drive 0.069,
+     plasma renin activity 2.31x. More physiological, not less - resting
+     renin is not zero.
+
+     CONSEQUENCE: `g_renin` was calibrated so the low-salt arm doubled PRA
+     from a baseline of 1.0, and that baseline no longer exists. Escape
+     still zeroes `fr_mod` at steady state, so no steady state moves, but
+     the gain must be re-derived before this component is trusted for
+     anything transient.
 
 Inputs   MAP (mmHg)
 Outputs  fr_mod (unitless) - ADDITIVE increment to renal fractional sodium

@@ -158,6 +158,31 @@ def _check_one(p: dict[str, float]) -> int:
           "otherwise the operating point is not a fixed point.",
           errors)
 
+    # --- pressure reconstruction, 2026-08-27 -------------------------------
+    #
+    # MAP is now DERIVED from the sourced central pressure. This is the check
+    # that caught a brachial MAP being mixed with a central pulse pressure: the
+    # form factor came out 0.515, which is impossible.
+    check("MAP from central DBP and PP",
+          p["CV.MAP.SETPOINT"],
+          p["CV.DBP.CENTRAL_NOMINAL"] +
+          p["CV.PULSE.FORM_FACTOR"] * p["CV.PP.CENTRAL_NOMINAL"],
+          "MAP = DBP + k_form*PP. If this drifts, the pressure reference has "
+          "been mixed across measurement sites again.",
+          errors)
+
+    check("pulse pressure from systolic and diastolic",
+          p["CV.PP.CENTRAL_NOMINAL"],
+          p["CV.SBP.CENTRAL_NOMINAL"] - p["CV.DBP.CENTRAL_NOMINAL"],
+          "PP = SBP - DBP, definitional.",
+          errors)
+
+    check("arterial compliance from SV and PP",
+          p["CV.ARTERIAL.COMPLIANCE"],
+          p["CV.SV.NOMINAL"] / p["CV.PP.CENTRAL_NOMINAL"],
+          "C_art = SV/PP, the Chemla 1998 estimator. Moves when either moves.",
+          errors)
+
     # --- ADR 0011: CO = HR x SV -------------------------------------------
     #
     # SV0 is DERIVED from CO0 and HR0, and HR0 is sex-specific, so this closure

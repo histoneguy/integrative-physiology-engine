@@ -139,7 +139,7 @@ exist and are connected; circadian, the last item, was wired on 26 August.
 | `Cardiovascular.jl` | ECF → plasma → blood volume, partitioned central/peripheral (ADR 0012). **CO = HR × SV** (ADR 0011). MAP = CO × TPR. |
 | `Renal.jl` | GFR autoregulation, filtered load, pressure natriuresis, RAAS tubular increment, circadian modulation on the excreted fraction, **osmoregulated water excretion**. |
 | `Baroreflex.jl` | Lumped, resetting, TPR effector only. Setpoint scaled by the clock. |
-| `Raas.jl` | Rectified renal baroreflex → renin → aldosterone → tubular reabsorption, with first-order escape. **No AngII vasoconstriction** — deliberate. |
+| `Raas.jl` | **Now active at rest** (see §3.1). Rectified renal baroreflex → renin → aldosterone → tubular reabsorption, with first-order escape. **No AngII vasoconstriction** — deliberate. |
 | `Adh.jl` | Osmolality → antidiuretic activity → urine osmolality; volume follows as solute load ÷ concentration. Algebraic, no states. |
 | `Circadian.jl` | Cosinor clock, **connected** to renal excretion and the reflex setpoint. **Default OFF** — both arms' parameters are contested. |
 
@@ -147,12 +147,17 @@ exist and are connected; circadian, the last item, was wired on 26 August.
 
 | intake (mEq/d) | MAP (mmHg) |
 |---|---|
-| 205 | 93.000 |
-| 154 | 90.451 |
-| 103 | 87.900 |
+| 205 | 87.001 |
+| 154 | 84.450 |
+| 103 | 81.900 |
 
-**Shift 5.0996 mmHg.** Arterial pressure is nowhere regulated; it lands at a stable
+**Shift 5.101 mmHg.** Arterial pressure is nowhere regulated; it lands at a stable
 intake-dependent value through renal–body fluid feedback alone.
+
+**These moved down 6 mmHg on 2026-08-27 and the shift did not move at all.** See §3.1.
+That is the useful part: the operating point was wrong, the salt-sensitivity finding it
+sat on was not affected, because the shift is set by `G_pn` and not by where the
+operating point sits.
 
 **Do not quote this to more than 5 significant figures** and do not pin it tighter than
 1e-4. See §1.9.
@@ -173,6 +178,80 @@ branch protection requires that exact string.
 grandfathered debt.
 
 ---
+
+
+## 3.1 MAP 93 was the brachial 120/80 convention, and it was load-bearing
+
+`CV.MAP.SETPOINT` was **93.0** under the citation *"Standard physiological reference.
+VERIFY."* It was never verified. It is 80 + 40/3 = 93.33 - **the textbook brachial
+120/80 rounded** - and it is now **87.0**, derived from sourced central pressure
+(Gomez-Sanchez 2021, 501 adults without cardiovascular disease).
+
+**What exposed it was an impossibility, not a search.** Deriving the pulse form factor
+gave 0.515. It cannot exceed 0.5: the fraction of pulse pressure above the mean must be
+below half when diastole is longer than systole. A brachial MAP was being divided by a
+central pulse pressure.
+
+### Three things followed, and the third is the one to read
+
+1. **`CV.TPR.NOMINAL` moved** 0.01292 -> 0.0120833, since it is MAP/CO by definition.
+   Every steady state dropped about 6 mmHg. Eight test pins were repinned.
+
+2. **The salt-sensitivity finding did not move.** The shift is 5.101 where it was 5.0996
+   - 0.2%. It is set by `G_pn`, not by the operating point. **ADR 0013 survives the
+   correction of the number underneath it**, which is worth more than if it had never
+   been wrong.
+
+3. **RAAS silently switched itself on.** The van Ochten renin threshold is 93 mmHg and
+   the old setpoint was 93 mmHg, so the model sat EXACTLY ON the rectification point and
+   RAAS was inactive at baseline **by construction**. `Raas.jl` had flagged this in its
+   own divergence notes as fragile and resting on one unverified number. That was the
+   number. The model now sits 6 mmHg below threshold: renin drive 0.069, **PRA 2.31x**.
+   More physiological, not less - resting renin is not zero.
+
+**There was a test asserting the coincidence** (`RAAS_RENIN_PRESSURE_THRESHOLD ==
+CV_MAP_SETPOINT`). It has been **inverted to a strict inequality**, not repinned. An
+equality would pass again the moment the two numbers coincided for any reason, including
+by accident, and would go on certifying a structural artefact as intended behaviour.
+
+### What this leaves open
+
+**`RAAS.RENIN.PRESSURE_GAIN` was calibrated against a baseline that no longer exists** -
+it was fitted so the low-salt arm doubled PRA from 1.0, and baseline PRA is now 2.31.
+**Not urgent**: escape drives `fr_mod` to 7.7e-7 regardless, so no steady state moves and
+the loop still closes at 1.0000. **Blocking for anything transient.** The target should
+be an absolute resting PRA, not a fold-change from an artefact.
+
+### The six others exactly like it - DO THIS NEXT
+
+**Take the general lesson, not the specific one.** A number carrying "VERIFY" sat in the
+ledger for weeks, silently set another parameter, and silently disabled an entire
+subsystem. It was caught by an arithmetic impossibility, not by any of the five gates.
+
+The ledger was grepped. **`CV.MAP.SETPOINT` was one of seven rows carrying the identical
+string "Standard physiological reference. VERIFY.", and it is the only one discharged.**
+All six survivors are load-bearing:
+
+| row | value | drives |
+|---|---|---|
+| `CV.CO.NOMINAL` | 7200 mL/min | `CV.TPR.NOMINAL` and `CV.SV.NOMINAL` - the same position MAP held |
+| `CV.HEMATOCRIT.NOMINAL` | 0.45 | plasma fraction `f_pv`, and it is the row whose own note says sex is deferred |
+| `CV.BLOOD_VOLUME.NOMINAL` | 5.0 L | `f_pv` and the central volume reference `VC0` |
+| `RN.GFR.NOMINAL` | 180 L/day | filtered sodium load - the whole renal input |
+| `RN.NA.FRACTIONAL_REABSORPTION` | 0.9918651 | sodium balance; `1 - FR` is the excreted fraction |
+| `RN.AUTOREG.LOWER` | 80 mmHg | autoregulation range, and **87 now sits only 7 mmHg above it** |
+| `RN.H2O.OBLIGATORY_LOSS` | 0.5 L/day | water balance |
+
+**These are a different category from the nine `assumed` rows with empty citations.**
+Those are honestly labelled guesses and the relations gate already tracks them as debt.
+These seven claim `extraction_method = reported`: they assert a source exists. For MAP
+that assertion was false and the number was a unit-convention artefact.
+
+`RN.AUTOREG.LOWER` is the one to look at first. The operating point moved toward it.
+
+**No gate catches this class.** All five pass on the ledger as it stands. A gate that
+rejects `reported` with a non-citation would have caught MAP 93 at entry - but per
+directive 1.2, do not build it until this sourcing pass shows the failure recurring.
 
 ## 3. THE FINDING THAT MATTERS MOST
 
