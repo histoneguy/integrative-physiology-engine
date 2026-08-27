@@ -62,6 +62,6 @@ it. The file has not been rewritten yet.
 | `HANDOVER.md` | the brief — read it |
 | `src/components/` | the model; `incoming/Raas.jl` is written but deliberately not wired in |
 | `ledger/` | parameters and relations, with provenance |
-| `docs/adr/` | structural decisions; ADR 0006 defines the evidence tiers |
+| `docs/adr/` | **A**rchitecture **D**ecision **R**ecords - structural decisions, each with an evidence tier and a falsifiable test; ADR 0006 defines the tiers |
 | `validation/` | targets, averaging and pooling policy, pre-registrations |
 | `tools/` | the five gates |
