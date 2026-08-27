@@ -88,15 +88,18 @@ function build_raw_model(; body_mass = 70.0, storage::Bool = false,
 
     systems = [bf, cv, rn, br, ra, ad]
 
-    if circadian
-        @named clk = CircadianClock()
-        push!(systems, clk)
-        # NOT CONNECTED. ADR 0005 is sound but ahead of its dependency: it
-        # modulates renal tubular reabsorption, which needs RAAS and ADH before
-        # the modulation means anything. Wiring it now would be untestable.
-        @warn "circadian=true adds the clock but it is not connected to anything " *
-              "(ADR 0006 build order). It will not affect results."
-    end
+    # CONNECTED 2026-08-25. ADR 0006 build order item 6: the clock modulates
+    # renal tubular sodium handling and the reflex pressure setpoint, both of
+    # which now exist. With circadian=false the gains are zero, so renal_mod and
+    # cv_mod are identically 1.0 and every equation reduces to its pre-clock form.
+    # DEFAULT REMAINS OFF: the amplitude and acrophase of both arms are contested
+    # in the literature - see the ledger notes on CIRC.RENAL_NA.AMPLITUDE and
+    # CIRC.CV_MAP.AMPLITUDE - so this must not silently drive results.
+    g = circadian ? 1.0 : 0.0
+    @named clk = CircadianClock(; renal_gain = g, cv_gain = g)
+    push!(systems, clk)
+    push!(connections, rn.renal_mod ~ clk.renal_mod)
+    push!(connections, br.cv_mod    ~ clk.cv_mod)
 
     @named model = MTKSystem(connections, t; systems)
     return model
@@ -140,6 +143,21 @@ function solve_individual(sys;
 end
 
 """
+    _obs(sys, name)
+
+Resolve a variable or observed quantity by substring, for cycle averaging.
+"""
+function _obs(sys, name)
+    for o in observed(sys)
+        occursin(name, String(Symbol(o.lhs))) && return o.lhs
+    end
+    for u in unknowns(sys)
+        occursin(name, String(Symbol(u))) && return u
+    end
+    error("no variable matching $name")
+end
+
+"""
     salt_step(; levels_mEq_day, days_per_level, body_mass = 70.0, saveat = 0.25, kwargs...)
 
 Run a stepped sodium intake protocol - the Mars500 design - carrying state across
@@ -158,17 +176,19 @@ what it claims - which is the whole substance of the Guyton formulation.
 Returns a NamedTuple per level with the solution and the summary quantities the
 test needs, plus a combined trajectory.
 """
+
 function salt_step(; levels_mEq_day = (205.0, 154.0, 103.0),
                    days_per_level = 30.0,
                    body_mass = 70.0,
                    baroreflex::Bool = true,
                    raas::Bool = true,
                    adh::Bool = true,
+                   circadian::Bool = false,
                    saveat = 0.25,
                    solver = nothing,
                    kwargs...)
 
-    sys = build_model(; body_mass, baroreflex, raas, adh)
+    sys = build_model(; body_mass, baroreflex, raas, adh, circadian)
     results = NamedTuple[]
     u_carry = nothing          # state carried between levels
     t0 = 0.0
@@ -195,11 +215,29 @@ function salt_step(; levels_mEq_day = (205.0, 154.0, 103.0),
                      kwargs...)
 
         u_carry = sol.u[end]
+        # PHASE-AWARE SUMMARIES. With a clock running there is no steady state,
+        # only a limit cycle (ADR 0005), so an instantaneous end value is
+        # ambiguous unless its phase is stated. Connecting the clock exposed
+        # this immediately: excretion/intake read 0.72/0.61/0.45 on instantaneous
+        # values and 1.00/1.00/1.00 once cycle-averaged, with MAP returning to
+        # the pre-clock levels to four decimals. cycle_average has existed since
+        # ADR 0005 and nothing used it, because nothing was connected.
+        #
+        # Computed unconditionally: with no clock the average over the final day
+        # equals the endpoint to solver tolerance, so this costs nothing and
+        # removes a whole class of phase artefact from every downstream check.
+        _cyc(name) = try
+            cycle_average(sol, _obs(sys, name); period_days = 1.0)
+        catch
+            _final(sol, sys, name)
+        end
         push!(results, (level = level,
                         index = i,
                         t_start = t0,
                         t_end = t0 + days_per_level,
                         sol = sol,
+                        MAP_cycavg = _cyc("MAP"),
+                        Na_excr_cycavg = _cyc("Na_excr"),
                         MAP_final = _final(sol, sys, "MAP"),
                         V_ecf_final = _final(sol, sys, "V_ecf"),
                         Na_excr_final = _final(sol, sys, "Na_excr"),
@@ -235,9 +273,10 @@ and that model has no pressure regulation in it at all.
 """
 function check_pressure_natriuresis(r; tol_excretion = 0.02, min_map_shift = 0.5)
     lv = r.levels
-    closes = all(abs(l.Na_excr_final - l.level) / l.level < tol_excretion for l in lv)
+    closes = all(abs(l.Na_excr_cycavg - l.level) / l.level < tol_excretion for l in lv)
 
-    maps = [l.MAP_final for l in lv]
+    # Cycle-averaged, so a running clock cannot make this phase-dependent.
+    maps = [l.MAP_cycavg for l in lv]
     intakes = [l.level for l in lv]
     map_range = maximum(maps) - minimum(maps)
     shifts = map_range >= min_map_shift

@@ -73,6 +73,7 @@ function Baroreflex(; name, enabled::Bool = true)
     vars = @variables begin
         MAP(t)                          # mmHg  INPUT from cardiovascular
         sp(t)      = CV_MAP_SETPOINT    # mmHg  resetting setpoint  (STATE)
+        cv_mod(t)                       # unitless INPUT from circadian clock
         tpr_mod(t) = 1.0                # unitless multiplier       (STATE)
         err(t)                          # mmHg
         drive(t)                        # unitless, saturated
@@ -80,7 +81,12 @@ function Baroreflex(; name, enabled::Bool = true)
 
     eqs = if enabled
         [
-            err ~ MAP - sp,
+            # cv_mod is the circadian modulation of the reflex setpoint
+            # (1.0 = no rhythm). Scaling the SETPOINT rather than adding to
+            # MAP keeps the reflex a comparator: the clock moves what the
+            # reflex defends, which is what a central circadian influence on
+            # blood pressure means.
+            err ~ MAP - sp * cv_mod,
 
             # Saturating characteristic. The real reflex is sigmoidal; tanh gives
             # the right shape with the right slope at the operating point and
