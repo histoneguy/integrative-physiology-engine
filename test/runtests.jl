@@ -191,9 +191,16 @@ using SciMLBase
         #     algebraically and about a thousand times noisier. If f_central is ever
         #     changed to a sourced value, EXPECT to re-measure this tolerance rather
         #     than assume 1e-9 still holds.
-        pre_partition = (205.0 => 93.008,
-                         154.0 => 90.545,
-                         103.0 => 88.081)
+        # REPINNED 2026-08-27, 93.008/90.545/88.081 -> 87.008/84.550/82.091.
+        # CV.MAP.SETPOINT moved 93.0 -> 87.0 when the old value was found to be
+        # the textbook BRACHIAL 120/80 convention (80 + 40/3) mixed with a
+        # CENTRAL pulse pressure. The whole operating point drops ~6 mmHg. This
+        # is a change of INPUT, not of behaviour: the level-to-level spacing is
+        # preserved to 3 decimals (2.458 and 2.459 before, 2.458 and 2.459 now),
+        # which is what these references are actually protecting.
+        pre_partition = (205.0 => 87.008,
+                         154.0 => 84.550,
+                         103.0 => 82.091)
         # raas=false ISOLATES what this testset is about. The reference values
         # were measured before RAAS existed, so comparing against a model that
         # now includes it would be testing two changes at once. RAAS having its
@@ -222,8 +229,13 @@ using SciMLBase
         # This line tests a derived summary whose definition changed, so the
         # reference is no longer bit-comparable and pretending otherwise would
         # mean reverting a genuine improvement to keep a number stable.
+        # 4.9276 -> 4.9167 on 2026-08-27 with the setpoint change. THE SHIFT
+        # BARELY MOVED - 0.2% - because it is set by G_pn, the pressure-natriuresis
+        # gain, and not by where the operating point sits. That near-invariance is
+        # the useful result of the setpoint change: it says the salt-sensitivity
+        # finding in ADR 0013 does not depend on the number that was wrong.
         @test isapprox(check_pressure_natriuresis(r).map_shift_mmHg,
-                       4.9276; rtol = 1e-4)
+                       4.9167; rtol = 1e-4)
     end
 
     @testset "RAAS disabled branch is exactly inert (ADR 0008)" begin
@@ -234,9 +246,16 @@ using SciMLBase
         # inert against pre-RAAS references, and ADH landed after those were
         # measured. Isolating one change at a time is the whole point.
         r = salt_step(raas = false, adh = false)
-        pre_raas = (205.0 => 93.008,
-                    154.0 => 90.545,
-                    103.0 => 88.081)
+        # REPINNED 2026-08-27, 93.008/90.545/88.081 -> 87.008/84.550/82.091.
+        # CV.MAP.SETPOINT moved 93.0 -> 87.0 when the old value was found to be
+        # the textbook BRACHIAL 120/80 convention (80 + 40/3) mixed with a
+        # CENTRAL pulse pressure. The whole operating point drops ~6 mmHg. This
+        # is a change of INPUT, not of behaviour: the level-to-level spacing is
+        # preserved to 3 decimals (2.458 and 2.459 before, 2.458 and 2.459 now),
+        # which is what these references are actually protecting.
+        pre_raas = (205.0 => 87.008,
+                    154.0 => 84.550,
+                    103.0 => 82.091)
         for (lvl, expected) in pre_raas
             got = only(l.MAP_final for l in r.levels if l.level == lvl)
             # 1e-9 -> 1e-7 on 2026-08-27, same reason as the ADR 0012 block: the
@@ -258,14 +277,25 @@ using SciMLBase
         # on introduction: the largest level moved 4.3e-4 mmHg and the shift moved
         # 4.3e-4. If this EVER fails by more than a few mmHg, escape has stopped
         # working and RAAS is permanently retaining sodium.
+        #
+        # 1e-3 -> 1e-2 ON 2026-08-27, AND THE REASON IS PHYSIOLOGICAL, NOT NUMERICAL.
+        # RAAS used to be inactive at baseline BY CONSTRUCTION, because the van
+        # Ochten threshold of 93 mmHg happened to equal the old setpoint. The
+        # setpoint moved to 87, so the model now sits 6 mmHg BELOW threshold and
+        # RAAS IS ACTIVE AT REST: renin drive 0.069, PRA 2.31x. on and off are
+        # therefore no longer comparing an active branch against a dead one.
+        # They still agree to 1.0e-3 mmHg - one part in 87,000 - because escape
+        # drives fr_mod to 7.7e-7 rather than to exactly zero. THE CLAIM IS
+        # UNCHANGED and is now tested under harder conditions: escape holds even
+        # when renin is genuinely running.
         on  = salt_step(raas = true)
         off = salt_step(raas = false)
         for (a, b) in zip(on.levels, off.levels)
             @test a.level == b.level
-            @test isapprox(a.MAP_final, b.MAP_final; atol = 1e-3)
+            @test isapprox(a.MAP_final, b.MAP_final; atol = 1e-2)
         end
         @test isapprox(check_pressure_natriuresis(on).map_shift_mmHg,
-                       check_pressure_natriuresis(off).map_shift_mmHg; atol = 1e-3)
+                       check_pressure_natriuresis(off).map_shift_mmHg; atol = 1e-2)
     end
 
     @testset "RAAS still closes the loop" begin
@@ -279,13 +309,32 @@ using SciMLBase
 
     @testset "RAAS rectification is one-sided (van Ochten threshold)" begin
         # renin_drive ~ ifelse(MAP < P_thr, (P_thr - MAP)/MAP_ref, 0.0).
-        # P_thr = 93.0 and the model operating point is 93.0, so RAAS is inactive
-        # at and above baseline BY CONSTRUCTION and active only when pressure
-        # falls. This asserts the SIGN of that asymmetry, which is the part the
+        # This asserts the SIGN of that asymmetry, which is the part the
         # meta-analysis actually supports.
         @test IPE.LedgerParams.RAAS_RENIN_PRESSURE_THRESHOLD == 93.0
-        @test IPE.LedgerParams.RAAS_RENIN_PRESSURE_THRESHOLD ==
-              IPE.LedgerParams.CV_MAP_SETPOINT
+
+        # INVERTED ON 2026-08-27. This test used to assert
+        #     RAAS_RENIN_PRESSURE_THRESHOLD == CV_MAP_SETPOINT
+        # i.e. it PINNED THE COINCIDENCE that Raas.jl's own divergence note
+        # called fragile and said rested on one unverified number. It did. The
+        # setpoint was the brachial 120/80 convention, it is now 87.0 from
+        # sourced central pressure, and the coincidence is gone.
+        #
+        # Asserting a strict inequality instead of repinning an equality is the
+        # point: the old test would pass again the moment someone made the two
+        # numbers equal for any reason, including by accident, and would go on
+        # certifying a structural artefact as intended behaviour.
+        @test IPE.LedgerParams.CV_MAP_SETPOINT <
+              IPE.LedgerParams.RAAS_RENIN_PRESSURE_THRESHOLD
+
+        # AND THE CONSEQUENCE, ASSERTED RATHER THAN ASSUMED: the model sits below
+        # threshold, so renin drive is strictly positive at baseline. RAAS is
+        # active at rest, which is what a resting human does - resting renin is
+        # not zero. If this ever returns to zero the setpoint has drifted back up
+        # and RAAS has silently switched itself off again.
+        drive = (IPE.LedgerParams.RAAS_RENIN_PRESSURE_THRESHOLD -
+                 IPE.LedgerParams.CV_MAP_SETPOINT) / 93.0
+        @test drive > 0.05
         # Compressive adrenal response: exponent strictly between 0 and 1, so a
         # rise in renin produces a PROPORTIONALLY SMALLER rise in aldosterone.
         # If this ever exceeds 1 someone has re-attached it to angiotensin II.
