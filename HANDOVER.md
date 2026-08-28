@@ -520,14 +520,8 @@ a population of an incomplete model is a wider set of wrong answers.**
   to 232 L/day by arithmetic against a denominator its source never used.
   Remaining: no population SD is entered — the source reports percentiles and
   right-skew makes two standard estimators disagree by 15%, so the sampled population
-  is UNIFORM over P05–P95, not weight-distributed. And (superseded text follows)
-- ~~**`body_mass` IS a ledger row now**~~ (`BF.BODY_MASS.REFERENCE`, 70.0 kg, `assumed`) and
-  the model scales to it — `src/scaling.jl`, extensive quantities scale, intensive ones
-  do not. **The remaining half is the sexed pair.** `SOURCES.md` already admits ICRP
-  Publication 89 as tier A and it carries reference adult masses by sex; that extraction
-  is NOT done and the numbers are NOT guessed. Because every extensive quantity now
-  scales through this row, entering the pair moves the whole model for both sexes at
-  once — which is what made it the largest un-modelled dimorphism.
+  is UNIFORM over P05–P95, not weight-distributed. Fixing that needs a declared
+  distribution family and an SD estimator chosen in advance — its own extraction.
 - **`CV.VENOUS_RETURN.SENSITIVITY` is `calibrated`** and is what item 2 replaces.
 - **`RN.URINE.SOLUTE_LOAD` now tracks SALT (PR #28) but still not PROTEIN.** The sodium
   half is done via charge balance; `RN.URINE.SOLUTE_NONNA` (urea + K salts) is still a
