@@ -5,7 +5,9 @@
 **Owner:** Eric George (`histoneguy`)
 **`main`:** `85cde41` — **297/297**, all five provenance gates green
 
-**In flight:** branch `autoreg-lower-sourcing` — `RN.AUTOREG.LOWER` sourced, 80 -> 63.9.
+**In flight:** PR #28, branch `autoreg-lower-sourcing`, **320/320**. Three changes:
+`RN.AUTOREG.LOWER` sourced 80 -> 63.9; `reconstruct.jl` connected so the model emits
+systolic and diastolic pressure; the urine solute load now tracks sodium.
 
 **Supersedes** the handover dated 2026-08-24, which described a 3-state model with no
 RAAS, no ADH and an unconnected clock. All of that is now wrong. Everything still live
@@ -142,7 +144,7 @@ exist and are connected; circadian, the last item, was wired on 26 August.
 |---|---|
 | `BodyFluids.jl` | ICF/ECF volumes, sodium mass balance, osmotic equilibration. Inactive-Na storage **default off** (ADR 0004). |
 | `Cardiovascular.jl` | ECF → plasma → blood volume, partitioned central/peripheral (ADR 0012). **CO = HR × SV** (ADR 0011). MAP = CO × TPR. |
-| `Renal.jl` | GFR autoregulation, filtered load, pressure natriuresis, RAAS tubular increment, circadian modulation on the excreted fraction, **osmoregulated water excretion**. |
+| `Renal.jl` | GFR autoregulation, filtered load, pressure natriuresis, RAAS tubular increment, circadian modulation on the excreted fraction, **osmoregulated water excretion**, and a **urine solute load that tracks sodium excretion** (PR #28). |
 | `Baroreflex.jl` | Lumped, resetting, TPR effector only. Setpoint scaled by the clock. |
 | `Raas.jl` | **Now active at rest** (see §3.1). Rectified renal baroreflex → renin → aldosterone → tubular reabsorption, with first-order escape. **No AngII vasoconstriction** — deliberate. |
 | `Adh.jl` | Osmolality → antidiuretic activity → urine osmolality; volume follows as solute load ÷ concentration. Algebraic, no states. |
@@ -169,9 +171,9 @@ operating point sits.
 
 ### Ledger
 
-64 parameters over 67 rows — 23 `reported`, 25 `derived`, 17 `assumed`, 2 `calibrated`.
-**19 weak.** Tiers: 24 A, 29 B, 14 C.
-41 relations — 15 definitional, 14 empirical, 8 conservation, 4 placeholder.
+66 parameters over 69 rows — 24 `reported`, 26 `derived`, 17 `assumed`, 2 `calibrated`.
+**19 weak.** Tiers: 24 A, 30 B, 15 C.
+42 relations — 15 definitional, 14 empirical, 9 conservation, 4 placeholder.
 Three parameters carry male/female pairs; the rest are `both`.
 
 ### Gates
@@ -408,11 +410,21 @@ filling relation is concave across a population.
 **Finish the cardiovascular system, then the other systems. Populations are far off —
 a population of an incomplete model is a wider set of wrong answers.**
 
-1. **Arterial compliance.** `PP = SV / C_art` gives pulse pressure and hence systolic and
-   diastolic. `reconstruct.jl` has taken `SV` and `C_art` as arguments since the repo
-   began and has never been connected; `SV` now exists. **The model cannot currently
-   produce a systolic pressure at all.** Smallest remaining piece with a real capability
-   gain. `form_factor` needs a ledger row (`reconstruct.jl` has a TODO saying so).
+1. ~~**Arterial compliance.**~~ **DONE in PR #28.** `reconstruct.jl` is connected and the
+   model emits SBP/DBP/PP — 108.99/76.01 at the high arm, pulse pressure moving
+   32.98 -> 31.05 across the salt step. NOT part of the ODE system, deliberately: SBP and
+   DBP stay functions of a solved trajectory tagged by `RECONSTRUCTED`, because ADR 0002
+   averaged the cardiac cycle away. The agreement with the sourced 109/76 is CONSISTENCY,
+   not validation — `C_art` was derived as SV0/PP0.
+
+   **Read the form-factor note before touching this.** `CV.PULSE.FORM_FACTOR` was NAMED as
+   the fraction of pulse pressure *above* the mean while carrying the *below*-mean value
+   0.3333. `check_closure.py` used it correctly as `MAP = DBP + k*PP` and passed;
+   `reconstruct.jl` defined it the other way. Connecting them under the shared word "form
+   factor" would have shipped SBP 98 / DBP 65 against the sourced 109/76 — 11 mmHg wrong
+   in each direction, past all five gates, because closure never reaches that file. It is
+   now `k_below`, with no default and a hard error at >= 0.5. **Second convention-inside-a-
+   name defect in two days; the first was MAP 93.**
 2. **Venous compliance and the venous return limb.** Pmsf, right atrial pressure,
    stressed vs unstressed volume. This replaces `G_vr`, and `relations.csv` already names
    venous compliance as the unsourced step in the `CO` row. Directive 1.7 re-aimed that
@@ -469,8 +481,12 @@ a population of an incomplete model is a wider set of wrong answers.**
 - **`G_pn` is wrong by 2–19×** (§3). Parked, one CSV value.
 - **`body_mass` is not a ledger row** and is the largest un-modelled dimorphism.
 - **`CV.VENOUS_RETURN.SENSITIVITY` is `calibrated`** and is what item 2 replaces.
-- **`RN.URINE.SOLUTE_LOAD` is assumed and held constant.** It should track salt and
-  protein intake; holding it fixed makes the model under-respond on the water side.
+- **`RN.URINE.SOLUTE_LOAD` now tracks SALT (PR #28) but still not PROTEIN.** The sodium
+  half is done via charge balance; `RN.URINE.SOLUTE_NONNA` (urea + K salts) is still a
+  constant, so protein intake still moves nothing. **And the level is still wrong**: 292
+  mOsm/day is too low for urea + K, because the parent 600 is an unsourced conventional
+  figure that is low for a 154 mEq/day intake. PR #28 changed the RESPONSE, not the
+  level; fixing the level moves every steady state and needs its own extraction.
 - **`ADH.URINE.OSM_MIN` is assumed**; it sets the maximal diuresis.
 - **Zerbe's AVP sensitivity spans 0.12–1.66 pg/ml per mOsm/kg** — fourteen-fold,
   reproducible within subject, heritable. Recorded and unused because the model carries
