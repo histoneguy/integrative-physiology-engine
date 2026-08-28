@@ -41,6 +41,7 @@ include("mtk_compat.jl")
 include("LedgerParams.jl")
 using .LedgerParams
 
+include("scaling.jl")
 include("recording.jl")
 include("reconstruct.jl")
 include("coupling.jl")
@@ -77,5 +78,6 @@ export CircadianClock, cycle_average
 export pulse_pressure, systolic_diastolic, reconstruct_pressures, RECONSTRUCTED
 export validate_partition, suggest_boundary, partitionable
 export LedgerParams, provenance, unledgered_check
+export size_factor
 
 end # module

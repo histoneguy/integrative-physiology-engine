@@ -640,32 +640,74 @@ using SciMLBase
         @test all(r -> r.retcode == ReturnCode.Success, res.u)
         @test all(r -> isfinite(r.MAP_final) && isfinite(r.V_ecf_final), res.u)
 
-        # THE FINDING, AND IT IS A DEFECT IN THE MODEL, NOT IN THE HARNESS.
-        # Body mass spans roughly 49 to 91 kg here - nearly a factor of two - and
-        # sets the INITIAL ECF volume, which therefore spans about 9.8 to 18.2 L.
-        # Every member converges to the same steady state anyway.
+        # BODY-SIZE SCALING, ADDED 2026-08-27. The previous version of this
+        # testset asserted the OPPOSITE - that every member converged on one
+        # extracellular volume - and said in its own comment that when scaling
+        # landed these bounds must fail and that the failure was the signal it
+        # worked. They failed. This is that.
         masses = [m.body_mass for m in pop]
-        @test maximum(masses) / minimum(masses) > 1.5      # the input really varies
+        @test maximum(masses) / minimum(masses) > 1.5
         vecfs = [r.V_ecf_final for r in res.u]
         maps  = [r.MAP_final for r in res.u]
-        @test maximum(vecfs) - minimum(vecfs) < 0.01       # ... the output does not
-        @test maximum(maps)  - minimum(maps)  < 0.05
 
-        # WHY. V_ecf is a state driven to steady state by SODIUM balance:
-        # Na content over C_Na sets the volume, and sodium content is fixed by
-        # intake against renal excretion. Body mass sets only the initial
-        # condition. Nothing downstream of it scales with body size - sodium
-        # intake is an absolute 205 mEq/day, GFR0 is an absolute 180 L/day, and
-        # every cardiovascular reference is absolute too. So the model says a
-        # 49 kg and a 91 kg adult have the SAME ECF volume and the same arterial
-        # pressure, which is wrong.
+        # EXTENSIVE: ECF volume tracks body mass, and tracks it PROPORTIONALLY.
+        # Ratio-constancy is the real assertion; a spread alone would pass for any
+        # monotone junk.
+        @test maximum(vecfs) - minimum(vecfs) > 5.0
+        ratios = vecfs ./ masses
+        @test maximum(ratios) - minimum(ratios) < 1e-6
+
+        # INTENSIVE: arterial pressure does NOT scale, and that half of the old
+        # collapse was never a defect. A model in which big people are
+        # hypertensive because they are big would be worse, not better. MAP is
+        # invariant to 1e-4 mmHg across a 1.85x mass range.
+        @test maximum(maps) - minimum(maps) < 1e-4
+
+        # BUILD-TIME AND REMAKE PATHS MUST AGREE. The components apply the size
+        # scaling when the model is built; member_remake reapplies it through
+        # remake because an ensemble must not rebuild. Two encodings of one rule
+        # is how they drift, so this asserts they have not.
+        bm = 90.0
+        built = salt_step(body_mass = bm,
+                          levels_mEq_day = (205.0 * bm / 70.0,),
+                          days_per_level = 40.0)
+        remade = IPE.run_population(build_model(), [(body_mass = bm,)];
+                                    tspan_days = 40.0)
+        @test isapprox(built.levels[1].V_ecf_final, remade.u[1].V_ecf_final;
+                       rtol = 1e-3)
+        @test isapprox(built.levels[1].MAP_cycavg, remade.u[1].MAP_final;
+                       rtol = 1e-3)
+
+        @info "ensemble body-size scaling" masses=round.(masses, digits=1) V_ecf=round.(vecfs, digits=4) V_ecf_per_kg=round.(ratios, digits=6) MAP=round.(maps, digits=4)
+    end
+
+    @testset "size scaling leaves the reference individual bit-identical" begin
+        # size_factor returns exactly 1.0 at BF.BODY_MASS.REFERENCE, so promoting
+        # body mass to a ledger row and threading it through three components must
+        # not move the default model at all. If this fails, the scaling has leaked
+        # into a quantity that should be intensive.
+        @test size_factor(IPE.LedgerParams.BF_BODY_MASS_REFERENCE) == 1.0
+        v = check_pressure_natriuresis(salt_step())
+        @test isapprox(v.map_shift_mmHg, 5.0575; atol = 0.02)
+
+        # THE INVARIANCE ITSELF, on the whole loop rather than on one arm.
+        # With sodium intake scaled along with the individual - which is what an
+        # individual eating their own diet means - arterial pressure and the
+        # salt-step shift are size-free, while every volume scales.
         #
-        # This is HANDOVER section 9's "body_mass is not a ledger row and is the
-        # largest un-modelled dimorphism", made measurable. It is asserted here as
-        # a CHARACTERISATION, not an endorsement: when body-size scaling lands
-        # these bounds must FAIL, and that failure is the signal it worked. Do not
-        # widen them to keep this green.
-        @info "ensemble body-size collapse" masses=round.(masses, digits=1) V_ecf=round.(vecfs, digits=4) MAP=round.(maps, digits=4)
+        # salt_step's own levels are ABSOLUTE, and deliberately: they are trial
+        # protocol values matching the Cutler and He/MacGregor targets, which were
+        # run on mixed-size adults. So the caller scales them here explicitly.
+        # That distinction is real - at FIXED absolute salt intake a larger person
+        # does sit at a lower pressure, because they filter more.
+        base = check_pressure_natriuresis(salt_step())
+        for bm in (55.0, 85.0)
+            f = bm / IPE.LedgerParams.BF_BODY_MASS_REFERENCE
+            r = check_pressure_natriuresis(
+                    salt_step(body_mass = bm,
+                              levels_mEq_day = (205.0 * f, 154.0 * f, 103.0 * f)))
+            @test isapprox(r.map_shift_mmHg, base.map_shift_mmHg; rtol = 1e-3)
+        end
     end
 
     @testset "recording and profiling paths run (ADR 0002, ADR 0003)" begin

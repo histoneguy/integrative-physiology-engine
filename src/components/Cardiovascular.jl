@@ -42,7 +42,8 @@ using ..LedgerParams
 using ..LedgerParams:
     CV_CO_NOMINAL, CV_TPR_NOMINAL, CV_BLOOD_VOLUME_NOMINAL,
     CV_HEMATOCRIT_NOMINAL, CV_PLASMA_ECF_FRACTION, CV_VENOUS_RETURN_SENSITIVITY,
-    CV_CENTRAL_FRACTION, CV_CENTRAL_VOLUME_NOMINAL, CV_CENTRAL_CO_SENSITIVITY
+    CV_CENTRAL_FRACTION, CV_CENTRAL_VOLUME_NOMINAL, CV_CENTRAL_CO_SENSITIVITY,
+    BF_BODY_MASS_REFERENCE
 
 """
     Cardiovascular(; name)
@@ -58,12 +59,20 @@ regulates it. Its stability comes entirely from renal pressure natriuresis actin
 through fluid volume - which is the central claim of the Guyton formulation and is
 what this minimal model exists to demonstrate.
 """
-function Cardiovascular(; name, sex::Symbol = :male)
+function Cardiovascular(; name, sex::Symbol = :male,
+                        body_mass = BF_BODY_MASS_REFERENCE)
+
+    sz = size_factor(body_mass)
 
     pars = @parameters begin
-        CO0    = CV_CO_NOMINAL
-        TPR0   = CV_TPR_NOMINAL                    # baseline; scaled by reflex
-        BV0    = CV_BLOOD_VOLUME_NOMINAL
+        # EXTENSIVE: a flow and two volumes.
+        CO0    = sz * CV_CO_NOMINAL
+        BV0    = sz * CV_BLOOD_VOLUME_NOMINAL
+        # TPR CARRIES THE RECIPROCAL, and this is the line that keeps arterial
+        # pressure intensive. MAP = CO*TPR, CO ~ s, so TPR ~ 1/s or big people
+        # would be hypertensive. Physically that is right: resistance falls as
+        # the vascular bed gets larger. See src/scaling.jl.
+        TPR0   = CV_TPR_NOMINAL / sz               # baseline; scaled by reflex
         # Resolved through the sex-aware accessor rather than read as a bare
         # constant. While CV.HEMATOCRIT.NOMINAL carries a single `both` row this
         # returns that value for either sex; the moment a male/female pair is
@@ -72,10 +81,14 @@ function Cardiovascular(; name, sex::Symbol = :male)
         f_pv   = CV_PLASMA_ECF_FRACTION
         G_vr   = CV_VENOUS_RETURN_SENSITIVITY      # CALIBRATED - see ledger
         f_c    = CV_CENTRAL_FRACTION               # PLACEHOLDER - cancels, see below
-        VC0    = CV_CENTRAL_VOLUME_NOMINAL         # DERIVED = f_c * BV0
+        VC0    = sz * CV_CENTRAL_VOLUME_NOMINAL    # EXTENSIVE, = f_c * BV0
+        # G_vc is dCO/dV_central. Both numerator and denominator are extensive,
+        # so the SENSITIVITY is intensive and must NOT scale.
         G_vc   = CV_CENTRAL_CO_SENSITIVITY         # DERIVED = G_vr / f_c
+        # HR is INTENSIVE - resting heart rate does not track body mass in
+        # adults - so stroke volume carries the whole of the cardiac scaling.
         HR0    = LedgerParams.param(:CV_HR_NOMINAL, sex)   # 1/min, SEX-SPECIFIC
-        SV0    = LedgerParams.param(:CV_SV_NOMINAL, sex)   # mL,    DERIVED per sex
+        SV0    = sz * LedgerParams.param(:CV_SV_NOMINAL, sex)   # mL, EXTENSIVE
     end
 
     vars = @variables begin

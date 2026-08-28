@@ -124,9 +124,29 @@ be done in one place rather than by callers.
 """
 function member_remake(prob, sys, member)
     bm = member.body_mass
+    sz = size_factor(bm)
     return remake(prob;
-        p = [sys.bf.m_body        => bm,
-             sys.bf.Osm_solute_icf => BF_OSM_PLASMA_SETPOINT * bm * BF_ICF_MASS_FRACTION],
+        # EVERY EXTENSIVE PARAMETER, because the base problem was built at the
+        # reference mass. The components apply this same scaling at BUILD time;
+        # here it has to be reapplied through remake, since the whole point of an
+        # ensemble is to avoid rebuilding. The two paths must agree, and the test
+        # suite asserts they do rather than trusting that they do.
+        p = [sys.bf.m_body         => bm,
+             sys.bf.Osm_solute_icf => BF_OSM_PLASMA_SETPOINT * bm * BF_ICF_MASS_FRACTION,
+             sys.bf.Na_intake      => sz * BF_NA_INTAKE_NOMINAL,
+             sys.bf.H2O_intake     => sz * BF_H2O_INTAKE_NOMINAL,
+             sys.bf.H2O_insens     => sz * BF_H2O_INSENSIBLE_LOSS,
+             sys.rn.GFR0           => sz * RN_GFR_NOMINAL,
+             sys.rn.G_pn           => sz * RN_PRESSURE_NATRIURESIS_SLOPE,
+             sys.rn.Osm_ref        => sz * RN_URINE_SOLUTE_LOAD,
+             sys.rn.Osm_nonNa      => sz * RN_URINE_SOLUTE_NONNA,
+             sys.cv.CO0            => sz * CV_CO_NOMINAL,
+             sys.cv.BV0            => sz * CV_BLOOD_VOLUME_NOMINAL,
+             sys.cv.VC0            => sz * CV_CENTRAL_VOLUME_NOMINAL,
+             sys.cv.SV0            => sz * LedgerParams.param(:CV_SV_NOMINAL, :male),
+             # RECIPROCAL. MAP = CO*TPR and CO scales, so resistance must fall or
+             # larger people come out hypertensive. See src/scaling.jl.
+             sys.cv.TPR0           => CV_TPR_NOMINAL / sz],
         u0 = [sys.bf.V_icf  => bm * BF_ICF_MASS_FRACTION,
               sys.bf.V_ecf  => bm * BF_ECF_MASS_FRACTION,
               sys.bf.Na_ecf => bm * BF_ECF_MASS_FRACTION * BF_NA_PLASMA_SETPOINT])
