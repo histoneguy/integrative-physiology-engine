@@ -165,5 +165,16 @@ function cardiovascular_couplings()
                  note = "V_ecf -> plasma -> blood volume -> venous return"),
         Coupling(:cardiovascular, :renal, Mechanical,
                  note = "MAP drives filtration and pressure natriuresis"),
+        # DECLARED 2026-08-27. This edge exists in assemble.jl as
+        # `bf.MAP ~ cv.MAP` and was declared nowhere, so the declared graph and
+        # the built model disagreed. It is currently INERT: BodyFluids takes MAP
+        # as an input and no equation there consumes it, so structural_simplify
+        # removes it. It is the hook ADR 0010 needs for a volume-natriuresis /
+        # ANP path. Declared rather than deleted so the two graphs match, and
+        # recorded as Mechanical, which means the partition rule forbids cutting
+        # across it - a precautionary constraint until something reads bf.MAP.
+        Coupling(:cardiovascular, :bodyfluids, Mechanical,
+                 note = "MAP to body fluids; INERT - no equation consumes bf.MAP " *
+                        "yet. ADR 0010 ANP hook."),
     ]
 end

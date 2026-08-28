@@ -116,6 +116,122 @@ function build_raw_model(; body_mass = 70.0, storage::Bool = false,
 end
 
 """
+    model_couplings()
+
+The declared coupling graph of the whole model, deduplicated.
+
+CONNECTED 2026-08-27. Every component has had a `*_couplings()` function since it
+was written and NOTHING HAS EVER CALLED ONE. Seven declaration functions, plus
+`coupling_ledger_rows`, `suggest_boundary` and `partitionable`, all dead. ADR 0003's
+partition rule was enforced by `validate_partition`, which had no graph to validate.
+
+Assembling it found four defects, none of which any of the five gates can see:
+
+  1. `bodyfluids -> endocrine` named a subsystem that does not exist. Worse than a
+     typo: `validate_partition` skips any edge whose endpoint is not in the
+     assignment, so the edge was guaranteed never to be checked.
+  2. `circadian -> cardiovascular` was the wrong endpoint. The clock scales the
+     BAROREFLEX setpoint (`br.cv_mod ~ clk.cv_mod`).
+  3. `cardiovascular -> bodyfluids` exists in the model and was declared nowhere.
+  4. `CIRC_CV_MAP_DIP_FRACTION` is not a ledger parameter. It is the dangling
+     provenance pointer `coupling_ledger_rows` exists to catch.
+
+Edges are declared by BOTH endpoints by convention, so duplicates are expected and
+are removed here. A duplicate that disagrees on KIND is not a duplicate and is left
+for `assert_couplings_match_model` to reject.
+"""
+function model_couplings()
+    all = vcat(bodyfluids_couplings(), cardiovascular_couplings(), renal_couplings(),
+               baroreflex_couplings(), raas_couplings(), adh_couplings(),
+               circadian_couplings())
+    seen = Set{Tuple{Symbol,Symbol,CouplingKind}}()
+    out = Coupling[]
+    for c in all
+        k = (c.from, c.to, c.kind)
+        k in seen && continue
+        push!(seen, k)
+        push!(out, c)
+    end
+    return out
+end
+
+"""
+    model_edges()
+
+The subsystem-level edges actually present in `build_raw_model`, as `(from, to)`.
+
+Hand-maintained to mirror the `connections` vector above, and asserted against the
+declarations by `assert_couplings_match_model`. It is written out rather than derived
+from the symbolic system because the connection equations name namespaced VARIABLES
+(`rn.MAP ~ cv.MAP`), and mapping those back to subsystems is exactly the step where a
+mistake would reintroduce the class of defect this function exists to catch.
+"""
+model_edges() = Set([
+    (:bodyfluids, :cardiovascular),   # cv.V_ecf ~ bf.V_ecf
+    (:cardiovascular, :renal),        # rn.MAP ~ cv.MAP
+    (:bodyfluids, :renal),            # rn.C_Na ~ bf.C_Na
+    (:renal, :bodyfluids),            # bf.Na_excr_rate, bf.H2O_excr_rate
+    (:cardiovascular, :bodyfluids),   # bf.MAP ~ cv.MAP - INERT, ADR 0010 hook
+    (:cardiovascular, :baroreflex),   # br.MAP ~ cv.MAP
+    (:baroreflex, :cardiovascular),   # cv.tpr_mod ~ br.tpr_mod
+    (:cardiovascular, :raas),         # ra.MAP ~ cv.MAP
+    (:raas, :renal),                  # rn.fr_mod ~ ra.fr_mod
+    (:bodyfluids, :adh),              # ad.Osm_ecf ~ bf.Osm_ecf
+    (:adh, :renal),                   # rn.u_osm ~ ad.u_osm
+    (:circadian, :renal),             # rn.renal_mod ~ clk.renal_mod
+    (:circadian, :baroreflex),        # br.cv_mod ~ clk.cv_mod
+])
+
+"""
+    assert_couplings_match_model()
+
+Assert the DECLARED coupling graph is exactly the graph the model is built from,
+and that every declared `gain_param` resolves to a ledger constant.
+
+This is the check whose absence let four defects sit in the declarations
+indefinitely. Returns a NamedTuple of the discrepancies; throws on any.
+"""
+function assert_couplings_match_model()
+    cs = model_couplings()
+    declared = Set((c.from, c.to) for c in cs)
+    actual   = model_edges()
+
+    undeclared = setdiff(actual, declared)
+    phantom    = setdiff(declared, actual)
+
+    subsystems = Set([:bodyfluids, :cardiovascular, :renal, :baroreflex,
+                      :raas, :adh, :circadian])
+    unknown = [c for c in cs if !(c.from in subsystems) || !(c.to in subsystems)]
+
+    dangling = Symbol[]
+    for r in coupling_ledger_rows(cs)
+        startswith(r, "COUPLE.") && continue      # tau rows, not ledger constants yet
+        isdefined(LedgerParams, Symbol(r)) || push!(dangling, Symbol(r))
+    end
+
+    isempty(unknown) || error("Coupling names a subsystem that does not exist " *
+        "(validate_partition SILENTLY SKIPS these):
+" *
+        join(["  $(c.from) -> $(c.to)" for c in unknown], "
+"))
+    isempty(undeclared) || error("Model has connections declared by no component:
+" *
+        join(["  $(e[1]) -> $(e[2])" for e in undeclared], "
+"))
+    isempty(phantom) || error("Components declare couplings the model does not build:
+" *
+        join(["  $(e[1]) -> $(e[2])" for e in phantom], "
+"))
+    isempty(dangling) || error("Coupling gain_param is not a ledger parameter:
+" *
+        join(["  $(d)" for d in dangling], "
+"))
+
+    return (n_couplings = length(cs), undeclared = undeclared, phantom = phantom,
+            unknown = unknown, dangling = dangling)
+end
+
+"""
     solve_individual(sys; tspan_days = 30.0, solver = nothing, saveat = 1.0, kwargs...)
 
 Solve for a single individual.
