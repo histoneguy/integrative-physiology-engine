@@ -376,6 +376,57 @@ using SciMLBase
         @test minimum(v.maps) - lo > 10.0
     end
 
+    @testset "the model reconstructs systolic and diastolic (ADR 0002)" begin
+        # CONNECTED 2026-08-27. reconstruct.jl existed from the first commit,
+        # was included by IPE.jl, and was called and tested by NOTHING - it took
+        # SV and C_art as arguments and neither existed. ADR 0011 created SV and
+        # the CV.MAP.SETPOINT sourcing pass created C_art. Until now the model
+        # could not produce a systolic pressure at all.
+        r = salt_step()
+        hi = r.levels[1]
+
+        # RECONSTRUCTED, NOT SIMULATED. ADR 0002 averaged the cardiac cycle away.
+        @test :systolic in IPE.RECONSTRUCTED
+        @test :diastolic in IPE.RECONSTRUCTED
+
+        # Ordering, which is the cheapest thing that catches a transposed
+        # convention: DBP < MAP < SBP, and the mean sits NEARER DIASTOLIC
+        # because diastole is longer than systole.
+        @test hi.DBP_reconstructed < hi.MAP_cycavg < hi.SBP_reconstructed
+        @test (hi.MAP_cycavg - hi.DBP_reconstructed) <
+              (hi.SBP_reconstructed - hi.MAP_cycavg)
+        @test isapprox(hi.PP_reconstructed,
+                       hi.SBP_reconstructed - hi.DBP_reconstructed; atol = 1e-9)
+
+        # Consistency with the tier A central references, NOT independent
+        # validation: C_art was derived as SV0/PP0, so at the operating point
+        # this largely returns them by construction. It is still worth pinning -
+        # it is what fails if the form-factor convention is transposed again,
+        # and that failure would be 11 mmHg in each direction.
+        @test isapprox(hi.SBP_reconstructed,
+                       IPE.LedgerParams.CV_SBP_CENTRAL_NOMINAL; atol = 0.1)
+        @test isapprox(hi.DBP_reconstructed,
+                       IPE.LedgerParams.CV_DBP_CENTRAL_NOMINAL; atol = 0.1)
+
+        # THE CONVENTION GUARD. k_below is the fraction of PP BELOW the mean and
+        # cannot reach 0.5 while diastole is longer than systole. The ledger row
+        # was NAMED as the fraction above until today while carrying the below
+        # value; wiring it in under that name would have given SBP 98 / DBP 65
+        # against the sourced 109 / 76, and check_closure would still have
+        # passed because it never reaches reconstruct.jl.
+        @test IPE.LedgerParams.CV_PULSE_FORM_FACTOR < 0.5
+        @test_throws ErrorException systolic_diastolic(87.0, 80.7, 2.445, 0.515)
+
+        # What is actually NEW: a pulse pressure that RESPONDS. The salt step
+        # moves SV, so PP moves with it. This is output the model could not
+        # generate before, and it is the part not fixed by construction.
+        pps = [l.PP_reconstructed for l in r.levels]
+        @test issorted(pps; rev = true)      # higher intake -> higher SV -> wider PP
+        @test pps[1] - pps[end] > 1.0
+
+        @info "reconstructed pressures" sbp=[l.SBP_reconstructed for l in r.levels] dbp=[l.DBP_reconstructed for l in r.levels] pp=pps
+    end
+
     @testset "ADH disabled branch recovers the placeholder (ADR 0008)" begin
         # ADR 0008: the disabled branch is TESTED, not assumed. With adh=false
         # u_osm is held at U_base, so Osm_load/u_osm returns exactly the old

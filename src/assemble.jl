@@ -237,17 +237,35 @@ function salt_step(; levels_mEq_day = (205.0, 154.0, 103.0),
         catch
             _final(sol, sys, name)
         end
+        # WITHIN-CYCLE RECONSTRUCTION (ADR 0002, reconstruct.jl). Systolic and
+        # diastolic are NOT simulated - the cardiac cycle was averaged away - so
+        # they are reconstructed here from the cycle-averaged MAP and SV and
+        # carried in fields named to say so. reconstruct.jl sat unconnected from
+        # the beginning of the repo because SV and C_art did not exist; ADR 0011
+        # created SV and the CV.MAP.SETPOINT sourcing pass created C_art.
+        #
+        # sex is threaded through because CV.ARTERIAL.COMPLIANCE is a male/female
+        # pair and ADR 0014 makes :both an error rather than an average.
+        map_cyc = _cyc("MAP")
+        sv_cyc  = _cyc("SV")
+        recon   = reconstruct_pressures(map_cyc, sv_cyc; sex)
+
         push!(results, (level = level,
                         index = i,
                         t_start = t0,
                         t_end = t0 + days_per_level,
                         sol = sol,
-                        MAP_cycavg = _cyc("MAP"),
+                        MAP_cycavg = map_cyc,
+                        SV_cycavg = sv_cyc,
                         Na_excr_cycavg = _cyc("Na_excr"),
                         MAP_final = _final(sol, sys, "MAP"),
                         V_ecf_final = _final(sol, sys, "V_ecf"),
                         Na_excr_final = _final(sol, sys, "Na_excr"),
-                        Na_ecf_final = _final(sol, sys, "Na_ecf")))
+                        Na_ecf_final = _final(sol, sys, "Na_ecf"),
+                        # RECONSTRUCTED, not simulated. Label as such.
+                        SBP_reconstructed = recon.systolic,
+                        DBP_reconstructed = recon.diastolic,
+                        PP_reconstructed = recon.pulse))
         t0 += days_per_level
     end
 
