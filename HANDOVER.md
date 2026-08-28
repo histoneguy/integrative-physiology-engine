@@ -3,7 +3,9 @@
 **Date:** 2026-08-27
 **Repo:** https://github.com/histoneguy/integrative-physiology-engine (public)
 **Owner:** Eric George (`histoneguy`)
-**`main`:** `b492d2b` — **273/273**, all five provenance gates green
+**`main`:** `85cde41` — **297/297**, all five provenance gates green
+
+**In flight:** branch `autoreg-lower-sourcing` — `RN.AUTOREG.LOWER` sourced, 80 -> 63.9.
 
 **Supersedes** the handover dated 2026-08-24, which described a 3-state model with no
 RAAS, no ADH and an unconnected clock. All of that is now wrong. Everything still live
@@ -124,7 +126,10 @@ unchanged** — that is the proof the digits carried nothing.
 
 ## 2. STATE
 
-`main` at `b492d2b`. **273/273.** All five gates exit 0.
+`main` at `85cde41`. **297/297.** All five gates exit 0.
+
+The header of the superseded handover said `b492d2b` / 273; both were one commit
+stale from the moment #27 merged. Counts below re-verified 2026-08-27.
 
 **The ADR 0006 spine is COMPLETE.** Renal, cardiovascular, baroreflex, RAAS, ADH all
 exist and are connected; circadian, the last item, was wired on 26 August.
@@ -164,9 +169,10 @@ operating point sits.
 
 ### Ledger
 
-61 parameters — 22 `reported`, 21 `derived`, 16 `assumed`, 2 `calibrated`. **18 weak.**
+64 parameters over 67 rows — 23 `reported`, 25 `derived`, 17 `assumed`, 2 `calibrated`.
+**19 weak.** Tiers: 24 A, 29 B, 14 C.
 41 relations — 15 definitional, 14 empirical, 8 conservation, 4 placeholder.
-Two parameters carry male/female pairs; the rest are `both`.
+Three parameters carry male/female pairs; the rest are `both`.
 
 ### Gates
 
@@ -228,9 +234,13 @@ be an absolute resting PRA, not a fold-change from an artefact.
 ledger for weeks, silently set another parameter, and silently disabled an entire
 subsystem. It was caught by an arithmetic impossibility, not by any of the five gates.
 
-The ledger was grepped. **`CV.MAP.SETPOINT` was one of seven rows carrying the identical
-string "Standard physiological reference. VERIFY.", and it is the only one discharged.**
-All six survivors are load-bearing:
+The ledger was grepped. **`CV.MAP.SETPOINT` was one of EIGHT rows carrying the identical
+string "Standard physiological reference. VERIFY."** `RN.AUTOREG.LOWER` was discharged
+on 2026-08-27 (see below). **The six survivors are load-bearing:**
+
+*(Corrected 2026-08-27: this paragraph said "one of seven" and "all six survivors"
+while tabling seven rows. Counted against `320759c`, the commit before the MAP fix,
+it was eight and seven. The table was right and the prose was wrong both ways.)*
 
 | row | value | drives |
 |---|---|---|
@@ -239,7 +249,6 @@ All six survivors are load-bearing:
 | `CV.BLOOD_VOLUME.NOMINAL` | 5.0 L | `f_pv` and the central volume reference `VC0` |
 | `RN.GFR.NOMINAL` | 180 L/day | filtered sodium load - the whole renal input |
 | `RN.NA.FRACTIONAL_REABSORPTION` | 0.9918651 | sodium balance; `1 - FR` is the excreted fraction |
-| `RN.AUTOREG.LOWER` | 80 mmHg | autoregulation range, and **87 now sits only 7 mmHg above it** |
 | `RN.H2O.OBLIGATORY_LOSS` | 0.5 L/day | water balance |
 
 **These are a different category from the nine `assumed` rows with empty citations.**
@@ -247,7 +256,44 @@ Those are honestly labelled guesses and the relations gate already tracks them a
 These seven claim `extraction_method = reported`: they assert a source exists. For MAP
 that assertion was false and the number was a unit-convention artefact.
 
-`RN.AUTOREG.LOWER` is the one to look at first. The operating point moved toward it.
+### `RN.AUTOREG.LOWER` — DONE, 2026-08-27. It was 20 mmHg wrong.
+
+**80 -> 63.9 mmHg, `species` human -> dog, tier B -> A.** Pre-registered in
+`validation/autoreg_lower_prereg.md` (commit `3fbe260`, before any paper was opened),
+executed by `validation/autoreg_lower_extract.py`. 26 PubMed queries, 1114 records.
+
+**No human primary study reports a lower breakpoint.** The one whose title says it does
+— Textor 1985, *Critical perfusion pressure for renal function* — measures a **stenosis**
+threshold that vanished after revascularisation.
+
+**The human evidence conflicts at the same pressure, and that is the result.** At MAP 60,
+Lessard 1991 (inulin GFR, PAH ERPF, n=20) found renal vascular resistance *falling* to
+maintain flow; Hara 1998 (n=26) found creatinine clearance significantly *decreased*.
+Lessard is the stronger study and picking it after seeing both is exactly what
+pre-registration forbids, so that branch failed on its own terms. **Directive 1.8 is why
+this was caught** — Lessard came from sweep 1 and looked clean; Hara came from sweep 2.
+
+All four human studies are **anaesthesia safety** studies: apply directive 1.7 and the
+alternative conclusion is "this technique is unsafe for the kidney". The relationship is
+the instrument. The adopted source is the opposite kind — **Finke 1983**, seven
+**conscious** foxhounds, renal artery pressure stepped 160 -> 40 mmHg under servo
+control, lower limit **63.9 mmHg**. The relationship IS the subject.
+
+**Nothing in the model moved.** All three arms were above 80 and are above 63.9, so every
+steady state is bit-identical. **What moved is margin**: the low-salt arm sat 1.9 mmHg
+above a piecewise kink that `CV.MAP.SETPOINT` had just moved 6 mmHg toward. It now sits
+18.0 mmHg above, and **a new testset asserts that margin** — nothing asserted on either
+breakpoint before, and both have been wrong while every test passed (§7.3).
+
+**Still debt, and the reason was fixed in advance.** It is a dog number and the human
+experiment *is* performable, so the ethical ceiling that earns `RN.AUTOREG.UPPER` its E2
+standing does **not** transfer. The pre-registration ruled that out before the search so
+it could not be reached for afterwards.
+
+**Finke also measured the renin threshold at 89.8 ± 3.3 mmHg** in conscious dog, against
+`RAAS.RENIN.PRESSURE_THRESHOLD = 93.0` on van Ochten. Not changed — out of scope — but
+that row is the rectification point §3.1 found the model sitting exactly on, and a second
+independent primary now exists in a paper this repo has read.
 
 **No gate catches this class.** All five pass on the ledger as it stands. A gate that
 rejects `reported` with a non-citation would have caught MAP 93 at entry - but per
@@ -419,7 +465,7 @@ a population of an incomplete model is a wider set of wrong answers.**
 
 ## 9. OPEN ITEMS
 
-- **18 of 61 parameters** are `assumed` or `calibrated`. `unledgered_check()` lists them.
+- **19 of 64 parameters** are `assumed` or `calibrated`. `unledgered_check()` lists them.
 - **`G_pn` is wrong by 2–19×** (§3). Parked, one CSV value.
 - **`body_mass` is not a ledger row** and is the largest un-modelled dimorphism.
 - **`CV.VENOUS_RETURN.SENSITIVITY` is `calibrated`** and is what item 2 replaces.
@@ -435,7 +481,8 @@ a population of an incomplete model is a wider set of wrong answers.**
 - **Two circadian rows are effectively uncited** (title plus PMC id, no authors) and are
   tier C pending replacement.
 - **`BF.NA.SKIN_ACCUMULATION_RATE` is a secondary citation** via a dissertation.
-- **`RN.AUTOREG.LOWER = 80` is genuine debt.**
+- **`RN.AUTOREG.LOWER` is sourced (63.9, Finke 1983) but is a DOG number** where the
+  human experiment is performable — debt with a named primary, not a closure. See §3.1.
 - **Eight relations carry no `form_citation`**, grandfathered as tracked debt.
 - **`pooling.md` requires columns `ledger/parameters.csv` does not have.**
 
