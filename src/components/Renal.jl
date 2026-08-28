@@ -45,7 +45,8 @@ using ..LedgerParams:
     RN_GFR_NOMINAL, RN_NA_FRACTIONAL_REABSORPTION, RN_PRESSURE_NATRIURESIS_SLOPE,
     RN_URINE_SOLUTE_LOAD, RN_URINE_SOLUTE_NONNA, RN_URINE_OSM_PER_NA,
     RN_AUTOREG_LOWER, RN_AUTOREG_UPPER, ADH_URINE_OSM_MAX, RN_URINE_SOLUTE_LOAD,
-    CV_MAP_SETPOINT, BF_H2O_INTAKE_NOMINAL, BF_H2O_INSENSIBLE_LOSS
+    CV_MAP_SETPOINT, BF_H2O_INTAKE_NOMINAL, BF_H2O_INSENSIBLE_LOSS,
+    BF_BODY_MASS_REFERENCE
 
 """
     Renal(; name)
@@ -59,12 +60,24 @@ The whole component is one idea: filtered sodium minus reabsorbed sodium, where
 reabsorption falls as pressure rises. That single dependence is what makes arterial
 pressure self-regulating in the long run.
 """
-function Renal(; name, solute_tracking::Bool = true)
+function Renal(; name, solute_tracking::Bool = true,
+               body_mass = BF_BODY_MASS_REFERENCE)
+
+    sz = size_factor(body_mass)
 
     pars = @parameters begin
-        GFR0     = RN_GFR_NOMINAL
-        FR_Na    = RN_NA_FRACTIONAL_REABSORPTION
-        G_pn     = RN_PRESSURE_NATRIURESIS_SLOPE     # CALIBRATED - see ledger
+        # EXTENSIVE. GFR is a flow and G_pn is an excretion per mmHg, so both
+        # scale. They scale TOGETHER, which is the point: FR_effective subtracts
+        # G_pn*(MAP-MAP_ref)/Na_filtered, and with G_pn ~ s and Na_filtered ~ s
+        # that term is INVARIANT. The reabsorbed fraction stays intensive and the
+        # pressure-natriuresis loop is size-free. See src/scaling.jl.
+        #
+        # GFR SCALING IS THE APPROXIMATION IN THIS FILE: clinically GFR is
+        # normalised to body surface area, which grows sub-linearly with mass, so
+        # linear scaling overstates the spread. Debt, not silently absorbed.
+        GFR0     = sz * RN_GFR_NOMINAL
+        FR_Na    = RN_NA_FRACTIONAL_REABSORPTION     # INTENSIVE - a fraction
+        G_pn     = sz * RN_PRESSURE_NATRIURESIS_SLOPE  # CALIBRATED - see ledger
         MAP_lo   = RN_AUTOREG_LOWER
         MAP_hi   = RN_AUTOREG_UPPER
         MAP_ref  = CV_MAP_SETPOINT
@@ -76,9 +89,12 @@ function Renal(; name, solute_tracking::Bool = true)
         # ledger row survives as the reference-load value and the identity is
         # asserted in the test suite instead.
         U_max     = ADH_URINE_OSM_MAX
-        Osm_ref   = RN_URINE_SOLUTE_LOAD     # reference load, disabled branch
-        Osm_nonNa = RN_URINE_SOLUTE_NONNA    # urea + K salts + rest, HELD CONSTANT
-        osm_Na    = RN_URINE_OSM_PER_NA      # mOsm per mEq Na - charge balance
+        # EXTENSIVE. Urea production tracks lean mass, so the non-sodium solute
+        # load scales. osm_Na is INTENSIVE - it is mOsm per mEq, charge balance,
+        # and charge balance does not care how big you are.
+        Osm_ref   = sz * RN_URINE_SOLUTE_LOAD   # reference load, disabled branch
+        Osm_nonNa = sz * RN_URINE_SOLUTE_NONNA  # urea + K salts + rest
+        osm_Na    = RN_URINE_OSM_PER_NA         # INTENSIVE - charge balance
         H2O_in   = BF_H2O_INTAKE_NOMINAL
         H2O_ins  = BF_H2O_INSENSIBLE_LOSS
     end

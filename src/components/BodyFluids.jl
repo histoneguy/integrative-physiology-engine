@@ -33,7 +33,8 @@ using ..LedgerParams:
     BF_NA_OSMOTICALLY_INACTIVE_FRACTION, BF_NA_STORAGE_TAU,
     BF_ICF_ECF_OSMOTIC_TAU,
     BF_NA_INTAKE_NOMINAL, BF_H2O_INTAKE_NOMINAL, BF_H2O_INSENSIBLE_LOSS,
-    BF_OSM_NONSODIUM
+    BF_OSM_NONSODIUM,
+    BF_BODY_MASS_REFERENCE
 
 """
     BodyFluids(; name, body_mass = 70.0, storage = false)
@@ -49,7 +50,10 @@ Interface (see src/coupling.jl):
   in   H2O_excr_rate    L/day    from renal
   out  V_ecf, C_Na, Osm_ecf      to cardiovascular, renal, endocrine
 """
-function BodyFluids(; name, body_mass = 70.0, storage::Bool = false)
+function BodyFluids(; name, body_mass = BF_BODY_MASS_REFERENCE,
+                    storage::Bool = false)
+
+    sz = size_factor(body_mass)
 
     pars = @parameters begin
         m_body      = body_mass
@@ -60,9 +64,11 @@ function BodyFluids(; name, body_mass = 70.0, storage::Bool = false)
         f_store     = BF_NA_OSMOTICALLY_INACTIVE_FRACTION
         tau_store   = BF_NA_STORAGE_TAU                    # already days
         tau_osm     = BF_ICF_ECF_OSMOTIC_TAU / 1440.0      # min -> day
-        Na_intake   = BF_NA_INTAKE_NOMINAL                 # protocol input
-        H2O_intake  = BF_H2O_INTAKE_NOMINAL                # protocol input
-        H2O_insens  = BF_H2O_INSENSIBLE_LOSS
+        # EXTENSIVE - scale with body size. A 90 kg adult eats more sodium and
+        # loses more water insensibly than a 50 kg adult. See src/scaling.jl.
+        Na_intake   = sz * BF_NA_INTAKE_NOMINAL            # protocol input
+        H2O_intake  = sz * BF_H2O_INTAKE_NOMINAL           # protocol input
+        H2O_insens  = sz * BF_H2O_INSENSIBLE_LOSS
         # Intracellular osmotically active solute content, CONSERVED. Set so that
         # at nominal ICF volume the cell is iso-osmolar with plasma. Cells do not
         # gain or lose solute on the timescales this model covers - only water

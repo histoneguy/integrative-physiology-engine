@@ -430,8 +430,9 @@ a population of an incomplete model is a wider set of wrong answers.**
    venous compliance as the unsourced step in the `CO` row. Directive 1.7 re-aimed that
    search at the relationship. Record Beard and Feigl 2011 as a declared conflict — they
    argue Guyton's interpretation interchanges independent and dependent variables.
-3. **`body_mass` as a sex-specific ledger row.** Dissolves three separate sex questions
-   into one parameter.
+3. ~~**`body_mass` as a sex-specific ledger row.**~~ **HALF DONE.** The row exists and the
+   model scales to it; the sexed pair (ICRP 89) is what remains. Dissolves three separate
+   sex questions into one parameter.
 4. **Chronotropic baroreflex.** ADR 0009 gives the reflex one effector; HR now exists.
 5. **ADR 0013 decision** on `G_pn`, with its ECF falsifiable test run first.
 6. **`check_closure.py` is filling up** — it hand-codes thirteen relationships and does
@@ -479,7 +480,13 @@ a population of an incomplete model is a wider set of wrong answers.**
 
 - **19 of 64 parameters** are `assumed` or `calibrated`. `unledgered_check()` lists them.
 - **`G_pn` is wrong by 2–19×** (§3). Parked, one CSV value.
-- **`body_mass` is not a ledger row** and is the largest un-modelled dimorphism.
+- **`body_mass` IS a ledger row now** (`BF.BODY_MASS.REFERENCE`, 70.0 kg, `assumed`) and
+  the model scales to it — `src/scaling.jl`, extensive quantities scale, intensive ones
+  do not. **The remaining half is the sexed pair.** `SOURCES.md` already admits ICRP
+  Publication 89 as tier A and it carries reference adult masses by sex; that extraction
+  is NOT done and the numbers are NOT guessed. Because every extensive quantity now
+  scales through this row, entering the pair moves the whole model for both sexes at
+  once — which is what made it the largest un-modelled dimorphism.
 - **`CV.VENOUS_RETURN.SENSITIVITY` is `calibrated`** and is what item 2 replaces.
 - **`RN.URINE.SOLUTE_LOAD` now tracks SALT (PR #28) but still not PROTEIN.** The sodium
   half is done via charge balance; `RN.URINE.SOLUTE_NONNA` (urea + K salts) is still a
