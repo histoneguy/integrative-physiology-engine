@@ -198,9 +198,19 @@ using SciMLBase
         # is a change of INPUT, not of behaviour: the level-to-level spacing is
         # preserved to 3 decimals (2.458 and 2.459 before, 2.458 and 2.459 now),
         # which is what these references are actually protecting.
+        # REPINNED 2026-08-28, 84.550/82.091 -> 84.5395/82.0713. THE HIGH ARM DID
+        # NOT MOVE, and that is the mechanism showing itself. CV.BLOOD_VOLUME.NOMINAL
+        # became a sourced male/female pair (Oberholzer 2024), so f_pv - which is
+        # DERIVED as BV0*(1-Hct)/V_ecf - rose 0.1889 -> 0.2123 for males. At the
+        # NOMINAL operating point that is exactly cancelled by VC0 = f_c*BV0, so
+        # V_central - VC0 is still zero and MAP is unchanged. AWAY from nominal it is
+        # not cancelled: dV_central/dV_ecf = f_c*f_pv/(1-Hct) is now 12% larger, so a
+        # given ECF change moves cardiac output more. That is a real change in loop
+        # gain, not solver noise, which is why these are repinned rather than having
+        # their tolerance widened.
         pre_partition = (205.0 => 87.008,
-                         154.0 => 84.550,
-                         103.0 => 82.091)
+                         154.0 => 84.5395,
+                         103.0 => 82.0713)
         # raas=false ISOLATES what this testset is about. The reference values
         # were measured before RAAS existed, so comparing against a model that
         # now includes it would be testing two changes at once. RAAS having its
@@ -235,7 +245,7 @@ using SciMLBase
         # the useful result of the setpoint change: it says the salt-sensitivity
         # finding in ADR 0013 does not depend on the number that was wrong.
         @test isapprox(check_pressure_natriuresis(r).map_shift_mmHg,
-                       4.9167; rtol = 1e-4)
+                       4.9352; rtol = 1e-4)   # 4.9167 -> 4.9352, see above
     end
 
     @testset "RAAS disabled branch is exactly inert (ADR 0008)" begin
@@ -253,9 +263,19 @@ using SciMLBase
         # is a change of INPUT, not of behaviour: the level-to-level spacing is
         # preserved to 3 decimals (2.458 and 2.459 before, 2.458 and 2.459 now),
         # which is what these references are actually protecting.
+        # REPINNED 2026-08-28, 84.550/82.091 -> 84.5395/82.0713. THE HIGH ARM DID
+        # NOT MOVE, and that is the mechanism showing itself. CV.BLOOD_VOLUME.NOMINAL
+        # became a sourced male/female pair (Oberholzer 2024), so f_pv - which is
+        # DERIVED as BV0*(1-Hct)/V_ecf - rose 0.1889 -> 0.2123 for males. At the
+        # NOMINAL operating point that is exactly cancelled by VC0 = f_c*BV0, so
+        # V_central - VC0 is still zero and MAP is unchanged. AWAY from nominal it is
+        # not cancelled: dV_central/dV_ecf = f_c*f_pv/(1-Hct) is now 12% larger, so a
+        # given ECF change moves cardiac output more. That is a real change in loop
+        # gain, not solver noise, which is why these are repinned rather than having
+        # their tolerance widened.
         pre_raas = (205.0 => 87.008,
-                    154.0 => 84.550,
-                    103.0 => 82.091)
+                    154.0 => 84.5395,
+                    103.0 => 82.0713)
         for (lvl, expected) in pre_raas
             got = only(l.MAP_final for l in r.levels if l.level == lvl)
             # 1e-9 -> 1e-7 on 2026-08-27, same reason as the ADR 0012 block: the
@@ -798,7 +818,10 @@ using SciMLBase
         # available value. Haematocrit is the obvious next pair - it is
         # androgen-driven erythropoiesis, not a body-size effect, so unlike
         # cardiac output it will NOT dissolve into body mass.
-        for sym in (:CV_HEMATOCRIT_NOMINAL, :CV_BLOOD_VOLUME_NOMINAL, :RN_GFR_NOMINAL)
+        # CV_BLOOD_VOLUME_NOMINAL LEFT THIS LIST 2026-08-27: it is now a sourced
+        # male/female pair (Oberholzer 2024), so asserting the sexes are equal
+        # would be asserting the absence of a dimorphism the literature reports.
+        for sym in (:CV_HEMATOCRIT_NOMINAL, :RN_GFR_NOMINAL)
             @test L.param(sym, :male) == L.param(sym, :female)
             @test L.param(sym, :male) == getfield(L, sym)
         end
