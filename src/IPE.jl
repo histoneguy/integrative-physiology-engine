@@ -61,11 +61,17 @@ export BodyFluids, Cardiovascular, Renal, Baroreflex, Raas, Adh
 export FullTrace, StreamingStats, EventWindows, projected_storage
 export step_distribution, cost_profile, timescale_audit, boundary_sensitivity
 export Coupling, CouplingKind, Neurohumoral, Mechanical, Conservation
+# The declared coupling graph, connected 2026-08-27. Every *_couplings()
+# function had existed since its component was written and none was ever called.
+export model_couplings, model_edges, assert_couplings_match_model
+export bodyfluids_couplings, cardiovascular_couplings, renal_couplings
+export baroreflex_couplings, raas_couplings, adh_couplings, circadian_couplings
+export coupling_ledger_rows
 export CircadianClock, cycle_average
 # Within-cycle reconstruction (ADR 0002). NOT simulated quantities - see
 # reconstruct.jl and RECONSTRUCTED before reporting any of these.
 export pulse_pressure, systolic_diastolic, reconstruct_pressures, RECONSTRUCTED
-export validate_partition, suggest_boundary
+export validate_partition, suggest_boundary, partitionable
 export LedgerParams, provenance, unledgered_check
 
 end # module

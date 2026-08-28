@@ -159,7 +159,16 @@ function bodyfluids_couplings()
                  note = "C_Na and V_ecf drive filtered load; algebraic, no lag"),
         Coupling(:bodyfluids, :cardiovascular, Mechanical,
                  note = "V_ecf -> plasma volume -> venous return; hydraulic, no lag"),
-        Coupling(:bodyfluids, :endocrine, Conservation,
+        # WAS `:endocrine`, WHICH IS NOT A SUBSYSTEM. Corrected to `:adh` on
+        # 2026-08-27. There has never been a subsystem called `endocrine`; the
+        # name predates the ADH component. The consequence was not cosmetic:
+        # validate_partition does `get(assignment, c.to, nothing) === nothing &&
+        # continue`, so an edge naming a subsystem that does not exist is
+        # SILENTLY SKIPPED - the one coupling most in need of checking was the
+        # one guaranteed never to be checked. Kind aligned to Mechanical to match
+        # Adh.jl, which declares the same edge; both are non-partitionable, so
+        # the disagreement never affected the partition rule.
+        Coupling(:bodyfluids, :adh, Mechanical,
                  note = "Osm_ecf drives ADH release; algebraic at this resolution"),
     ]
 end

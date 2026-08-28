@@ -561,6 +561,66 @@ using SciMLBase
         @info "solute load tracks sodium" loads=loads maps=[l.MAP_cycavg for l in r.levels]
     end
 
+    @testset "the declared coupling graph matches the model (ADR 0003)" begin
+        # CONNECTED 2026-08-27. Every component has had a *_couplings() function
+        # since it was written and NOTHING EVER CALLED ONE. Seven declaration
+        # functions plus coupling_ledger_rows, suggest_boundary and partitionable,
+        # all dead. ADR 0003's partition rule is enforced by validate_partition,
+        # which had no graph to validate.
+        #
+        # Assembling it found four defects that no gate can see, and all four are
+        # defects BETWEEN subsystems - the class isolated auditing cannot reach:
+        #   bodyfluids -> endocrine   named a subsystem that does not exist, and
+        #                             validate_partition SKIPS unknown endpoints,
+        #                             so it could never have been checked;
+        #   circadian -> cardiovascular  wrong endpoint, it is the baroreflex;
+        #   cardiovascular -> bodyfluids  real edge, declared by nobody;
+        #   CIRC_CV_MAP_DIP_FRACTION  gain_param naming no ledger row.
+        r = assert_couplings_match_model()
+        @test isempty(r.undeclared)
+        @test isempty(r.phantom)
+        @test isempty(r.unknown)
+        @test isempty(r.dangling)
+        @test r.n_couplings == 13
+
+        cs = model_couplings()
+        # ADR 0003: instantaneous couplings are not partitionable. If this ever
+        # returns true for a Mechanical or Conservation edge the rule has been
+        # inverted, and the partition would be free to cut a hydraulic link.
+        @test all(c -> partitionable(c.kind) == (c.kind === Neurohumoral), cs)
+        # Every Neurohumoral coupling carries a tau; the others must not.
+        @test all(c -> (c.tau_seconds !== nothing) == (c.kind === Neurohumoral), cs)
+
+        # validate_partition on a REAL assignment. The fast block is everything
+        # instantaneously coupled to pressure and volume; the clock is slow. This
+        # is the first time the ADR 0003 machinery has been run on this model.
+        fast = Dict(:bodyfluids => :fast, :cardiovascular => :fast, :renal => :fast,
+                    :baroreflex => :fast, :raas => :fast, :adh => :fast,
+                    :circadian => :slow)
+        @test validate_partition(cs, fast; boundary_seconds = 30.1).ok
+
+        # And a partition that CUTS A MECHANICAL EDGE must throw. Asserting the
+        # guard fires, not just that the good case passes - the disabled-branch
+        # discipline of ADR 0008 applied to a checker.
+        bad = Dict(:bodyfluids => :fast, :cardiovascular => :slow, :renal => :fast,
+                   :baroreflex => :fast, :raas => :fast, :adh => :fast,
+                   :circadian => :slow)
+        @test_throws ErrorException validate_partition(cs, bad;
+                                                       boundary_seconds = 30.1)
+
+        # THE PHYSIOLOGICAL RESULT, which only exists once the graph is assembled.
+        # suggest_boundary warns when the largest ratio between adjacent declared
+        # time constants is under 10x. It does not warn here: 3.0 s (baroreflex
+        # effector) to 302.4 s (renin) is a ~100x gap. That is a statement about
+        # PHYSIOLOGY rather than about the Jacobian spectrum, and it is the other
+        # half of the ADR 0003 argument, which is deferred on state count.
+        b = suggest_boundary(cs)
+        @test length(b.taus) == 4
+        @test b.gap !== nothing
+        @test b.gap[1] > 10.0
+        @info "declared coupling timescales" taus=b.taus gap_ratio=b.gap[1] boundary_s=b.suggested_boundary_seconds
+    end
+
     @testset "sex is a model dimension (ADR 0014)" begin
         L = IPE.LedgerParams
         # Nothing is dimorphic yet, so the accessor must FALL BACK to the shared

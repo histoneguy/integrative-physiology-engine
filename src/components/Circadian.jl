@@ -134,9 +134,19 @@ function circadian_couplings()
                  gain_param = :CIRC_RENAL_NA_AMPLITUDE,
                  note = "aldosterone-Per1-ENaC path; tau is transcriptional-effector " *
                         "delay and is ASSUMED - see ledger"),
-        Coupling(:circadian, :cardiovascular, Neurohumoral;
+        # TWO CORRECTIONS, 2026-08-27, both found by assembling the graph.
+        # (1) The target was `:cardiovascular`. The actual connection in
+        #     assemble.jl is `br.cv_mod ~ clk.cv_mod` - the clock scales the
+        #     BAROREFLEX SETPOINT, not anything in the cardiovascular component.
+        #     A partition trusting the old declaration would have protected an
+        #     edge that does not exist while cutting one that does.
+        # (2) gain_param named :CIRC_CV_MAP_DIP_FRACTION, which is not a ledger
+        #     parameter and never has been. coupling_ledger_rows() exists
+        #     precisely to catch a dangling provenance pointer and had never
+        #     been called. The row is CIRC.CV_MAP.AMPLITUDE.
+        Coupling(:circadian, :baroreflex, Neurohumoral;
                  tau_seconds = 3600.0,
-                 gain_param = :CIRC_CV_MAP_DIP_FRACTION,
+                 gain_param = :CIRC_CV_MAP_AMPLITUDE,
                  note = "independent path - Bmal1-/- rats lose renal rhythm while " *
                         "MAP rhythm persists, so these must not share a route"),
     ]
