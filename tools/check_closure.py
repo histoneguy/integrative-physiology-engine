@@ -240,6 +240,17 @@ def _check_one(p: dict[str, float]) -> int:
           "in the ledger, so U_max is forced, not chosen.",
           errors)
 
+    check("non-sodium solute is the residual at the mid salt arm",
+          p["RN.URINE.SOLUTE_NONNA"] +
+          p["RN.URINE.OSM_PER_NA"] * p["BF.NA.INTAKE_MID"],
+          solute,
+          "Osm_nonNa + osm_Na*Na_mid = the REFERENCE solute load. The load now "
+          "tracks sodium excretion, and the residual is pinned so the mid arm "
+          "returns exactly the reference. If this drifts, U_max, U_base and "
+          "k_adh - all derived from that reference - describe a different model "
+          "than the one being run.",
+          errors)
+
     check("baseline urine osmolality closes water balance",
           p["ADH.URINE.OSM_BASELINE"], solute / v_base,
           "U_base = solute load / (intake - insensible loss). Used by the "
