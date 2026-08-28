@@ -62,6 +62,9 @@ export FullTrace, StreamingStats, EventWindows, projected_storage
 export step_distribution, cost_profile, timescale_audit, boundary_sensitivity
 export Coupling, CouplingKind, Neurohumoral, Mechanical, Conservation
 export CircadianClock, cycle_average
+# Within-cycle reconstruction (ADR 0002). NOT simulated quantities - see
+# reconstruct.jl and RECONSTRUCTED before reporting any of these.
+export pulse_pressure, systolic_diastolic, reconstruct_pressures, RECONSTRUCTED
 export validate_partition, suggest_boundary
 export LedgerParams, provenance, unledgered_check
 
