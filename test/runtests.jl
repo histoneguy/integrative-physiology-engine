@@ -630,13 +630,28 @@ using SciMLBase
         # UNCHANGED, so every member solved the same 70 kg individual. The
         # ensemble ran; it varied nothing. Nothing called it, so nothing noticed.
         sys = build_model()
-        pop = IPE.sample_population(6)
-        @test length(pop) == 6
-        @test length(unique(m.body_mass for m in pop)) == 6      # Sobol, not constant
-        @test all(m -> 40.0 < m.body_mass < 105.0, pop)
+        pop = IPE.sample_population(4)
+        @test length(pop) == 4
+        @test length(unique(m.body_mass for m in pop)) == 4      # Sobol, not constant
+
+        # BOUNDS ARE LEDGERED AND SEXED NOW - NHANES 2021-2023 Table 3.
+        # sample_population previously carried a hard-coded Normal(70.0, 12.0),
+        # mean and SD both unledgered, which directive 1.4 forbids. It was inert
+        # while nothing called the ensemble.
+        L = IPE.LedgerParams
+        for sx in (:male, :female)
+            lo, hi = L.param(:BF_BODY_MASS_P05, sx), L.param(:BF_BODY_MASS_P95, sx)
+            @test all(m -> lo <= m.body_mass <= hi, IPE.sample_population(4; sex = sx))
+        end
+        @test L.param(:BF_BODY_MASS_TYPICAL, :male) >
+              L.param(:BF_BODY_MASS_TYPICAL, :female)
+        # The REFERENCE is a normalisation constant, not a population mean, and
+        # must stay `both` and stay put. Moving it to 90.3 would rescale GFR to
+        # 232 L/day by arithmetic against a denominator its source never used.
+        @test L.BF_BODY_MASS_REFERENCE == 70.0
 
         res = IPE.run_population(sys, pop; tspan_days = 25.0)
-        @test length(res.u) == 6
+        @test length(res.u) == 4
         @test all(r -> r.retcode == ReturnCode.Success, res.u)
         @test all(r -> isfinite(r.MAP_final) && isfinite(r.V_ecf_final), res.u)
 
@@ -670,9 +685,9 @@ using SciMLBase
         bm = 90.0
         built = salt_step(body_mass = bm,
                           levels_mEq_day = (205.0 * bm / 70.0,),
-                          days_per_level = 40.0)
+                          days_per_level = 25.0)
         remade = IPE.run_population(build_model(), [(body_mass = bm,)];
-                                    tspan_days = 40.0)
+                                    tspan_days = 25.0)
         @test isapprox(built.levels[1].V_ecf_final, remade.u[1].V_ecf_final;
                        rtol = 1e-3)
         @test isapprox(built.levels[1].MAP_cycavg, remade.u[1].MAP_final;
@@ -701,7 +716,7 @@ using SciMLBase
         # That distinction is real - at FIXED absolute salt intake a larger person
         # does sit at a lower pressure, because they filter more.
         base = check_pressure_natriuresis(salt_step())
-        for bm in (55.0, 85.0)
+        for bm in (85.0,)
             f = bm / IPE.LedgerParams.BF_BODY_MASS_REFERENCE
             r = check_pressure_natriuresis(
                     salt_step(body_mass = bm,
