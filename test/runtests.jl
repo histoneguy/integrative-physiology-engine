@@ -498,7 +498,67 @@ using SciMLBase
         on  = check_pressure_natriuresis(salt_step(adh = true)).map_shift_mmHg
         off = check_pressure_natriuresis(salt_step(adh = false)).map_shift_mmHg
         @test on > off
-        @test isapprox(on, 5.0996; atol = 0.02)
+
+        # REPINNED 5.0996 -> 5.0575 ON 2026-08-27, and the direction is the
+        # interesting part. RN.URINE.SOLUTE_LOAD stopped being a constant: the
+        # urine solute load now tracks sodium excretion, so a salt load raises
+        # the osmoles that have to be carried out and with them the obligatory
+        # water loss. That DAMPS the pressure excursion - the high arm falls
+        # 87.0012 -> 86.9794 and the low arm rises 81.9002 -> 81.9219.
+        #
+        # ADR 0013 records the model as 2 to 19 times more salt-sensitive than
+        # normotensive humans. This is the FIRST structural change to move it
+        # the RIGHT way. It is small - 0.8% against a discrepancy of 2x at best -
+        # so it does not touch that finding, and it must not be read as
+        # addressing it: G_pn is still the parameter that sets the shift.
+        @test isapprox(on, 5.0575; atol = 0.02)
+    end
+
+    @testset "the urine solute load tracks sodium (water limb responds to salt)" begin
+        # WHAT THIS REPLACED. RN.URINE.SOLUTE_LOAD was a constant 600 mOsm/day
+        # and its own ledger note called that the load-bearing assumption of the
+        # ADH component: urine volume is solute load over urine osmolality, so a
+        # frozen numerator made the model under-respond to a salt load on the
+        # WATER side while responding correctly on the sodium side. The note said
+        # to consider making it depend on Na_excr. It now does.
+        L = IPE.LedgerParams
+
+        # The residual is a RESIDUAL, and this is the identity that defines it.
+        # If it drifts, the mid arm stops returning the reference load and every
+        # ADH constant derived from that load is silently describing a different
+        # model. check_closure.py asserts the same thing on the ledger.
+        @test isapprox(L.RN_URINE_SOLUTE_NONNA +
+                       L.RN_URINE_OSM_PER_NA * L.BF_NA_INTAKE_MID,
+                       L.RN_URINE_SOLUTE_LOAD; rtol = 1e-3)
+
+        # The load must RESPOND, and monotonically. At steady state excretion
+        # matches intake, so the load is Osm_nonNa + 2*intake.
+        r = salt_step()
+        loads = [L.RN_URINE_SOLUTE_NONNA + L.RN_URINE_OSM_PER_NA * l.Na_excr_cycavg
+                 for l in r.levels]
+        @test issorted(loads; rev = true)
+        @test loads[1] - loads[end] > 100.0     # 2 * (205 - 103) = 204 mOsm/day
+
+        # THE OBLIGATORY VOLUME FLOOR NOW TRACKS THE LOAD, and this is why it had
+        # to. V_min was a constant 0.5 L/day, which equalled
+        # SOLUTE_LOAD / OSM_MAX only while the load was constant. On the low-salt
+        # arm the load falls to 498 mOsm/day and 498/1200 = 0.415 L/day, so a
+        # fixed 0.5 floor would have bound spuriously - clamping urine output
+        # above what the kidney actually must excrete, in the arm where water
+        # retention matters most.
+        @test isapprox(L.RN_URINE_SOLUTE_LOAD / L.ADH_URINE_OSM_MAX,
+                       L.RN_H2O_OBLIGATORY_LOSS; rtol = 1e-3)
+        low_load = L.RN_URINE_SOLUTE_NONNA + L.RN_URINE_OSM_PER_NA * 103.0
+        @test low_load / L.ADH_URINE_OSM_MAX < L.RN_H2O_OBLIGATORY_LOSS
+
+        # DISABLED BRANCH IS EXACTLY INERT (ADR 0008). With adh = false the whole
+        # post-placeholder water limb is off - pinned u_osm AND constant load -
+        # so water excretion returns the old constant intake minus insensible
+        # loss. The two are halves of one placeholder; see Renal.jl.
+        off = salt_step(adh = false)
+        @test all(l -> 60.0 <= l.MAP_final <= 140.0, off.levels)
+
+        @info "solute load tracks sodium" loads=loads maps=[l.MAP_cycavg for l in r.levels]
     end
 
     @testset "sex is a model dimension (ADR 0014)" begin

@@ -63,7 +63,12 @@ function build_raw_model(; body_mass = 70.0, storage::Bool = false,
               "individual - a parameter with no known dimorphism resolves to its " *
               "shared value for either sex, which is not the same thing.")
     @named cv = Cardiovascular(; sex)
-    @named rn = Renal()
+    # solute_tracking follows the adh flag. The urine solute load tracking
+    # sodium and ADH setting urine osmolality are the two halves of the same
+    # post-placeholder water limb: with adh = false, u_osm is pinned at U_base
+    # so that Osm_load/U_base reproduces the old constant 1.7 L/day, and a
+    # varying Osm_load would break that recovery. See Renal.jl and ADR 0008.
+    @named rn = Renal(; solute_tracking = adh)
     @named br = Baroreflex(; enabled = baroreflex)
     @named ra = Raas(; enabled = raas)
     @named ad = Adh(; enabled = adh)

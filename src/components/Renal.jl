@@ -43,8 +43,8 @@ using ModelingToolkit: t_nounits as t, D_nounits as D
 
 using ..LedgerParams:
     RN_GFR_NOMINAL, RN_NA_FRACTIONAL_REABSORPTION, RN_PRESSURE_NATRIURESIS_SLOPE,
-    RN_URINE_SOLUTE_LOAD,
-    RN_AUTOREG_LOWER, RN_AUTOREG_UPPER, RN_H2O_OBLIGATORY_LOSS,
+    RN_URINE_SOLUTE_LOAD, RN_URINE_SOLUTE_NONNA, RN_URINE_OSM_PER_NA,
+    RN_AUTOREG_LOWER, RN_AUTOREG_UPPER, ADH_URINE_OSM_MAX, RN_URINE_SOLUTE_LOAD,
     CV_MAP_SETPOINT, BF_H2O_INTAKE_NOMINAL, BF_H2O_INSENSIBLE_LOSS
 
 """
@@ -59,7 +59,7 @@ The whole component is one idea: filtered sodium minus reabsorbed sodium, where
 reabsorption falls as pressure rises. That single dependence is what makes arterial
 pressure self-regulating in the long run.
 """
-function Renal(; name)
+function Renal(; name, solute_tracking::Bool = true)
 
     pars = @parameters begin
         GFR0     = RN_GFR_NOMINAL
@@ -68,8 +68,17 @@ function Renal(; name)
         MAP_lo   = RN_AUTOREG_LOWER
         MAP_hi   = RN_AUTOREG_UPPER
         MAP_ref  = CV_MAP_SETPOINT
-        V_min    = RN_H2O_OBLIGATORY_LOSS
-        Osm_load = RN_URINE_SOLUTE_LOAD
+        # V_min (RN.H2O.OBLIGATORY_LOSS) IS DELIBERATELY NO LONGER A PARAMETER
+        # HERE. It was a constant 0.5 L/day floor, which equalled
+        # RN.URINE.SOLUTE_LOAD / ADH.URINE.OSM_MAX only while the solute load was
+        # constant. The obligatory volume is a CONSEQUENCE of the load, not an
+        # independent number, so it is now computed as Osm_load / U_max. The
+        # ledger row survives as the reference-load value and the identity is
+        # asserted in the test suite instead.
+        U_max     = ADH_URINE_OSM_MAX
+        Osm_ref   = RN_URINE_SOLUTE_LOAD     # reference load, disabled branch
+        Osm_nonNa = RN_URINE_SOLUTE_NONNA    # urea + K salts + rest, HELD CONSTANT
+        osm_Na    = RN_URINE_OSM_PER_NA      # mOsm per mEq Na - charge balance
         H2O_in   = BF_H2O_INTAKE_NOMINAL
         H2O_ins  = BF_H2O_INSENSIBLE_LOSS
     end
@@ -87,6 +96,7 @@ function Renal(; name)
         Na_excr(t)          # mEq/day  OUTPUT
         H2O_excr(t)         # L/day    OUTPUT
         FR_effective(t)     # unitless
+        Osm_load(t)         # mOsm/day urinary solute load - NOW TRACKS SODIUM
     end
 
     eqs = [
@@ -140,11 +150,54 @@ function Renal(; name)
         #
         # Urine volume is solute excretion divided by urine concentration, and
         # ADH sets the concentration. That is where the nonlinearity lives: the
+        # THE URINE SOLUTE LOAD NOW TRACKS SODIUM EXCRETION.
+        # It was the constant RN.URINE.SOLUTE_LOAD, and its own ledger note named
+        # that as the load-bearing assumption of the ADH component: urine volume
+        # is solute load over urine osmolality, so freezing the numerator made the
+        # model under-respond to a salt load on the WATER side while responding
+        # correctly on the sodium side. The note said to consider making it depend
+        # on Na_excr. This is that.
+        #
+        # The coefficient of 2 is CHARGE BALANCE, not a fit: every excreted Na+
+        # leaves with an accompanying anion, mostly chloride, so a mEq of sodium
+        # carries about two milliosmoles. Osm_nonNa is urea plus potassium salts
+        # plus the remainder and is STILL CONSTANT, so protein intake still moves
+        # nothing here.
+        #
+        # Osm_nonNa is pinned as a RESIDUAL so that the total returns exactly
+        # 600.0 mOsm/day at the mid salt arm. That is deliberate: U_max, U_base
+        # and k_adh are all DERIVED from the reference load and four closure
+        # checks depend on it, so the reference must not move. The mid arm is
+        # unchanged to the last digit; the high and low arms are what move.
+        # WHY THIS IS BEHIND THE SAME SWITCH AS ADH (ADR 0008). The pre-ADH
+        # water placeholder was a CONSTANT 1.7 L/day - intake minus insensible
+        # loss - and it is recovered by holding u_osm at U_base so that
+        # Osm_load/U_base returns exactly that. A VARIABLE Osm_load breaks that
+        # recovery, because the numerator then moves while the denominator is
+        # pinned. The constant load and the pinned urine osmolality are two
+        # halves of ONE placeholder, so they belong to one switch; splitting
+        # them would leave a disabled branch that reproduces neither the old
+        # model nor the new one. assemble.jl wires solute_tracking from the adh
+        # flag for exactly this reason.
+        # solute_tracking is a build-time Bool, so this resolves to ONE concrete
+        # equation at model construction - not a runtime branch in the compiled
+        # system. Same pattern as the enabled/disabled branches elsewhere.
+        Osm_load ~ solute_tracking ? Osm_nonNa + osm_Na * Na_excr : Osm_ref,
+
+        # Urine volume is solute excretion divided by urine concentration, and
+        # ADH sets the concentration. That is where the nonlinearity lives: the
         # same change in u_osm moves litres at the dilute end and millilitres at
-        # the concentrated end. The floor at V_min is retained as a guard; at
-        # u_osm = U_max the division already gives exactly V_min, so it should
-        # never bind, and if it ever does the ADH closure has drifted.
-        H2O_excr ~ max(V_min, Osm_load / u_osm),
+        # the concentrated end.
+        #
+        # THE FLOOR NOW TRACKS THE LOAD. It was the constant V_min = 0.5 L/day,
+        # which was exactly RN.URINE.SOLUTE_LOAD / ADH.URINE.OSM_MAX while the
+        # load was constant. With a variable load the obligatory volume is
+        # Osm_load / U_max by definition - the volume needed to carry THIS solute
+        # load at maximal concentrating ability - and a fixed 0.5 would bind
+        # spuriously on the low-salt arm, where the load falls to 498 mOsm/day and
+        # 498/1200 = 0.415 L/day. V_min is retained only to assert that identity
+        # at the reference load; see the test.
+        H2O_excr ~ max(Osm_load / U_max, Osm_load / u_osm),
     ]
 
     return MTKSystem(eqs, t, vars, pars; name)
