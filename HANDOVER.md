@@ -124,6 +124,38 @@ to sixteen digits to erase a 6.2e-8 mmHg difference. Every structural change the
 pin and needed another round. Rounding the whole ledger left **every simulated result
 unchanged** — that is the proof the digits carried nothing.
 
+### 1.10 Comprehensive, but super efficient — FOUNDATIONAL — 2026-08-27
+**Coverage is not negotiable; cost is.** Code must be comprehensive AND efficient.
+This is a **foundational tenet**, ranking with provenance — not a preference to trade
+away when a task feels big.
+
+The two are not in tension, and treating them as if they were is the error. What
+makes work expensive here is almost never the number of things checked; it is
+horizon, duplication, and code that should not exist at all.
+
+**What triggered it.** Connecting the ensemble took the suite from about 1 minute to
+3m33 — six-member populations over 40-day horizons, plus a build-versus-remake check
+running two full integrations. Trimming to four members over 25 days, folding a
+separate testset into an existing one, and dropping a redundant salt-step arm brought
+it to 1m46 **with MORE assertions than before**. Coverage went up while cost halved.
+That is the shape to aim for every time.
+
+**A slow suite is a compounding cost.** It is paid on every future run, forever,
+unlike a slow one-off. The same applies to anything on the development loop.
+
+**How to apply.**
+- Fold assertions into an existing testset rather than adding another.
+- Pick the shortest horizon at which the assertion still bites.
+- Check whether the repo already contains it before writing anything. Several things
+  did, unconnected, for months.
+- No new file where a function will do; no new function where an argument will do.
+- Assert more per unit of compute, not less per unit of confidence.
+
+**This never licenses skipping verification.** The falsification runs — reverting a
+parameter to confirm a test genuinely fails — are cheap, and are not what makes a
+suite slow. Cut horizon and duplication. Never cut the check.
+
+
 ---
 
 ## 2. STATE
@@ -480,7 +512,16 @@ a population of an incomplete model is a wider set of wrong answers.**
 
 - **19 of 64 parameters** are `assumed` or `calibrated`. `unledgered_check()` lists them.
 - **`G_pn` is wrong by 2–19×** (§3). Parked, one CSV value.
-- **`body_mass` IS a ledger row now** (`BF.BODY_MASS.REFERENCE`, 70.0 kg, `assumed`) and
+- **`body_mass` is DONE for now.** `BF.BODY_MASS.REFERENCE` (70.0 kg, `assumed`, stays
+  `both`) is a NORMALISATION CONSTANT — the mass at which this ledger's extensive
+  constants are stated. `BF.BODY_MASS.TYPICAL` is the sexed pair (90.3 / 77.9 kg,
+  NHANES 2021–2023, tier A) with `P05`/`P95` bounds driving the ensemble. **They are
+  different quantities**; moving the reference to a population mean would rescale GFR
+  to 232 L/day by arithmetic against a denominator its source never used.
+  Remaining: no population SD is entered — the source reports percentiles and
+  right-skew makes two standard estimators disagree by 15%, so the sampled population
+  is UNIFORM over P05–P95, not weight-distributed. And (superseded text follows)
+- ~~**`body_mass` IS a ledger row now**~~ (`BF.BODY_MASS.REFERENCE`, 70.0 kg, `assumed`) and
   the model scales to it — `src/scaling.jl`, extensive quantities scale, intensive ones
   do not. **The remaining half is the sexed pair.** `SOURCES.md` already admits ICRP
   Publication 89 as tier A and it carries reference adult masses by sex; that extraction

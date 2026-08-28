@@ -27,10 +27,32 @@ integration. Correlations between physiological parameters are real and currentl
 ignored here - a copula or a fitted joint distribution belongs here once the ledger
 carries enough covariance information to justify one.
 """
-function sample_population(n::Int; body_mass_dist = Normal(70.0, 12.0))
-    lb = [quantile(body_mass_dist, 0.01)]
-    ub = [quantile(body_mass_dist, 0.99)]
-    s = QuasiMonteCarlo.sample(n, lb, ub, SobolSample())
+function sample_population(n::Int; sex::Symbol = :male,
+                           lo = LedgerParams.param(:BF_BODY_MASS_P05, sex),
+                           hi = LedgerParams.param(:BF_BODY_MASS_P95, sex))
+    # WAS `body_mass_dist = Normal(70.0, 12.0)`, WITH THE MEAN AND THE SD BOTH
+    # HARD-CODED AND UNLEDGERED - which directive 1.4 forbids. It was inert while
+    # nothing called the ensemble; the ensemble runs now, so it was live and
+    # driving every population result.
+    #
+    # Bounds now come from NHANES 2021-2023 Table 3, per sex: male 60.9 to 131.8
+    # kg, female 50.7 to 119.2 kg.
+    #
+    # THE NORMAL WAS NEVER DOING WHAT IT LOOKED LIKE IT WAS DOING. This function
+    # only ever took the 1st and 99th percentiles of the distribution it was
+    # handed and then sampled UNIFORMLY between them with Sobol. The distribution
+    # supplied bounds and nothing else - the shape was discarded. Taking sourced
+    # percentiles directly is therefore not a loss of information; it makes the
+    # existing behaviour honest, and it avoids inventing a standard deviation the
+    # source does not report (see the BF.BODY_MASS.P05 ledger note: two standard
+    # SD estimators disagree by 15% because body weight is right-skewed, and the
+    # pre-registration declared no estimator).
+    #
+    # KNOWN LIMITATION, now explicit rather than disguised: the sampled
+    # population is UNIFORM over the 5th-95th percentile range, not
+    # weight-distributed, so it over-represents the tails. Fixing that needs a
+    # declared distribution family and a pre-declared SD estimator.
+    s = QuasiMonteCarlo.sample(n, [float(lo)], [float(hi)], SobolSample())
     return [(body_mass = s[1, i],) for i in 1:n]
 end
 
