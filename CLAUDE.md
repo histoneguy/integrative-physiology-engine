@@ -30,6 +30,13 @@ Run all five provenance gates before committing:
     python tools/check_adrs.py
     python tools/fix_deps.py
 
+**Comprehensive, but super efficient** — HANDOVER directive 1.10, foundational.
+Coverage is not negotiable; cost is. A slow suite is paid on every future run.
+
+**Connect it and run it** — directive 1.11, foundational. Wire up what already
+exists before sourcing anything new. Every real defect found on 2026-08-27 was
+found by connecting something, and none by any of the five gates.
+
 ## Rules you need before you have read the handover
 
 - **Provenance is the point.** Numbers enter via `ledger/parameters.csv`, equations via
@@ -60,7 +67,7 @@ it. The file has not been rewritten yet.
 | Path | What |
 |---|---|
 | `HANDOVER.md` | the brief — read it |
-| `src/components/` | the model; `incoming/Raas.jl` is written but deliberately not wired in |
+| `src/components/` | the model — all seven components wired, including RAAS, ADH and the clock |
 | `ledger/` | parameters and relations, with provenance |
 | `docs/adr/` | **A**rchitecture **D**ecision **R**ecords - structural decisions, each with an evidence tier and a falsifiable test; ADR 0006 defines the tiers |
 | `validation/` | targets, averaging and pooling policy, pre-registrations |
