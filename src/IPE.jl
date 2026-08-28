@@ -59,6 +59,10 @@ export MTKSystem, mtk_simplify, mtk_unknowns
 export build_model, build_raw_model, solve_individual, run_population, salt_step, check_pressure_natriuresis
 export BodyFluids, Cardiovascular, Renal, Baroreflex, Raas, Adh
 export FullTrace, StreamingStats, EventWindows, projected_storage
+# recording.jl and ensemble.jl internals, connected 2026-08-27 - all of this
+# was dead code, including the ensemble path HANDOVER calls the primary workload.
+export save_grid, grid_size_report, streaming_output_func, OnlineStat
+export sample_population, member_remake, default_summary
 export step_distribution, cost_profile, timescale_audit, boundary_sensitivity
 export Coupling, CouplingKind, Neurohumoral, Mechanical, Conservation
 # The declared coupling graph, connected 2026-08-27. Every *_couplings()

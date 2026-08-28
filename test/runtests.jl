@@ -621,6 +621,117 @@ using SciMLBase
         @info "declared coupling timescales" taus=b.taus gap_ratio=b.gap[1] boundary_s=b.suggested_boundary_seconds
     end
 
+    @testset "the ensemble actually varies its members (and mostly cannot)" begin
+        # CONNECTED 2026-08-27. HANDOVER calls ensembles "the primary workload".
+        # run_population, sample_population, member_parameters, prob_func and
+        # default_summary had never been called by anything.
+        #
+        # member_parameters(prob, member) = prob.p returned the parameters
+        # UNCHANGED, so every member solved the same 70 kg individual. The
+        # ensemble ran; it varied nothing. Nothing called it, so nothing noticed.
+        sys = build_model()
+        pop = IPE.sample_population(6)
+        @test length(pop) == 6
+        @test length(unique(m.body_mass for m in pop)) == 6      # Sobol, not constant
+        @test all(m -> 40.0 < m.body_mass < 105.0, pop)
+
+        res = IPE.run_population(sys, pop; tspan_days = 25.0)
+        @test length(res.u) == 6
+        @test all(r -> r.retcode == ReturnCode.Success, res.u)
+        @test all(r -> isfinite(r.MAP_final) && isfinite(r.V_ecf_final), res.u)
+
+        # THE FINDING, AND IT IS A DEFECT IN THE MODEL, NOT IN THE HARNESS.
+        # Body mass spans roughly 49 to 91 kg here - nearly a factor of two - and
+        # sets the INITIAL ECF volume, which therefore spans about 9.8 to 18.2 L.
+        # Every member converges to the same steady state anyway.
+        masses = [m.body_mass for m in pop]
+        @test maximum(masses) / minimum(masses) > 1.5      # the input really varies
+        vecfs = [r.V_ecf_final for r in res.u]
+        maps  = [r.MAP_final for r in res.u]
+        @test maximum(vecfs) - minimum(vecfs) < 0.01       # ... the output does not
+        @test maximum(maps)  - minimum(maps)  < 0.05
+
+        # WHY. V_ecf is a state driven to steady state by SODIUM balance:
+        # Na content over C_Na sets the volume, and sodium content is fixed by
+        # intake against renal excretion. Body mass sets only the initial
+        # condition. Nothing downstream of it scales with body size - sodium
+        # intake is an absolute 205 mEq/day, GFR0 is an absolute 180 L/day, and
+        # every cardiovascular reference is absolute too. So the model says a
+        # 49 kg and a 91 kg adult have the SAME ECF volume and the same arterial
+        # pressure, which is wrong.
+        #
+        # This is HANDOVER section 9's "body_mass is not a ledger row and is the
+        # largest un-modelled dimorphism", made measurable. It is asserted here as
+        # a CHARACTERISATION, not an endorsement: when body-size scaling lands
+        # these bounds must FAIL, and that failure is the signal it worked. Do not
+        # widen them to keep this green.
+        @info "ensemble body-size collapse" masses=round.(masses, digits=1) V_ecf=round.(vecfs, digits=4) MAP=round.(maps, digits=4)
+    end
+
+    @testset "recording and profiling paths run (ADR 0002, ADR 0003)" begin
+        # All of recording.jl and profiling.jl was dead: update!, summarise,
+        # save_grid, grid_size_report, streaming_output_func, projected_storage,
+        # step_distribution, cost_profile, timescale_audit. Storage is the stated
+        # binding constraint of the whole design and nothing had ever computed it.
+        sys = build_model()
+        prob = ODEProblem(sys, [], (0.0, 10.0), []; jac = true)
+        sol = solve(prob, FBDF(); saveat = 0.25, dense = false)
+        @test sol.retcode == ReturnCode.Success
+
+        # Storage projection. The number the module docstring says to get BEFORE
+        # launching, not at hour six.
+        gb = projected_storage(n_members = 1000, horizon_days = 30.0,
+                               dt_seconds = 5.0, n_states = length(mtk_unknowns(sys)))
+        @test gb > 0
+        # HANDOVER SECTION ON ensemble.jl QUOTES ~0.9 TB FOR THIS CONFIGURATION.
+        # It is 13.5 GB. The claim predates the model: 0.9 TB needs roughly 476
+        # states and this model has 7 after structural_simplify. The storage
+        # argument is still directionally right - full traces do not scale - but
+        # the number was never recomputed against a real model, because nothing
+        # ever called projected_storage. Pinned loosely; it moves with state count.
+        @test 5.0 < gb < 40.0
+
+        # Online statistics. O(observables), independent of horizon.
+        st = IPE.OnlineStat()
+        for (t, x) in zip(0.0:1.0:10.0, 80.0:1.0:90.0)
+            IPE.update!(st, t, x)
+        end
+        sm = IPE.summarise(st)
+        @test sm.min == 80.0 && sm.max == 90.0
+        @test 80.0 <= sm.mean <= 90.0
+
+        # Windowed recording grid: fine inside the window, coarse outside.
+        ew = EventWindows([(2.0, 3.0)], [:MAP]; coarse_seconds = 3600.0,
+                          fine_seconds = 60.0)
+        grid = save_grid(ew, (0.0, 10.0))
+        @test issorted(grid)
+        @test length(grid) > length(0.0:(3600.0/86400.0):10.0)   # window added points
+        gr = grid_size_report(ew, (0.0, 10.0), length(mtk_unknowns(sys)))
+        @test gr.points > 0
+        # Windowed recording must actually REDUCE against a naive fine grid -
+        # that is the entire justification for the mode existing.
+        @test gr.points < gr.naive_points
+        @test gr.reduction > 1.0
+
+        # Cost profile and step distribution on a real solution.
+        cp = cost_profile(sol)
+        @test cp !== nothing
+        sd = step_distribution(sol; windows = [(0.0, 5.0), (5.0, 10.0)])
+        @test sd !== nothing
+
+        # TIMESCALE AUDIT ON THE REAL JACOBIAN. This is the OTHER half of the
+        # ADR 0003 argument: suggest_boundary above works on DECLARED physiological
+        # time constants, this works on the Jacobian spectrum. The ADR says both
+        # should be consulted and that disagreement means the declared structure
+        # and the numerical behaviour have diverged. Until now neither had ever
+        # been run on this model.
+        J = prob.f.jac(sol.u[end], prob.p, sol.t[end])
+        ta = timescale_audit(Matrix(J); label = "resting steady state")
+        @test !isempty(ta.tau)
+        @test all(isfinite, ta.tau)
+        @info "spectral vs declared" spectral_stiffness=ta.tau[end]/ta.tau[1] declared_gap=suggest_boundary(model_couplings()).gap[1]
+    end
+
     @testset "sex is a model dimension (ADR 0014)" begin
         L = IPE.LedgerParams
         # Nothing is dimorphic yet, so the accessor must FALL BACK to the shared
