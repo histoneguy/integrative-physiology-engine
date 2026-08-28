@@ -1,52 +1,46 @@
 # HANDOVER — Integrative Physiology Engine
 
-**Date:** 2026-08-27
+**Date:** 2026-08-27 (second handover of the day — supersedes the earlier one)
 **Repo:** https://github.com/histoneguy/integrative-physiology-engine (public)
 **Owner:** Eric George (`histoneguy`)
-**`main`:** `85cde41` — **297/297**, all five provenance gates green
+**`main`:** `85cde41`
+**In flight:** **PR #28**, branch `autoreg-lower-sourcing`, 12 commits, **391/391**,
+all five gates exit 0. Everything in §2 and §3 lives on that branch, not on `main`.
 
-**In flight:** PR #28, branch `autoreg-lower-sourcing`, **320/320**. Three changes:
-`RN.AUTOREG.LOWER` sourced 80 -> 63.9; `reconstruct.jl` connected so the model emits
-systolic and diastolic pressure; the urine solute load now tracks sodium.
-
-**Supersedes** the handover dated 2026-08-24, which described a 3-state model with no
-RAAS, no ADH and an unconnected clock. All of that is now wrong. Everything still live
-is folded in below.
+**Supersedes** the handover written earlier today, which was accurate about the MAP 93
+correction and wrong or silent about everything after it. That version has been folded
+in; nothing live has been dropped.
 
 ---
 
 ## 0. HOW THIS WORKS
 
-### What an ADR is
-
-**Architecture Decision Record.** A short document in `docs/adr/` recording a structural
-choice: what was decided, what the evidence was, what it forecloses, and what would show
-it wrong. They exist so the reasoning outlives the session that produced it — the repo
-has fourteen and they are referenced constantly below, so it is worth knowing the term is
-not jargon for its own sake.
-
-Each carries a **Status** (Proposed, Accepted, Provisional, Deferred, Superseded), an
-**Evidence tier** per ADR 0006, and a **Falsifiable test** — the observation that would
-show the structure is wrong. `tools/check_adrs.py` enforces that much.
-
-They are decisions, not documentation. A wrong parameter gets re-estimated; a wrong
-structure invalidates every estimate resting on it, which is why they get their own
-record.
+**An ADR is an Architecture Decision Record** — a short document in `docs/adr/`
+recording a structural choice: what was decided, the evidence, what it forecloses, and
+what would show it wrong. There are fourteen and they are referenced constantly. Each
+carries a **Status**, an **Evidence tier** (ADR 0006), and a **Falsifiable test**.
+`tools/check_adrs.py` enforces that much. They are decisions, not documentation: a wrong
+parameter gets re-estimated, a wrong structure invalidates every estimate resting on it.
 
 **Claude Code runs locally on the owner's machine, inside the repo.** Julia 1.12.6,
-Python 3.12.10, `git` and `gh` are present and working.
+Python 3.12.10, `git` and `gh` all present and working.
 
     julia --project=. -e "using Pkg; Pkg.test()"
 
-**The loop is: edit, run the gates, run `Pkg.test()`, read the output, commit.** CI is
-the receipt, not the loop. There is no handover script — `CLAUDE.md` loads at session
-start and points here. The brief arrives on its own.
+**The loop is: edit, run the gates, run `Pkg.test()`, read the output, commit.** ~1m46
+warm, ~3m30 cold. CI is the receipt, not the loop.
+
+**`START-HERE.md` is stale and must not be reinstated.** It describes a workflow built
+around `sprint.py` and self-applying `apply-*.py` scripts, from when the assistant could
+not execute anything. That workflow is obsolete; the file has not been rewritten yet.
+`incoming/` is likewise historical — `Raas.jl` was wired in on 2026-08-25 and what
+remains there is prototype scaffolding, not live code.
 
 ---
 
 ## 1. BINDING DIRECTIVES
 
-Set by the owner over several sessions. Paraphrased, not quoted — see §7.2.
+Set by the owner over several sessions. **Paraphrased, not quoted** — see §5.2.
 
 ### 1.1 Give runnable commands, not step-by-step instructions
 He directs this work and does not write the code. Do the thing with tools. Where he must
@@ -54,119 +48,103 @@ run something, hand him one block he can paste. Windows and PowerShell: `python`
 `python3`.
 
 ### 1.2 Build physiology, not process
-The repo already carries five gates and fourteen ADRs. **Do not add tooling unless
-something breaks that cannot be worked around.** In the whole project only one change has
-met that bar: the sex column, because two sexes do not fit in a schema permitting one
-value per parameter.
+Five gates and fourteen ADRs already exist. **Do not add tooling unless something breaks
+that cannot be worked around.** Two changes have met that bar in the whole project: the
+`sex` column, and `src/scaling.jl`.
 
 ### 1.3 Well-established relationships first
 Build E1 before anything that modulates it. ADR 0006 carries the build order.
 
 ### 1.4 Provenance is the point
-Numbers enter via `ledger/parameters.csv`, equations via `ledger/relations.csv`, both with
-citations. Nothing hardcoded in a component.
+Numbers enter via `ledger/parameters.csv`, equations via `ledger/relations.csv`, both
+with citations. Nothing hardcoded in a component. **This has been violated twice by
+values sitting in dead code** — `form_factor = 0.4` in `reconstruct.jl` and
+`Normal(70.0, 12.0)` in `ensemble.jl`. Unreached code still counts.
 
 ### 1.5 Stop working from memory; back up every statement
 **Never write a citation you have not opened.** A wrong author on correct data passes
-every check here. It has happened.
+every check here. It has happened. When a value is believed but unverified, enter it as
+`assumed` and say so — an honest assumption beats a citation nobody read.
 
 ### 1.6 Animal data is legitimate evidence
 Judge a source on study quality, not species. Record species, preparation and tested
 range. State *why* no human study exists. Encoded in ADR 0006.
 
-### 1.7 Fundamental studies. New or old — 2026-08-24
-Prefer studies that characterise **baseline physiological relationships**. The test is
-not the year and **not whether a stressor was used** — Guyton 1957 varied right atrial
-pressure precisely to trace the venous return curve, and that is exactly what is wanted.
+### 1.7 Fundamental studies. New or old
+Prefer studies characterising **baseline physiological relationships**. Not the year, and
+not whether a stressor was used — Guyton 1957 varied right atrial pressure precisely to
+trace the venous return curve, which is exactly what is wanted.
 
 Ask of any candidate: *if the physiology had come out differently, what would this
 paper's conclusion have been?* If the answer is "the device would have failed validation"
-or "the index would have been unconfounded", the relationship is the **instrument**, not
-the subject.
+or "the technique would have been unsafe", the relationship is the **instrument**, not the
+subject. **Search relationships, not variables** — a search ranked by what extracts easily
+selects against the data you want, invisibly.
 
-**Why it exists.** Everything sourced 22–24 August came from the second kind — can
-bio-impedance *detect* blood loss, does Modelflow SV *mirror* withdrawn volume, does
-preload *confound* augmentation index. Median year 2018, nothing before 2004. And every
-extraction came back with a confound attached, which was recorded as bad luck. It was
-not: a study built around a stressor as its endpoint returns a stressor-contaminated
-number.
+### 1.8 Cast a wide net. Do not anchor on a few papers
+**It has now paid twice.** The circadian sweep returned 437 records across twelve queries
+and five papers would have been wrong on both arms. The `RN.AUTOREG.LOWER` sweep returned
+a clean-looking human answer in sweep 1 and the paper contradicting it in sweep 2 — see
+§3.1.
 
-**Search relationships, not variables.** Modern stressor studies have structured
-abstracts with the numbers in them; foundational measurements often do not. A search
-ranked by what extracts easily selects against the data you want, invisibly.
-
-### 1.8 Cast a wide net. Do not anchor on a few papers — 2026-08-25
-**Do not fix on a small number of papers early and ignore the wider literature.**
-
-**Why it exists.** The circadian sweep returned 437 records across twelve queries. Five
-papers would have been wrong on **both** arms: Kerkhof alone makes the BP rhythm entirely
-exogenous, and Shea 2011 contradicts him with a stronger design; and the sodium amplitude
-and acrophase are both contested, with one large cosinor study finding the rhythm
-non-significant and another placing the acrophase nearly antiphase. None of that was
-visible from the first five hits.
-
-### 1.9 Significant figures. Round to real numbers — 2026-08-27
-**The sources support 2 to 4 significant figures. Store that, not sixteen.**
-
-Tolerances follow the physics, not the arithmetic: **closure 1e-3, test pins 1e-4,
-identities between rounded values 1e-3.** Still sixty times tighter than the 6% error
-that motivated the closure gate.
+### 1.9 Significant figures. Round to real numbers
+**Sources support 2 to 4 significant figures. Store that, not sixteen.** Tolerances follow
+the physics: **closure 1e-3, test pins 1e-4, identities between rounded values 1e-3.**
 
 **Exception, and it is the instructive one:** significant figures belong to the quantity
-that carries the information. `RN.NA.FRACTIONAL_REABSORPTION` must keep 7 figures because
-what matters is `1 - FR_Na = 0.0081`; rounding it to 0.9919 broke sodium balance
-immediately. A small difference of large numbers needs digits on the large numbers.
+carrying the information. `RN.NA.FRACTIONAL_REABSORPTION` keeps 7 figures because what
+matters is `1 - FR_Na = 0.0081`. A small difference of large numbers needs digits on the
+large numbers.
 
-**What this cost, so it is not repeated:** roughly a third of one session. Demanding
-bit-identity of ADR 0012 and rewriting its falsifiable test when it failed at 1e-13.
-Revising `solver_agreement` twice over a state sitting at 2e-17 then 7e-10. Storing SV0
-to sixteen digits to erase a 6.2e-8 mmHg difference. Every structural change then broke a
-pin and needed another round. Rounding the whole ledger left **every simulated result
-unchanged** — that is the proof the digits carried nothing.
+Chasing precision that does not exist cost roughly a third of one session.
 
 ### 1.10 Comprehensive, but super efficient — FOUNDATIONAL — 2026-08-27
-**Coverage is not negotiable; cost is.** Code must be comprehensive AND efficient.
-This is a **foundational tenet**, ranking with provenance — not a preference to trade
-away when a task feels big.
+**Coverage is not negotiable; cost is.** Code must be comprehensive AND efficient. This
+ranks with provenance — not a preference to trade away when a task feels big.
 
-The two are not in tension, and treating them as if they were is the error. What
-makes work expensive here is almost never the number of things checked; it is
-horizon, duplication, and code that should not exist at all.
+The two are not in tension, and treating them as if they were is the error. What makes
+work expensive here is almost never the number of things checked; it is **horizon,
+duplication, and code that should not exist at all.**
 
-**What triggered it.** Connecting the ensemble took the suite from about 1 minute to
-3m33 — six-member populations over 40-day horizons, plus a build-versus-remake check
-running two full integrations. Trimming to four members over 25 days, folding a
-separate testset into an existing one, and dropping a redundant salt-step arm brought
-it to 1m46 **with MORE assertions than before**. Coverage went up while cost halved.
-That is the shape to aim for every time.
+**The evidence.** Connecting the ensemble took the suite from ~1 min to 3m33. Trimming to
+four members over 25 days, folding a testset into an existing one, and dropping a
+redundant salt-step arm brought it to **1m46 with more assertions than before.**
 
-**A slow suite is a compounding cost.** It is paid on every future run, forever,
-unlike a slow one-off. The same applies to anything on the development loop.
+**A slow suite is a compounding cost** — paid on every future run, forever.
 
-**How to apply.**
-- Fold assertions into an existing testset rather than adding another.
-- Pick the shortest horizon at which the assertion still bites.
-- Check whether the repo already contains it before writing anything. Several things
-  did, unconnected, for months.
-- No new file where a function will do; no new function where an argument will do.
-- Assert more per unit of compute, not less per unit of confidence.
+**How to apply.** Fold assertions into an existing testset rather than adding one. Pick
+the shortest horizon at which the assertion still bites. Check whether the repo already
+contains it before writing anything. No new file where a function will do; no new
+function where an argument will do. **Assert more per unit of compute.**
 
-**This never licenses skipping verification.** The falsification runs — reverting a
-parameter to confirm a test genuinely fails — are cheap, and are not what makes a
-suite slow. Cut horizon and duplication. Never cut the check.
+**This never licenses skipping verification.** Falsification runs — reverting a parameter
+to confirm a test genuinely fails — are cheap and are not what makes a suite slow.
 
+### 1.11 Connect it and run it — FOUNDATIONAL — 2026-08-27
+**Wire up what already exists before sourcing anything new.** Prefer connecting an
+unconnected component over auditing or extracting.
+
+**Why: every real defect found on 2026-08-27 was found by connecting something, and none
+by any of the five gates.** Provenance auditing found none of them.
+
+| found by wiring | what it was |
+|---|---|
+| `CV.MAP.SETPOINT` = 93 | the brachial 120/80 convention; exposed by a form factor of 0.515, an arithmetic impossibility |
+| `CV.PULSE.FORM_FACTOR` | NAMED as the fraction *above* the mean while carrying the *below* value — would have shipped SBP 98 / DBP 65 against a sourced 109/76 |
+| four coupling defects | including an edge naming a subsystem that does not exist, which `validate_partition` was structurally guaranteed to skip |
+| `member_parameters` | returned parameters unchanged; every "population" member was the same 70 kg individual |
+| the body-size collapse | six adults 49–91 kg converging on one ECF volume |
+
+**Sourcing that runs ahead of the model consuming it is the failure mode.** A parameter
+nobody calls is not evidence about anything. Do not propose an upstream extraction as a
+prerequisite for wiring unless the wiring genuinely cannot proceed without it — a 5% error
+in an input is recorded uncertainty, not a blocker.
 
 ---
 
 ## 2. STATE
 
-`main` at `85cde41`. **297/297.** All five gates exit 0.
-
-The header of the superseded handover said `b492d2b` / 273; both were one commit
-stale from the moment #27 merged. Counts below re-verified 2026-08-27.
-
-**The ADR 0006 spine is COMPLETE.** Renal, cardiovascular, baroreflex, RAAS, ADH all
-exist and are connected; circadian, the last item, was wired on 26 August.
+**PR #28: 391/391, five gates exit 0.** `main` is still at `85cde41`.
 
 ### The model — 7 states after `structural_simplify`
 
@@ -174,171 +152,101 @@ exist and are connected; circadian, the last item, was wired on 26 August.
 
 | Component | Status |
 |---|---|
-| `BodyFluids.jl` | ICF/ECF volumes, sodium mass balance, osmotic equilibration. Inactive-Na storage **default off** (ADR 0004). |
+| `BodyFluids.jl` | ICF/ECF volumes, sodium mass balance, osmotic equilibration. Intakes now scale with body size. Inactive-Na storage **default off** (ADR 0004). |
 | `Cardiovascular.jl` | ECF → plasma → blood volume, partitioned central/peripheral (ADR 0012). **CO = HR × SV** (ADR 0011). MAP = CO × TPR. |
-| `Renal.jl` | GFR autoregulation, filtered load, pressure natriuresis, RAAS tubular increment, circadian modulation on the excreted fraction, **osmoregulated water excretion**, and a **urine solute load that tracks sodium excretion** (PR #28). |
-| `Baroreflex.jl` | Lumped, resetting, TPR effector only. Setpoint scaled by the clock. |
-| `Raas.jl` | **Now active at rest** (see §3.1). Rectified renal baroreflex → renin → aldosterone → tubular reabsorption, with first-order escape. **No AngII vasoconstriction** — deliberate. |
-| `Adh.jl` | Osmolality → antidiuretic activity → urine osmolality; volume follows as solute load ÷ concentration. Algebraic, no states. |
-| `Circadian.jl` | Cosinor clock, **connected** to renal excretion and the reflex setpoint. **Default OFF** — both arms' parameters are contested. |
+| `Renal.jl` | GFR autoregulation, filtered load, pressure natriuresis, RAAS increment, circadian modulation, osmoregulated water excretion, **urine solute load tracking sodium**. |
+| `Baroreflex.jl` | Lumped, resetting, **TPR effector only**. Setpoint scaled by the clock. |
+| `Raas.jl` | Active at rest — PRA 2.31×. No AngII vasoconstriction, deliberate. |
+| `Adh.jl` | Osmolality → antidiuretic activity → urine osmolality. Algebraic, no states. |
+| `Circadian.jl` | Cosinor clock, connected to renal excretion and the reflex setpoint. **Default OFF** — both arms' parameters contested. |
+| `reconstruct.jl` | **Connected.** SBP/DBP/PP from `SV` and `C_art`. NOT part of the ODE system — see §3.2. |
+| `scaling.jl` | **New.** Extensive quantities scale with body mass, intensive ones do not. |
 
 ### The result
 
-| intake (mEq/d) | MAP (mmHg) |
-|---|---|
-| 205 | 87.001 |
-| 154 | 84.450 |
-| 103 | 81.900 |
+| intake (mEq/d) | MAP (mmHg) | SBP | DBP | PP |
+|---|---|---|---|---|
+| 205 | 86.979 | 108.99 | 76.01 | 32.98 |
+| 154 | 84.450 | 105.80 | 73.78 | 32.02 |
+| 103 | 81.922 | 102.60 | 71.55 | 31.05 |
 
-**Shift 5.101 mmHg.** Arterial pressure is nowhere regulated; it lands at a stable
-intake-dependent value through renal–body fluid feedback alone.
+**Shift 5.0575 mmHg.** Arterial pressure is nowhere regulated; it lands at a stable
+intake-dependent value through renal–body fluid feedback alone. **Do not quote beyond 5
+significant figures** and do not pin tighter than 1e-4.
 
-**These moved down 6 mmHg on 2026-08-27 and the shift did not move at all.** See §3.1.
-That is the useful part: the operating point was wrong, the salt-sensitivity finding it
-sat on was not affected, because the shift is set by `G_pn` and not by where the
-operating point sits.
+SBP/DBP are **reconstructed, not simulated** (ADR 0002) and must be labelled as such
+wherever reported. Agreement with the sourced 109/76 is **consistency, not validation** —
+`C_art` was derived as SV₀/PP₀.
 
-**Do not quote this to more than 5 significant figures** and do not pin it tighter than
-1e-4. See §1.9.
+### Population
+
+`sample_population` draws Sobol over sexed NHANES percentiles. `V_ecf` scales with body
+mass (0.20788 L/kg male, 0.20284 female) while **MAP is invariant to 1e-4 mmHg** across a
+1.85× mass range. The population is **uniform** over P05–P95, not weight-distributed.
 
 ### Ledger
 
-66 parameters over 69 rows — 24 `reported`, 26 `derived`, 17 `assumed`, 2 `calibrated`.
-**19 weak.** Tiers: 24 A, 30 B, 15 C.
-42 relations — 15 definitional, 14 empirical, 9 conservation, 4 placeholder.
-Three parameters carry male/female pairs; the rest are `both`.
+**70 parameters over 76 rows** — 30 `reported`, 26 `derived`, 18 `assumed`, 2
+`calibrated`. **20 weak.** Tiers: 30 A, 30 B, 16 C.
+**42 relations** — 15 definitional, 14 empirical, 9 conservation, 4 placeholder.
+**Six parameters carry male/female pairs:** `BF.BODY_MASS.{TYPICAL,P05,P95}`,
+`CV.ARTERIAL.COMPLIANCE`, `CV.HR.NOMINAL`, `CV.SV.NOMINAL`.
+
+### Couplings — connected 2026-08-27
+
+13 couplings, cross-checked against the built model by
+`assert_couplings_match_model()`. Declared time constants **3.0 / 302.4 / 3600 / 3600 s**,
+largest gap **100.8×**, suggested boundary **30.1 s**. `cost_profile` on a real solution
+returns `nf/nw = 2.5` — **linear-algebra bound, so partitioning is the right lever.** Both
+halves of the ADR 0003 argument now exist; ADR 0003 stays Deferred on state count.
 
 ### Gates
 
-`ledger_to_julia.py --check`, `check_relations.py --repo .`, `check_closure.py`,
-`check_adrs.py`, `fix_deps.py`. **Never rename the `Provenance` job in `ci.yml`** —
-branch protection requires that exact string.
-
-`check_closure.py` now runs **per sex**. `check_relations.py` is forward-only with
-grandfathered debt.
+`ledger_to_julia.py --check`, `check_relations.py --repo .`, `check_closure.py`
+(19 checks, per sex), `check_adrs.py`, `fix_deps.py`. **Never rename the `Provenance` job
+in `ci.yml`** — branch protection requires that exact string.
 
 ---
 
+## 3. FINDINGS THAT MATTER
 
-## 3.1 MAP 93 was the brachial 120/80 convention, and it was load-bearing
+### 3.1 `RN.AUTOREG.LOWER`: the textbook 80 mmHg is an anaesthetised dog
 
-`CV.MAP.SETPOINT` was **93.0** under the citation *"Standard physiological reference.
-VERIFY."* It was never verified. It is 80 + 40/3 = 93.33 - **the textbook brachial
-120/80 rounded** - and it is now **87.0**, derived from sourced central pressure
-(Gomez-Sanchez 2021, 501 adults without cardiovascular disease).
+**80 → 63.9 mmHg, species human → dog, tier B → A.** Pre-registered at `3fbe260` before
+any paper was opened; 26 queries, 1114 records.
 
-**What exposed it was an impossibility, not a search.** Deriving the pulse form factor
-gave 0.515. It cannot exceed 0.5: the fraction of pulse pressure above the mean must be
-below half when diastole is longer than systole. A brachial MAP was being divided by a
-central pulse pressure.
+No human primary reports a lower breakpoint. **The human evidence conflicts at the same
+pressure:** at MAP 60, Lessard 1991 (inulin GFR, PAH ERPF, n=20) found renal vascular
+resistance *falling* to maintain flow, while Hara 1998 (n=26) found creatinine clearance
+significantly *decreased*. All four human candidates are anaesthesia **safety** studies —
+directive 1.7 says the relationship is the instrument there. Adopted **Finke 1983**: seven
+**conscious** foxhounds, renal artery pressure servo-stepped 160 → 40 mmHg, lower limit
+63.9 mmHg.
 
-### Three things followed, and the third is the one to read
+**Still debt**: a dog number where the human experiment *is* performable, so the ethical
+ceiling that earns `RN.AUTOREG.UPPER` its E2 standing does **not** transfer. Ruled out in
+the pre-registration before the search.
 
-1. **`CV.TPR.NOMINAL` moved** 0.01292 -> 0.0120833, since it is MAP/CO by definition.
-   Every steady state dropped about 6 mmHg. Eight test pins were repinned.
+**Recorded, out of scope:** Finke also measured the renin threshold at **89.8 ± 3.3 mmHg**
+in conscious dog, against `RAAS.RENIN.PRESSURE_THRESHOLD = 93.0` on van Ochten. That row
+is the rectification point the model was found sitting exactly on.
 
-2. **The salt-sensitivity finding did not move.** The shift is 5.101 where it was 5.0996
-   - 0.2%. It is set by `G_pn`, not by the operating point. **ADR 0013 survives the
-   correction of the number underneath it**, which is worth more than if it had never
-   been wrong.
+### 3.2 The form-factor convention would have shipped an 11 mmHg error past every gate
 
-3. **RAAS silently switched itself on.** The van Ochten renin threshold is 93 mmHg and
-   the old setpoint was 93 mmHg, so the model sat EXACTLY ON the rectification point and
-   RAAS was inactive at baseline **by construction**. `Raas.jl` had flagged this in its
-   own divergence notes as fragile and resting on one unverified number. That was the
-   number. The model now sits 6 mmHg below threshold: renin drive 0.069, **PRA 2.31x**.
-   More physiological, not less - resting renin is not zero.
+`CV.PULSE.FORM_FACTOR` was **named** as the fraction of pulse pressure *above* the mean
+while carrying the *below*-mean value 0.3333. `check_closure.py` used it correctly as
+`MAP = DBP + k·PP` and passed; `reconstruct.jl` defined it the other way. Connecting them
+under the shared word "form factor" would have returned SBP 98.0 / DBP 65.0 against the
+sourced 109 / 76 — each wrong by PP/3, in opposite directions — **and every gate would
+still have passed, because closure never reaches that file.**
 
-**There was a test asserting the coincidence** (`RAAS_RENIN_PRESSURE_THRESHOLD ==
-CV_MAP_SETPOINT`). It has been **inverted to a strict inequality**, not repinned. An
-equality would pass again the moment the two numbers coincided for any reason, including
-by accident, and would go on certifying a structural artefact as intended behaviour.
+It is now `k_below`, with no default and a hard error at ≥ 0.5. **Second
+convention-hiding-in-a-name defect in two days**, after MAP 93.
 
-### What this leaves open
+### 3.3 The model is 2 to 19 times too salt-sensitive. It is calibrated to hypertensives.
 
-**`RAAS.RENIN.PRESSURE_GAIN` was calibrated against a baseline that no longer exists** -
-it was fitted so the low-salt arm doubled PRA from 1.0, and baseline PRA is now 2.31.
-**Not urgent**: escape drives `fr_mod` to 7.7e-7 regardless, so no steady state moves and
-the loop still closes at 1.0000. **Blocking for anything transient.** The target should
-be an absolute resting PRA, not a fold-change from an artefact.
-
-### The six others exactly like it - DO THIS NEXT
-
-**Take the general lesson, not the specific one.** A number carrying "VERIFY" sat in the
-ledger for weeks, silently set another parameter, and silently disabled an entire
-subsystem. It was caught by an arithmetic impossibility, not by any of the five gates.
-
-The ledger was grepped. **`CV.MAP.SETPOINT` was one of EIGHT rows carrying the identical
-string "Standard physiological reference. VERIFY."** `RN.AUTOREG.LOWER` was discharged
-on 2026-08-27 (see below). **The six survivors are load-bearing:**
-
-*(Corrected 2026-08-27: this paragraph said "one of seven" and "all six survivors"
-while tabling seven rows. Counted against `320759c`, the commit before the MAP fix,
-it was eight and seven. The table was right and the prose was wrong both ways.)*
-
-| row | value | drives |
-|---|---|---|
-| `CV.CO.NOMINAL` | 7200 mL/min | `CV.TPR.NOMINAL` and `CV.SV.NOMINAL` - the same position MAP held |
-| `CV.HEMATOCRIT.NOMINAL` | 0.45 | plasma fraction `f_pv`, and it is the row whose own note says sex is deferred |
-| `CV.BLOOD_VOLUME.NOMINAL` | 5.0 L | `f_pv` and the central volume reference `VC0` |
-| `RN.GFR.NOMINAL` | 180 L/day | filtered sodium load - the whole renal input |
-| `RN.NA.FRACTIONAL_REABSORPTION` | 0.9918651 | sodium balance; `1 - FR` is the excreted fraction |
-| `RN.H2O.OBLIGATORY_LOSS` | 0.5 L/day | water balance |
-
-**These are a different category from the nine `assumed` rows with empty citations.**
-Those are honestly labelled guesses and the relations gate already tracks them as debt.
-These seven claim `extraction_method = reported`: they assert a source exists. For MAP
-that assertion was false and the number was a unit-convention artefact.
-
-### `RN.AUTOREG.LOWER` — DONE, 2026-08-27. It was 20 mmHg wrong.
-
-**80 -> 63.9 mmHg, `species` human -> dog, tier B -> A.** Pre-registered in
-`validation/autoreg_lower_prereg.md` (commit `3fbe260`, before any paper was opened),
-executed by `validation/autoreg_lower_extract.py`. 26 PubMed queries, 1114 records.
-
-**No human primary study reports a lower breakpoint.** The one whose title says it does
-— Textor 1985, *Critical perfusion pressure for renal function* — measures a **stenosis**
-threshold that vanished after revascularisation.
-
-**The human evidence conflicts at the same pressure, and that is the result.** At MAP 60,
-Lessard 1991 (inulin GFR, PAH ERPF, n=20) found renal vascular resistance *falling* to
-maintain flow; Hara 1998 (n=26) found creatinine clearance significantly *decreased*.
-Lessard is the stronger study and picking it after seeing both is exactly what
-pre-registration forbids, so that branch failed on its own terms. **Directive 1.8 is why
-this was caught** — Lessard came from sweep 1 and looked clean; Hara came from sweep 2.
-
-All four human studies are **anaesthesia safety** studies: apply directive 1.7 and the
-alternative conclusion is "this technique is unsafe for the kidney". The relationship is
-the instrument. The adopted source is the opposite kind — **Finke 1983**, seven
-**conscious** foxhounds, renal artery pressure stepped 160 -> 40 mmHg under servo
-control, lower limit **63.9 mmHg**. The relationship IS the subject.
-
-**Nothing in the model moved.** All three arms were above 80 and are above 63.9, so every
-steady state is bit-identical. **What moved is margin**: the low-salt arm sat 1.9 mmHg
-above a piecewise kink that `CV.MAP.SETPOINT` had just moved 6 mmHg toward. It now sits
-18.0 mmHg above, and **a new testset asserts that margin** — nothing asserted on either
-breakpoint before, and both have been wrong while every test passed (§7.3).
-
-**Still debt, and the reason was fixed in advance.** It is a dog number and the human
-experiment *is* performable, so the ethical ceiling that earns `RN.AUTOREG.UPPER` its E2
-standing does **not** transfer. The pre-registration ruled that out before the search so
-it could not be reached for afterwards.
-
-**Finke also measured the renin threshold at 89.8 ± 3.3 mmHg** in conscious dog, against
-`RAAS.RENIN.PRESSURE_THRESHOLD = 93.0` on van Ochten. Not changed — out of scope — but
-that row is the rectification point §3.1 found the model sitting exactly on, and a second
-independent primary now exists in a paper this repo has read.
-
-**No gate catches this class.** All five pass on the ledger as it stands. A gate that
-rejects `reported` with a non-citation would have caught MAP 93 at entry - but per
-directive 1.2, do not build it until this sourcing pass shows the failure recurring.
-
-## 3. THE FINDING THAT MATTERS MOST
-
-### The model is 2 to 19 times too salt-sensitive. It is calibrated to hypertensives.
-
-Sourced under `validation/salt_sensitivity_prereg.md`, committed before any paper was
-read. Reproduce with `python validation/salt_sensitivity_extract.py`.
+Sourced under `validation/salt_sensitivity_prereg.md`. Reproduce with
+`python validation/salt_sensitivity_extract.py`.
 
 | source | trials | MAP mmHg/100 mmol | implied `G_pn` |
 |---|---|---|---|
@@ -348,205 +256,127 @@ read. Reproduce with `python validation/salt_sensitivity_extract.py`.
 | Graudal 2019 | 133 RCTs | 0.53 | 188 |
 | Graudal 2017 Cochrane | 89, n=8569 | 0.25 | 393 |
 
-**The model gives 4.84 mmHg per 100 mmol.** Every estimate lands below it; the closest is
-2.1× away. 4.84 is not a normotensive number — it sits among the *hypertensive*
-comparators.
+The model gives ~4.8 mmHg per 100 mmol — a *hypertensive* number. **`G_pn` should be
+LARGER than 20, not smaller.** ADR 0013 proposes 20.0 → 51.0 and is **PARKED at the
+owner's decision**; it is one CSV value. Its falsifiable test uses a variable that did not
+set the value — source the human ECF or weight response and run it before accepting.
 
-**`G_pn` should be LARGER than 20, not smaller. The Mizelle dog comparison points the
-wrong way**, and the 3.68× inflation and 2.2× residual were an argument about moving a
-number in a direction the human evidence contradicts. The residual audit stands as
-arithmetic and is off the critical path.
+Making the urine solute load track sodium moved salt sensitivity 5.0996 → 5.0575, the
+**first structural change to move it toward the human data.** 0.8% against a 2× gap, so it
+does not touch this finding.
 
-**ADR 0013 proposes 20.0 → 51.0 and is PARKED at the owner's decision.** It is one CSV
-value and can be changed in ten minutes. Its falsifiable test uses a variable that did
-not set the value: at `G_pn = 51` the model moves `V_ecf` by 0.155 L per 102 mEq/day —
-source the human ECF or weight response and compare. Run that before accepting.
+### 3.4 Body size: two quantities, and merging them would have corrupted the ledger
 
-`bench/gpn_sweep.jl` shows the loop closes exactly at every value from 20 to 188, and
-`V_ecf` gets *tighter* as `G_pn` rises. At Graudal's 188 the shift is 0.54 mmHg against
-the 0.5 mmHg `min_map_shift` threshold — on that reading the effect this model exists to
-demonstrate is barely visible.
+`BF.BODY_MASS.REFERENCE` (70.0 kg, `both`) is a **normalisation constant** — the mass at
+which the extensive constants are stated. GFR 180 L/day, CO 7200 mL/min, blood volume
+5.0 L are textbook values for a ~70 kg, 1.73 m² adult. **Setting it to the NHANES mean
+would scale GFR to 232 L/day by arithmetic**, against a denominator its own sources never
+used.
 
----
-
-## 4. ADR 0006 WAS AMENDED — RETROSPECTIVE
-
-The tier table made species a proxy for quality: `species-extrapolated` sat in E3, which
-forces default OFF. That would have demoted the entire primary basis of
-`Renal.FR_effective` while leaving `RN.PRESSURE_NATRIURESIS.SLOPE` unchallenged — a
-fitted constant labelled `species: human`. **The rule protected the fitted number and
-penalised the measured ones.**
-
-E2 now admits animal data where the human experiment is not ethically performable, with
-species, preparation and range recorded. **ADR 0004 stays E3 and default off** — its
-weakness is single-group small-*n* in humans; species was never its problem.
+`BF.BODY_MASS.TYPICAL` is the sexed pair — 90.3 / 77.9 kg, NHANES 2021–2023 Table 3,
+tier A. **No SD is entered**: the source reports SEM and percentiles, body weight is
+right-skewed, and two standard estimators disagree by 15%. The pre-registration declared
+no estimator, so choosing one afterwards is the unfalsifiable move `pooling.md` forbids.
 
 ---
 
-## 5. THE CARDIOVASCULAR TURN — ADRs 0011 to 0014
+## 4. NEXT, IN ORDER
 
-### ADR 0012: central/peripheral partition, stage 1 built
+**Finish the cardiovascular system, then the other systems. Populations are far off — a
+population of an incomplete model is a wider set of wrong answers.**
 
-`V_blood` is **not a sensed variable anywhere in the body**. Cardiopulmonary receptors and
-atrial ANP release respond to *central* filling, so ADR 0010's unsourceable input link was
-a category error rather than a gap in the literature.
-
-    V_central ~ f_c * V_blood
-    V_periph  ~ V_blood - V_central
-
-`f_c` is constant, so stage 1 is a change of variables. **Stage 2 is VENOUS TONE, not
-posture** — see below.
-
-### ADR 0011: CO = HR × SV, built
-
-Exact identity with the previous CO equation. What it buys is that HR and SV **exist**:
-separately measurable where `G_vr` never was, a stroke volume for `reconstruct.jl`, and
-the variable a chronotropic reflex will act on.
-
-**The filling relation is LINEAR over the range the model traverses.** The salt step
-displaces 2.7% of blood volume; over that excursion any smooth curve is its own tangent.
-Concavity matters across a **population** range (±12% at ±2 SD), not within one
-individual's step.
-
-### ADR 0014: sex is a model dimension
-
-`sex` column, key `(param_id, sex)`. **A parameter has either one `both` row or both a
-male and a female row — never one alone.** Where only one sex has been studied the row
-stays `both` with the cohort in its notes.
-
-`param(sym, :both)` on a dimorphic parameter is an **error, not an average** — averaging
-two sexes describes no one.
-
-**The first pair — heart rate and stroke volume — cannot move the model, and that is
-correct.** `SV0` is derived to preserve `CO0`, so HR × SV is the same either way. Katori
-1979 found **no sex difference in cardiac or stroke INDEX** once normalised to body
-surface area; Eikendal 2016 finds absolute CO lower in women. Both true: **the difference
-is body size.**
-
-**So `body_mass` is where sex actually enters, and it is still a hard-coded 70.0
-argument, not a ledger row.** That is the next thing that makes sex bite. Haematocrit
-after it — androgen-driven erythropoiesis is not a size effect and will not dissolve into
-body mass.
-
-### Posture is descoped
-
-`ensemble.jl` states the primary workload as many virtual individuals over long horizons;
-head-up tilt is a **TODO** challenge protocol in `targets.md`, not a target. What survives
-from the posture work is diagnostic: `V_blood` is not the filling variable, and the
-filling relation is concave across a population.
+1. **The six remaining `Standard physiological reference. VERIFY.` rows.** Two of two
+   examined have been materially wrong. `RN.GFR.NOMINAL` (180 L/day) is the one that would
+   actually move the model — it is the whole renal input, and it now also scales with body
+   mass. The others: `RN.NA.FRACTIONAL_REABSORPTION`, `RN.H2O.OBLIGATORY_LOSS`,
+   `CV.CO.NOMINAL`, `CV.BLOOD_VOLUME.NOMINAL`, `CV.HEMATOCRIT.NOMINAL`.
+2. **Venous compliance and the venous return limb.** Pmsf, right atrial pressure, stressed
+   vs unstressed volume. Replaces `G_vr`; `relations.csv` already names venous compliance
+   as the unsourced step in the `CO` row. Record Beard and Feigl 2011 as a declared
+   conflict. **`validation/venous_compliance_extract.py` already refutes ADR 0012's
+   concavity requirement** — the filling relation is linear over the physiological range,
+   and the operative variable is stressed/unstressed, not central/peripheral.
+3. **Chronotropic baroreflex.** ADR 0009 gives the reflex one effector; HR now exists.
+   **Deliberately deferred** — ADR 0009 says do not re-separate the arms without a
+   protocol that needs it, the reflex resets so it nulls at every steady state, and the
+   cardiac gain needs a sourcing pass. Best normative source found: **Schumann 2024**,
+   *Am J Physiol Heart Circ Physiol* 326:H158–H165, n=980 healthy — and it is about **sex
+   differences in BRS**, so it would also give ADR 0014 a second real dimorphic pair.
+4. **ADR 0013 decision** on `G_pn`, with its ECF falsifiable test run first.
+5. **Body surface area.** GFR and CO properly scale with BSA, sub-linearly in mass;
+   `scaling.jl` records that linear scaling overstates their spread. Needs a height row.
+6. **`check_closure.py` is filling up** — 19 hand-coded relationships, does not scale past
+   about twenty.
 
 ---
 
-## 6. NEXT, IN ORDER
-
-**Finish the cardiovascular system, then the other systems. Populations are far off —
-a population of an incomplete model is a wider set of wrong answers.**
-
-1. ~~**Arterial compliance.**~~ **DONE in PR #28.** `reconstruct.jl` is connected and the
-   model emits SBP/DBP/PP — 108.99/76.01 at the high arm, pulse pressure moving
-   32.98 -> 31.05 across the salt step. NOT part of the ODE system, deliberately: SBP and
-   DBP stay functions of a solved trajectory tagged by `RECONSTRUCTED`, because ADR 0002
-   averaged the cardiac cycle away. The agreement with the sourced 109/76 is CONSISTENCY,
-   not validation — `C_art` was derived as SV0/PP0.
-
-   **Read the form-factor note before touching this.** `CV.PULSE.FORM_FACTOR` was NAMED as
-   the fraction of pulse pressure *above* the mean while carrying the *below*-mean value
-   0.3333. `check_closure.py` used it correctly as `MAP = DBP + k*PP` and passed;
-   `reconstruct.jl` defined it the other way. Connecting them under the shared word "form
-   factor" would have shipped SBP 98 / DBP 65 against the sourced 109/76 — 11 mmHg wrong
-   in each direction, past all five gates, because closure never reaches that file. It is
-   now `k_below`, with no default and a hard error at >= 0.5. **Second convention-inside-a-
-   name defect in two days; the first was MAP 93.**
-2. **Venous compliance and the venous return limb.** Pmsf, right atrial pressure,
-   stressed vs unstressed volume. This replaces `G_vr`, and `relations.csv` already names
-   venous compliance as the unsourced step in the `CO` row. Directive 1.7 re-aimed that
-   search at the relationship. Record Beard and Feigl 2011 as a declared conflict — they
-   argue Guyton's interpretation interchanges independent and dependent variables.
-3. ~~**`body_mass` as a sex-specific ledger row.**~~ **HALF DONE.** The row exists and the
-   model scales to it; the sexed pair (ICRP 89) is what remains. Dissolves three separate
-   sex questions into one parameter.
-4. **Chronotropic baroreflex.** ADR 0009 gives the reflex one effector; HR now exists.
-5. **ADR 0013 decision** on `G_pn`, with its ECF falsifiable test run first.
-6. **`check_closure.py` is filling up** — it hand-codes thirteen relationships and does
-   not scale past about twenty.
-
----
-
-## 7. HOW THINGS BREAK HERE
+## 5. HOW THINGS BREAK HERE
 
 1. **Exit codes swallowed by pipes.** `cmd | tail` reports `tail`'s status.
 2. **A wrong author on correct data is invisible to every check.** PMID 2966064 was
    attributed to "Yokota N et al." for two sessions. **The same applies to quoting the
    owner** — directives here are paraphrased for that reason.
 3. **A passing test suite is not evidence about a parameter it does not assert on.**
+   Nothing asserted on either autoregulation breakpoint while both were wrong.
 4. **`Diagnostics` cannot fail.** It is a report. Read the numbers.
 5. **Derived values drifting apart.** Run `check_closure.py` after any ledger change.
 6. **Silent string replacements.** Assert on every replacement.
-7. **A gate cannot check a label you supplied.** ADR 0012's first draft tiered its
-   load-bearing row E1 when the source is one group of ten, and `check_adrs.py` returned
-   OK *because* of that.
-8. **Do not run experiments on uncommitted work.** Perturbing the ledger then
-   `git checkout`-ing it discarded three rows that had never been committed.
-9. **CHASING PRECISION THAT DOES NOT EXIST.** See §1.9. This one cost the most.
-10. **Citations without an author list.** Four defects found by audit on 2026-08-25,
-    including one relation justified by a **pointer to a ledger row** rather than to
-    literature — circular, and dangling after a rename.
+7. **A gate cannot check a label you supplied.**
+8. **Do not run experiments on uncommitted work.**
+9. **Chasing precision that does not exist.** See §1.9.
+10. **Citations without an author list.**
+11. **A name can carry a convention its value contradicts.** Twice now — §3.2. No gate
+    catches it; only wiring does.
+12. **Dead code hides unledgered constants and stale API assumptions.** `reconstruct.jl`
+    and `ensemble.jl` each carried a hardcoded number. Connecting the ensemble surfaced
+    three live SciMLBase API breakages that nothing could have caught while it was dead.
 
 ---
 
-## 8. SETTLED — DO NOT RELITIGATE
+## 6. SETTLED — DO NOT RELITIGATE
 
-- **Julia stays.**
-- **The `Provenance` job name.**
-- **ADR 0004 default off.**
-- **Pre-register before extracting** — it has caught something every time, including
-  twice finding faults in the ADR the pre-registration served.
+- **Julia stays.** **The `Provenance` job name.** **ADR 0004 default off.**
+- **Pre-register before extracting** — it has caught something every time, including twice
+  finding faults in the ADR it served, and twice preventing a rule chosen after seeing the
+  numbers.
 - **Posture is not a target of this model.**
-- **Mars500 is not the primary validation target.** Its required comparisons carry **no
-  blood pressure**, so it cannot test the claim the model exists to demonstrate. It
-  anchors ADR 0004's storage question, which is E3 and parked.
+- **Mars500 is not the primary validation target** — its comparisons carry no blood
+  pressure.
+- **MAP does not scale with body size.** Arterial pressure is intensive. A model in which
+  large people are hypertensive *because* they are large would be worse, not better.
 
 ---
 
-## 9. OPEN ITEMS
+## 7. OPEN ITEMS
 
-- **19 of 64 parameters** are `assumed` or `calibrated`. `unledgered_check()` lists them.
-- **`G_pn` is wrong by 2–19×** (§3). Parked, one CSV value.
-- **`body_mass` is DONE for now.** `BF.BODY_MASS.REFERENCE` (70.0 kg, `assumed`, stays
-  `both`) is a NORMALISATION CONSTANT — the mass at which this ledger's extensive
-  constants are stated. `BF.BODY_MASS.TYPICAL` is the sexed pair (90.3 / 77.9 kg,
-  NHANES 2021–2023, tier A) with `P05`/`P95` bounds driving the ensemble. **They are
-  different quantities**; moving the reference to a population mean would rescale GFR
-  to 232 L/day by arithmetic against a denominator its source never used.
-  Remaining: no population SD is entered — the source reports percentiles and
-  right-skew makes two standard estimators disagree by 15%, so the sampled population
-  is UNIFORM over P05–P95, not weight-distributed. Fixing that needs a declared
-  distribution family and an SD estimator chosen in advance — its own extraction.
-- **`CV.VENOUS_RETURN.SENSITIVITY` is `calibrated`** and is what item 2 replaces.
-- **`RN.URINE.SOLUTE_LOAD` now tracks SALT (PR #28) but still not PROTEIN.** The sodium
-  half is done via charge balance; `RN.URINE.SOLUTE_NONNA` (urea + K salts) is still a
-  constant, so protein intake still moves nothing. **And the level is still wrong**: 292
-  mOsm/day is too low for urea + K, because the parent 600 is an unsourced conventional
-  figure that is low for a 154 mEq/day intake. PR #28 changed the RESPONSE, not the
-  level; fixing the level moves every steady state and needs its own extraction.
+- **20 of 70 parameters** are `assumed` or `calibrated`. `unledgered_check()` lists them.
+- **`G_pn` is wrong by 2–19×** (§3.3). Parked, one CSV value.
+- **Six rows still claim a source that does not exist** (§4 item 1).
+- **`RAAS.RENIN.PRESSURE_GAIN` was calibrated against a baseline that no longer exists** —
+  fitted so the low-salt arm doubled PRA from 1.0, and baseline PRA is now 2.31. Not
+  urgent: escape drives `fr_mod` to ~1e-7 so no steady state moves. **Blocking for anything
+  transient.** The target should be an absolute resting PRA.
+- **`RN.URINE.SOLUTE_NONNA` is a residual and the level is too low.** 292 mOsm/day is
+  under-sized for urea + K salts because the parent 600 is an unsourced conventional
+  figure. The sodium half responds; protein still moves nothing.
+- **No population SD for body mass**; the sampled population is uniform over P05–P95.
+- **`CV.VENOUS_RETURN.SENSITIVITY` is `calibrated`** and is what §4 item 2 replaces.
 - **`ADH.URINE.OSM_MIN` is assumed**; it sets the maximal diuresis.
 - **Zerbe's AVP sensitivity spans 0.12–1.66 pg/ml per mOsm/kg** — fourteen-fold,
-  reproducible within subject, heritable. Recorded and unused because the model carries
-  no plasma vasopressin. The most obvious population covariate in the repo.
+  reproducible within subject, heritable. Recorded and unused because the model carries no
+  plasma vasopressin. The most obvious population covariate in the repo.
 - **Circadian amplitudes and acrophases are contested** on both arms. Minors & Waterhouse
-  1990 have normative endogenous urinary sodium from ~80 constant routines — the source
-  to get.
-- **Two circadian rows are effectively uncited** (title plus PMC id, no authors) and are
-  tier C pending replacement.
+  1990 have normative endogenous urinary sodium from ~80 constant routines.
+- **Two circadian rows are effectively uncited** (title plus PMC id) — tier C pending
+  replacement.
 - **`BF.NA.SKIN_ACCUMULATION_RATE` is a secondary citation** via a dissertation.
-- **`RN.AUTOREG.LOWER` is sourced (63.9, Finke 1983) but is a DOG number** where the
-  human experiment is performable — debt with a named primary, not a closure. See §3.1.
 - **Eight relations carry no `form_citation`**, grandfathered as tracked debt.
-- **`pooling.md` requires columns `ledger/parameters.csv` does not have.**
+- **`pooling.md` requires columns `ledger/parameters.csv` does not have** — recorded in
+  prose instead, by precedent.
 
 ---
 
-## 10. ENVIRONMENT
+## 8. ENVIRONMENT
 
 **Owner's machine:** Windows 11, PowerShell, Julia 1.12.6, Python 3.12.10, `gh` authed as
 `histoneguy`. Repo at `C:\Users\histo\Claude Coding\integrative-physiology-engine`.
@@ -556,5 +386,7 @@ linear history, no force push, `enforce_admins: true`.
 
 **Harness notes:** bash heredocs containing backticks or apostrophes fail — write the
 script to a file and run it. `python` cannot read Git Bash paths like `/tmp/x`; pass
-Windows paths. `pypdf` is installed for reading supplied PDFs. PubMed HTML is behind a
-cookie wall — use the E-utilities API.
+Windows paths. `pypdf` is installed. **PubMed HTML is behind a cookie wall — use the
+E-utilities API.** **cdc.gov returns 403 to WebFetch and serves PDFs as downloads to the
+browser tool; NHANES tables are reachable through the NCBI Bookshelf reproduction
+instead.**
