@@ -818,10 +818,13 @@ using SciMLBase
         # available value. Haematocrit is the obvious next pair - it is
         # androgen-driven erythropoiesis, not a body-size effect, so unlike
         # cardiac output it will NOT dissolve into body mass.
-        # CV_BLOOD_VOLUME_NOMINAL LEFT THIS LIST 2026-08-27: it is now a sourced
-        # male/female pair (Oberholzer 2024), so asserting the sexes are equal
-        # would be asserting the absence of a dimorphism the literature reports.
-        for sym in (:CV_HEMATOCRIT_NOMINAL, :RN_GFR_NOMINAL)
+        # CV_BLOOD_VOLUME_NOMINAL left this list 2026-08-27 and
+        # CV_HEMATOCRIT_NOMINAL on 2026-08-28: both are now sourced male/female
+        # pairs, so asserting the sexes are equal would assert the absence of a
+        # dimorphism the literature reports. RN_GFR_NOMINAL stays because Soares
+        # 2013 measured no sex difference (108 vs 104, p = 0.134) - that is a
+        # FINDING, and this line is what asserts it rather than assuming it.
+        for sym in (:RN_GFR_NOMINAL,)
             @test L.param(sym, :male) == L.param(sym, :female)
             @test L.param(sym, :male) == getfield(L, sym)
         end
@@ -842,6 +845,30 @@ using SciMLBase
         @test build_model(sex = :female) isa ModelingToolkit.AbstractSystem
         @test_throws Exception build_model(sex = :both)
         @test_throws Exception build_model(sex = :unspecified)
+
+        # THE SOURCED PAIRS, asserted rather than assumed.
+        @test L.param(:CV_HEMATOCRIT_NOMINAL, :male) >
+              L.param(:CV_HEMATOCRIT_NOMINAL, :female)
+        @test L.param(:CV_BLOOD_VOLUME_NOMINAL, :male) >
+              L.param(:CV_BLOOD_VOLUME_NOMINAL, :female)
+
+        # HAEMATOCRIT IS CURRENTLY NON-IDENTIFIABLE, AND THIS PINS WHY. Blood
+        # volume is f_pv*V_ecf/(1-Hct), and f_pv is DERIVED as BV0*(1-Hct)/V_ecf,
+        # so f_pv/(1-Hct) = BV0/V_ecf and the haematocrit cancels exactly. The
+        # model therefore reports a sourced, dimorphic haematocrit that changes
+        # none of its results - male and female MAP agree to 7 figures despite a
+        # 15% difference in Hct. That is honest provenance for a quantity not yet
+        # used, NOT a claim that haematocrit does not matter. It starts mattering
+        # the moment f_pv is sourced independently, or anything depending on
+        # viscosity or oxygen carriage exists. If this identity ever breaks, one
+        # of those has happened and the cancellation must be re-examined.
+        for sx in (:male, :female)
+            fpv = L.param(:CV_PLASMA_ECF_FRACTION, sx)
+            hct = L.param(:CV_HEMATOCRIT_NOMINAL, sx)
+            bv0 = L.param(:CV_BLOOD_VOLUME_NOMINAL, sx)
+            v_ecf = L.BF_BODY_MASS_REFERENCE * L.BF_ECF_MASS_FRACTION
+            @test isapprox(fpv / (1 - hct), bv0 / v_ecf; rtol = 1e-3)
+        end
     end
 
     @testset "ADR 0011: CO = HR x SV, and the first sex pair" begin
