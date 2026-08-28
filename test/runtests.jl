@@ -341,6 +341,41 @@ using SciMLBase
         @test 0.0 < IPE.LedgerParams.RAAS_ALDO_PRA_LOG_SLOPE < 1.0
     end
 
+    @testset "the operating range sits INSIDE the autoregulation plateau" begin
+        # ADDED 2026-08-27 with the RN.AUTOREG.LOWER sourcing pass. Nothing in
+        # this suite asserted on either autoregulation breakpoint before, which
+        # is the failure mode HANDOVER section 7.3 names: a passing suite is not
+        # evidence about a parameter it does not assert on. Both breakpoints had
+        # been wrong - 180 until 2026-08-21, 80 until today - and 294 tests
+        # passed throughout.
+        lo = IPE.LedgerParams.RN_AUTOREG_LOWER
+        hi = IPE.LedgerParams.RN_AUTOREG_UPPER
+        @test lo < hi
+
+        # The real assertion. GFR is piecewise in MAP:
+        #     GFR ~ GFR0 * ifelse(MAP < lo, MAP/lo, ifelse(MAP > hi, MAP/hi, 1.0))
+        # Every salt arm must sit strictly inside [lo, hi], because that is what
+        # makes GFR = GFR0 and the renal input pressure-independent. If an arm
+        # ever crosses a breakpoint the renal limb changes character - and it
+        # would do so silently, since the loop still closes on the other side.
+        v = check_pressure_natriuresis(salt_step())
+        @test all(m -> lo < m < hi, v.maps)
+
+        # AND THE MARGIN, asserted rather than assumed. Before today the
+        # low-salt arm sat 1.9 mmHg above lo = 80, an unsourced number that
+        # traced to an anaesthetised dog. CV.MAP.SETPOINT then moved 6 mmHg
+        # TOWARD it on 2026-08-27. A model whose operating point is one and a
+        # half mmHg from a piecewise kink is one parameter revision away from
+        # crossing it. With lo = 63.9 (Finke 1983, conscious dog, servo-
+        # controlled steps) the margin is 18 mmHg.
+        #
+        # This is a strict inequality on the MARGIN, not a pin on the value,
+        # for the same reason the RAAS test above was inverted rather than
+        # repinned: pinning 18.0 would certify today's arithmetic, while this
+        # fails only when the model drifts back toward the cliff.
+        @test minimum(v.maps) - lo > 10.0
+    end
+
     @testset "ADH disabled branch recovers the placeholder (ADR 0008)" begin
         # ADR 0008: the disabled branch is TESTED, not assumed. With adh=false
         # u_osm is held at U_base, so Osm_load/u_osm returns exactly the old
