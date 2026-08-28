@@ -41,7 +41,7 @@ using ModelingToolkit: t_nounits as t, D_nounits as D
 using ..LedgerParams
 using ..LedgerParams:
     CV_CO_NOMINAL, CV_TPR_NOMINAL,
-    CV_HEMATOCRIT_NOMINAL, CV_VENOUS_RETURN_SENSITIVITY,
+    CV_VENOUS_RETURN_SENSITIVITY,
     CV_CENTRAL_FRACTION, CV_CENTRAL_CO_SENSITIVITY,
     BF_BODY_MASS_REFERENCE
 
