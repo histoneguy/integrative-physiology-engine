@@ -65,6 +65,7 @@ Run an ensemble and return reduced outputs.
 small. Returning the solution object defeats the purpose.
 """
 function run_population(sys, population;
+                        sex::Symbol = :male,
                         tspan_days = 30.0,
                         saveat = 1.0,
                         solver = FBDF(),
@@ -81,7 +82,7 @@ function run_population(sys, population;
     function prob_func(prob, i, args...)
         # remake with this member's parameters AND initial conditions - no
         # re-simplification, no codegen. See member_remake for why both.
-        return member_remake(prob, sys, population[member_index(i)])
+        return member_remake(prob, sys, population[member_index(i)]; sex)
     end
 
     # safetycopy = false. EnsembleProblem deepcopies the base problem before each
@@ -144,7 +145,7 @@ the ICF solute content has to move with them or the cell starts off anisosmolar.
 That coupling is the reason this was left as a TODO, and it is the reason it has to
 be done in one place rather than by callers.
 """
-function member_remake(prob, sys, member)
+function member_remake(prob, sys, member; sex::Symbol = :male)
     bm = member.body_mass
     sz = size_factor(bm)
     return remake(prob;
@@ -163,9 +164,9 @@ function member_remake(prob, sys, member)
              sys.rn.Osm_ref        => sz * RN_URINE_SOLUTE_LOAD,
              sys.rn.Osm_nonNa      => sz * RN_URINE_SOLUTE_NONNA,
              sys.cv.CO0            => sz * CV_CO_NOMINAL,
-             sys.cv.BV0            => sz * CV_BLOOD_VOLUME_NOMINAL,
-             sys.cv.VC0            => sz * CV_CENTRAL_VOLUME_NOMINAL,
-             sys.cv.SV0            => sz * LedgerParams.param(:CV_SV_NOMINAL, :male),
+             sys.cv.BV0            => sz * LedgerParams.param(:CV_BLOOD_VOLUME_NOMINAL, sex),
+             sys.cv.VC0            => sz * LedgerParams.param(:CV_CENTRAL_VOLUME_NOMINAL, sex),
+             sys.cv.SV0            => sz * LedgerParams.param(:CV_SV_NOMINAL, sex),
              # RECIPROCAL. MAP = CO*TPR and CO scales, so resistance must fall or
              # larger people come out hypertensive. See src/scaling.jl.
              sys.cv.TPR0           => CV_TPR_NOMINAL / sz],

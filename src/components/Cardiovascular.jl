@@ -40,9 +40,9 @@ using ModelingToolkit: t_nounits as t, D_nounits as D
 
 using ..LedgerParams
 using ..LedgerParams:
-    CV_CO_NOMINAL, CV_TPR_NOMINAL, CV_BLOOD_VOLUME_NOMINAL,
-    CV_HEMATOCRIT_NOMINAL, CV_PLASMA_ECF_FRACTION, CV_VENOUS_RETURN_SENSITIVITY,
-    CV_CENTRAL_FRACTION, CV_CENTRAL_VOLUME_NOMINAL, CV_CENTRAL_CO_SENSITIVITY,
+    CV_CO_NOMINAL, CV_TPR_NOMINAL,
+    CV_HEMATOCRIT_NOMINAL, CV_VENOUS_RETURN_SENSITIVITY,
+    CV_CENTRAL_FRACTION, CV_CENTRAL_CO_SENSITIVITY,
     BF_BODY_MASS_REFERENCE
 
 """
@@ -67,7 +67,10 @@ function Cardiovascular(; name, sex::Symbol = :male,
     pars = @parameters begin
         # EXTENSIVE: a flow and two volumes.
         CO0    = sz * CV_CO_NOMINAL
-        BV0    = sz * CV_BLOOD_VOLUME_NOMINAL
+        # SEXED as of 2026-08-27 (Oberholzer 2024, CO rebreathing): 80.3 mL/kg in
+        # men, 70.3 in women. f_pv and VC0 are DERIVED from it and are sexed with
+        # it, so all three go through the ADR 0014 accessor.
+        BV0    = sz * LedgerParams.param(:CV_BLOOD_VOLUME_NOMINAL, sex)
         # TPR CARRIES THE RECIPROCAL, and this is the line that keeps arterial
         # pressure intensive. MAP = CO*TPR, CO ~ s, so TPR ~ 1/s or big people
         # would be hypertensive. Physically that is right: resistance falls as
@@ -78,10 +81,10 @@ function Cardiovascular(; name, sex::Symbol = :male,
         # returns that value for either sex; the moment a male/female pair is
         # entered it starts returning the right one, with no change here.
         Hct    = LedgerParams.param(:CV_HEMATOCRIT_NOMINAL, sex)
-        f_pv   = CV_PLASMA_ECF_FRACTION
+        f_pv   = LedgerParams.param(:CV_PLASMA_ECF_FRACTION, sex)   # DERIVED from BV0
         G_vr   = CV_VENOUS_RETURN_SENSITIVITY      # CALIBRATED - see ledger
         f_c    = CV_CENTRAL_FRACTION               # PLACEHOLDER - cancels, see below
-        VC0    = sz * CV_CENTRAL_VOLUME_NOMINAL    # EXTENSIVE, = f_c * BV0
+        VC0    = sz * LedgerParams.param(:CV_CENTRAL_VOLUME_NOMINAL, sex)  # = f_c*BV0
         # G_vc is dCO/dV_central. Both numerator and denominator are extensive,
         # so the SENSITIVITY is intensive and must NOT scale.
         G_vc   = CV_CENTRAL_CO_SENSITIVITY         # DERIVED = G_vr / f_c
