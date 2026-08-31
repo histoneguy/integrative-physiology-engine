@@ -1,11 +1,10 @@
 # HANDOVER — Integrative Physiology Engine
 
-**Date:** 2026-08-27 (second handover of the day — supersedes the earlier one)
+**Date:** 2026-08-31
 **Repo:** https://github.com/histoneguy/integrative-physiology-engine (public)
 **Owner:** Eric George (`histoneguy`)
-**`main`:** `85cde41`
-**In flight:** **PR #28**, branch `autoreg-lower-sourcing`, 12 commits, **391/391**,
-all five gates exit 0. Everything in §2 and §3 lives on that branch, not on `main`.
+**`main`:** `1d32104` — **411/411**, all five gates exit 0. Nothing in flight.
+**PR #28 merged 2026-08-31**, 18 commits, rebased so every commit message survives.
 
 **Supersedes** the handover written earlier today, which was accurate about the MAP 93
 correction and wrong or silent about everything after it. That version has been folded
@@ -144,7 +143,16 @@ in an input is recorded uncertainty, not a blocker.
 
 ## 2. STATE
 
-**PR #28: 391/391, five gates exit 0.** `main` is still at `85cde41`.
+**`main` at `1d32104`: 411/411, five gates exit 0.** PR #28 merged 2026-08-31.
+
+**THE `VERIFY` CLASS IS EMPTY.** Eight rows carried
+`Standard physiological reference. VERIFY.` Five are now sourced — `CV.MAP.SETPOINT`,
+`RN.AUTOREG.LOWER`, `RN.GFR.NOMINAL`, `CV.BLOOD_VOLUME.NOMINAL`,
+`CV.HEMATOCRIT.NOMINAL` — one had its derivation written down
+(`RN.NA.FRACTIONAL_REABSORPTION`), and two were **demoted to `assumed`** because no
+source could be opened (`CV.CO.NOMINAL`, `RN.H2O.OBLIGATORY_LOSS`). **Four of the six
+that could be opened were materially wrong.** The `assumed` count went UP by two, and
+that is the honest direction — see `validation/verify_rows_prereg.md` branch 6.
 
 ### The model — 7 states after `structural_simplify`
 
@@ -186,11 +194,14 @@ mass (0.20788 L/kg male, 0.20284 female) while **MAP is invariant to 1e-4 mmHg**
 
 ### Ledger
 
-**70 parameters over 76 rows** — 30 `reported`, 26 `derived`, 18 `assumed`, 2
-`calibrated`. **20 weak.** Tiers: 30 A, 30 B, 16 C.
+**70 parameters over 80 rows** — 31 `reported`, 27 `derived`, 20 `assumed`, 2
+`calibrated`. **22 weak.** Tiers: 35 A, 26 B, 19 C.
 **42 relations** — 15 definitional, 14 empirical, 9 conservation, 4 placeholder.
-**Six parameters carry male/female pairs:** `BF.BODY_MASS.{TYPICAL,P05,P95}`,
-`CV.ARTERIAL.COMPLIANCE`, `CV.HR.NOMINAL`, `CV.SV.NOMINAL`.
+**Ten parameters carry male/female pairs:** `BF.BODY_MASS.{TYPICAL,P05,P95}`,
+`CV.ARTERIAL.COMPLIANCE`, `CV.HR.NOMINAL`, `CV.SV.NOMINAL`,
+`CV.BLOOD_VOLUME.NOMINAL`, `CV.HEMATOCRIT.NOMINAL`, `CV.PLASMA.ECF_FRACTION`,
+`CV.CENTRAL.VOLUME_NOMINAL` — the last two DERIVED from blood volume and
+haematocrit, so they became sexed with them.
 
 ### Couplings — connected 2026-08-27
 
