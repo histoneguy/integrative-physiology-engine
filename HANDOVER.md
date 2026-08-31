@@ -3,8 +3,11 @@
 **Date:** 2026-08-31
 **Repo:** https://github.com/histoneguy/integrative-physiology-engine (public)
 **Owner:** Eric George (`histoneguy`)
-**`main`:** `1d32104` — **411/411**, all five gates exit 0. Nothing in flight.
-**PR #28 merged 2026-08-31**, 18 commits, rebased so every commit message survives.
+**`main`:** at the **PR #28 merge** (18 commits, rebased so every message survives) —
+**411/411**, all five gates exit 0.
+**In flight:** PR #29, **this document**. The SHA is deliberately not pinned here: the
+last two handovers were both wrong in their first line because a merge advanced `main`
+after the header was written. Read `git log -1` for the tip.
 
 **Supersedes** the handover written earlier today, which was accurate about the MAP 93
 correction and wrong or silent about everything after it. That version has been folded
@@ -213,11 +216,11 @@ that is the honest direction — see `validation/verify_rows_prereg.md` branch 6
 
 | intake (mEq/d) | MAP (mmHg) | SBP | DBP | PP |
 |---|---|---|---|---|
-| 205 | 86.979 | 108.99 | 76.01 | 32.98 |
+| 205 | 86.979 | 108.96 | 75.99 | 32.98 |
 | 154 | 84.450 | 105.80 | 73.78 | 32.02 |
-| 103 | 81.922 | 102.60 | 71.55 | 31.05 |
+| 103 | 81.922 | 102.63 | 71.57 | 31.06 |
 
-**Shift 5.0575 mmHg.** Arterial pressure is nowhere regulated; it lands at a stable
+**Shift 5.0569 mmHg.** Arterial pressure is nowhere regulated; it lands at a stable
 intake-dependent value through renal–body fluid feedback alone. **Do not quote beyond 5
 significant figures** and do not pin tighter than 1e-4.
 
@@ -228,8 +231,17 @@ wherever reported. Agreement with the sourced 109/76 is **consistency, not valid
 ### Population
 
 `sample_population` draws Sobol over sexed NHANES percentiles. `V_ecf` scales with body
-mass (0.20788 L/kg male, 0.20284 female) while **MAP is invariant to 1e-4 mmHg** across a
-1.85× mass range. The population is **uniform** over P05–P95, not weight-distributed.
+mass — **0.20792 L/kg male, 0.20787 female** — while MAP is invariant across the mass
+range (86.978 both sexes). The population is **uniform** over P05–P95, not
+weight-distributed.
+
+**ECF per kg is now essentially sex-INVARIANT, and that is a change of meaning, not of
+digits.** It read 0.20788 / 0.20284 before blood volume and haematocrit were sourced as
+pairs — a 2.4% sex difference that was an ARTEFACT of a female plasma fraction derived
+against a shared blood volume and a shared 45% haematocrit. With both sexed the chain is
+internally consistent per sex and ECF per kg lands on `BF.ECF.MASS_FRACTION` (0.208),
+which is a shared `both` row. The dimorphism moved to where it is actually measured —
+blood volume and haematocrit — and left the compartment fraction alone.
 
 ### Ledger
 
