@@ -3,15 +3,18 @@
 **Date:** 2026-08-31
 **Repo:** https://github.com/histoneguy/integrative-physiology-engine (public)
 **Owner:** Eric George (`histoneguy`)
-**`main`:** at the **PR #28 merge** (18 commits, rebased so every message survives) —
-**411/411**, all five gates exit 0.
-**In flight:** PR #29, **this document**. The SHA is deliberately not pinned here: the
-last two handovers were both wrong in their first line because a merge advanced `main`
-after the header was written. Read `git log -1` for the tip.
+**State:** **411/411**, all five gates exit 0, nothing outstanding.
 
-**Supersedes** the handover written earlier today, which was accurate about the MAP 93
-correction and wrong or silent about everything after it. That version has been folded
-in; nothing live has been dropped.
+**This header deliberately names NO commit SHA and NO open PR.** Three consecutive
+handovers were wrong in their first line, each in a different way: two pinned a SHA that
+the next merge advanced, and the third replaced the SHA with an "in flight: PR #29"
+line that went stale the moment PR #29 merged — which was minutes later, and was the
+very merge that put the warning about it onto `main`. **Anything a merge can invalidate
+does not belong in a header.** Run `git log -1` and `gh pr list` for live state; this
+document describes the MODEL, which merging does not change.
+
+**Supersedes** the handover of 2026-08-27, which was accurate about the MAP 93
+correction and silent about everything after it. Folded in; nothing live dropped.
 
 ---
 
@@ -185,7 +188,7 @@ prohibits `range-midpoint`, so an interval cannot become a point estimate.
 
 ## 2. STATE
 
-**`main` at `1d32104`: 411/411, five gates exit 0.** PR #28 merged 2026-08-31.
+**411/411, five gates exit 0.** All of the below is on `main` as of 2026-08-31.
 
 **THE `VERIFY` CLASS IS EMPTY.** Eight rows carried
 `Standard physiological reference. VERIFY.` Five are now sourced — `CV.MAP.SETPOINT`,
