@@ -139,6 +139,45 @@ nobody calls is not evidence about anything. Do not propose an upstream extracti
 prerequisite for wiring unless the wiring genuinely cannot proceed without it — a 5% error
 in an input is recorded uncertainty, not a blocker.
 
+
+### 1.12 Textbook numbers are teaching aids. The RELATIONSHIPS are the content — FOUNDATIONAL — 2026-08-31
+**A round physiological constant is a pedagogical convention until proven otherwise.**
+Treat every one as presumptively unsourced, whatever the ledger's `extraction_method`
+column claims.
+
+Textbooks are written for undergraduates and are deliberately simplified. What they get
+*right* is the structure — that pressure natriuresis exists, that GFR is autoregulated,
+that CO = HR × SV. What they carry alongside it are round numbers chosen to be
+memorable, and **nobody ever meant them as population estimates.** 120/80 is not a mean.
+Neither is 37 °C, 5 litres, 45%, 125 mL/min or 5 L/min.
+
+**The record, and it is not close.** Eight ledger rows claimed
+`Standard physiological reference. VERIFY.` Six could be opened. **Four were materially
+wrong:**
+
+| row | textbook | measured |
+|---|---|---|
+| `CV.MAP.SETPOINT` | 93 (= 80 + 40/3, brachial 120/80) | 87, central |
+| `RN.AUTOREG.LOWER` | 80 mmHg | 63.9, and an anaesthetised dog |
+| `RN.GFR.NOMINAL` | 180 L/day (= 125 mL/min) | 152.6 (= 106 mL/min) |
+| `CV.BLOOD_VOLUME.NOMINAL` | "5 litres" | 5.62 male / 4.92 female |
+| `CV.HEMATOCRIT.NOMINAL` | 45% for everyone | 45.3 male / **39.5 female** |
+
+Haematocrit is the clearest case: the unisex 45% is **the male value applied to women.**
+
+**And a clinical reference value is a RANGE because humans are a distribution.** A
+textbook point value is therefore wrong twice over — wrong centre, and no spread at all.
+This ledger stores a point plus an `uncertainty_value`, and **only body mass is currently
+sampled**; every other parameter is one number for all thousand virtual people. That is a
+known defect, not a simplification.
+
+**How to apply.** Do not act surprised when a round number fails — expect it, and budget
+for it. Never enter one as `reported`. Where it cannot be sourced, `assumed` with an
+honest note is the correct outcome and the `assumed` count going UP is progress
+(`validation/verify_rows_prereg.md` branch 6). And prefer sources that report a
+**central value with dispersion** over those reporting an interval — `pooling.md`
+prohibits `range-midpoint`, so an interval cannot become a point estimate.
+
 ---
 
 ## 2. STATE
@@ -291,16 +330,61 @@ no estimator, so choosing one afterwards is the unfalsifiable move `pooling.md` 
 
 ---
 
+### 3.5 The `VERIFY` class is closed, and four of six were wrong
+
+Pre-registered in `validation/verify_rows_prereg.md` (commit `e0195f4`) as ONE document
+for all six rather than six documents, per directive 1.10.
+
+**Sourced:** `RN.GFR.NOMINAL` 180 → 152.6 L/day (Soares 2013, ⁵¹Cr-EDTA, n=285;
+Denic 2017 NEJM n=1,388 corroborates but is unindexed and so NOT pooled).
+`CV.BLOOD_VOLUME.NOMINAL` → 5.62/4.92 L (Oberholzer 2024, CO rebreathing, n=582).
+`CV.HEMATOCRIT.NOMINAL` → 0.453/0.395 (Morales-Mendoza 2026 low-altitude stratum,
+n=662,024; Fulgoni 2019 NHANES n=44,328 corroborates with intervals, not pooled).
+
+**Derived, no search needed:** `RN.NA.FRACTIONAL_REABSORPTION` is exactly
+`1 − Na_intake/(GFR0·C_Na)`. It claimed `derived` while carrying a citation; a derived
+value needs its derivation written down. **`check_closure.py` already asserted it**, so
+no gate was added.
+
+**Demoted to `assumed`:** `CV.CO.NOMINAL` and `RN.H2O.OBLIGATORY_LOSS`. Nothing usable
+could be opened — the attempts are recorded in the rows so they are not repeated.
+
+**Two structural results, each worth more than the row that produced it.**
+
+1. **GFR cancels out of the steady state.** `FR_Na` is derived to close sodium balance,
+   so `Na_filtered·(1−FR_Na) = intake` and `MAP − MAP_ref = (intake − 205)/G_pn`. A **15%
+   error in the entire renal input moved the salt-step shift by 0.0006 mmHg.** Salt
+   sensitivity is set by `G_pn` alone; GFR enters only transients and the water side.
+2. **Haematocrit is currently non-identifiable.** It enters only via
+   `V_blood = f_pv·V_ecf/(1−Hct)`, and `f_pv` is DERIVED as `BV0(1−Hct)/V_ecf`, so
+   `f_pv/(1−Hct) = BV0/V_ecf` and the Hct cancels. Verified empirically: a 15% sex
+   difference in Hct left every result identical to seven figures. It bites the moment
+   `f_pv` is sourced independently — plasma volume as a fraction of ECF is measurable —
+   or when viscosity or oxygen carriage exists.
+
+---
+
 ## 4. NEXT, IN ORDER
 
 **Finish the cardiovascular system, then the other systems. Populations are far off — a
 population of an incomplete model is a wider set of wrong answers.**
 
-1. **The six remaining `Standard physiological reference. VERIFY.` rows.** Two of two
-   examined have been materially wrong. `RN.GFR.NOMINAL` (180 L/day) is the one that would
-   actually move the model — it is the whole renal input, and it now also scales with body
-   mass. The others: `RN.NA.FRACTIONAL_REABSORPTION`, `RN.H2O.OBLIGATORY_LOSS`,
-   `CV.CO.NOMINAL`, `CV.BLOOD_VOLUME.NOMINAL`, `CV.HEMATOCRIT.NOMINAL`.
+1. **Flip the stroke-volume dependency, which discharges `CV.CO.NOMINAL`.** ADR 0011 made
+   `CO = HR × SV` structural, and **stroke volume is what echocardiography and CMR
+   actually measure** while cardiac output is computed from it — yet `CV.SV.NOMINAL` is
+   derived FROM `CV.CO.NOMINAL`, which is now `assumed`. Source an `SV0` (WASE / Patel
+   2021, PMID 34044105, 1,450 healthy adults across 15 countries, reports it by sex —
+   paywalled, no numbers in the abstract; or the adult CMR reference literature), derive
+   `CO0 = HR0·SV0·1440/1000`, and the row discharges as `derived` with the dependency
+   pointing the way the measurement does. `HR0` is already sourced and sexed. **Record the
+   technique** — WASE reports Doppler, 2D and 3D are NOT interchangeable, and `pooling.md`
+   forbids pooling across them. Expect `CV.TPR.NOMINAL` (= MAP/CO) to move with it.
+
+   The same inversion exists on the water side: `check_closure.py` derives
+   `ADH.URINE.OSM_MAX` FROM `RN.H2O.OBLIGATORY_LOSS`, when **maximal concentrating ability
+   is the measured quantity.** Since the solute load became variable, `Renal.jl` already
+   computes the floor as `Osm_load/U_max` — the model inverted it and the ledger has not
+   caught up.
 2. **Venous compliance and the venous return limb.** Pmsf, right atrial pressure, stressed
    vs unstressed volume. Replaces `G_vr`; `relations.csv` already names venous compliance
    as the unsourced step in the `CO` row. Record Beard and Feigl 2011 as a declared
@@ -324,6 +408,9 @@ population of an incomplete model is a wider set of wrong answers.**
 ## 5. HOW THINGS BREAK HERE
 
 1. **Exit codes swallowed by pipes.** `cmd | tail` reports `tail`'s status.
+   **This recurred on 2026-08-31**, in the same session that rewrote the warning: a
+   `git push` to protected `main` was rejected, the piped exit code came back `0`, and
+   only a follow-up `git log origin/main` caught it. Verify state, not exit codes.
 2. **A wrong author on correct data is invisible to every check.** PMID 2966064 was
    attributed to "Yokota N et al." for two sessions. **The same applies to quoting the
    owner** — directives here are paraphrased for that reason.
@@ -360,9 +447,17 @@ population of an incomplete model is a wider set of wrong answers.**
 
 ## 7. OPEN ITEMS
 
-- **20 of 70 parameters** are `assumed` or `calibrated`. `unledgered_check()` lists them.
+- **22 of 70 parameters** are `assumed` or `calibrated`. `unledgered_check()` lists them.
+  The count went UP by two on 2026-08-31 and that is the honest direction — see §1.12.
+- **`CV.CO.NOMINAL` and `RN.H2O.OBLIGATORY_LOSS` are `assumed` with EMPTY citations.**
+  Both have their dependency backwards and fixing that is §4 item 1, not another search.
+- **Haematocrit is sourced but the model cannot feel it** (§3.5). It becomes live when
+  `CV.PLASMA.ECF_FRACTION` is sourced independently rather than derived from it.
+- **Only body mass is sampled in the ensemble.** Every other parameter is one number
+  for all members, though the ledger carries dispersion for several. Humans are a
+  distribution and the population currently is not — see §1.12.
 - **`G_pn` is wrong by 2–19×** (§3.3). Parked, one CSV value.
-- **Six rows still claim a source that does not exist** (§4 item 1).
+- ~~Six rows still claim a source that does not exist.~~ **DONE 2026-08-31**, §3.5.
 - **`RAAS.RENIN.PRESSURE_GAIN` was calibrated against a baseline that no longer exists** —
   fitted so the low-salt arm doubled PRA from 1.0, and baseline PRA is now 2.31. Not
   urgent: escape drives `fr_mod` to ~1e-7 so no steady state moves. **Blocking for anything
