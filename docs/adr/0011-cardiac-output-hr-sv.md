@@ -490,3 +490,53 @@ Note also the live controversy already recorded on that row: Beard and Feigl 201
 (`10.1152/ajpheart.00228.2011`) argue Guyton's interpretation interchanges independent
 and dependent variables. That belongs in the next pre-registration as a declared conflict
 to record rather than resolve.
+
+## The dependency is inverted, and the Q1 baselines were right — 2026-09-01
+
+**`CV.SV.NOMINAL` is now SOURCED and `CV.CO.NOMINAL` is DERIVED from it.** The
+Consequences section above says the opposite — "`CV.CO.NOMINAL` already exists at 7200
+L/day, so `SV0 = CO0 / HR0` is derived, not sourced" — and that was the right call in
+August, when nothing better than the conventional 5 L/min was in hand. It is no longer
+true and this record must not be read as if it were.
+
+Pre-registered in `validation/dependency_inversion_prereg.md`, committed before any paper
+was opened. The reason is the one this ADR itself argued for splitting cardiac output in
+the first place: **the halves are separately measurable, and stroke volume is the half
+imaging actually measures.** Cardiac output is what it computes.
+
+| row | was | is |
+|---|---|---|
+| `CV.SV.NOMINAL` | 80.7 / 77.0 mL, `derived` from CO0 and HR0 | **96 / 75 mL, `reported`** (Petersen 2017, UK Biobank CMR, n = 800) |
+| `CV.CO.NOMINAL` | 7200 L/day, `both`, `assumed`, citation empty | **8570.88 / 7020 L/day, `derived`, a male/female pair** |
+| `CV.TPR.NOMINAL` | 0.012083, `both` | **0.010151 / 0.012393**, sexed with CO0 |
+
+The identity is unchanged and `check_closure.py` still holds it; only which side is the
+primitive has moved. **At most two of `CO0`, `HR0`, `SV0` may ever be sourced.** `HR0`
+and `SV0` are; a directly sourced cardiac output would have to REPLACE one of them.
+
+### Q1's recorded contradiction is discharged, and it pointed the right way
+
+Section "What does hold across all three: the baselines do not match the model" recorded
+that the three posture studies screened for the filling slope reported **baseline stroke
+volumes of 94, 118 and 90 mL against the `SV0 = 78.74 mL` this record derives, and
+baseline cardiac outputs of 6.9 and 6.03 L/min against the model's 5.0.** That was
+written down as an unreconciled discrepancy between the devices and the ledger.
+
+The sourced value is **96 mL, giving 5.95 L/min in men** — inside the range those three
+studies reported and about 19% above the conventional figure the ledger carried. The
+discrepancy was not the devices. It was the 5 L/min, which is directive 1.12's teaching
+aid, and this record had already caught it without being able to act.
+
+### What moved in the model, and what did not
+
+`TPR0` is derived as `MAP0/CO0`, so **arterial pressure at the nominal operating point is
+unchanged by construction** and so are the reconstructed systolic and diastolic pressures,
+which run through `C_art = SV0/PP0`. What changes is loop gain: `dMAP/dV_ecf` scales with
+`TPR0`, which fell 16% in men.
+
+**The default salt-step shift did not move: 5.0569 mmHg before, 5.056918 after** - and
+the cardiac change ALONE, with the old ADH constants restored, gives 5.056913, so neither
+branch moves it at the fifth significant figure. With the ADH loop disabled it moves 0.6% (4.9352 -> 4.9067), because the
+placeholder pins urine output and forces the sodium balance to be closed through the
+circulation instead. Both are recorded in `test/runtests.jl`; the attribution was checked
+by running the cardiac change alone with the old ADH constants restored.

@@ -40,7 +40,6 @@ using ModelingToolkit: t_nounits as t, D_nounits as D
 
 using ..LedgerParams
 using ..LedgerParams:
-    CV_CO_NOMINAL, CV_TPR_NOMINAL,
     CV_VENOUS_RETURN_SENSITIVITY,
     CV_CENTRAL_FRACTION, CV_CENTRAL_CO_SENSITIVITY,
     BF_BODY_MASS_REFERENCE
@@ -66,7 +65,12 @@ function Cardiovascular(; name, sex::Symbol = :male,
 
     pars = @parameters begin
         # EXTENSIVE: a flow and two volumes.
-        CO0    = sz * CV_CO_NOMINAL
+        # SEXED as of 2026-09-01. CO0 is now DERIVED from the sourced stroke
+        # volume and heart rate (CO0 = HR0*SV0*1440/1000), and both of those are
+        # male/female pairs, so this is one too. It was a shared `both` row while
+        # it carried the conventional 5 L/min, which is what made the HR/SV pair
+        # cancel out of every result.
+        CO0    = sz * LedgerParams.param(:CV_CO_NOMINAL, sex)
         # SEXED as of 2026-08-27 (Oberholzer 2024, CO rebreathing): 80.3 mL/kg in
         # men, 70.3 in women. f_pv and VC0 are DERIVED from it and are sexed with
         # it, so all three go through the ADR 0014 accessor.
@@ -75,7 +79,8 @@ function Cardiovascular(; name, sex::Symbol = :male,
         # pressure intensive. MAP = CO*TPR, CO ~ s, so TPR ~ 1/s or big people
         # would be hypertensive. Physically that is right: resistance falls as
         # the vascular bed gets larger. See src/scaling.jl.
-        TPR0   = CV_TPR_NOMINAL / sz               # baseline; scaled by reflex
+        # DERIVED as MAP0/CO0 and therefore sexed with CO0.
+        TPR0   = LedgerParams.param(:CV_TPR_NOMINAL, sex) / sz   # scaled by reflex
         # Resolved through the sex-aware accessor rather than read as a bare
         # constant. While CV.HEMATOCRIT.NOMINAL carries a single `both` row this
         # returns that value for either sex; the moment a male/female pair is

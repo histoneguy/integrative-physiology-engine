@@ -1,9 +1,9 @@
 # HANDOVER — Integrative Physiology Engine
 
-**Date:** 2026-08-31
+**Date:** 2026-09-01
 **Repo:** https://github.com/histoneguy/integrative-physiology-engine (public)
 **Owner:** Eric George (`histoneguy`)
-**State:** **411/411**, all five gates exit 0, nothing outstanding.
+**State:** **427/427**, all five gates exit 0, nothing outstanding.
 
 **This header deliberately names NO commit SHA and NO open PR.** Three consecutive
 handovers were wrong in their first line, each in a different way: two pinned a SHA that
@@ -158,8 +158,10 @@ memorable, and **nobody ever meant them as population estimates.** 120/80 is not
 Neither is 37 °C, 5 litres, 45%, 125 mL/min or 5 L/min.
 
 **The record, and it is not close.** Eight ledger rows claimed
-`Standard physiological reference. VERIFY.` Six could be opened. **Four were materially
-wrong:**
+`Standard physiological reference. VERIFY.` Six could be opened directly on 2026-08-31
+and **four were materially wrong**. The last two could not be sourced at all until their
+DEPENDENCIES were inverted on 2026-09-01 — and then **both were wrong too**. Six of
+eight, and not one of the six was high:
 
 | row | textbook | measured |
 |---|---|---|
@@ -168,6 +170,8 @@ wrong:**
 | `RN.GFR.NOMINAL` | 180 L/day (= 125 mL/min) | 152.6 (= 106 mL/min) |
 | `CV.BLOOD_VOLUME.NOMINAL` | "5 litres" | 5.62 male / 4.92 female |
 | `CV.HEMATOCRIT.NOMINAL` | 45% for everyone | 45.3 male / **39.5 female** |
+| `CV.CO.NOMINAL` | “5 L/min” | 5.95 male / 4.88 female |
+| `ADH.URINE.OSM_MAX` | 1200 mOsm/kg | 982, and 823 by age 80 |
 
 Haematocrit is the clearest case: the unisex 45% is **the male value applied to women.**
 
@@ -188,7 +192,7 @@ prohibits `range-midpoint`, so an interval cannot become a point estimate.
 
 ## 2. STATE
 
-**411/411, five gates exit 0.** All of the below is on `main` as of 2026-08-31.
+**427/427, five gates exit 0.** All of the below is on `main` as of 2026-09-01.
 
 **THE `VERIFY` CLASS IS EMPTY.** Eight rows carried
 `Standard physiological reference. VERIFY.` Five are now sourced — `CV.MAP.SETPOINT`,
@@ -206,7 +210,7 @@ that is the honest direction — see `validation/verify_rows_prereg.md` branch 6
 | Component | Status |
 |---|---|
 | `BodyFluids.jl` | ICF/ECF volumes, sodium mass balance, osmotic equilibration. Intakes now scale with body size. Inactive-Na storage **default off** (ADR 0004). |
-| `Cardiovascular.jl` | ECF → plasma → blood volume, partitioned central/peripheral (ADR 0012). **CO = HR × SV** (ADR 0011). MAP = CO × TPR. |
+| `Cardiovascular.jl` | ECF → plasma → blood volume, partitioned central/peripheral (ADR 0012). **CO = HR × SV**, and stroke volume is now the SOURCED half (ADR 0011). MAP = CO × TPR, sexed. |
 | `Renal.jl` | GFR autoregulation, filtered load, pressure natriuresis, RAAS increment, circadian modulation, osmoregulated water excretion, **urine solute load tracking sodium**. |
 | `Baroreflex.jl` | Lumped, resetting, **TPR effector only**. Setpoint scaled by the clock. |
 | `Raas.jl` | Active at rest — PRA 2.31×. No AngII vasoconstriction, deliberate. |
@@ -219,11 +223,12 @@ that is the honest direction — see `validation/verify_rows_prereg.md` branch 6
 
 | intake (mEq/d) | MAP (mmHg) | SBP | DBP | PP |
 |---|---|---|---|---|
-| 205 | 86.979 | 108.96 | 75.99 | 32.98 |
-| 154 | 84.450 | 105.80 | 73.78 | 32.02 |
-| 103 | 81.922 | 102.63 | 71.57 | 31.06 |
+| 205 | 86.979 | 108.97 | 75.98 | 32.99 |
+| 154 | 84.450 | 105.81 | 73.77 | 32.03 |
+| 103 | 81.922 | 102.64 | 71.57 | 31.07 |
 
-**Shift 5.0569 mmHg.** Arterial pressure is nowhere regulated; it lands at a stable
+**Shift 5.0569 mmHg**, and it survived a 19% rise in cardiac output without moving at
+the fifth significant figure — §3.6. Arterial pressure is nowhere regulated; it lands at a stable
 intake-dependent value through renal–body fluid feedback alone. **Do not quote beyond 5
 significant figures** and do not pin tighter than 1e-4.
 
@@ -234,8 +239,8 @@ wherever reported. Agreement with the sourced 109/76 is **consistency, not valid
 ### Population
 
 `sample_population` draws Sobol over sexed NHANES percentiles. `V_ecf` scales with body
-mass — **0.20792 L/kg male, 0.20787 female** — while MAP is invariant across the mass
-range (86.978 both sexes). The population is **uniform** over P05–P95, not
+mass — **0.207969 L/kg male, 0.207976 female** — while MAP is invariant across the mass
+range (86.9789 male, 86.9804 female). The population is **uniform** over P05–P95, not
 weight-distributed.
 
 **ECF per kg is now essentially sex-INVARIANT, and that is a change of meaning, not of
@@ -248,14 +253,21 @@ blood volume and haematocrit — and left the compartment fraction alone.
 
 ### Ledger
 
-**70 parameters over 80 rows** — 31 `reported`, 27 `derived`, 20 `assumed`, 2
-`calibrated`. **22 weak.** Tiers: 35 A, 26 B, 19 C.
+**70 parameters over 82 rows** — 34 `reported`, 28 `derived`, 18 `assumed`, 2
+`calibrated`. **20 weak.** Tiers: 38 A, 27 B, 17 C.
+**The `assumed` count went DOWN by two on 2026-09-01, and that is as honest as its going
+UP was on 2026-08-31.** `CV.CO.NOMINAL` and `RN.H2O.OBLIGATORY_LOSS` did not acquire
+citations; they stopped being primitives. Each is now DERIVED from the quantity that is
+actually measured — stroke volume and maximal urine concentration — and it is those two
+rows that carry the new sources.
 **42 relations** — 15 definitional, 14 empirical, 9 conservation, 4 placeholder.
-**Ten parameters carry male/female pairs:** `BF.BODY_MASS.{TYPICAL,P05,P95}`,
+**Twelve parameters carry male/female pairs:** `BF.BODY_MASS.{TYPICAL,P05,P95}`,
 `CV.ARTERIAL.COMPLIANCE`, `CV.HR.NOMINAL`, `CV.SV.NOMINAL`,
 `CV.BLOOD_VOLUME.NOMINAL`, `CV.HEMATOCRIT.NOMINAL`, `CV.PLASMA.ECF_FRACTION`,
-`CV.CENTRAL.VOLUME_NOMINAL` — the last two DERIVED from blood volume and
-haematocrit, so they became sexed with them.
+`CV.CENTRAL.VOLUME_NOMINAL`, **`CV.CO.NOMINAL`** and **`CV.TPR.NOMINAL`** — the
+last four are DERIVED and became sexed with their inputs: plasma fraction and
+central volume from blood volume and haematocrit, cardiac output and resistance
+from the sourced stroke volume.
 
 ### Couplings — connected 2026-08-27
 
@@ -377,6 +389,59 @@ could be opened — the attempts are recorded in the rows so they are not repeat
    `f_pv` is sourced independently — plasma volume as a fraction of ECF is measurable —
    or when viscosity or oxygen carriage exists.
 
+### 3.6 Two dependencies ran against the measurement, and inverting them cost 19% of cardiac output
+
+Pre-registered in `validation/dependency_inversion_prereg.md` at `bd5cdf3`, before any
+paper was opened. Reproduce with `python validation/dependency_inversion_extract.py`.
+
+Both rows the 2026-08-31 sweep had to demote were demoted for the same reason: **the
+ledger derived the measured quantity from the computed one.** No search could discharge
+either, because the row a source would have filled was the row being computed.
+
+| row | was | is |
+|---|---|---|
+| `CV.SV.NOMINAL` | 80.7 / 77.0 mL, `derived` | **96 / 75 mL, `reported`** (Petersen 2017, UK Biobank CMR, n = 800) |
+| `CV.CO.NOMINAL` | 7200 L/day, `assumed`, no citation | **8570.88 / 7020 L/day, `derived`** |
+| `ADH.URINE.OSM_MAX` | 1200 mOsm/kg, `derived` | **982, `reported`** (Tryding 1988, DDAVP, n = 212) |
+| `RN.H2O.OBLIGATORY_LOSS` | 0.5 L/day, `assumed`, no citation | **0.611 L/day, `derived`** |
+
+**The water side needed no search to be CORRECT, only to be better.** `Renal.jl` has
+computed the obligatory volume as `Osm_load/U_max` since the solute load began tracking
+sodium; nothing in `src/` read the row at all, and `check_closure.py` — its only consumer
+— was asserting the relationship in the **opposite direction to the code it exists to
+check.** Directive 1.11 found that, not a gate.
+
+**A 19% RISE IN CARDIAC OUTPUT MOVED THE SALT-STEP SHIFT BY NOTHING.** 5.0569 before,
+5.056918 after. `TPR0` is derived as `MAP0/CO0`, so the nominal operating point cannot
+move — but loop gain does, `dMAP/dV_ecf` falling 16%, and §3.5 predicted the shift would
+survive that because `G_pn` sets it. It does, to five significant figures. With the ADH
+loop **disabled** it moves 0.6% (4.9352 → 4.9067), because the placeholder pins urine
+output and forces sodium balance to close through the circulation instead. Checked rather
+than assumed: the cardiac change was run alone with the old ADH constants restored.
+
+**And the sex pair now moves volumes while leaving pressure alone.** Cardiac output
+differs by 22% between the sexes; the salt-step shift differs at the eighth significant
+figure. Women reach the same pressure on a **6.9% smaller ECF excursion**, because
+`dMAP/dV_ecf` scales as `TPR0·BV0` and that product is 6.9% larger in women. ADR 0014's
+falsifiable test asked that a pair change a result — it does, and not where that record
+predicted. **"Results move" is the wrong test on its own in a regulated loop.**
+
+**The pre-registered prediction about body size was half wrong, which is the useful
+half.** `CV.SV.NOMINAL`'s old note cited Katori 1979 for no sex difference in stroke
+*index* and concluded the dimorphism was body size. Indexing to body surface area, the
+male excess falls from 28% to 9% — but it does **not** vanish, and four independent
+cohorts totalling 4,582 people agree (Petersen 9%, Luu 10%, Salton and Le Ven both
+stating the difference survives adjustment). Two thirds of it is size; about a third is
+not. The note has been corrected on the row.
+
+**What could not be used, and it is the better study.** Luu 2022 (CAHHM, n = 3,206,
+multi-ethnic, anatomically correct contouring) reports stroke volume **indexed to BSA
+only.** Converting it needs a body surface area, which this model does not carry, and the
+pre-registration refused to introduce one as a side effect. Zhan 2024 — the Bayesian
+meta-analysis of 12,812 healthy adults that `pooling.md` rule 1 would have preferred —
+reports reference *limits*, indexed, so `range-midpoint` disqualifies it. **A BSA row
+would unlock both.** See §4.
+
 ---
 
 ## 4. NEXT, IN ORDER
@@ -384,37 +449,36 @@ could be opened — the attempts are recorded in the rows so they are not repeat
 **Finish the cardiovascular system, then the other systems. Populations are far off — a
 population of an incomplete model is a wider set of wrong answers.**
 
-1. **Flip the stroke-volume dependency, which discharges `CV.CO.NOMINAL`.** ADR 0011 made
-   `CO = HR × SV` structural, and **stroke volume is what echocardiography and CMR
-   actually measure** while cardiac output is computed from it — yet `CV.SV.NOMINAL` is
-   derived FROM `CV.CO.NOMINAL`, which is now `assumed`. Source an `SV0` (WASE / Patel
-   2021, PMID 34044105, 1,450 healthy adults across 15 countries, reports it by sex —
-   paywalled, no numbers in the abstract; or the adult CMR reference literature), derive
-   `CO0 = HR0·SV0·1440/1000`, and the row discharges as `derived` with the dependency
-   pointing the way the measurement does. `HR0` is already sourced and sexed. **Record the
-   technique** — WASE reports Doppler, 2D and 3D are NOT interchangeable, and `pooling.md`
-   forbids pooling across them. Expect `CV.TPR.NOMINAL` (= MAP/CO) to move with it.
+**Flipping the stroke-volume dependency was item 1 and is DONE, both halves — §3.6.**
 
-   The same inversion exists on the water side: `check_closure.py` derives
-   `ADH.URINE.OSM_MAX` FROM `RN.H2O.OBLIGATORY_LOSS`, when **maximal concentrating ability
-   is the measured quantity.** Since the solute load became variable, `Renal.jl` already
-   computes the floor as `Osm_load/U_max` — the model inverted it and the ledger has not
-   caught up.
-2. **Venous compliance and the venous return limb.** Pmsf, right atrial pressure, stressed
+1. **Venous compliance and the venous return limb.** Pmsf, right atrial pressure, stressed
    vs unstressed volume. Replaces `G_vr`; `relations.csv` already names venous compliance
    as the unsourced step in the `CO` row. Record Beard and Feigl 2011 as a declared
    conflict. **`validation/venous_compliance_extract.py` already refutes ADR 0012's
    concavity requirement** — the filling relation is linear over the physiological range,
    and the operative variable is stressed/unstressed, not central/peripheral.
-3. **Chronotropic baroreflex.** ADR 0009 gives the reflex one effector; HR now exists.
+2. **Chronotropic baroreflex.** ADR 0009 gives the reflex one effector; HR now exists.
    **Deliberately deferred** — ADR 0009 says do not re-separate the arms without a
    protocol that needs it, the reflex resets so it nulls at every steady state, and the
    cardiac gain needs a sourcing pass. Best normative source found: **Schumann 2024**,
    *Am J Physiol Heart Circ Physiol* 326:H158–H165, n=980 healthy — and it is about **sex
    differences in BRS**, so it would also give ADR 0014 a second real dimorphic pair.
-4. **ADR 0013 decision** on `G_pn`, with its ECF falsifiable test run first.
-5. **Body surface area.** GFR and CO properly scale with BSA, sub-linearly in mass;
-   `scaling.jl` records that linear scaling overstates their spread. Needs a height row.
+3. **ADR 0013 decision** on `G_pn`, with its ECF falsifiable test run first.
+4. **Body surface area, and it is now worth more than it was.** It was on this list only
+   because GFR and cardiac output scale sub-linearly in mass, so `scaling.jl` overstates
+   their population spread. It has since acquired two further jobs, both from §3.6.
+   **It unlocks the sources.** The two best studies in the cardiac reference literature —
+   Luu 2022 (n = 3,206, multi-ethnic) and the Zhan 2024 meta-analysis (12,812) — report
+   ventricular volumes indexed to BSA and were both rejected for that reason alone. **And
+   it stops a double count.** `CV.SV.NOMINAL` is entered as reported at a cohort mass that
+   Petersen gives only by age group, while `size_factor` scales it again and the ensemble
+   samples mass by sex — so part of the size dimorphism is counted twice. Needs a height
+   row and one BSA formula, sourced.
+5. **`RN.URINE.SOLUTE_LOAD = 600 mOsm/day` is now the load-bearing unsourced number on
+   the water side.** `ADH.URINE.OSM_MAX` is sourced, so the obligatory volume, `U_base`,
+   `k_adh` and every steady state now hang off a conventional figure that
+   `RN.URINE.SOLUTE_NONNA` already records as too low — measured totals are 700–900.
+   Correcting it moves every ADH constant and needs its own pre-registration.
 6. **`check_closure.py` is filling up** — 19 hand-coded relationships, does not scale past
    about twenty.
 
@@ -462,10 +526,21 @@ population of an incomplete model is a wider set of wrong answers.**
 
 ## 7. OPEN ITEMS
 
-- **22 of 70 parameters** are `assumed` or `calibrated`. `unledgered_check()` lists them.
-  The count went UP by two on 2026-08-31 and that is the honest direction — see §1.12.
-- **`CV.CO.NOMINAL` and `RN.H2O.OBLIGATORY_LOSS` are `assumed` with EMPTY citations.**
-  Both have their dependency backwards and fixing that is §4 item 1, not another search.
+- **20 of 70 parameters** are `assumed` or `calibrated`. `unledgered_check()` lists them.
+  The count went UP by two on 2026-08-31 and back DOWN by two on 2026-09-01, and **both
+  directions were honest.** Up, because two rows stopped claiming sources they did not
+  have. Down, because those same two stopped being primitives at all — see §3.6.
+- ~~`CV.CO.NOMINAL` and `RN.H2O.OBLIGATORY_LOSS` are `assumed` with EMPTY citations.~~
+  **DONE 2026-09-01.** Both are now `derived`, from the quantities that are actually
+  measured.
+- **`CV.SV.NOMINAL` is NOT normalised to the 70 kg reference mass.** Petersen reports
+  cohort weight by age group and not by sex, so the sexed pair still carries a body-size
+  component — and in the ensemble, where mass is sampled by sex, that component is
+  counted twice. §4 item 4.
+- **`ADH.URINE.OSM_MAX` carries no dispersion and no age.** Tryding reports age-related
+  reference intervals; the record read gives means by age, not an SD at one age. Maximal
+  concentrating ability falls 16% from 20 to 80 years and this model has no age
+  dimension, so 982 is the young-adult ceiling.
 - **Haematocrit is sourced but the model cannot feel it** (§3.5). It becomes live when
   `CV.PLASMA.ECF_FRACTION` is sourced independently rather than derived from it.
 - **Only body mass is sampled in the ensemble.** Every other parameter is one number

@@ -163,13 +163,13 @@ function member_remake(prob, sys, member; sex::Symbol = :male)
              sys.rn.G_pn           => sz * RN_PRESSURE_NATRIURESIS_SLOPE,
              sys.rn.Osm_ref        => sz * RN_URINE_SOLUTE_LOAD,
              sys.rn.Osm_nonNa      => sz * RN_URINE_SOLUTE_NONNA,
-             sys.cv.CO0            => sz * CV_CO_NOMINAL,
+             sys.cv.CO0            => sz * LedgerParams.param(:CV_CO_NOMINAL, sex),
              sys.cv.BV0            => sz * LedgerParams.param(:CV_BLOOD_VOLUME_NOMINAL, sex),
              sys.cv.VC0            => sz * LedgerParams.param(:CV_CENTRAL_VOLUME_NOMINAL, sex),
              sys.cv.SV0            => sz * LedgerParams.param(:CV_SV_NOMINAL, sex),
              # RECIPROCAL. MAP = CO*TPR and CO scales, so resistance must fall or
              # larger people come out hypertensive. See src/scaling.jl.
-             sys.cv.TPR0           => CV_TPR_NOMINAL / sz],
+             sys.cv.TPR0           => LedgerParams.param(:CV_TPR_NOMINAL, sex) / sz],
         u0 = [sys.bf.V_icf  => bm * BF_ICF_MASS_FRACTION,
               sys.bf.V_ecf  => bm * BF_ECF_MASS_FRACTION,
               sys.bf.Na_ecf => bm * BF_ECF_MASS_FRACTION * BF_NA_PLASMA_SETPOINT])

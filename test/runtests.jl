@@ -208,9 +208,19 @@ using SciMLBase
         # given ECF change moves cardiac output more. That is a real change in loop
         # gain, not solver noise, which is why these are repinned rather than having
         # their tolerance widened.
-        pre_partition = (205.0 => 87.008,
-                         154.0 => 84.5395,
-                         103.0 => 82.0713)
+        # REPINNED 2026-09-01, 87.008/84.5395/82.0713 -> 87.0047/84.5522/82.0980,
+        # and the SHAPE of the move is the mechanism. CV.SV.NOMINAL was sourced
+        # (Petersen 2017), so CO0 became derived and sexed and rose 7200 -> 8570.88
+        # for males, and TPR0 = MAP0/CO0 fell 0.012083 -> 0.010151. dMAP/dV_ecf
+        # scales with TPR0, so a given ECF excursion now moves pressure 16% LESS
+        # and the arms COMPRESS toward the high arm, which is anchored at MAP_ref
+        # where the pressure-natriuresis term vanishes. Hence the high arm barely
+        # moves (0.003) while the mid and low arms rise by 0.013 and 0.027.
+        # Same class of change as the f_pv repin of 2026-08-28: a real change in
+        # loop gain, repinned rather than having its tolerance widened.
+        pre_partition = (205.0 => 87.0047,
+                         154.0 => 84.5522,
+                         103.0 => 82.0980)
         # raas=false ISOLATES what this testset is about. The reference values
         # were measured before RAAS existed, so comparing against a model that
         # now includes it would be testing two changes at once. RAAS having its
@@ -244,8 +254,22 @@ using SciMLBase
         # gain, and not by where the operating point sits. That near-invariance is
         # the useful result of the setpoint change: it says the salt-sensitivity
         # finding in ADR 0013 does not depend on the number that was wrong.
+        # 4.9352 -> 4.9067 on 2026-09-01, when CO0 became a derivation from the
+        # sourced stroke volume. A 19% RISE IN CARDIAC OUTPUT MOVED THIS SHIFT BY
+        # 0.6%, which is the near-invariance above holding again against a much
+        # larger perturbation than the setpoint change was.
+        #
+        # AND WITH THE ADH LOOP CONNECTED IT DOES NOT MOVE AT ALL: the default
+        # model's shift is 5.056918 against 5.0569 before - unchanged at the
+        # fifth significant figure. This branch has adh=false, which replaces the water
+        # limb with a placeholder that pins urine output, so ECF volume is fixed
+        # by water balance and the sodium equation has to be closed through the
+        # circulation - which is exactly why the cardiovascular gain reaches the
+        # answer here and not in the real model. Checked directly rather than
+        # assumed: branch A was run alone with the old ADH constants restored and
+        # gave 5.056913.
         @test isapprox(check_pressure_natriuresis(r).map_shift_mmHg,
-                       4.9352; rtol = 1e-4)   # 4.9167 -> 4.9352, see above
+                       4.9067; rtol = 1e-4)   # 4.9352 -> 4.9067, see above
     end
 
     @testset "RAAS disabled branch is exactly inert (ADR 0008)" begin
@@ -273,9 +297,14 @@ using SciMLBase
         # given ECF change moves cardiac output more. That is a real change in loop
         # gain, not solver noise, which is why these are repinned rather than having
         # their tolerance widened.
-        pre_raas = (205.0 => 87.008,
-                    154.0 => 84.5395,
-                    103.0 => 82.0713)
+        # REPINNED 2026-09-01, 87.008/84.5395/82.0713 -> 87.0047/84.5522/82.0980.
+        # Cardiac output became a sourced-stroke-volume derivation and TPR fell
+        # with it; see the ADR 0012 block above for the mechanism. These two
+        # blocks pin the same three numbers on purpose - they assert different
+        # claims about them - so they move together.
+        pre_raas = (205.0 => 87.0047,
+                    154.0 => 84.5522,
+                    103.0 => 82.0980)
         for (lvl, expected) in pre_raas
             got = only(l.MAP_final for l in r.levels if l.level == lvl)
             # 1e-9 -> 1e-7 on 2026-08-27, same reason as the ADR 0012 block: the
@@ -881,34 +910,61 @@ using SciMLBase
         # :both must ERROR on a dimorphic parameter, not average.
         @test_throws Exception L.param(:CV_HR_NOMINAL, :both)
 
+        # CO0 IS A PAIR TOO as of 2026-09-01, and it must error on :both for the
+        # same reason HR0 and SV0 do - averaging two sexes is not a person.
+        @test :CV_CO_NOMINAL in L.sex_specific_params()
+        @test :CV_TPR_NOMINAL in L.sex_specific_params()
+        @test_throws Exception L.param(:CV_CO_NOMINAL, :both)
+        @test L.param(:CV_CO_NOMINAL, :female) < L.param(:CV_CO_NOMINAL, :male)
+
         # The identity that makes ADR 0011 a change of variables: heart rate
         # times stroke volume is nominal cardiac output, for EITHER sex.
+        # INVERTED 2026-09-01 - SV0 is now the sourced side and CO0 the derived
+        # one, so this compares against a SEXED CO0 rather than a shared constant.
+        # The identity is exact now, not rounded: CO0 is stored as the full
+        # product because a derived row closing an identity carries every digit.
         for sx in (:male, :female)
-            # 1e-3, matching tools/check_closure.py: HR0 carries 2 significant
-            # figures and SV0 three, so 62*1440*80.7/1000 is 7205, not 7200.
             @test isapprox(L.param(:CV_HR_NOMINAL, sx) * 1440.0 *
                            L.param(:CV_SV_NOMINAL, sx) / 1000.0,
-                           L.CV_CO_NOMINAL; rtol = 1e-3)
+                           L.param(:CV_CO_NOMINAL, sx); rtol = 1e-3)
         end
     end
 
-    @testset "the HR/SV pair cannot move the model, and that is expected" begin
-        # ADR 0014's falsifiable test asks that a parameter pair change a result.
-        # THIS PAIR CANNOT, and the reason is structural rather than a wiring
-        # failure: SV0 is DERIVED as CO0/(HR0*1440) and CO0 has no sex-specific
-        # row, so the product is CO0 for either sex and cardiac output is
-        # identical. Sex is real in the components and cancels in the output.
+    @testset "a 22% sex difference in cardiac output moves no pressure at all" begin
+        # REPLACED 2026-09-01, and the old reason for this test is now FALSE.
+        # It used to read "the HR/SV pair CANNOT move the model", because SV0 was
+        # DERIVED as CO0/(HR0*1440) from a shared CO0, so the product was the same
+        # number for either sex and the dimorphism cancelled arithmetically. Its
+        # comment said the test should FAIL when a real pair landed.
         #
-        # Katori 1979 found no sex difference in cardiac INDEX or stroke INDEX
-        # once normalised to body surface area, so the dimorphism that WILL move
-        # this model is body size - and body_mass is still a hard-coded 70.0,
-        # not a ledger row. That is the next thing that makes sex bite.
-        #
-        # When a haematocrit or body-mass pair lands, THIS TEST SHOULD FAIL.
-        # Replace it then; do not delete it.
+        # A real pair has landed - CV.SV.NOMINAL is sourced per sex (Petersen 2017,
+        # CMR) and CO0 is derived from it, so CO0 differs by 22% between sexes and
+        # TPR0 by the same. THE TEST STILL PASSES, and that is a much stronger
+        # result than the one it replaces: arterial pressure does not move because
+        # the RENAL-BODY FLUID loop sets it, not the heart. This is the central
+        # claim of the model, and it is now demonstrated against a 22% perturbation
+        # of the cardiac side rather than against an arithmetic identity.
         m = check_pressure_natriuresis(salt_step(sex = :male)).map_shift_mmHg
         f = check_pressure_natriuresis(salt_step(sex = :female)).map_shift_mmHg
         @test isapprox(m, f; rtol = 1e-4)
+
+        # THE PAIR IS NOT INERT ANY MORE, AND THIS IS WHERE IT BITES. ADR 0014's
+        # falsifiable test asks that a sexed pair change a result. It changes the
+        # VOLUME excursion: the pressure the kidney demands is the same, so the
+        # circulation must supply it with whatever volume swing its own gain
+        # requires, and dMAP/dV_ecf scales as TPR0*BV0. That product is 6.9%
+        # larger in women (0.012393*4.92 against 0.010151*5.62), so women reach
+        # the same pressure shift on a 6.9% SMALLER ECF excursion.
+        #
+        # If this assertion ever fails while the one above still passes, the
+        # cardiac sex pair has stopped reaching the circulation at all.
+        exc(sex) = begin
+            r = salt_step(sex = sex)
+            r.levels[1].V_ecf_final - r.levels[end].V_ecf_final
+        end
+        em, ef = exc(:male), exc(:female)
+        @test ef < em
+        @test isapprox(em / ef, (0.012393 * 4.92) / (0.010151 * 5.62); rtol = 0.02)
     end
 
     @testset "modulators are off by default" begin

@@ -112,3 +112,41 @@ actually uses and the wiring is decorative.
   circadian arm already has sex-dependence recorded in `targets.md` as a covariate.
   Those are different uses and the second is not built.
 - **Pregnancy, or any within-sex state.** Out of scope.
+
+## The falsifiable test is satisfied, and it was satisfied by volumes — 2026-09-01
+
+"Both currently pass because nothing is dimorphic yet" in *Closure is now one question
+per sex*, and "It enters no sex-specific values. Every row is `both`" in *What this
+deliberately does not do*, are both **out of date and were already out of date on
+2026-08-27**. Ten parameters now carry male/female pairs. Read those sections as the
+record of what was true when the machinery was built, not as a description of the ledger.
+
+**The falsifiable test asked that a pair change a result. It now does, and not in the
+place this record predicted.**
+
+`CV.SV.NOMINAL` was sourced per sex on 2026-09-01 (Petersen 2017, CMR), so `CV.CO.NOMINAL`
+became a derived male/female pair and `CV.TPR.NOMINAL` with it. **Cardiac output now
+differs between the sexes by 22%.** Arterial pressure does not differ at all: the
+salt-step shift is 5.056918 in men and 5.056912 in women, identical to eight significant
+figures.
+
+That is not the accessor failing to reach the component, which is the failure mode this
+record warned about. It is the model's central claim: **the renal-body fluid loop sets
+arterial pressure, and the heart supplies whatever the kidney demands.** The pair reaches
+the answer through the volume side instead —
+
+    dMAP/dV_ecf  scales as  TPR0 * BV0
+    men    0.010151 * 5.62 = 0.05705
+    women  0.012393 * 4.92 = 0.06097   (+6.9%)
+
+so women reach the same pressure shift on a **6.9% smaller ECF excursion**, and the test
+suite now asserts that ratio rather than only asserting that the pressures agree. Before
+this pair landed, the sexes were identical in every quantity, because `SV0` was derived
+from a shared `CO0` and the dimorphism cancelled arithmetically.
+
+**The lesson for the next pair is that "results move" is the wrong test on its own.** A
+correct dimorphic parameter can leave the headline result untouched because the loop is
+regulated; what must be asserted is that it moves the quantity the mechanism says it
+should. The haematocrit pair is still the outstanding case of the opposite problem: it is
+sourced and the model cannot feel it at all, because `f_pv` is derived from it and the two
+cancel.

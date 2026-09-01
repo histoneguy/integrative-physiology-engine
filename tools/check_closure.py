@@ -185,15 +185,18 @@ def _check_one(p: dict[str, float]) -> int:
 
     # --- ADR 0011: CO = HR x SV -------------------------------------------
     #
-    # SV0 is DERIVED from CO0 and HR0, and HR0 is sex-specific, so this closure
-    # is the reason the check runs per sex at all. Sourcing SV independently as
-    # well would overdetermine the operating point.
-    check("stroke volume from CO and heart rate",
-          p["CV.SV.NOMINAL"],
-          p["CV.CO.NOMINAL"] / (p["CV.HR.NOMINAL"] * 1440.0) * 1000.0,
-          "SV0 = CO0 / (HR0 * 1440) in mL. If this drifts the heart rate and "
-          "stroke volume no longer multiply to the nominal cardiac output and "
-          "the operating point moves for that sex only.",
+    # INVERTED 2026-09-01. SV0 used to be derived from CO0; it is now SOURCED
+    # (Petersen 2017, CMR) and CO0 is derived from it, because stroke volume is
+    # what imaging measures and cardiac output is what it computes. The identity
+    # is unchanged - only which side is the primitive. HR0 and SV0 are both
+    # sex-specific, so CO0 is too, and this closure is the reason the check runs
+    # per sex at all. At most two of the three may ever be sourced.
+    check("cardiac output from heart rate and stroke volume",
+          p["CV.CO.NOMINAL"],
+          p["CV.HR.NOMINAL"] * 1440.0 * p["CV.SV.NOMINAL"] / 1000.0,
+          "CO0 = HR0 * SV0 * 1440 / 1000 in L/day. If this drifts the heart "
+          "rate and stroke volume no longer multiply to the nominal cardiac "
+          "output and the operating point moves for that sex only.",
           errors)
 
     # --- central/peripheral partition, ADR 0012 stage 1 --------------------
@@ -232,12 +235,19 @@ def _check_one(p: dict[str, float]) -> int:
     u_min  = p["ADH.URINE.OSM_MIN"]
     v_base = p["BF.H2O.INTAKE_NOMINAL"] - p["BF.H2O.INSENSIBLE_LOSS"]
 
-    check("max urine osmolality from obligatory volume",
-          p["ADH.URINE.OSM_MAX"],
-          solute / p["RN.H2O.OBLIGATORY_LOSS"],
-          "U_max = solute load / obligatory minimum urine volume. At maximal "
-          "antidiuresis urine volume must equal the obligatory minimum already "
-          "in the ledger, so U_max is forced, not chosen.",
+    # INVERTED 2026-09-01. This check used to read U_max = solute/V_min, which
+    # made maximal concentrating ability the CONSEQUENCE of an assumed obligatory
+    # volume. That is backwards twice over: maximal concentration is what water
+    # deprivation MEASURES, and Renal.jl has computed the floor as Osm_load/U_max
+    # since the solute load became variable - so this gate was asserting the
+    # opposite direction to the code it exists to check. U_max is now sourced
+    # (Tryding 1988) and the obligatory volume is derived from it.
+    check("obligatory urine volume from maximal concentration",
+          p["RN.H2O.OBLIGATORY_LOSS"],
+          solute / p["ADH.URINE.OSM_MAX"],
+          "V_min = solute load / U_max. At maximal antidiuresis the urine "
+          "carries the whole solute load at the highest concentration the "
+          "kidney can reach, so the volume is forced, not chosen.",
           errors)
 
     check("non-sodium solute is the residual at the mid salt arm",

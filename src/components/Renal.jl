@@ -88,6 +88,12 @@ function Renal(; name, solute_tracking::Bool = true,
         # independent number, so it is now computed as Osm_load / U_max. The
         # ledger row survives as the reference-load value and the identity is
         # asserted in the test suite instead.
+        #
+        # THE LEDGER CAUGHT UP ON 2026-09-01. RN.H2O.OBLIGATORY_LOSS is now
+        # DERIVED from U_max, which is the direction this code has used since the
+        # solute load became variable; check_closure.py had been asserting the
+        # inverse. U_max is now SOURCED (Tryding 1988, 982 mOsm/kg) rather than
+        # back-computed from a conventional 0.5 L/day.
         U_max     = ADH_URINE_OSM_MAX
         # EXTENSIVE. Urea production tracks lean mass, so the non-sodium solute
         # load scales. osm_Na is INTENSIVE - it is mOsm per mEq, charge balance,
