@@ -1,8 +1,15 @@
 #!/usr/bin/env python
 """Two inverted dependencies, sourced: stroke volume and maximal urine concentration.
 
-Executes validation/dependency_inversion_prereg.md, committed at bd5cdf3 BEFORE any
-paper was opened.
+Executes validation/dependency_inversion_prereg.md, committed BEFORE any paper was
+opened and sitting immediately before this change in main's history.
+
+NO COMMIT SHA IS CITED, DELIBERATELY. Rebase-merge rewrites it, and every
+pre-registration SHA already cited in this repository - 3fbe260, e0195f4, 3fd859b,
+7d97d65, 9e2cef4, d811ca0 - points at a commit that main does not contain. Verify the
+ordering instead:
+
+    git log --diff-filter=A -- validation/dependency_inversion_prereg.md
 
 THE ANSWER, BOTH BRANCHES: the textbook number was wrong, in the same direction the
 last five were.
