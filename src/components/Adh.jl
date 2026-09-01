@@ -110,7 +110,7 @@ function Adh(; name, enabled::Bool = true)
         Osm_thr  = ADH_OSM_THRESHOLD        # mOsm/kg
         k_adh    = ADH_OSM_SENSITIVITY      # per mOsm/kg
         U_min    = ADH_URINE_OSM_MIN        # mOsm/kg
-        U_max    = ADH_URINE_OSM_MAX        # mOsm/kg  DERIVED
+        U_max    = ADH_URINE_OSM_MAX        # mOsm/kg  REPORTED (Tryding 1988)
         U_base   = ADH_URINE_OSM_BASELINE   # mOsm/kg  DERIVED, disabled branch
     end
 
