@@ -504,7 +504,20 @@ population of an incomplete model is a wider set of wrong answers.**
 10. **Citations without an author list.**
 11. **A name can carry a convention its value contradicts.** Twice now — §3.2. No gate
     catches it; only wiring does.
-12. **Dead code hides unledgered constants and stale API assumptions.** `reconstruct.jl`
+12. **EVERY PRE-REGISTRATION SHA CITED IN THIS REPO POINTS AT A COMMIT `main` DOES NOT
+    CONTAIN.** `3fbe260`, `e0195f4`, `3fd859b`, `7d97d65`, `9e2cef4`, `d811ca0` — all
+    six. **Rebase-merge rewrites the SHA**, and branch protection requires linear
+    history, so merge commits are unavailable and every merged branch is rewritten.
+    They still resolve locally only because the side branches were never deleted;
+    delete those, or clone fresh, and the pre-registration audit trail evaporates.
+    This is the header-staleness lesson one level down: **anything a merge can
+    invalidate does not belong in a citation either.** Cite the FILE and verify the
+    ordering, which survives:
+
+        git log --diff-filter=A -- validation/<name>_prereg.md
+
+    Fixed for `dependency_inversion_prereg.md` on 2026-09-01; the other six are §7.
+13. **Dead code hides unledgered constants and stale API assumptions.** `reconstruct.jl`
     and `ensemble.jl` each carried a hardcoded number. Connecting the ensemble surfaced
     three live SciMLBase API breakages that nothing could have caught while it was dead.
 
@@ -566,6 +579,13 @@ population of an incomplete model is a wider set of wrong answers.**
 - **Two circadian rows are effectively uncited** (title plus PMC id) — tier C pending
   replacement.
 - **`BF.NA.SKIN_ACCUMULATION_RATE` is a secondary citation** via a dissertation.
+- **Six pre-registration SHA citations are unverifiable from `main`** — §5 item 12.
+  `3fbe260` and `3fd859b` (`RN.AUTOREG.LOWER`, and `autoreg_lower_extract.py` twice),
+  `e0195f4` (`verify_rows_prereg`), `7d97d65` and `d811ca0` (ADR 0012 and two extract
+  scripts), `9e2cef4` (`salt_sensitivity_extract.py`). Each should become a file
+  reference plus the `--diff-filter=A` check. **Deliberately NOT fixed in the same
+  change that sourced stroke volume** — it touches rows that change made no claim
+  about, and two changes at once leaves neither testable. It is one clean pass.
 - **Eight relations carry no `form_citation`**, grandfathered as tracked debt.
 - **`pooling.md` requires columns `ledger/parameters.csv` does not have** — recorded in
   prose instead, by precedent.
