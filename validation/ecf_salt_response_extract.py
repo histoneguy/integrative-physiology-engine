@@ -7,16 +7,28 @@ rebase-merge rewrites it. Verify the ordering with:
 
     git log --diff-filter=A -- validation/ecf_salt_response_prereg.md
 
-THE VERDICT: Test B fails by a factor of 5.2 against a pre-registered threshold of 2.
-Branch A1 is therefore unavailable, RN.PRESSURE_NATRIURESIS.SLOPE stays at 20.0, and
-ADR 0013 stays Proposed.
+THE VERDICT: Test B fails by a factor of 2.7 to 5.2 across the whole evidence base,
+against a pre-registered threshold of 2. Branch A1 is therefore unavailable,
+RN.PRESSURE_NATRIURESIS.SLOPE stays at 20.0, and ADR 0013 stays Proposed.
+
+THE EVIDENCE BASE IS SEVEN PRIMARIES ACROSS FOUR GROUPS AND TWO METHODS, not one study.
+The n-weighted body-weight limb (four groups, n = 132) gives 0.572 kg per 100 mmol/day
+and the iothalamate tracer limb gives 0.553 L - AGREEING TO 4%. The pre-registration
+declared 1 kg = 1 L in advance and said the conversion would be falsified if they
+diverged; it is corroborated instead.
 
 THE FINDING IS ABOUT THE CIRCULATION, NOT THE KIDNEY, which is exactly what ADR 0013
 said its test would show if it failed: "the error has moved rather than been fixed -
 most likely into G_vr, f_pv, or the fractional reabsorption term".
 
-  human   dMAP / dV_ecf  =  1.885 mmHg/L   (van den Bosch 2021, n = 70, 80.6 kg)
-  model   dMAP / dV_ecf  =  9.80  mmHg/L   (11.285 at 70 kg, scaled as 1/mass)
+  human   dMAP / dV_ecf  =  1.885 mmHg/L   within-subject (van den Bosch, n = 70)
+                          =  2.97 - 4.16    meta-analytic pressure / pooled volume
+  model   dMAP / dV_ecf  =  11.285 mmHg/L  at 70 kg, scaling as 1/mass
+
+The within-subject figure is the tightest comparison and the harshest; the pooled figure
+is the most defensible, because the mechanistic volume studies are UNDERPOWERED for the
+2 mmHg the meta-analyses detect - Kirkendall, Rorije and Taurio all report no BP change
+at all, and taking that at face value would give a ratio of zero.
 
 AND G_pn CANNOT FIX IT, because the two parameters are ORTHOGONAL. Measured, not argued:
 an 8x change in G_vr moves the pressure response by 0.1% and moves the volume response
@@ -39,7 +51,9 @@ Run:  python validation/ecf_salt_response_extract.py
 # Directive 1.8 has now paid a fourth time.
 # ---------------------------------------------------------------------------
 
-SWEEP = dict(queries=12, records_screened=85,
+SWEEP = dict(queries=24, records_screened=162,
+             sweep3="classic primary sodium loading with measured body fluids, 6 queries",
+             sweep4="weight limb across other groups, salt-reduction trials, 6 queries",
              sweep1="sodium intake / ECF volume / salt loading in healthy adults, 6 queries",
              sweep2="body weight, metabolic ward and ultra-long sodium balance, 6 queries")
 
@@ -92,6 +106,82 @@ SAME_COHORT_FAMILY = [
                 "not the step change, so it cannot supply a number here. It is the "
                 "right source for the 6.9% sex difference the model predicts."),
 ]
+
+# ---------------------------------------------------------------------------
+# THE WEIGHT LIMB, ADDED ON A THIRD AND FOURTH SWEEP. Four independent groups,
+# and it CONVERGES WITH THE TRACER LIMB TO 3%.
+#
+# The pre-registration declared 1 kg = 1 L in advance and said in section 8 that the
+# conversion would be FALSIFIED if the weight and ECF studies disagreed beyond their
+# dispersions. They do not. That is the conversion earning its keep rather than being
+# assumed.
+# ---------------------------------------------------------------------------
+
+WEIGHT_LIMB = [
+    # label, pmid, n, delta intake mmol/day, delta weight kg, notes
+    dict(label="van den Bosch 2021", pmid="34921521", n=70, d_na=192.0, d_kg=1.4,
+         note="Same study as TEST_B; its weight limb, read from the same Table 1."),
+    dict(label="Rorije 2018", pmid="29206647", n=12, d_na=150.0, d_kg=2.5,
+         cite="Rorije NMG, Olde Engberink RHG, Chahid Y, van Vlies N, van Straalen JP, "
+              "van den Born BH, Verberne HJ, Vogt L. Microvascular Permeability after an "
+              "Acute and Chronic Salt Load in Healthy Subjects: A Randomized Open-label "
+              "Crossover Intervention Study. Anesthesiology 2018;128(2):352-360.",
+         note="12 normotensive males, <50 vs >200 mmol/day for EIGHT DAYS, randomised "
+              "crossover. Body weight and blood pressure are its PRIMARY outcomes. "
+              "+2.5 kg (95% CI 1.7-3.2), and BLOOD PRESSURE DID NOT CHANGE."),
+    dict(label="Foo 1998", pmid="9680497", n=18, d_na=180.0, d_kg=0.45,
+         cite="Foo M, Denver AE, Coppack SW, Yudkin JS. Effect of salt-loading on blood "
+              "pressure, insulin sensitivity and limb blood flow in normal subjects. "
+              "Clin Sci (Lond) 1998;95(2):157-164.",
+         note="18 healthy normotensive, 220 vs 40 mmol/day for 6 days. +0.45 +/- 0.69 kg, "
+              "plasma volume +0.29 +/- 0.67 L (P = 0.08), 24 h SBP +5.8 +/- 14.2 mmHg "
+              "(P = 0.06, NOT significant). The SMALLEST volume response in the set."),
+    dict(label="Heer 2000", pmid="10751219", n=32, d_na=150.0, d_kg=0.0,
+         note="Entered as ZERO, and that is an INTERPRETATION of a null result rather "
+              "than a measurement - the abstract states body mass did not increase. The "
+              "pooled estimate is reported both with and without it for that reason."),
+]
+
+# Two further primaries that carry no extractable number but bear on the PRESSURE limb,
+# which is the half that decides Test B.
+PRESSURE_LIMB_QUALITATIVE = [
+    dict(label="Kirkendall 1976", pmid="1249473", n=8,
+         cite="Kirkendall AM, Connor WE, Abboud F, Rastogi SP, Anderson TA, Fry M. The "
+              "effect of dietary sodium chloride on blood pressure, body fluids, "
+              "electrolytes, renal function, and serum lipids of normotensive man. "
+              "J Lab Clin Med 1976;87(3):411-434.",
+         note="THE LONGEST PROTOCOL FOUND AND THE CLOSEST TO THIS MODEL'S 30 DAYS - low, "
+              "moderate and high salt for AT LEAST FOUR WEEKS EACH in 8 normotensive men. "
+              "Reports a TENDENCY for body weight, exchangeable sodium and inulin space to "
+              "rise, NO CHANGE IN BLOOD PRESSURE supine or upright, and no change in total "
+              "body water. Qualitative only in the record read, so it supplies no number - "
+              "but it is direct evidence that the pressure response over a month in 8 "
+              "normotensives is below detection."),
+    dict(label="Taurio 2023", pmid="36708156", n=510,
+         cite="Taurio J, Koskela J, Sinisalo M, Tikkakoski A, Niemela O, Hamalainen M, "
+              "Moilanen E, Choudhary MK, Mustonen J, Nevalainen P, Porsti I. Urine sodium "
+              "excretion is related to extracellular water volume but not to blood "
+              "pressure in 510 normotensive and never-treated hypertensive subjects. "
+              "Blood Press 2023;32(1):2170869.",
+         note="THE LARGEST DATASET FOUND, n = 510, 24 h urinary sodium tertiles at 94, 148 "
+              "and 218 mmol. Extracellular water HIGHER in the top tertile; NO difference "
+              "in aortic systolic or diastolic pressure, heart rate, CARDIAC OUTPUT or "
+              "SYSTEMIC VASCULAR RESISTANCE. Its own conclusion is that sodium intake "
+              "'predominantly influences extracellular water volume without a clear effect "
+              "on blood pressure' - which is this finding, stated independently and from "
+              "the other direction. CROSS-SECTIONAL, so it cannot supply a delta per 100 "
+              "mmol/day, and it is recorded for its direction and its size."),
+]
+
+# THE CAUTION THAT KEEPS THIS HONEST. Every mechanistic study above is underpowered for
+# the effect the meta-analyses detect: Foo's SD on 24 h SBP is 14.2 mmHg with n = 18,
+# and the meta-analytic normotensive response is 1.7-2.3 mmHg per 100 mmol. So "blood
+# pressure did not change" in Kirkendall, Rorije and Taurio is NOT evidence that the
+# pressure response is zero, and taking it at face value would give a ratio of zero and
+# drive G_vr to zero, which is absurd. The defensible ratio therefore pairs the
+# META-ANALYTIC pressure with the POOLED volume, and the within-subject van den Bosch
+# ratio is reported alongside it as the upper end.
+POWER_CAVEAT = True
 
 # ---------------------------------------------------------------------------
 # THE DECLARED CONFLICT, AND IT IS NOT RESOLVED HERE.
@@ -176,8 +266,8 @@ def main():
 
     print("SEARCH")
     print("  %d queries, %d records" % (SWEEP["queries"], SWEEP["records_screened"]))
-    print("     sweep 1: " + SWEEP["sweep1"])
-    print("     sweep 2: " + SWEEP["sweep2"])
+    for k in ("sweep1", "sweep2", "sweep3", "sweep4"):
+        print("     %s: %s" % (k, SWEEP[k]))
 
     b = TEST_B
     d_na = b["na_high"] - b["na_low"]
@@ -220,9 +310,41 @@ def main():
     print("     ADR 0013 concordant pressure bracket: 43.5 - 58.8   -> OUTSIDE, low")
     print("     " + CONFLICT_VERDICT[:100] + "...")
 
+    print("\nTHE WEIGHT LIMB - FOUR GROUPS, POOLED n-WEIGHTED (pooling.md rule 3)")
+    tot_n = tot_nw = 0.0
+    for w in WEIGHT_LIMB:
+        per100 = w["d_kg"] / w["d_na"] * 100.0
+        tot_n += w["n"]; tot_nw += w["n"] * per100
+        print("  %-20s n=%-4d d_Na=%-6.0f d_wt=%-5.2f kg   %.3f kg/100 mmol"
+              % (w["label"], w["n"], w["d_na"], w["d_kg"], per100))
+    pooled_all = tot_nw / tot_n
+    keep = [w for w in WEIGHT_LIMB if w["d_kg"] > 0.0]
+    pooled_pos = (sum(w["n"] * w["d_kg"] / w["d_na"] * 100.0 for w in keep) /
+                  sum(w["n"] for w in keep))
+    print("  POOLED %.3f kg/100 mmol (k=%d, n=%d)  |  %.3f excluding Heer null (k=%d)"
+          % (pooled_all, len(WEIGHT_LIMB), int(tot_n), pooled_pos, len(keep)))
+    print("  TRACER ECF LIMB: %.3f L/100 mmol (van den Bosch, iothalamate)" % ecf100)
+    print("  TWO INDEPENDENT METHODS AGREE TO %.0f%% - the pre-registered 1 kg = 1 L"
+          % (abs(pooled_all - ecf100) / ecf100 * 100.0))
+    print("  conversion is CORROBORATED, not assumed; prereg section 8 said it would be")
+    print("  falsified if they diverged.")
+
+    print("\n  RATIO FROM THE POOLED VOLUME AND THE META-ANALYTIC PRESSURE")
+    print("  (the mechanistic studies are UNDERPOWERED for a 2 mmHg effect - Foo SD on")
+    print("   24 h SBP is 14.2 with n=18 - so BP did not change is NOT dMAP = 0)")
+    for lbl, dmap in (("He 2013 1.96", 1.96), ("Cutler 1997 1.70", 1.70),
+                      ("He 2002 2.30", 2.30)):
+        for vlbl, vol in (("pooled weight", pooled_all), ("tracer ECF", ecf100)):
+            rt = dmap / vol
+            print("     %-17s / %-14s = %5.2f mmHg/L -> model %5.2f is %.1fx stiff"
+                  % (lbl, vlbl, rt, MODEL["ratio_70kg"], MODEL["ratio_70kg"] / rt))
+
     print("\nTHE CONFLICT, RECORDED AND NOT RESOLVED")
     for c in CONFLICT:
         print("  %-24s n=%-3d %s" % (c["label"], c["n"], c["result"][:74] + "..."))
+    print("\n  TWO PRIMARIES WITH NO NUMBER THAT BEAR ON THE PRESSURE LIMB")
+    for q in PRESSURE_LIMB_QUALITATIVE:
+        print("  %-18s n=%-4d %s" % (q["label"], q["n"], q["note"][:70] + "..."))
     print("  " + RANGE_NOTE[:100] + "...")
 
     print("\nORTHOGONALITY: G_pn SETS THE PRESSURE, G_vr SETS THE RATIO")
@@ -237,15 +359,30 @@ def main():
 
     # The target the next pass has to hit, stated as a number rather than a direction.
     target_ratio_70kg = (d_map / d_ecfv) * b["weight_high"] / 70.0
-    print("\n  TO MATCH THE HUMAN RATIO, G_vr must fall from 2880 to about %.0f"
-          % (2880.0 * (MODEL["ratio_70kg"] / target_ratio_70kg) ** -1.0))
+    lo = 2880.0 * 2.97 / MODEL["ratio_70kg"]
+    hi = 2880.0 * 4.16 / MODEL["ratio_70kg"]
+    print("\n  TO MATCH THE HUMAN RATIO, G_vr must fall from 2880 to %.0f-%.0f"
+          % (lo, hi))
+    print("  (%.0f on the harshest within-subject reading; the range is the pooled one)"
+          % (2880.0 * target_ratio_70kg / MODEL["ratio_70kg"]))
+    print("  PART OF THAT IS NOT G_vr. Cardiovascular.jl computes V_blood as")
+    print("  V_plasma/(1-Hct) with Hct a CONSTANT, so red cell volume expands with")
+    print("  plasma over a 30 day salt step. Red cell mass is fixed on that timescale;")
+    print("  plasma expansion DILUTES the haematocrit. dV_blood/dV_ecf should be f_pv")
+    print("  (0.211), not f_pv/(1-Hct) (0.386) - a factor of 1.83, taking the model")
+    print("  ratio to 6.17 and leaving G_vr needing only 1.5-2.8x. DIAGNOSED FROM THE")
+    print("  EQUATION AND THE ARITHMETIC THAT REPRODUCES 11.285 EXACTLY; NOT YET RUN.")
+    print("  Its justification is independent of this test - red cell mass does not")
+    print("  track plasma in 30 days - but it was found while looking for the")
+    print("  discrepancy, and that is declared rather than presented as coincidence.")
     print("  (human ratio %.3f mmHg/L at %.1f kg = %.3f at the 70 kg reference)"
           % (d_map / d_ecfv, b["weight_high"], target_ratio_70kg))
 
     print("\nVERDICT")
-    print("  Test B fails by a factor of %.1f. Branch A1 is unavailable REGARDLESS of"
+    print("  Test B fails by 2.7-5.2x across the base (%.1f within-subject);"
           % (model_ratio_here / (d_map / d_ecfv)))
-    print("  Test A. RN.PRESSURE_NATRIURESIS.SLOPE stays 20.0 and ADR 0013 stays")
+    print("  branch A1 is unavailable REGARDLESS of Test A.")
+    print("  RN.PRESSURE_NATRIURESIS.SLOPE stays 20.0 and ADR 0013 stays")
     print("  Proposed. The pressure limb still supports 51 - this does not refute it -")
     print("  but accepting it alone would take the volume response from 1.26x too small")
     print("  to 3.2x too small, because dMAP is what G_pn moves and dV_ecf follows it.")
