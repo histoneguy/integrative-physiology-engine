@@ -168,3 +168,105 @@ anticipated. `validation/residual_audit.py` stands as arithmetic.
   spans a factor of 9 and a point value hides that. This is the strongest case in the repo
   so far for a distribution.
 - **The volume test above.** Until it runs, this ADR should stay Proposed.
+
+## The falsifiable test has been run. It fails, and NOT because 51 is wrong — 2026-09-02
+
+**Status is unchanged: Proposed. `RN.PRESSURE_NATRIURESIS.SLOPE` stays at 20.0.**
+
+Pre-registered in `validation/ecf_salt_response_prereg.md`, committed before any paper was
+opened. Reproduce with `python validation/ecf_salt_response_extract.py`.
+
+This record said the volume test *"can fail, and it is independent"*, and that it *"should
+be run before this ADR is Accepted rather than after"*. It has been, and it did.
+
+### First, this record's own prediction was stale
+
+It states the model moves `V_ecf` by **0.155 L** across the salt step at `G_pn` = 51. That
+was measured on 2026-08-25 — before ADH landed, before the urine solute load tracked
+sodium, before blood volume and haematocrit were sourced as sexed pairs, and before
+cardiac output became a derivation from stroke volume. **The current figure is 0.176 L.**
+Testing sourced data against the stale number would have tested nothing.
+
+Re-measuring also produced the thing that makes the test sharp: **the map from `G_pn` to
+the volume response is exactly inverse**, `G_pn × ΔV₁₀₀ = 8.786` at every value swept. So
+the test inverts to arithmetic rather than to a judgement.
+
+### The evidence
+
+**van den Bosch 2021** (`Physiol Rep` 2021;9(24):e15103, PMID 34921521), n = 70 healthy
+men, crossover, 7 days per level, ECFV as iothalamate distribution volume, intake
+**verified by 24 h urinary sodium** — 230 against 38 mmol/24 h. The only study found that
+reports volume, pressure **and** cohort mass in the same subjects.
+
+| | measured | per 100 mmol/day |
+|---|---|---|
+| ΔMAP | 88 → 86 mmHg | 1.042 mmHg |
+| ΔECFV | 1.061 L (17.4 → 16.5 L/1.73 m², BSA 2.04) | 0.553 L |
+| Δbody weight | 80.6 → 79.2 kg | 0.729 kg |
+
+### Test B fails by 5.2×, and Test B was pre-registered to override
+
+    human   ΔMAP / ΔV_ecf  =  1.885 mmHg/L
+    model   ΔMAP / ΔV_ecf  =  9.80  mmHg/L   (11.285 at 70 kg, scaling as 1/mass)
+
+The pre-registered failure threshold was a factor of 2. It fails at 5.2 on de-indexed
+ECFV, 4.4 on ECFV as printed, and 6.9 on body weight — so **it does not depend on the
+iothalamate-space caveat or on the 1 kg = 1 L conversion.**
+
+**Test A is separately inconclusive**, exactly as branch A4 describes: the volume-implied
+`G_pn` is 15.9 (van den Bosch), 11.0 (Visser 2009), 6.5 (Heer 2009's low-to-normal limb)
+and effectively infinite (Heer 2000). That spread crosses every branch boundary.
+
+### The error is in the circulation, and this record predicted the place
+
+> *"the error has moved rather than been fixed — most likely into `G_vr`, `f_pv`, or the
+> fractional reabsorption term."*
+
+**`G_pn` and `G_vr` are orthogonal.** Measured, not argued:
+
+| `G_vr` | ΔMAP/100 mmol | ΔV_ecf/100 mmol | ratio (mmHg/L) |
+|---|---|---|---|
+| 2880 (calibrated) | 4.9577 | 0.4393 | 11.285 |
+| 1440 | 4.9578 | 0.8786 | 5.643 |
+| 720 | 4.9584 | 1.7573 | 2.822 |
+| 554 | 4.9592 | 2.2840 | 2.171 |
+| 360 | 4.9637 | 3.5168 | 1.411 |
+
+An **8× change in `G_vr` moves the pressure response by 0.12%** and moves the volume
+response exactly inversely. `G_pn` sets ΔMAP; `G_vr` sets ΔMAP/ΔV_ecf. **The human
+pressure data and the human volume data therefore identify one parameter each, with no
+cross-talk** — which means this model is exactly identifiable from the two of them.
+
+**To match the human ratio, `G_vr` must fall from 2880 to about 554.**
+
+### Why this is not a refutation of 51
+
+The pressure limb is untouched. Three meta-analyses still put the normotensive response at
+1.70–2.30 mmHg/100 mmol, still implying `G_pn` = 43.5–58.8, and this test says nothing
+against that. What it says is that **accepting 51 on its own would make the volume
+response worse** — from 1.26× too small at `G_pn` = 20 to 3.2× too small at 51 — because
+`G_pn` moves ΔMAP and ΔV_ecf follows it down at a fixed, wrong ratio.
+
+**The sequencing is therefore: fix `G_vr` first, then re-run this test, then accept.**
+`G_vr` is `calibrated`, never measured, and replacing it with sourced venous compliance is
+already HANDOVER §4 item 1. This test has now given that work a **number to hit** and an
+independent human datum to hit it against, which it did not have before.
+
+### A declared conflict, recorded and not resolved
+
+A second group reports the opposite. **Heer 2000** (PMID 10751219, n = 32, metabolic ward,
+50–550 meq/day) found plasma volume rose dose-dependently while **total body water and body
+mass did not increase at all**, concluding that sodium drives a fluid *shift* rather than
+storage. **Heer 2009** (PMID 19173770, n = 9) found ECV rose 2.02 L from low to normal
+intake and then *fell* going to high, attributing the high limb to osmotically inactive
+sodium storage on glycosaminoglycans.
+
+Both camps agree that ECF responds across the low-to-normal range, which is where the
+model's 103–205 mEq/day step sits; they disagree above ~200 mmol/day, outside it. But
+Heer's 2.02 L for the same low-to-normal step is 3.7× van den Bosch's, and **that**
+disagreement is inside the range.
+
+**This bears directly on ADR 0004.** Osmotically inactive sodium storage — default OFF in
+this model — is precisely the mechanism Heer and Titze invoke for sodium retention without
+volume expansion. If that camp is right, the model is missing a mechanism it already has a
+record for. Recorded; not acted on here.
