@@ -154,8 +154,30 @@ using SciMLBase
         # Note that ADR 0013 finds the model already 2 to 19 times more
         # salt-sensitive than normotensive humans, so this shift is in the wrong
         # direction against the literature - a fact about G_pn, not about ADH.
-        v = check_pressure_natriuresis(salt_step())
+        r = salt_step()
+        v = check_pressure_natriuresis(r)
         @test isapprox(v.map_shift_mmHg, 5.0996; atol = 0.05)
+
+        # AND THE OTHER HALF OF THE PAIR, ADDED 2026-09-02 AT NO EXTRA COMPUTE:
+        # dMAP/dV_ecf, which is set by CV.VENOUS_RETURN.SENSITIVITY and NOT by G_pn.
+        #
+        # ADR 0013's falsifiable test convicted this number and nothing pinned it.
+        # G_pn and G_vr are ORTHOGONAL - an 8x change in G_vr moves the shift above by
+        # 0.12% while moving this ratio exactly inversely - so the two assertions are
+        # independent and each catches a different parameter drifting.
+        #
+        # 11.285 mmHg/L at the 70 kg reference, scaling as 1/mass. THE HUMAN VALUE IS
+        # 1.885 mmHg/L at 80.6 kg, i.e. 2.170 here (van den Bosch 2021, n = 70, ECFV by
+        # iothalamate and blood pressure in the same subjects). THE MODEL IS 5.2x TOO
+        # STIFF and this pin records that mismatch rather than hiding it - see
+        # validation/ecf_salt_response_extract.py and HANDOVER section 3.7.
+        #
+        # When venous compliance replaces G_vr (section 4 item 1), THIS TEST SHOULD FAIL
+        # and the expected value should move toward 2.17. Replace it then; do not delete
+        # it, and do not simply refit G_vr to make it pass.
+        ratio = v.map_shift_mmHg /
+                (r.levels[1].V_ecf_final - r.levels[end].V_ecf_final)
+        @test isapprox(ratio, 11.285; rtol = 1e-3)
     end
 
     @testset "ADR 0012 stage 1 is a change of variables, not of behaviour" begin

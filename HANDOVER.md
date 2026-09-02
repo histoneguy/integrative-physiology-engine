@@ -342,6 +342,11 @@ Making the urine solute load track sodium moved salt sensitivity 5.0996 → 5.05
 **first structural change to move it toward the human data.** 0.8% against a 2× gap, so it
 does not touch this finding.
 
+**UPDATE 2026-09-02: the test was run and `G_pn` is NOT the row to change first — §3.7.**
+The pressure evidence above is untouched and still implies 43.5–58.8. What the volume
+test shows is that the model's **pressure-per-unit-volume is 5.2× too stiff**, and that
+`G_pn` cannot fix that because the two parameters are orthogonal.
+
 ### 3.4 Body size: two quantities, and merging them would have corrupted the ledger
 
 `BF.BODY_MASS.REFERENCE` (70.0 kg, `both`) is a **normalisation constant** — the mass at
@@ -442,6 +447,58 @@ meta-analysis of 12,812 healthy adults that `pooling.md` rule 1 would have prefe
 reports reference *limits*, indexed, so `range-midpoint` disqualifies it. **A BSA row
 would unlock both.** See §4.
 
+### 3.7 ADR 0013's own test fails, and it clears `G_pn` while convicting `G_vr`
+
+Pre-registered in `validation/ecf_salt_response_prereg.md` before any paper was opened.
+Reproduce with `python validation/ecf_salt_response_extract.py`. **`G_pn` stays at 20.0
+and ADR 0013 stays Proposed.**
+
+ADR 0013 says its volume test *"can fail, and it is independent"* and must run before
+acceptance. It ran. **Its own predicted volume response was also stale** — 0.155 L, measured
+before ADH, the sodium-tracking solute load, sourced blood volume and the cardiac
+inversion. The current figure is 0.176 L.
+
+**The evidence.** van den Bosch 2021 (`Physiol Rep` 2021;9(24):e15103, PMID 34921521),
+n = 70 healthy men, 7 days per level, ECFV by iothalamate distribution volume, intake
+**verified by 24 h urinary sodium** — 230 against 38 mmol/24 h. The only study found
+reporting volume, pressure and cohort mass in the same subjects.
+
+| | measured | per 100 mmol/day |
+|---|---|---|
+| ΔMAP | 88 → 86 mmHg | 1.042 mmHg |
+| ΔECFV | 1.061 L | 0.553 L |
+| Δbody weight | 80.6 → 79.2 kg | 0.729 kg |
+
+**Test B — the ratio, which does not involve `G_pn` at all — fails by 5.2×:** human
+1.885 mmHg/L against the model's 9.80 at that cohort's mass. Threshold was 2. It fails on
+all three volume proxies (5.2, 4.4, 6.9), so it does not turn on the iothalamate space or
+the 1 kg = 1 L conversion.
+
+**`G_pn` AND `G_vr` ARE ORTHOGONAL, AND THAT IS THE STRUCTURAL RESULT.** An 8× change in
+`G_vr` moves the salt-step **pressure** response by **0.12%** and moves the **volume**
+response **exactly inversely** (`G_vr × ΔV₁₀₀` = 1265 throughout). `G_pn` sets ΔMAP; `G_vr`
+sets ΔMAP/ΔV_ecf. **So the human pressure data and the human volume data identify one
+parameter each, with no cross-talk, and this model is exactly identifiable from the two.**
+
+**To match the human ratio, `G_vr` must fall from 2880 to about 554.**
+
+**Why this does not refute 51.** The pressure limb is untouched. Accepting 51 alone would
+make the volume response *worse* — from 1.26× too small at `G_pn` = 20 to 3.2× too small —
+because `G_pn` moves ΔMAP and ΔV_ecf follows it down at a fixed, wrong ratio. **Fix `G_vr`
+first, re-run this test, then accept.**
+
+**A declared conflict, recorded and not resolved.** Heer 2000 (PMID 10751219, n = 32,
+metabolic ward) found plasma volume rose dose-dependently while **total body water and body
+mass did not increase at all**; Heer 2009 (PMID 19173770) found ECV rose 2.02 L from low to
+normal intake and then *fell*. If that camp is right the discrepancy has the opposite sign.
+Both camps agree ECF responds across low-to-normal, which is where the model's step sits —
+but Heer's 2.02 L for that same step is 3.7× van den Bosch's. **This bears on ADR 0004:**
+osmotically inactive sodium storage, default OFF here, is exactly the mechanism that camp
+invokes.
+
+**Test A is separately inconclusive** — branch A4 by the pre-registration's own words. The
+volume-implied `G_pn` is 15.9, 11.0, 6.5 and effectively infinite across the four studies.
+
 ---
 
 ## 4. NEXT, IN ORDER
@@ -451,7 +508,14 @@ population of an incomplete model is a wider set of wrong answers.**
 
 **Flipping the stroke-volume dependency was item 1 and is DONE, both halves — §3.6.**
 
-1. **Venous compliance and the venous return limb.** Pmsf, right atrial pressure, stressed
+1. **Venous compliance and the venous return limb — AND IT NOW HAS A NUMBER TO HIT.**
+   §3.7 measured what `G_vr` has to become: **2880 → about 554**, from an independent human
+   datum that is orthogonal to everything the pressure evidence constrains. That is a
+   target for the sourced relation to EXPLAIN, not a value to enter — refitting 2880 to
+   554 would swap one calibrated constant for another and throw away the falsifiable test
+   in the process. **ADR 0013 is blocked behind this**, so this is now the critical path
+   for the model's headline number as well as for its own sake.
+   Pmsf, right atrial pressure, stressed
    vs unstressed volume. Replaces `G_vr`; `relations.csv` already names venous compliance
    as the unsourced step in the `CO` row. Record Beard and Feigl 2011 as a declared
    conflict. **`validation/venous_compliance_extract.py` already refutes ADR 0012's
@@ -559,7 +623,13 @@ population of an incomplete model is a wider set of wrong answers.**
 - **Only body mass is sampled in the ensemble.** Every other parameter is one number
   for all members, though the ledger carries dispersion for several. Humans are a
   distribution and the population currently is not — see §1.12.
-- **`G_pn` is wrong by 2–19×** (§3.3). Parked, one CSV value.
+- **`G_pn` is wrong by 2–19× on the PRESSURE evidence** (§3.3), and **ADR 0013's own
+  falsifiable test now blocks changing it** (§3.7). The volume test fails by 5.2× and
+  convicts `CV.VENOUS_RETURN.SENSITIVITY`, not this row. Sequencing: `G_vr` first, re-run
+  the test, then accept. `G_pn` stays 20.0 in the meantime and that is the pre-registered
+  outcome, not an omission.
+- **`CV.VENOUS_RETURN.SENSITIVITY` is 5.2× too stiff against human data** (§3.7). It was
+  already `calibrated` and already §4 item 1; it now has a measured target of ~554.
 - ~~Six rows still claim a source that does not exist.~~ **DONE 2026-08-31**, §3.5.
 - **`RAAS.RENIN.PRESSURE_GAIN` was calibrated against a baseline that no longer exists** —
   fitted so the low-salt arm doubled PRA from 1.0, and baseline PRA is now 2.31. Not
