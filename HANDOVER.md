@@ -469,10 +469,27 @@ reporting volume, pressure and cohort mass in the same subjects.
 | ΔECFV | 1.061 L | 0.553 L |
 | Δbody weight | 80.6 → 79.2 kg | 0.729 kg |
 
-**Test B — the ratio, which does not involve `G_pn` at all — fails by 5.2×:** human
-1.885 mmHg/L against the model's 9.80 at that cohort's mass. Threshold was 2. It fails on
-all three volume proxies (5.2, 4.4, 6.9), so it does not turn on the iothalamate space or
-the 1 kg = 1 L conversion.
+**Test B — the ratio, which does not involve `G_pn` at all — fails by 2.7–5.2×.** Threshold
+was 2. Within-subject: human 1.885 mmHg/L against the model's 9.80 at that cohort's mass,
+and it fails on all three volume proxies (5.2, 4.4, 6.9), so it does not turn on the
+iothalamate space or the 1 kg = 1 L conversion.
+
+**The base is seven primaries across four groups and two methods, not one study.** Two
+further sweeps were run because the verdict rested on one cohort. The **body-weight limb**
+— van den Bosch (n=70, 0.729), Rorije 2018 (n=12, +2.5 kg, **BP unchanged**), Foo 1998
+(n=18, 0.250), Heer 2000 (n=32, zero) — pools n-weighted to **0.572 kg/100 mmol** over
+n=132, against the tracer limb's **0.553 L. Two independent methods agreeing to 4%**, and
+the pre-registration said in §8 that the 1 kg = 1 L conversion would be FALSIFIED if they
+diverged. Pairing the meta-analytic pressure with the pooled volume gives 2.97–4.16
+mmHg/L, so **`G_vr`'s target is 758–1062**, with 554 the harshest reading.
+
+**Use the pooled ratio, not the studies' own pressures.** Kirkendall 1976 (n=8, **four
+weeks per level**, the closest protocol to this model's 30 days), Rorije 2018 and Taurio
+2023 (**n=510**, the largest dataset found) all report **no blood pressure change at
+all** — they are underpowered for 2 mmHg, and taking those nulls at face value would drive
+`G_vr` to zero. Taurio's own conclusion is that sodium intake *“predominantly influences
+extracellular water volume without a clear effect on blood pressure”*, which is this
+finding stated independently.
 
 **`G_pn` AND `G_vr` ARE ORTHOGONAL, AND THAT IS THE STRUCTURAL RESULT.** An 8× change in
 `G_vr` moves the salt-step **pressure** response by **0.12%** and moves the **volume**
@@ -480,7 +497,19 @@ response **exactly inversely** (`G_vr × ΔV₁₀₀` = 1265 throughout). `G_pn
 sets ΔMAP/ΔV_ecf. **So the human pressure data and the human volume data identify one
 parameter each, with no cross-talk, and this model is exactly identifiable from the two.**
 
-**To match the human ratio, `G_vr` must fall from 2880 to about 554.**
+**To match the human ratio, `G_vr` must fall from 2880 to 758–1062.**
+
+**And part of that is not `G_vr` at all.** `Cardiovascular.jl` computes
+`V_blood ~ V_plasma/(1 - Hct)` with `Hct` a **constant**, so red cell volume expands with
+plasma across a 30-day salt step. Red cell mass is fixed on that timescale — plasma
+expansion *dilutes* the haematocrit. `dV_blood/dV_ecf` should be `f_pv` (0.211), not
+`f_pv/(1-Hct)` (0.386): **a factor of 1.83**, taking the model ratio to 6.17 and leaving
+`G_vr` needing only 1.5–2.8×, about 1000–1950. **Diagnosed from the equation and from the
+arithmetic that reproduces 11.285 exactly; NOT YET RUN.** Its justification is independent
+of this test — red cell mass does not track plasma in 30 days — but it was found while
+looking for the discrepancy, and that is declared. **It would also make the sourced
+haematocrit pair identifiable for the first time**: `f_pv` and `Hct` cancel in the level
+(§3.5) but not in the derivative.
 
 **Why this does not refute 51.** The pressure limb is untouched. Accepting 51 alone would
 make the volume response *worse* — from 1.26× too small at `G_pn` = 20 to 3.2× too small —
@@ -628,8 +657,14 @@ population of an incomplete model is a wider set of wrong answers.**
   convicts `CV.VENOUS_RETURN.SENSITIVITY`, not this row. Sequencing: `G_vr` first, re-run
   the test, then accept. `G_pn` stays 20.0 in the meantime and that is the pre-registered
   outcome, not an omission.
-- **`CV.VENOUS_RETURN.SENSITIVITY` is 5.2× too stiff against human data** (§3.7). It was
-  already `calibrated` and already §4 item 1; it now has a measured target of ~554.
+- **`CV.VENOUS_RETURN.SENSITIVITY` is 2.7–5.2× too stiff against human data** (§3.7). It
+  was already `calibrated` and already §4 item 1; it now has a measured target of
+  **758–1062**, from seven primaries across four groups and two methods.
+- **`Cardiovascular.jl` lets red cell volume expand with plasma** (§3.7). `V_blood` is
+  `V_plasma/(1-Hct)` with `Hct` constant, so a 30-day salt load grows the red cell mass.
+  Worth **1.83×** of the discrepancy above, and fixing it would make haematocrit
+  identifiable. Diagnosed, not yet run, and it should be done BEFORE venous compliance
+  is sourced — otherwise that work gets fitted to absorb an error that is not in it.
 - ~~Six rows still claim a source that does not exist.~~ **DONE 2026-08-31**, §3.5.
 - **`RAAS.RENIN.PRESSURE_GAIN` was calibrated against a baseline that no longer exists** —
   fitted so the low-salt arm doubled PRA from 1.0, and baseline PRA is now 2.31. Not

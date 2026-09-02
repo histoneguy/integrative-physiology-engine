@@ -270,3 +270,54 @@ disagreement is inside the range.
 this model — is precisely the mechanism Heer and Titze invoke for sodium retention without
 volume expansion. If that camp is right, the model is missing a mechanism it already has a
 record for. Recorded; not acted on here.
+
+### The evidence base, widened the same day — it was one cohort, it is now seven primaries
+
+The verdict above initially rested on a single n = 70 study. Two further sweeps (24
+queries, 162 records in total) were run for that reason. **The conclusion did not change;
+its magnitude did, and it got a second independent method.**
+
+**The body-weight limb, four independent groups, n-weighted per `pooling.md` rule 3:**
+
+| study | n | Δintake | Δweight | per 100 mmol/day |
+|---|---|---|---|---|
+| van den Bosch 2021 | 70 | 192 | 1.4 kg | 0.729 |
+| Rorije 2018 (PMID 29206647) | 12 | ~150 | 2.5 kg (95% CI 1.7–3.2) | 1.667 |
+| Foo 1998 (PMID 9680497) | 18 | 180 | 0.45 ± 0.69 kg | 0.250 |
+| Heer 2000 (PMID 10751219) | 32 | 150 | no increase | 0 |
+
+**Pooled: 0.572 kg/100 mmol** (n = 132), or 0.755 excluding Heer's null. Heer's zero is an
+*interpretation* of a null result, not a measurement, which is why both are reported.
+
+**The tracer limb gives 0.553 L. Two independent methods agree to 4%.** The
+pre-registration declared 1 kg = 1 L in advance and said in §8 that the conversion would
+be **falsified** if the two diverged. It is corroborated instead.
+
+**The defensible ratio is the pooled one, and it is 2.7–3.8× rather than 5.2×.** Pairing
+the meta-analytic pressure (1.70–2.30 mmHg/100 mmol) with the pooled volume gives
+**2.97–4.16 mmHg/L** against the model's 11.285. So `G_vr`'s target is **758–1062**, with
+554 as the harshest within-subject reading.
+
+**Why the pooled ratio and not the studies' own pressures.** Kirkendall 1976 (PMID
+1249473, n = 8, **four weeks per level** — the closest protocol found to this model's 30
+days), Rorije 2018 and Taurio 2023 (PMID 36708156, **n = 510**, the largest dataset found)
+all report **no blood pressure change at all**. They are underpowered for the 2 mmHg the
+meta-analyses detect — Foo's SD on 24 h SBP is 14.2 with n = 18 — so taking those nulls at
+face value would give a ratio of zero and drive `G_vr` to zero, which is absurd. Taurio's
+own conclusion is that sodium intake *"predominantly influences extracellular water volume
+without a clear effect on blood pressure"*, which is this finding stated independently and
+from the other direction.
+
+**And part of the discrepancy is not `G_vr` at all.** `Cardiovascular.jl` computes
+`V_blood ~ V_plasma / (1 - Hct)` with `Hct` a **constant parameter**, so red cell volume
+expands with plasma across a 30-day salt step. Red cell mass is fixed on that timescale —
+plasma expansion *dilutes* the haematocrit. `dV_blood/dV_ecf` should be `f_pv` = 0.211,
+not `f_pv/(1-Hct)` = 0.386: **a factor of 1.83**, which would take the model ratio to 6.17
+and leave `G_vr` needing only 1.5–2.8×, i.e. roughly 1000–1950.
+
+**Diagnosed from the equation and from the arithmetic that reproduces 11.285 exactly. Not
+yet run.** Its justification is independent of this test — red cell mass does not track
+plasma over 30 days — but it was found while looking for the source of the discrepancy,
+and that is declared rather than presented as an independent coincidence. It also makes
+the sourced haematocrit pair **identifiable for the first time**: `f_pv` and `Hct` cancel
+in the level, which is HANDOVER §3.5, but they do not cancel in the derivative.
