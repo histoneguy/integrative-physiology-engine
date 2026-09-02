@@ -3,7 +3,7 @@
 **Date:** 2026-09-02
 **Repo:** https://github.com/histoneguy/integrative-physiology-engine (public)
 **Owner:** Eric George (`histoneguy`)
-**State:** **427/427**, all five gates exit 0, nothing outstanding.
+**State:** **428/428**, all five gates exit 0, nothing outstanding.
 
 **This header deliberately names NO commit SHA and NO open PR.** Three consecutive
 handovers were wrong in their first line, each in a different way: two pinned a SHA that
@@ -22,7 +22,7 @@ correction and silent about everything after it. Folded in; nothing live dropped
 
 **An ADR is an Architecture Decision Record** — a short document in `docs/adr/`
 recording a structural choice: what was decided, the evidence, what it forecloses, and
-what would show it wrong. There are fourteen and they are referenced constantly. Each
+what would show it wrong. There are fifteen and they are referenced constantly. Each
 carries a **Status**, an **Evidence tier** (ADR 0006), and a **Falsifiable test**.
 `tools/check_adrs.py` enforces that much. They are decisions, not documentation: a wrong
 parameter gets re-estimated, a wrong structure invalidates every estimate resting on it.
@@ -192,7 +192,7 @@ prohibits `range-midpoint`, so an interval cannot become a point estimate.
 
 ## 2. STATE
 
-**427/427, five gates exit 0.** All of the below is on `main` as of 2026-09-01.
+**428/428, five gates exit 0.** All of the below is on `main` as of 2026-09-02.
 
 **THE `VERIFY` CLASS IS EMPTY.** Eight rows carried
 `Standard physiological reference. VERIFY.` Five are now sourced — `CV.MAP.SETPOINT`,
@@ -260,7 +260,8 @@ UP was on 2026-08-31.** `CV.CO.NOMINAL` and `RN.H2O.OBLIGATORY_LOSS` did not acq
 citations; they stopped being primitives. Each is now DERIVED from the quantity that is
 actually measured — stroke volume and maximal urine concentration — and it is those two
 rows that carry the new sources.
-**42 relations** — 15 definitional, 14 empirical, 9 conservation, 4 placeholder.
+**42 relations** — 14 definitional, 14 empirical, 10 conservation, 4 placeholder.
+`Cardiovascular.V_blood` moved definitional → conservation on 2026-09-02 (§3.8).
 **Twelve parameters carry male/female pairs:** `BF.BODY_MASS.{TYPICAL,P05,P95}`,
 `CV.ARTERIAL.COMPLIANCE`, `CV.HR.NOMINAL`, `CV.SV.NOMINAL`,
 `CV.BLOOD_VOLUME.NOMINAL`, `CV.HEMATOCRIT.NOMINAL`, `CV.PLASMA.ECF_FRACTION`,
