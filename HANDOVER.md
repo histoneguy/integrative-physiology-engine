@@ -726,13 +726,33 @@ population of an incomplete model is a wider set of wrong answers.**
 **Flipping the stroke-volume dependency was item 1 and is DONE, both halves — §3.6.**
 
 1. **Renal haemodynamics across salt intake in healthy humans — THE SOURCE TABLE IS
-   ALREADY BUILT.** `validation/renal_hemodynamics_salt_sources.md`, 24 queries, nine
-   healthy-human primaries with numbers. Nothing is extracted from it and it needs a
-   pre-registration before anything is. The two things to settle first are named in its
-   §4: the **direction of the filtration-fraction change** on high salt, which disagrees
-   between healthy humans and the conscious dog, and **one ambiguous sentence in Krikken
-   2007** that needs the full text. This is item 1 because §3.10 is a lead about the
-   MODEL'S OWN renal structure and this is what would let it be sized rather than argued.
+   ALREADY BUILT AND THE PRE-REGISTRATION IS NOW WRITTEN.**
+   `validation/renal_hemodynamics_salt_sources.md`, 24 queries, nine healthy-human
+   primaries with numbers, and `validation/renal_hemodynamics_prereg.md` governing what
+   may be taken from it. **Nothing is extracted yet.** The two things to settle first are
+   named in the table's §4: the **direction of the filtration-fraction change** on high
+   salt, which disagrees between healthy humans and the conscious dog, and **one ambiguous
+   sentence in Krikken 2007** that needs the full text. This is item 1 because §3.10 is a
+   lead about the MODEL'S OWN renal structure and this is what would let it be sized
+   rather than argued.
+   **Four things the pre-registration fixed that were not previously written down.**
+   (a) The model holds GFR **identical to seven figures** at all three salt arms, and
+   `bench/gfr_salt_sweep.jl` measures what a salt-linked GFR would be worth: the fall in
+   the salt-step shift is **4.05 × g**, linear to 1% for `g` ≤ 0.08, so closing the whole
+   human gap by this route alone would need a 26–32% GFR swing across the step.
+   (b) **`dMAP/dV_ecf` stays at 6.173 throughout** — a third independent confirmation of
+   §3.7's orthogonality, after the `G_vr` and escape sweeps. This is a pressure-limb lever
+   and touches item 2 not at all.
+   (c) **GFR cancels between builds and NOT within a run.** `FR_Na` is derived from `GFR0`
+   and absorbs a build-time change, which is §3.5's result; it cannot absorb a GFR that
+   moves while the run proceeds. **§3.5 is true of the level and false of the derivative,
+   exactly as §3.8 found for haematocrit. Two for two** — a quantity that cancels at the
+   operating point need not cancel in the response, and that is now a pattern rather than
+   an incident.
+   (d) **ITEM 1 IMPLEMENTATION IS SEQUENCED BEHIND ITEM 2, though the extraction is not.**
+   The entered quantity is per litre of ECF expansion, so it survives the `G_vr` fix; the
+   model's response to it does not, because the model over-expands by 1.5–2.1×. Extract
+   and enter now, enable after item 2.
 
 2. **Venous compliance and the venous return limb.** §3.7 and §3.8 give `G_vr` a target of
    **1012–1941** (not the 554 an earlier draft of this item carried — the red cell

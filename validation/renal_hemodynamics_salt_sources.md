@@ -5,6 +5,13 @@ pooling rule has been applied, and no conclusion is drawn. If any of it is ever 
 set a parameter, that needs its own pre-registration first, written before the numbers
 below are re-read.
 
+**THAT PRE-REGISTRATION NOW EXISTS: `validation/renal_hemodynamics_prereg.md`.** It could
+not satisfy the sentence above — this table was already on `main` and had been read — so
+its §1 declares the prior exposure instead and fixes every threshold by reusing a rule
+that was set before its own run. **No value here has been extracted yet.** Read that
+document before touching anything below, and note that it forbids §2 and §3 of this table
+from supplying magnitudes at all.
+
 Compiled 2026-09-02. Three sweeps, 24 queries. **Healthy humans first; animal data listed
 separately as backup, per directive 1.6.** Every entry read from the retrieved PubMed
 record; where the record gives only a direction, that is what is recorded.
