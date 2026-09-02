@@ -751,21 +751,29 @@ population of an incomplete model is a wider set of wrong answers.**
    conflict. **`validation/venous_compliance_extract.py` already refutes ADR 0012's
    concavity requirement** — the filling relation is linear over the physiological range,
    and the operative variable is stressed/unstressed, not central/peripheral.
-3. **Chronotropic baroreflex.** ADR 0009 gives the reflex one effector; HR now exists.
+3. **Re-derive `RAAS.RENIN.PRESSURE_GAIN`. IT BLOCKS BOTH ADR 0013 AND ADR 0015.**
+   It was fitted so the low-salt arm doubled PRA from 1.0, against a baseline PRA that
+   is now 2.31 — so it is calibrated to a model that no longer exists. §7 called this
+   “not urgent” and transient-only on the grounds that escape zeroes `fr_mod` at steady
+   state. **§3.11 killed that reasoning**: ADR 0015's whole proposal is a tubular term
+   that does not escape, and this gain sets how hard it pushes. Until it is re-derived,
+   any magnitude taken from §3.11 is unreliable and item 4 cannot be settled.
+   **The target should be an absolute resting PRA, not a doubling ratio.**
+4. **Chronotropic baroreflex.** ADR 0009 gives the reflex one effector; HR now exists.
    **Deliberately deferred** — ADR 0009 says do not re-separate the arms without a
    protocol that needs it, the reflex resets so it nulls at every steady state, and the
    cardiac gain needs a sourcing pass. Best normative source found: **Schumann 2024**,
    *Am J Physiol Heart Circ Physiol* 326:H158–H165, n=980 healthy — and it is about **sex
    differences in BRS**, so it would also give ADR 0014 a second real dimorphic pair.
-4. **ADR 0013 versus ADR 0015 — THEY ARE NOW COMPETING EXPLANATIONS, NOT A QUEUE.**
+5. **ADR 0013 versus ADR 0015 — THEY ARE NOW COMPETING EXPLANATIONS, NOT A QUEUE.**
    ADR 0013 reaches the human salt sensitivity by moving a FITTED CONSTANT (`G_pn`
    20 → 51); ADR 0015 reaches it from a MECHANISM (§3.11, 50.7% of the gap closed
    with no parameter touched). **Adopting both at full strength double-counts the
    same discrepancy.** Its ECF falsifiable test has been run and blocks 0013 anyway
-   (§3.7). **Re-derive `RAAS.RENIN.PRESSURE_GAIN` before either** — it is calibrated
-   against a baseline that no longer exists (§7) and ADR 0015 amplifies whatever it
-   carries.
-5. **Body surface area, and it is now worth more than it was.** It was on this list only
+   (§3.7). **THIS ITEM IS BLOCKED BEHIND ITEM 3** — `RAAS.RENIN.PRESSURE_GAIN` is
+   calibrated against a baseline that no longer exists, ADR 0015 amplifies whatever it
+   carries, and neither record can be decided until it is re-derived.
+6. **Body surface area, and it is now worth more than it was.** It was on this list only
    because GFR and cardiac output scale sub-linearly in mass, so `scaling.jl` overstates
    their population spread. It has since acquired two further jobs, both from §3.6.
    **It unlocks the sources.** The two best studies in the cardiac reference literature —
@@ -775,12 +783,12 @@ population of an incomplete model is a wider set of wrong answers.**
    Petersen gives only by age group, while `size_factor` scales it again and the ensemble
    samples mass by sex — so part of the size dimorphism is counted twice. Needs a height
    row and one BSA formula, sourced.
-6. **`RN.URINE.SOLUTE_LOAD = 600 mOsm/day` is now the load-bearing unsourced number on
+7. **`RN.URINE.SOLUTE_LOAD = 600 mOsm/day` is now the load-bearing unsourced number on
    the water side.** `ADH.URINE.OSM_MAX` is sourced, so the obligatory volume, `U_base`,
    `k_adh` and every steady state now hang off a conventional figure that
    `RN.URINE.SOLUTE_NONNA` already records as too low — measured totals are 700–900.
    Correcting it moves every ADH constant and needs its own pre-registration.
-7. **`check_closure.py` is filling up** — 19 hand-coded relationships, does not scale past
+8. **`check_closure.py` is filling up** — 19 hand-coded relationships, does not scale past
    about twenty.
 
 ---
@@ -863,7 +871,7 @@ population of an incomplete model is a wider set of wrong answers.**
 - **`CV.SV.NOMINAL` is NOT normalised to the 70 kg reference mass.** Petersen reports
   cohort weight by age group and not by sex, so the sexed pair still carries a body-size
   component — and in the ensemble, where mass is sampled by sex, that component is
-  counted twice. §4 item 5.
+  counted twice. §4 item 6.
 - **`ADH.URINE.OSM_MAX` carries no dispersion and no age.** Tryding reports age-related
   reference intervals; the record read gives means by age, not an SD at one age. Maximal
   concentrating ability falls 16% from 20 to 80 years and this model has no age
@@ -889,10 +897,15 @@ population of an incomplete model is a wider set of wrong answers.**
   and matching the human pressure AND volume responses simultaneously** — §3.8.
 - ~~`Cardiovascular.jl` lets red cell volume expand with plasma.~~ **DONE 2026-09-02**, §3.8.
 - ~~Six rows still claim a source that does not exist.~~ **DONE 2026-08-31**, §3.5.
-- **`RAAS.RENIN.PRESSURE_GAIN` was calibrated against a baseline that no longer exists** —
-  fitted so the low-salt arm doubled PRA from 1.0, and baseline PRA is now 2.31. Not
-  urgent: escape drives `fr_mod` to ~1e-7 so no steady state moves. **Blocking for anything
-  transient.** The target should be an absolute resting PRA.
+- **`RAAS.RENIN.PRESSURE_GAIN` was calibrated against a baseline that no longer exists,
+  and it is NO LONGER “not urgent”.** Fitted so the low-salt arm doubled PRA from 1.0;
+  baseline PRA is now 2.31. The old note said escape drives `fr_mod` to ~1e-7 so no
+  steady state moves, and filed it as transient-only. **§3.11 and ADR 0015 make it a
+  STEADY-STATE blocker**: the whole point of that record is a tubular term that does
+  NOT escape, and this gain sets how hard it pushes. **It now blocks BOTH ADR 0013 and
+  ADR 0015, which are competing explanations for the same discrepancy, and it must be
+  re-derived before either is decided** — §4 item 3. The target should be an absolute
+  resting PRA.
 - **`RN.URINE.SOLUTE_NONNA` is a residual and the level is too low.** 292 mOsm/day is
   under-sized for urea + K salts because the parent 600 is an unsourced conventional
   figure. The sodium half responds; protein still moves nothing.
