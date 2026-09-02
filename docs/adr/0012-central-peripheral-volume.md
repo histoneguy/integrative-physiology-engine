@@ -527,3 +527,69 @@ and it should not be made inside a sourcing addendum.
 close to Maas's 28.5% stressed fraction. **They are different quantities** — central
 volume is anatomical, stressed volume is mechanical. Do not quietly reinterpret one as the
 other.
+
+## The partition is not the missing variable, and now there is a number saying so — 2026-09-02
+
+The 2026-08-24 extract that refuted this record's concavity requirement also said, in
+prose, that **"the distinction the model needs is stressed/unstressed, not
+central/peripheral"**. That was a qualitative reading of the capacitance literature. It is
+now quantitative, and the margin is two orders of magnitude.
+
+Pre-registered in `validation/venous_return_resistance_prereg.md`; reproduce with
+`python validation/venous_return_resistance_extract.py`.
+
+### The composition, closed with sourced numbers
+
+| input | value | source |
+|---|---|---|
+| systemic compliance `C_sys` | 64.3 mL/mmHg → **15.55 mmHg per litre** | Maas 2012, n = 15, human |
+| Pmsf − RAP gradient, normal | **3–6 mmHg** | Magder 2025, compiled, tier B |
+| ⇒ resistance to venous return | 0.50–1.01 mmHg/(L/min) at CO 5.95 L/min | composed |
+| ⇒ **`G_vr` = 1/(C_sys·R_vr)** | **22,200–44,400 (L/day)/L** | composed |
+
+Against a calibrated **2880** and a salt-data target of **1012–1941**. The mechanics are
+**8–15× above the incumbent** and **11–44× above the target**.
+
+### Turned round, it is unarguable
+
+The model's linear `CO = CO0 + G_vr(V_blood − BV0)`, closed with a sourced compliance,
+implies a mean systemic filling pressure gradient of
+
+| | implied `R_vr` | implied Pmsf − RAP |
+|---|---|---|
+| incumbent `G_vr` = 2880 | 7.78 | **46.3 mmHg** |
+| target `G_vr` = 1941 | 11.54 | **68.7 mmHg** |
+| target `G_vr` = 1012 | 22.13 | **131.7 mmHg** |
+| **sourced normal** | — | **3–6 mmHg** |
+
+**A 132 mmHg venous gradient exceeds arterial pressure.** The relation is not physically
+interpretable as venous mechanics at *any* value of `G_vr`, including the one it has.
+
+And forward: the acute mechanics predict **35 mmHg per 100 mmol/day** of dietary sodium
+against a measured human **1.04**. A factor of 34.
+
+### What that means for this record
+
+`G_vr` is **not a venous-mechanics parameter.** It is a lumped *chronic* sensitivity whose
+calibrated value already sits ~10× below the acute mechanics — that is, it is *already*
+implicitly modelling absorption of volume, without saying so and without a variable for it.
+
+**The absorbing mechanism is sourced, not inferred.** Chronic (>2 week) dietary salt
+loading displaces the vascular capacitance curve **upward and parallel** — an active
+increase in unstressed blood volume with **no change in compliance** (Olson & Hoagland
+2008, unanaesthetised, volume and salt balance manipulated independently; species and
+preparation recorded per directive 1.6, and no ethical-ceiling promotion claimed). Only the
+stressed fraction drives flow; it is ~30% of blood volume and "relatively constant under
+steady state conditions" (Magder 2016). Cha 1992, Ogilvie 1992 and Greenway & Lautt 1986,
+already in this repo, say the same three ways.
+
+**So the operative state variable is stressed volume, and this record's central/peripheral
+cut does not capture it.** `f_central` is anatomical; stressed volume is mechanical. The
+2026-08-24 extract already flagged that `f_central = 0.25` sitting near Maas's 28.5%
+stressed fraction is a **coincidence not to be exploited**. That warning now has a number
+behind it.
+
+**Nothing is changed in the model here, deliberately.** Replacing the partition supersedes
+this record's own falsifiable test, and the pre-registration §5 fixed in advance that an R2
+result does not license the model change in the same pass. It needs its own ADR and the
+owner's decision.

@@ -577,6 +577,63 @@ independently — red cell mass does not track plasma over 30 days whatever the 
 say — but it was found while hunting §3.7's discrepancy, and that is recorded rather than
 presented as an independent discovery.
 
+### 3.9 `G_vr` cannot be sourced from venous mechanics, because it is not a venous-mechanics parameter
+
+Pre-registered in `validation/venous_return_resistance_prereg.md`, which **predicted this
+outcome in writing** and fixed the arithmetic before any source was opened. Reproduce with
+`python validation/venous_return_resistance_extract.py`. **Branch R2. `G_vr` stays
+`calibrated` at 2880 and no ledger value changes.**
+
+§4 item 1 was "replace `G_vr` with sourced venous compliance". The August pass sourced the
+compliance and the shape and entered nothing. What was missing was the **resistance to
+venous return**, which closes the composition on its own:
+
+    G_vr  =  1 / (C_sys * R_vr)
+
+| input | value | source |
+|---|---|---|
+| `C_sys` | 64.3 mL/mmHg → **15.55 mmHg/L** | Maas 2012, n = 15, human |
+| Pmsf − RAP, normal | **3–6 mmHg** | Magder 2025, compiled, tier B, used as a range |
+| ⇒ `R_vr` | 0.50–1.01 mmHg/(L/min) | composed at CO 5.95 L/min |
+| ⇒ **`G_vr`** | **22,200–44,400 (L/day)/L** | composed |
+
+Against a calibrated **2880** and §3.8's target of **1012–1941**: the mechanics are **8–15×
+above the incumbent** and **11–44× above the target.**
+
+**Turned round, it is unarguable.** The model's linear `CO = CO0 + G_vr(V_blood − BV0)`,
+closed with a sourced compliance, implies a mean systemic filling pressure gradient of
+**46 mmHg** at the incumbent `G_vr` and **69–132 mmHg** at the target, against a sourced
+normal of 3–6. **A 132 mmHg venous gradient exceeds arterial pressure.** The relation is not
+physically interpretable as venous mechanics at any value of `G_vr`, including its own.
+
+Forward: the acute mechanics predict **35 mmHg per 100 mmol/day** against a measured human
+**1.04**. A factor of 34.
+
+**So `G_vr` is a lumped CHRONIC sensitivity, and its calibrated value already sits ~10×
+below the acute mechanics** — it is already implicitly absorbing volume, without saying so
+and without a variable for it.
+
+**The absorbing mechanism is sourced, not inferred.** Chronic (>2 week) dietary salt
+loading displaces the vascular capacitance curve **upward and parallel**: an active
+increase in **unstressed** blood volume with **no change in compliance** (Olson & Hoagland
+2008, unanaesthetised trout, volume and salt balance manipulated independently — species
+and preparation recorded per directive 1.6, no ethical-ceiling promotion claimed, and the
+result used for shape and direction rather than as a number). Only the stressed fraction
+drives flow, it is ~30% of blood volume, and it is "relatively constant under steady state
+conditions" (Magder 2016). Cha 1992, Ogilvie 1992 and Greenway & Lautt 1986 — already in
+this repo since August — say the same thing three more ways.
+
+**This is the second independent line to land on stressed/unstressed as the missing
+variable.** The August extract said it in prose from the capacitance literature; this says
+it in numbers from the salt data. ADR 0012's central/peripheral cut does not capture it —
+`f_central` is anatomical, stressed volume is mechanical, and that record already flagged
+their numerical closeness as a coincidence not to be exploited.
+
+**Nothing in the model changed here, deliberately.** The pre-registration fixed in advance
+that an R2 result does not license the structural change in the same pass: replacing the
+partition supersedes ADR 0012's own falsifiable test, and needs its own ADR and the owner's
+decision.
+
 ---
 
 ## 4. NEXT, IN ORDER
@@ -586,7 +643,15 @@ population of an incomplete model is a wider set of wrong answers.**
 
 **Flipping the stroke-volume dependency was item 1 and is DONE, both halves — §3.6.**
 
-1. **Venous compliance and the venous return limb — AND IT NOW HAS A NUMBER TO HIT.**
+1. **The venous limb — AND THE JOB HAS CHANGED SHAPE. Read §3.9 before starting.**
+   **Sourcing venous compliance CANNOT discharge `G_vr`**, and that is now measured
+   rather than suspected: the sourced mechanics give 22,200–44,400 against a target of
+   1012–1941, and the incumbent 2880 implies a 46 mmHg venous pressure gradient against
+   a sourced 3–6. `G_vr` is a lumped CHRONIC sensitivity, not a mechanics parameter.
+   **The real job is the stressed/unstressed distinction**, which two independent lines
+   now point at — the capacitance literature in August, the salt data in September — and
+   which needs its own ADR because it supersedes ADR 0012. **What survives of the
+   original framing:**
    §3.7 measured what `G_vr` has to become: **2880 → about 554**, from an independent human
    datum that is orthogonal to everything the pressure evidence constrains. That is a
    target for the sourced relation to EXPLAIN, not a value to enter — refitting 2880 to
@@ -710,11 +775,18 @@ population of an incomplete model is a wider set of wrong answers.**
   convicts `CV.VENOUS_RETURN.SENSITIVITY`, not this row. Sequencing: `G_vr` first, re-run
   the test, then accept. `G_pn` stays 20.0 in the meantime and that is the pre-registered
   outcome, not an omission.
-- **`CV.VENOUS_RETURN.SENSITIVITY` is 1.5–2.1× too stiff against human data** (§3.7, §3.8).
-  It was 2.7–5.2× before the red cell correction closed 1.83× of it. Already `calibrated`
-  and already §4 item 1; the measured target is now **1012–1941**, from seven primaries
-  across four groups and two methods. **It is the only thing standing between this model
-  and matching the human pressure AND volume responses simultaneously** — §3.8.
+- **`CV.VENOUS_RETURN.SENSITIVITY` is 1.5–2.1× too stiff against human data** (§3.7, §3.8)
+  **and cannot be sourced** (§3.9). It was 2.7–5.2× before the red cell correction closed
+  1.83× of it. The measured target is **1012–1941**; the sourced venous mechanics give
+  **22,200–44,400**, and the incumbent 2880 already implies a 46 mmHg venous gradient
+  against a sourced 3–6. **It is a lumped chronic sensitivity standing in for unstressed
+  volume recruitment, which the model has no variable for.** It is still the only thing
+  between this model and matching both human limbs at once — §3.8 — but it will not be
+  fixed by a number.
+- **The model has no stressed/unstressed volume distinction**, and two independent lines
+  now say that is the missing variable (§3.9). It supersedes ADR 0012's central/peripheral
+  cut and needs its own ADR. **Deliberately not started**: the pre-registration fixed in
+  advance that this result does not license the model change in the same pass.
 - ~~`Cardiovascular.jl` lets red cell volume expand with plasma.~~ **DONE 2026-09-02**, §3.8.
 - ~~Six rows still claim a source that does not exist.~~ **DONE 2026-08-31**, §3.5.
 - **`RAAS.RENIN.PRESSURE_GAIN` was calibrated against a baseline that no longer exists** —
