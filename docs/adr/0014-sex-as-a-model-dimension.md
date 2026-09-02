@@ -150,3 +150,34 @@ regulated; what must be asserted is that it moves the quantity the mechanism say
 should. The haematocrit pair is still the outstanding case of the opposite problem: it is
 sourced and the model cannot feel it at all, because `f_pv` is derived from it and the two
 cancel.
+
+## The falsifiable test is satisfied a second time, by haematocrit — 2026-09-02
+
+The amendment above recorded that the cardiac pair reaches the model through the volume
+side. **Haematocrit now does the same, and this record and HANDOVER §3.5 both said it could
+not.**
+
+§3.5 concluded haematocrit was **non-identifiable**: `f_pv` is DERIVED as
+`BV0(1-Hct)/V_ecf`, so `f_pv/(1-Hct) = BV0/V_ecf` and the sourced 0.453/0.395 pair cancelled
+out of every result. It said the row becomes live only when `CV.PLASMA.ECF_FRACTION` is
+sourced independently.
+
+**That was true of the LEVEL and false of the DERIVATIVE, and nobody had checked the
+derivative.**
+
+`Cardiovascular.jl` computed `V_blood ~ V_plasma/(1 - Hct)` with `Hct` constant, which makes
+red cell volume expand with plasma — wrong over a 30-day salt step, where red cell mass is
+fixed. Corrected to `V_blood ~ V_plasma + Hct*BV0`:
+
+    dV_blood/dV_ecf    was  f_pv/(1-Hct) = BV0/V_ecf0     Hct CANCELS
+                       now  f_pv         = BV0(1-Hct)/V_ecf0   Hct DOES NOT
+
+So the sexed haematocrit pair now moves a result. The male/female ECF excursion ratio goes
+**1.069 → 1.182**: the dimorphism nearly doubles, and the part that is new is entirely
+haematocrit, because that is the only term that stopped cancelling.
+
+**The lesson generalises and is worth more than the row.** A parameter can be
+non-identifiable in a model's steady-state LEVELS and identifiable in its RESPONSES. Testing
+for "does this pair move the answer" at one operating point is not a test of identifiability
+at all. Two of this record's own conclusions — that the cardiac pair could not move the
+model, and that haematocrit could not — were both artefacts of looking only at levels.

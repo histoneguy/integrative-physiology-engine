@@ -321,3 +321,42 @@ plasma over 30 days — but it was found while looking for the source of the dis
 and that is declared rather than presented as an independent coincidence. It also makes
 the sourced haematocrit pair **identifiable for the first time**: `f_pv` and `Hct` cancel
 in the level, which is HANDOVER §3.5, but they do not cancel in the derivative.
+
+## The 1.83× was real, and with it fixed the endpoint is visible — 2026-09-02
+
+**Status is still Proposed and `G_pn` is still 20.0.** What changed is that the obstacle
+has been measured, halved, and located precisely.
+
+The red cell defect diagnosed above has been **fixed and run**. `Cardiovascular.jl`
+computed `V_blood ~ V_plasma/(1 - Hct)` with `Hct` constant, so red cell volume expanded
+with plasma over a 30-day salt step; it is now `V_blood ~ V_plasma + Hct*BV0`, and the
+relation is reclassified `definitional` → `conservation`. The nominal operating point is
+bit-identical by construction. `dMAP/dV_ecf` fell **11.285 → 6.173**, exactly the predicted
+1/(1−Hct) = 1.83.
+
+**So the residual on `G_vr` is 1.5–2.1×, not 2.7–5.2×, and its target is 1012–1941.**
+
+### The endpoint, measured
+
+| config | ΔMAP/100 mmol | ΔV/100 mmol | ratio (mmHg/L) |
+|---|---|---|---|
+| current (`G_pn` 20, `G_vr` 2880) | 4.958 | 0.803 | 6.173 |
+| **this ADR alone** (51, 2880) | **1.944** ✓ | 0.315 ✗ | 6.173 ✗ |
+| `G_vr` alone (20, 1400) | 4.958 ✗ | 1.652 ✗ | **3.001** ✓ |
+| **both** (51, 1400) | **1.944** ✓ | **0.648** ✓ | **3.001** ✓ |
+| **human** | **1.70–2.30** | **0.553–0.572** | **2.97–4.16** |
+
+**Neither correction alone lands. Together they land on all three human quantities at
+once.** That is the orthogonality result made operational, and it is the strongest
+statement this record can now make: **the pressure evidence behind 51 was right, and the
+volume objection was never about `G_pn`.**
+
+1400 is illustrative and must not be entered. `G_vr` is `calibrated` and HANDOVER §4 item 1
+is to **replace** it with sourced venous compliance; this table is the target that work has
+to explain. Fitting 2880 to 1400 would swap one calibrated constant for another and destroy
+the only independent test this record has.
+
+**Sequencing is unchanged and now fully specified.** Source venous compliance → re-run
+`validation/ecf_salt_response_extract.py` → if the ratio lands in 2.97–4.16, accept this
+ADR and move `G_pn` to 51 in the same change, because the table above says the two are only
+correct together.

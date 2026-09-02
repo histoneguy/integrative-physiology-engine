@@ -134,12 +134,20 @@ def _check_one(p: dict[str, float]) -> int:
           errors)
 
     # --- blood volume -----------------------------------------------------
+    # REWRITTEN 2026-09-02 TO MATCH THE MODEL. This computed
+    # f_pv*V_ecf/(1-Hct), which is the form Cardiovascular.jl used until the red
+    # cell correction. The two agree at the nominal point BY CONSTRUCTION, so this
+    # gate would have kept passing while checking an expression the component no
+    # longer evaluates - the same defect the U_max inversion had. A gate must
+    # assert what the code does.
     v_ecf = body_mass * p["BF.ECF.MASS_FRACTION"]
-    v_blood = p["CV.PLASMA.ECF_FRACTION"] * v_ecf / (1 - p["CV.HEMATOCRIT.NOMINAL"])
-    check("blood volume from ECF",
+    v_plasma = p["CV.PLASMA.ECF_FRACTION"] * v_ecf
+    v_blood = v_plasma + p["CV.HEMATOCRIT.NOMINAL"] * p["CV.BLOOD_VOLUME.NOMINAL"]
+    check("blood volume from ECF plus fixed red cells",
           v_blood, p["CV.BLOOD_VOLUME.NOMINAL"],
-          "f_pv*V_ecf/(1-Hct) must equal nominal blood volume, or cardiac "
-          "output sits off its operating point and MAP is wrong from t=0.",
+          "V_plasma + Hct*BV0 must equal nominal blood volume, or cardiac "
+          "output sits off its operating point and MAP is wrong from t=0. This "
+          "holds iff f_pv = BV0*(1-Hct)/V_ecf, which is how f_pv is derived.",
           errors)
 
     # --- pressure ---------------------------------------------------------

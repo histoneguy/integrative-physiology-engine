@@ -175,9 +175,16 @@ using SciMLBase
         # When venous compliance replaces G_vr (section 4 item 1), THIS TEST SHOULD FAIL
         # and the expected value should move toward 2.17. Replace it then; do not delete
         # it, and do not simply refit G_vr to make it pass.
+        # 11.285 -> 6.1731 on 2026-09-02. THE TEST FAILED AND WAS REPLACED, WHICH
+        # IS WHAT ITS OWN COMMENT ASKED FOR - though not by the cause it predicted.
+        # Cardiovascular.jl stopped letting red cell volume expand with plasma, so
+        # dV_blood/dV_ecf fell by 1/(1-Hct) = 1.83 and this ratio fell with it.
+        # STILL 1.5-2.1x ABOVE THE HUMAN 2.97-4.16, and that residual is G_vr,
+        # which is CALIBRATED and is section 4 item 1. When sourced venous
+        # compliance lands this should fail again and move to about 3.0.
         ratio = v.map_shift_mmHg /
                 (r.levels[1].V_ecf_final - r.levels[end].V_ecf_final)
-        @test isapprox(ratio, 11.285; rtol = 1e-3)
+        @test isapprox(ratio, 6.1731; rtol = 1e-3)
     end
 
     @testset "ADR 0012 stage 1 is a change of variables, not of behaviour" begin
@@ -240,9 +247,16 @@ using SciMLBase
         # moves (0.003) while the mid and low arms rise by 0.013 and 0.027.
         # Same class of change as the f_pv repin of 2026-08-28: a real change in
         # loop gain, repinned rather than having its tolerance widened.
-        pre_partition = (205.0 => 87.0047,
-                         154.0 => 84.5522,
-                         103.0 => 82.0980)
+        # REPINNED AGAIN 2026-09-02, 84.5522/82.0980 -> 84.6233/82.2375, and the
+        # high arm is unmoved at 87.0046. Cardiovascular.jl stopped letting RED
+        # CELL VOLUME expand with plasma, so dV_blood/dV_ecf fell 0.386 -> 0.211
+        # and a given ECF excursion now moves pressure 1.83x LESS. Same shape of
+        # move as the CO0 repin above and for the same reason - the arms compress
+        # toward the anchored high arm. This is a CORRECTION of a physical error,
+        # not a tuning: red cell mass does not track plasma over 30 days.
+        pre_partition = (205.0 => 87.0046,
+                         154.0 => 84.6233,
+                         103.0 => 82.2375)
         # raas=false ISOLATES what this testset is about. The reference values
         # were measured before RAAS existed, so comparing against a model that
         # now includes it would be testing two changes at once. RAAS having its
@@ -290,8 +304,12 @@ using SciMLBase
         # answer here and not in the real model. Checked directly rather than
         # assumed: branch A was run alone with the old ADH constants restored and
         # gave 5.056913.
+        # 4.9067 -> 4.7672 on 2026-09-02 with the red cell correction. Again this
+        # is the DISABLED-ADH branch, where the placeholder pins urine output and
+        # forces sodium balance to close through the circulation; the default
+        # model's shift is unmoved at 5.0570 against 5.0569.
         @test isapprox(check_pressure_natriuresis(r).map_shift_mmHg,
-                       4.9067; rtol = 1e-4)   # 4.9352 -> 4.9067, see above
+                       4.7672; rtol = 1e-4)   # 4.9352 -> 4.9067 -> 4.7672
     end
 
     @testset "RAAS disabled branch is exactly inert (ADR 0008)" begin
@@ -324,9 +342,9 @@ using SciMLBase
         # with it; see the ADR 0012 block above for the mechanism. These two
         # blocks pin the same three numbers on purpose - they assert different
         # claims about them - so they move together.
-        pre_raas = (205.0 => 87.0047,
-                    154.0 => 84.5522,
-                    103.0 => 82.0980)
+        pre_raas = (205.0 => 87.0046,
+                    154.0 => 84.6233,
+                    103.0 => 82.2375)
         for (lvl, expected) in pre_raas
             got = only(l.MAP_final for l in r.levels if l.level == lvl)
             # 1e-9 -> 1e-7 on 2026-08-27, same reason as the ADR 0012 block: the
@@ -953,6 +971,7 @@ using SciMLBase
     end
 
     @testset "a 22% sex difference in cardiac output moves no pressure at all" begin
+        L = IPE.LedgerParams
         # REPLACED 2026-09-01, and the old reason for this test is now FALSE.
         # It used to read "the HR/SV pair CANNOT move the model", because SV0 was
         # DERIVED as CO0/(HR0*1440) from a shared CO0, so the product was the same
@@ -984,9 +1003,18 @@ using SciMLBase
             r = salt_step(sex = sex)
             r.levels[1].V_ecf_final - r.levels[end].V_ecf_final
         end
+        # EXPRESSION CHANGED 2026-09-02 AND THE GAP NEARLY DOUBLED, 1.069 -> 1.182.
+        # It was TPR0*BV0 because dV_blood/dV_ecf was f_pv/(1-Hct) = BV0/V_ecf0,
+        # in which haematocrit CANCELS - section 3.5's non-identifiability. With
+        # red cell volume held fixed the derivative is f_pv = BV0*(1-Hct)/V_ecf0,
+        # so Hct no longer cancels and THE SOURCED 0.453/0.395 PAIR MOVES A RESULT
+        # FOR THE FIRST TIME. That is ADR 0014's falsifiable test being satisfied
+        # by haematocrit, which section 7 listed as debt precisely because it
+        # could not be.
         em, ef = exc(:male), exc(:female)
         @test ef < em
-        @test isapprox(em / ef, (0.012393 * 4.92) / (0.010151 * 5.62); rtol = 0.02)
+        tpv(sx) = L.param(:CV_TPR_NOMINAL, sx) * L.param(:CV_PLASMA_ECF_FRACTION, sx)
+        @test isapprox(em / ef, tpv(:female) / tpv(:male); rtol = 0.02)
     end
 
     @testset "modulators are off by default" begin
