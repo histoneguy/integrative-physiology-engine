@@ -659,12 +659,61 @@ represented at all.**
 function curve cannot move, so all sodium-balance adaptation must run through arterial
 pressure. That is a candidate explanation for §3.3 and for why `G_pn` needs recalibrating
 at all. **Do not act on it without running something.** Two mechanistic claims were made
-and withdrawn on 2026-09-02 (§3.9); this is a third and it is deliberately not being
-built on.
+and withdrawn on 2026-09-02 (§3.9); this was a third. **IT HAS NOW BEEN TESTED — §3.11,
+and it survived**, with the threshold fixed before the run. ADR 0015 is the proposal
+that follows, default OFF.
 
 **What is missing before it can be sized:** filtration fraction across salt intake
 disagrees in direction between healthy humans (Krikken +1.1%, van den Bosch 0.229 → 0.233)
 and the conscious dog control arm (Hall 1980, FF decreased). See the source table §4.
+
+### 3.11 The lead in §3.10 was tested. It survives, and it halves salt sensitivity
+
+**Run it: `julia --project=. bench/escape_sweep.jl`.** ADR 0015 is the structural proposal
+that follows.
+
+§3.10 observed that `fr_mod` is zero at every steady state, so sodium balance is reached
+through arterial pressure alone. The test lengthens `tau_esc` so the existing tubular term
+persists, and asks what that does to the salt step. **The decision rule was fixed before
+the run: >20% fall means the pathway is live, <5% means the lead is dead.**
+
+| | salt-step shift | per 100 mmol/day |
+|---|---|---|
+| escape ON (default) | 5.0570 mmHg | 4.958 |
+| **escape OFF** (`tau_esc` = 1e6 d) | **2.4925 mmHg** | **2.444** |
+| human, meta-analytic (Cutler / He / He, k = 3) | — | **1.70–2.30** |
+
+**A 50.7% fall.** The model goes from 2.2–2.9× too salt-sensitive to **6% above the top of
+the human range**, without `G_pn` being touched. The mechanism is visible in the run:
+`fr_mod` is +3.1e-3 at 205 mEq/day and +5.5e-3 at 103 — less reabsorption on high salt,
+more on low. That is pressure-independent natriuresis doing the work `G_pn` does alone.
+
+**THIS MAKES ADR 0013 A COMPETING EXPLANATION, NOT A COMPLEMENTARY ONE.** ADR 0013 reaches
+1.944 mmHg/100 mmol by moving a **fitted constant** from 20 to 51. This reaches 2.444 from
+a **mechanism**. Both cannot be adopted at full strength without double-counting the same
+discrepancy — ADR 0015 records that, and whichever lands second must be re-estimated
+against the other.
+
+**Four things stop this being a fix, and they are not decoration:**
+
+1. **Disabling escape is wrong physiology.** Aldosterone escape is real and well
+   documented. Hall 1986 says the **AngII** tubular effect is the dominant, non-escaping
+   one and aldosterone's is minor and does escape, so the correct change adds an AngII term
+   and **leaves aldosterone's escape intact**. This run is a diagnostic of the pathway, not
+   a proposal. ADR 0015 proposes the real thing, **default OFF** per ADR 0006's E3 rule.
+2. **The baseline moves.** MAP 86.98 → 90.30 at the high arm, `V_ecf` 14.556 → 15.095. The
+   model is off its calibrated operating point and the magnitude carries that confound.
+3. **`RAAS.RENIN.PRESSURE_GAIN` is calibrated against a baseline that no longer exists**
+   (§7). Direction trustworthy, size not. **It has to be re-derived before any magnitude
+   here is believed.**
+4. **The volume limb is untouched.** ΔV_ecf goes 0.803 → 0.396 per 100 mmol against a human
+   0.553–0.572, overshooting the other way, and `dMAP/dV_ecf` stays at **6.173** —
+   unchanged, exactly as §3.7's orthogonality result predicts. The ratio problem is still
+   `G_vr` and still unsourced.
+
+**Why this one was tested before it was written up.** Two mechanistic claims were made and
+withdrawn on 2026-09-02 (§3.9). This one was put to a run with a pre-registered threshold
+first, and the write-up followed the number rather than preceding it.
 
 ---
 
@@ -707,7 +756,14 @@ population of an incomplete model is a wider set of wrong answers.**
    cardiac gain needs a sourcing pass. Best normative source found: **Schumann 2024**,
    *Am J Physiol Heart Circ Physiol* 326:H158–H165, n=980 healthy — and it is about **sex
    differences in BRS**, so it would also give ADR 0014 a second real dimorphic pair.
-4. **ADR 0013 decision** on `G_pn`, with its ECF falsifiable test run first.
+4. **ADR 0013 versus ADR 0015 — THEY ARE NOW COMPETING EXPLANATIONS, NOT A QUEUE.**
+   ADR 0013 reaches the human salt sensitivity by moving a FITTED CONSTANT (`G_pn`
+   20 → 51); ADR 0015 reaches it from a MECHANISM (§3.11, 50.7% of the gap closed
+   with no parameter touched). **Adopting both at full strength double-counts the
+   same discrepancy.** Its ECF falsifiable test has been run and blocks 0013 anyway
+   (§3.7). **Re-derive `RAAS.RENIN.PRESSURE_GAIN` before either** — it is calibrated
+   against a baseline that no longer exists (§7) and ADR 0015 amplifies whatever it
+   carries.
 5. **Body surface area, and it is now worth more than it was.** It was on this list only
    because GFR and cardiac output scale sub-linearly in mass, so `scaling.jl` overstates
    their population spread. It has since acquired two further jobs, both from §3.6.
