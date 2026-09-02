@@ -227,7 +227,7 @@ that is the honest direction — see `validation/verify_rows_prereg.md` branch 6
 | 154 | 84.450 | 105.81 | 73.77 | 32.03 |
 | 103 | 81.922 | 102.64 | 71.57 | 31.07 |
 
-**Shift 5.0569 mmHg**, and it survived a 19% rise in cardiac output without moving at
+**Shift 5.0570 mmHg**, and it survived a 19% rise in cardiac output without moving at
 the fifth significant figure — §3.6. Arterial pressure is nowhere regulated; it lands at a stable
 intake-dependent value through renal–body fluid feedback alone. **Do not quote beyond 5
 significant figures** and do not pin tighter than 1e-4.
@@ -239,8 +239,8 @@ wherever reported. Agreement with the sourced 109/76 is **consistency, not valid
 ### Population
 
 `sample_population` draws Sobol over sexed NHANES percentiles. `V_ecf` scales with body
-mass — **0.207969 L/kg male, 0.207976 female** — while MAP is invariant across the mass
-range (86.9789 male, 86.9804 female). The population is **uniform** over P05–P95, not
+mass — **0.207943 L/kg male, 0.207959 female** — while MAP is invariant across the mass
+range (86.9794 male, 86.9795 female). The population is **uniform** over P05–P95, not
 weight-distributed.
 
 **ECF per kg is now essentially sex-INVARIANT, and that is a change of meaning, not of
@@ -499,17 +499,12 @@ parameter each, with no cross-talk, and this model is exactly identifiable from 
 
 **To match the human ratio, `G_vr` must fall from 2880 to 758–1062.**
 
-**And part of that is not `G_vr` at all.** `Cardiovascular.jl` computes
-`V_blood ~ V_plasma/(1 - Hct)` with `Hct` a **constant**, so red cell volume expands with
-plasma across a 30-day salt step. Red cell mass is fixed on that timescale — plasma
-expansion *dilutes* the haematocrit. `dV_blood/dV_ecf` should be `f_pv` (0.211), not
-`f_pv/(1-Hct)` (0.386): **a factor of 1.83**, taking the model ratio to 6.17 and leaving
-`G_vr` needing only 1.5–2.8×, about 1000–1950. **Diagnosed from the equation and from the
-arithmetic that reproduces 11.285 exactly; NOT YET RUN.** Its justification is independent
-of this test — red cell mass does not track plasma in 30 days — but it was found while
-looking for the discrepancy, and that is declared. **It would also make the sourced
-haematocrit pair identifiable for the first time**: `f_pv` and `Hct` cancel in the level
-(§3.5) but not in the derivative.
+**And part of that was not `G_vr` at all. IT HAS NOW BEEN FIXED AND RUN — §3.8.**
+`Cardiovascular.jl` computed `V_blood ~ V_plasma/(1 - Hct)` with `Hct` a **constant**, so
+red cell volume expanded with plasma across a 30-day salt step. Red cell mass is fixed on
+that timescale — plasma expansion *dilutes* the haematocrit. Correcting it moved
+`dV_blood/dV_ecf` from 0.386 to 0.211 and the ratio from 11.285 to **6.173**, closing
+**1.83×** of the gap and leaving `G_vr` needing **1012–1941**.
 
 **Why this does not refute 51.** The pressure limb is untouched. Accepting 51 alone would
 make the volume response *worse* — from 1.26× too small at `G_pn` = 20 to 3.2× too small —
@@ -527,6 +522,60 @@ invokes.
 
 **Test A is separately inconclusive** — branch A4 by the pre-registration's own words. The
 volume-implied `G_pn` is 15.9, 11.0, 6.5 and effectively infinite across the four studies.
+
+### 3.8 Red cell volume was expanding with plasma, and correcting it made haematocrit bite
+
+Found while attributing §3.7's 2.7–5.2× discrepancy. `Cardiovascular.jl` computed
+
+    V_blood ~ V_plasma / (1 - Hct)          with Hct a CONSTANT parameter
+
+which makes **red cell volume expand in proportion to plasma.** Over the 30-day salt step
+this model runs, red cell mass does not move at all — erythrocyte lifespan is ~120 days and
+erythropoiesis answers to EPO, not to sodium. A plasma expansion *dilutes* the haematocrit.
+It is now `V_blood ~ V_plasma + Hct*BV0`, and `relations.csv` reclassifies it
+`definitional` to **`conservation`**, because that is what it states: the red cell
+compartment is conserved over the timescale of the perturbation.
+
+**The nominal point is bit-identical by construction** — `f_pv` is derived as
+`BV0(1-Hct)/V_ecf0`, so `V_plasma + Hct*BV0 = BV0` exactly at `V_ecf = V_ecf0`. MAP, SBP and
+DBP at the operating point do not move. **The derivative is what changes, and that was the
+point.**
+
+| | before | after |
+|---|---|---|
+| `dV_blood/dV_ecf` | 0.386 | **0.211** (divided by 1.83 = 1/(1−Hct)) |
+| `dMAP/dV_ecf` | 11.285 | **6.173** |
+| ΔV_ecf per 100 mmol/day | 0.439 | **0.803** |
+| male/female excursion ratio | 1.069 | **1.182** |
+| salt-step MAP shift | 5.0569 | 5.0570 |
+
+**HAEMATOCRIT IS IDENTIFIABLE NOW, AND §3.5 SAID IT WOULD NOT BE.** That section recorded
+haematocrit as non-identifiable because `f_pv` is derived from it and
+`f_pv/(1-Hct) = BV0/V_ecf0`. **That cancellation is in the LEVEL only.** In the derivative
+the model now carries `f_pv = BV0(1-Hct)/V_ecf0`, which depends on `Hct` — so the sourced
+0.453/0.395 pair moves a result for the first time, and ADR 0014's falsifiable test is
+satisfied a second time, by a second parameter, through the volume side again.
+
+**AND THE ENDPOINT IS NOW VISIBLE.** With `G_pn` = 51 (ADR 0013) *and* `G_vr` near 1400, the
+model reproduces every human quantity at once:
+
+| config | ΔMAP/100 mmol | ΔV/100 mmol | ratio |
+|---|---|---|---|
+| current (20, 2880) | 4.958 | 0.803 | 6.173 |
+| ADR 0013 alone (51, 2880) | **1.944** yes | 0.315 no | 6.173 no |
+| `G_vr` alone (20, 1400) | 4.958 no | 1.652 no | **3.001** yes |
+| **both (51, 1400)** | **1.944** yes | **0.648** yes | **3.001** yes |
+| **human** | **1.70–2.30** | **0.553–0.572** | **2.97–4.16** |
+
+**Neither correction alone lands; together they land on all three.** 1400 is illustrative,
+not a value to enter — `G_vr` must be REPLACED by sourced venous compliance (§4 item 1),
+and this table is the target that work has to explain. It also **vindicates ADR 0013's 51**:
+the pressure evidence was right and the volume objection was never about `G_pn`.
+
+**Declared, because the discovery route was motivated.** The correction is justified
+independently — red cell mass does not track plasma over 30 days whatever the pressure data
+say — but it was found while hunting §3.7's discrepancy, and that is recorded rather than
+presented as an independent discovery.
 
 ---
 
@@ -647,8 +696,12 @@ population of an incomplete model is a wider set of wrong answers.**
   reference intervals; the record read gives means by age, not an SD at one age. Maximal
   concentrating ability falls 16% from 20 to 80 years and this model has no age
   dimension, so 982 is the young-adult ceiling.
-- **Haematocrit is sourced but the model cannot feel it** (§3.5). It becomes live when
-  `CV.PLASMA.ECF_FRACTION` is sourced independently rather than derived from it.
+- ~~Haematocrit is sourced but the model cannot feel it.~~ **RESOLVED 2026-09-02, and not
+  by the route §3.5 predicted.** It said haematocrit becomes live only when
+  `CV.PLASMA.ECF_FRACTION` is sourced independently. That is true of the LEVEL, where
+  `f_pv` and `Hct` cancel. It is false of the DERIVATIVE: with red cell volume held fixed,
+  `dV_blood/dV_ecf = f_pv = BV0(1-Hct)/V_ecf0` depends on `Hct`, so the sourced 0.453/0.395
+  pair now moves a result — the male/female ECF excursion ratio, 1.069 to **1.182**. §3.8.
 - **Only body mass is sampled in the ensemble.** Every other parameter is one number
   for all members, though the ledger carries dispersion for several. Humans are a
   distribution and the population currently is not — see §1.12.
@@ -657,14 +710,12 @@ population of an incomplete model is a wider set of wrong answers.**
   convicts `CV.VENOUS_RETURN.SENSITIVITY`, not this row. Sequencing: `G_vr` first, re-run
   the test, then accept. `G_pn` stays 20.0 in the meantime and that is the pre-registered
   outcome, not an omission.
-- **`CV.VENOUS_RETURN.SENSITIVITY` is 2.7–5.2× too stiff against human data** (§3.7). It
-  was already `calibrated` and already §4 item 1; it now has a measured target of
-  **758–1062**, from seven primaries across four groups and two methods.
-- **`Cardiovascular.jl` lets red cell volume expand with plasma** (§3.7). `V_blood` is
-  `V_plasma/(1-Hct)` with `Hct` constant, so a 30-day salt load grows the red cell mass.
-  Worth **1.83×** of the discrepancy above, and fixing it would make haematocrit
-  identifiable. Diagnosed, not yet run, and it should be done BEFORE venous compliance
-  is sourced — otherwise that work gets fitted to absorb an error that is not in it.
+- **`CV.VENOUS_RETURN.SENSITIVITY` is 1.5–2.1× too stiff against human data** (§3.7, §3.8).
+  It was 2.7–5.2× before the red cell correction closed 1.83× of it. Already `calibrated`
+  and already §4 item 1; the measured target is now **1012–1941**, from seven primaries
+  across four groups and two methods. **It is the only thing standing between this model
+  and matching the human pressure AND volume responses simultaneously** — §3.8.
+- ~~`Cardiovascular.jl` lets red cell volume expand with plasma.~~ **DONE 2026-09-02**, §3.8.
 - ~~Six rows still claim a source that does not exist.~~ **DONE 2026-08-31**, §3.5.
 - **`RAAS.RENIN.PRESSURE_GAIN` was calibrated against a baseline that no longer exists** —
   fitted so the low-salt arm doubled PRA from 1.0, and baseline PRA is now 2.31. Not

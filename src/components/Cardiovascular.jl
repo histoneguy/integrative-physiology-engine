@@ -116,7 +116,40 @@ function Cardiovascular(; name, sex::Symbol = :male,
 
     eqs = [
         V_plasma ~ f_pv * V_ecf,
-        V_blood  ~ V_plasma / (1 - Hct),
+
+        # RED CELL VOLUME IS CONSTANT. CORRECTED 2026-09-02.
+        #
+        # This read V_blood ~ V_plasma / (1 - Hct) with Hct a constant PARAMETER,
+        # which makes red cell volume expand in proportion to plasma. Over the
+        # 30-day salt step this model runs, red cell mass does not move at all -
+        # erythrocyte lifespan is ~120 days and erythropoiesis answers to EPO, not
+        # to sodium. A plasma expansion DILUTES the haematocrit; it does not
+        # recruit erythrocytes.
+        #
+        # Hct*BV0 is the red cell volume at the nominal operating point, and it is
+        # EXTENSIVE, so it scales with body mass through BV0 as it should.
+        #
+        # THE NOMINAL POINT IS BIT-IDENTICAL AND THAT IS BY CONSTRUCTION. f_pv is
+        # DERIVED as BV0*(1-Hct)/V_ecf0, so at V_ecf = V_ecf0
+        #
+        #     V_plasma + Hct*BV0 = (1-Hct)*BV0 + Hct*BV0 = BV0
+        #
+        # exactly. What changes is the DERIVATIVE, which is the whole point:
+        #
+        #     dV_blood/dV_ecf   was  f_pv/(1-Hct) = 0.386
+        #                       now  f_pv         = 0.211
+        #
+        # a factor of 1/(1-Hct) = 1.83. That term sets dMAP/dV_ecf, which ADR
+        # 0013's falsifiable test found to be 2.7-5.2x too stiff against seven
+        # human primaries. This closes 1.83x of it; the rest is G_vr, which is
+        # CALIBRATED and is HANDOVER section 4 item 1.
+        #
+        # AND IT MAKES HAEMATOCRIT IDENTIFIABLE FOR THE FIRST TIME. Section 3.5
+        # records that Hct cancels: f_pv is derived FROM it, so f_pv/(1-Hct) =
+        # BV0/V_ecf0 and the sourced male/female pair could not move any result.
+        # It cancels in the LEVEL. It does not cancel in the DERIVATIVE, which is
+        # now f_pv = BV0*(1-Hct)/V_ecf0 - so the 0.453/0.395 pair finally bites.
+        V_blood  ~ V_plasma + Hct * BV0,
 
         # ADR 0012 stage 1: the central/peripheral partition. f_c is constant in
         # time, so this is a CHANGE OF VARIABLES and nothing else. VC0 = f_c*BV0
