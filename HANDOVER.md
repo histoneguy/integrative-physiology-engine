@@ -253,8 +253,10 @@ blood volume and haematocrit — and left the compartment fraction alone.
 
 ### Ledger
 
-**70 parameters over 82 rows** — 34 `reported`, 28 `derived`, 18 `assumed`, 2
-`calibrated`. **20 weak.** Tiers: 38 A, 27 B, 17 C.
+**71 parameters over 83 rows** — 34 `reported`, 29 `derived`, 18 `assumed`, 2
+`calibrated`. **20 weak.** Tiers: 38 A, 28 B, 17 C.
+`RN.GFR.VOLUME_SENSITIVITY` was added on 2026-09-02 (§3.12) and **nothing in `src/` reads
+it yet** — declared, not hidden, and in §7.
 **The `assumed` count went DOWN by two on 2026-09-01, and that is as honest as its going
 UP was on 2026-08-31.** `CV.CO.NOMINAL` and `RN.H2O.OBLIGATORY_LOSS` did not acquire
 citations; they stopped being primitives. Each is now DERIVED from the quantity that is
@@ -664,9 +666,13 @@ and withdrawn on 2026-09-02 (§3.9); this was a third. **IT HAS NOW BEEN TESTED 
 and it survived**, with the threshold fixed before the run. ADR 0015 is the proposal
 that follows, default OFF.
 
-**What is missing before it can be sized:** filtration fraction across salt intake
-disagrees in direction between healthy humans (Krikken +1.1%, van den Bosch 0.229 → 0.233)
-and the conscious dog control arm (Hall 1980, FF decreased). See the source table §4.
+~~**What is missing before it can be sized:** filtration fraction across salt intake
+disagrees in direction between healthy humans and the conscious dog.~~ **SETTLED
+2026-09-02 AS BRANCH F3 — §3.12. There is no human direction to disagree with.** Krikken
+is struck as unreadable, the van den Bosch ratio carries no dispersion, and the two
+eligible human sources differ by hormonal state. **The dog fall is unreplicated in humans
+and this model carries no filtration fraction anyway**, so the efferent-arteriolar rows in
+ADR 0015 stand untested rather than confirmed.
 
 ### 3.11 The lead in §3.10 was tested. It survives, and it halves salt sensitivity
 
@@ -716,6 +722,59 @@ against the other.
 withdrawn on 2026-09-02 (§3.9). This one was put to a run with a pre-registered threshold
 first, and the write-up followed the number rather than preceding it.
 
+### 3.12 The nine renal primaries were four groups, and the salt-GFR response is male
+
+**Run it: `python validation/renal_hemodynamics_extract.py`.** Pre-registered in
+`validation/renal_hemodynamics_prereg.md`, written before the extraction and sitting
+before it in history. **Verdict: branch G3.** One row entered,
+`RN.GFR.VOLUME_SENSITIVITY = 1.30`, no structural ADR, no code change.
+
+**The number.** `Renal.jl` holds GFR flat across the salt step. Healthy humans raise it.
+The sourced sensitivity is **1.30 fractional GFR change per fractional ECF change**,
+which removes **15.2%** of the model's salt-step shift by the per-litre route and **8.1%**
+by the per-intake cross-check. Both sit inside the pre-registered 5–20% band, so the
+verdict does not turn on the parameterisation. It moves 4.9578 → 4.2019 mmHg per 100
+mmol/day against a human 1.70–2.30. **About a sixth of the gap, and a third competing
+explanation alongside ADR 0013 and ADR 0015.**
+
+**It is identified by an independent measurement, which the other two are not.** `G_pn` =
+51 is fitted to the salt-sensitivity data and `fr_angii` would be sized against the same.
+This comes from a GFR and a volume, neither of which is a pressure.
+
+**THE SOURCE TABLE'S NINE HEALTHY-HUMAN PRIMARIES ARE FOUR GROUPS, AND THREE OF THE NINE
+ARE ONE COHORT.** Krikken 2007, Visser 2009 and van den Bosch 2021 are the same Groningen
+study — van den Bosch says so in its own Methods, n = 70/93 — and Toering 2018 is the same
+group. Shoback 1983, Redgrave 1985 and Conlin 1993 are all Brigham. That leaves Textor
+1991 and Barba 2000. **Pooling would have looked like k = 3 and is k = 1.** It was not
+visible from the retrieved records; it appeared on reading one full text.
+
+**ADR 0015 claimed four independent groups for its E1 human row and had two.** Corrected
+there. **The tier survives on a wider base than before**, because the pre-registered fourth
+sweep added two genuinely independent groups: Roos 1985 (Utrecht, n = 8, inulin, an
+independent tracer) and Pechère-Bertschi 2002/2003 (Geneva).
+
+**AND THE ONLY CLEAN HEALTHY-WOMEN STUDY POINTS THE OTHER WAY.** Pechère-Bertschi 2002,
+n = 35 normotensive women, 40 against 250 mmol/day: **no change in renal haemodynamics in
+the follicular phase**, vasodilation in the luteal. The row is entered `both` on a male
+cohort because ADR 0014 forbids a sexed pair on a direction alone — **but this may be a
+male number applied to women, which is exactly what `CV.HEMATOCRIT.NOMINAL` turned out to
+be.** Declared on the row, not hidden.
+
+**Filtration fraction is branch F3 and the dog is unreplicated.** Krikken is struck under
+branch K2 — *Kidney International* 2007 is subscription-only, absent from PubMed Central,
+403 on ScienceDirect — and its ΔFF pair goes with it, because the group ordering is
+ambiguous in the same way. The van den Bosch ratio carries no dispersion and was declared
+descriptive-only in advance. The two eligible human sources disagree by hormonal state.
+**No human direction is established, so ADR 0015's efferent-arteriolar rows stand untested
+rather than confirmed.**
+
+**Found in passing and deliberately NOT fixed here.** `ecf_salt_response_extract.py`
+de-indexes van den Bosch by multiplying the indexed ECF *difference* by one body surface
+area, giving 1.061 L. Each arm has its own BSA, and BSA itself rose with the retained
+fluid, so the correct figure is **1.157 L, 9% larger.** That makes §3.7's within-subject
+ratio 1.73 rather than 1.885 mmHg/L and its failure 5.7× rather than 5.2× — same
+direction, slightly worse. It is §4 item 2's business and one clean pass on its own.
+
 ---
 
 ## 4. NEXT, IN ORDER
@@ -725,16 +784,15 @@ population of an incomplete model is a wider set of wrong answers.**
 
 **Flipping the stroke-volume dependency was item 1 and is DONE, both halves — §3.6.**
 
-1. **Renal haemodynamics across salt intake in healthy humans — THE SOURCE TABLE IS
-   ALREADY BUILT AND THE PRE-REGISTRATION IS NOW WRITTEN.**
-   `validation/renal_hemodynamics_salt_sources.md`, 24 queries, nine healthy-human
-   primaries with numbers, and `validation/renal_hemodynamics_prereg.md` governing what
-   may be taken from it. **Nothing is extracted yet.** The two things to settle first are
-   named in the table's §4: the **direction of the filtration-fraction change** on high
-   salt, which disagrees between healthy humans and the conscious dog, and **one ambiguous
-   sentence in Krikken 2007** that needs the full text. This is item 1 because §3.10 is a
-   lead about the MODEL'S OWN renal structure and this is what would let it be sized
-   rather than argued.
+1. ~~**Renal haemodynamics across salt intake in healthy humans.**~~ **DONE 2026-09-02,
+   §3.12.** Pre-registered, extracted, verdict **G3**. `RN.GFR.VOLUME_SENSITIVITY = 1.30`
+   entered; no ADR written and no code changed, which is what G3 prescribes. The
+   filtration-fraction question came back **F3** and the Krikken sentence was **struck
+   under K2**, both of which the pre-registration named in advance as the branches that
+   must not be avoided.
+   **What it leaves behind, and none of it is item 1 any more:** the sex conflict
+   (§7), the unconsumed row awaiting item 2, and the de-indexing correction owed to
+   `ecf_salt_response_extract.py`.
    **Four things the pre-registration fixed that were not previously written down.**
    (a) The model holds GFR **identical to seven figures** at all three salt arms, and
    `bench/gfr_salt_sweep.jl` measures what a salt-linked GFR would be worth: the fall in
@@ -785,7 +843,12 @@ population of an incomplete model is a wider set of wrong answers.**
    cardiac gain needs a sourcing pass. Best normative source found: **Schumann 2024**,
    *Am J Physiol Heart Circ Physiol* 326:H158–H165, n=980 healthy — and it is about **sex
    differences in BRS**, so it would also give ADR 0014 a second real dimorphic pair.
-5. **ADR 0013 versus ADR 0015 — THEY ARE NOW COMPETING EXPLANATIONS, NOT A QUEUE.**
+5. **ADR 0013 versus ADR 0015 versus THE GFR LIMB — THREE COMPETING EXPLANATIONS NOW,
+   NOT TWO, AND NOT A QUEUE.** §3.12 added the third: a sourced GFR response to volume
+   expansion worth 8–15% of the same discrepancy, from a measurement that is not a
+   pressure. It is the only one of the three whose magnitude is not inferred from the gap
+   it explains. **The total explained must not exceed the gap**, so whichever lands second
+   and third must be re-estimated against those already in.
    ADR 0013 reaches the human salt sensitivity by moving a FITTED CONSTANT (`G_pn`
    20 → 51); ADR 0015 reaches it from a MECHANISM (§3.11, 50.7% of the gap closed
    with no parameter touched). **Adopting both at full strength double-counts the
@@ -953,9 +1016,33 @@ population of an incomplete model is a wider set of wrong answers.**
   2025), or anaesthetised, ganglion-blocked, splenectomised animals
   (`venous_compliance_extract.py`). **That is the real obstacle on §4 item 2**, not the
   arithmetic. Recorded in `renal_hemodynamics_salt_sources.md` §5.
-- **Renal haemodynamics across salt intake has been sourced in men only.** Krikken, van den
-  Bosch, Visser, Barba, Textor, Kirkendall and Rorije are all male; Toering 2018 is the
-  only sexed source found and gives a direction, not numbers.
+- **Renal haemodynamics across salt intake has been sourced in men only, AND THE ONE CLEAN
+  WOMEN'S STUDY DISAGREES.** Krikken, van den Bosch, Visser, Barba, Textor, Kirkendall and
+  Rorije are all male. Pechère-Bertschi 2002 (n = 35 normotensive women, PMID 11849382)
+  finds **no change in renal haemodynamics** on high salt in the follicular phase, with
+  vasodilation in the luteal. `RN.GFR.VOLUME_SENSITIVITY` is entered `both` on the male
+  cohort because ADR 0014 forbids a sexed pair on a direction alone. **It may be a male
+  number applied to women** — the `CV.HEMATOCRIT.NOMINAL` failure exactly. What would
+  settle it is GFR and extracellular volume in the same healthy women across salt intake,
+  and nothing found reports both. §3.12.
+- **`RN.GFR.VOLUME_SENSITIVITY` IS ENTERED AND NOTHING CALLS IT.** Directive 1.11 says a
+  parameter nobody calls is not evidence about anything, so this is declared rather than
+  left to be discovered. Branch G3 of its pre-registration says enter the row and write no
+  structural ADR; implementation is sequenced behind `CV.VENOUS_RETURN.SENSITIVITY`,
+  because the model's volume excursion is the input this term multiplies and it is 1.5–2.1×
+  too large. **Named consumer, named unblocking condition, §4 item 2.**
+- **`ecf_salt_response_extract.py` de-indexes van den Bosch with one body surface area
+  where each arm has its own.** 0.9 × 2.04/1.73 = 1.061 L against the correct
+  (17.4×2.04 − 16.5×2.03)/1.73 = **1.157 L**, because BSA itself rose with the retained
+  fluid. It makes §3.7's within-subject ratio 1.73 rather than 1.885 mmHg/L and the
+  failure 5.7× rather than 5.2×. **Deliberately not fixed inside the renal haemodynamics
+  change** — it touches a document that change made no claim about, and two changes at
+  once leaves neither testable. One clean pass, with §4 item 2.
+- **Krikken 2007's filtration-fraction sentence is still unread.** Struck under branch K2,
+  not reinterpreted. Subscription-only, absent from PubMed Central, 403 on ScienceDirect.
+  Anyone with institutional access should record which way the value pairs run — the
+  abstract's own correlation coefficients suggest all three are printed in reverse order,
+  and that is an observation, not a reading.
 - **Eight relations carry no `form_citation`**, grandfathered as tracked debt.
 - **`pooling.md` requires columns `ledger/parameters.csv` does not have** — recorded in
   prose instead, by precedent.

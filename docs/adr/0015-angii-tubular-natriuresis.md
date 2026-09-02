@@ -5,7 +5,19 @@
 **Evidence tier:** MIXED — E1, E3.
 
 - **E1** — that chronic high sodium intake suppresses the renin-angiotensin system and
-  raises renal plasma flow and GFR in healthy humans. Four independent groups, n up to 95.
+  raises renal plasma flow and GFR in healthy humans. ~~Four independent groups, n up to
+  95.~~ **CORRECTED 2026-09-02: the four papers first cited here are TWO groups.** Krikken
+  2007 and van den Bosch 2021 are the same Groningen cohort — van den Bosch is a post-hoc
+  analysis of it and says so — and Redgrave 1985 and Conlin 1993 are both Brigham. **The
+  E1 tier survives, and on a wider base than before**, because the pre-registered fourth
+  sweep in `validation/renal_hemodynamics_prereg.md` added two further independent groups:
+  Roos 1985 (Utrecht, n = 8, **inulin** clearance, PMID 3907374) and Pechère-Bertschi 2002
+  and 2003 (Geneva, women, PMIDs 11849382 and 12969156). **Four groups, three tracers.**
+  The count was wrong; the claim was not. See `renal_hemodynamics_salt_sources.md` §0.
+- **The E1 claim is now known to be MALE-SPECIFIC where it is quantified.** The only clean
+  healthy-women study finds **no change in renal haemodynamics** on high salt in the
+  follicular phase (Pechère-Bertschi 2002, n = 35). Recorded as a declared conflict on
+  `RN.GFR.VOLUME_SENSITIVITY`.
 - **E3** — that the AngII tubular effect is what allows sodium balance at nearly constant
   pressure, and that it does **not** escape as aldosterone does. The decisive experiment
   is a **dog** AngII clamp, and the human experiment **is performable** — chronic ACE
@@ -36,7 +48,7 @@ the literature calls dominant and which does the resetting, is not represented a
 
 | Claim | Tier | Source | Species |
 |---|---|---|---|
-| High Na suppresses RAS and raises renal plasma flow and GFR | **E1** | Krikken 2007 (n=95, PMID 17091123); van den Bosch 2021 (n=70, ERPF 592 vs 559, GFR 138 vs 128, PRA 2.10 vs 5.74, PMID 34921521); Redgrave 1985 normotensive controls (RBF +79±28 mL/min/1.73 m², **BP unchanged**, PMID 2985655); Conlin 1993 (modulation reversed in 3–7 h, PMID 7503952) | **human** |
+| High Na suppresses RAS and raises renal plasma flow and GFR | **E1** | **Groningen:** Krikken 2007 (n=95, PMID 17091123) and van den Bosch 2021 (n=70, ERPF 592 vs 559, GFR 138 vs 128, PRA 2.10 vs 5.74, PMID 34921521) — **one cohort, not two studies.** **Brigham:** Redgrave 1985 normotensive controls (RBF +79±28 mL/min/1.73 m², **BP unchanged**, PMID 2985655) and Conlin 1993 (modulation reversed in 3–7 h, PMID 7503952). **Utrecht:** Roos 1985 (n=8, inulin 103→129 mL/min over 20→1128 meq/day, PMID 3907374). **Geneva:** Pechère-Bertschi 2003 (n=27 women on oral contraceptives, GFR and FF rise, PMID 12969156) — **but the same group's non-contraceptive cohort finds no change in the follicular phase** (n=35, PMID 11849382) | **human** |
 | Sodium balance across a 100-fold intake range is achieved with <7 mmHg of pressure change when the RAS is free | **E3** | Hall, Guyton, Smith & Coleman 1980, six **conscious control** dogs, 5 → 500 meq/day (PMID 6254369) | dog |
 | Clamping AngII converts the same intake steps into a 42% rise in arterial pressure | **E3** | Hall 1980, six AngII-infused dogs, same protocol | dog |
 | The RAS acts **independently of plasma aldosterone**; its intrarenal tubular effects outweigh the aldosterone-mediated ones | **E3** | Hall 1980 (PAC not different in the ACE-inhibited arm); Hall 1986 review (PMID 3514280) | dog / review |
@@ -99,6 +111,23 @@ fitted magnitude reproduces the human slope.
 
 **A second, independent test if the renal haemodynamic sourcing lands:** the model should
 show renal plasma flow *rising* on high salt. It currently cannot — see below.
+
+**THE SOURCING LANDED ON 2026-09-02 AND THIS TEST IS NOT AVAILABLE.** The model carries no
+renal plasma flow and the extraction did not add one — `validation/`
+`renal_hemodynamics_extract.py`, branch G3. What it did add is a **GFR** response to
+volume expansion, `RN.GFR.VOLUME_SENSITIVITY = 1.30`, which is a **third competing
+explanation** for the same salt-sensitivity discrepancy and is worth 8–15% of it against
+this record's 51%. **The anti-double-count rule now covers three records, not two.**
+
+**And the filtration-fraction contrast came back inconclusive, which touches the E3 rows
+above.** The pre-registered question was whether healthy humans reproduce Hall 1980's fall
+in filtration fraction, as the efferent-arteriolar mechanism predicts. **They neither
+reproduce it nor contradict it**: the Krikken numbers are struck as unreadable, the van
+den Bosch ratio carries no dispersion, and the two eligible human sources disagree by
+hormonal state. **The dog fall is unreplicated in humans and the efferent rows here stand
+untested rather than confirmed.** That is not a reason to change the tier — E3 already
+means the mechanism is inferred — but it removes a corroboration this record did not
+claim and should not later acquire by assumption.
 
 ## What this lumping disqualifies as evidence
 
