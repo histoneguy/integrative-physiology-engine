@@ -1,6 +1,6 @@
 # HANDOVER — Integrative Physiology Engine
 
-**Date:** 2026-09-01
+**Date:** 2026-09-02
 **Repo:** https://github.com/histoneguy/integrative-physiology-engine (public)
 **Owner:** Eric George (`histoneguy`)
 **State:** **427/427**, all five gates exit 0, nothing outstanding.
@@ -387,7 +387,10 @@ could be opened — the attempts are recorded in the rows so they are not repeat
    so `Na_filtered·(1−FR_Na) = intake` and `MAP − MAP_ref = (intake − 205)/G_pn`. A **15%
    error in the entire renal input moved the salt-step shift by 0.0006 mmHg.** Salt
    sensitivity is set by `G_pn` alone; GFR enters only transients and the water side.
-2. **Haematocrit is currently non-identifiable.** It enters only via
+2. **Haematocrit is currently non-identifiable.** — **SUPERSEDED 2026-09-02, §3.8.**
+   What follows is true of the LEVEL and false of the DERIVATIVE, and nobody checked
+   the derivative for five days. Read it as the record of a conclusion that was
+   half right. It enters only via
    `V_blood = f_pv·V_ecf/(1−Hct)`, and `f_pv` is DERIVED as `BV0(1−Hct)/V_ecf`, so
    `f_pv/(1−Hct) = BV0/V_ecf` and the Hct cancels. Verified empirically: a 15% sex
    difference in Hct left every result identical to seven figures. It bites the moment
@@ -577,6 +580,92 @@ independently — red cell mass does not track plasma over 30 days whatever the 
 say — but it was found while hunting §3.7's discrepancy, and that is recorded rather than
 presented as an independent discovery.
 
+### 3.9 A venous-mechanics claim was made and withdrawn. Read this before repeating it
+
+On 2026-09-02 a pre-registered pass concluded that `G_vr` could not be sourced from venous
+mechanics, on the grounds that sourced compliance and venous-return resistance compose to
+22,200–44,400 (L/day)/L against a target of 1012–1941. **That conclusion is withdrawn.
+Its PR was closed unmerged and nothing reached `main`** — `validation/`
+`venous_return_resistance_prereg.md` and its extract are NOT in this repository.
+
+**The error, stated so it is not repeated.** The composition `G_vr = 1/(C_sys · R_vr)`
+treats right atrial pressure as **fixed**. The pre-registration said so in terms — *"when
+right atrial pressure is treated as fixed, which is what this model does"* — and the
+result was then read as a fact about physiology rather than as a consequence of the
+assumption. With RAP free the composition is `S/((1 + S·R_vr)·C_sys)`, and for a cardiac
+function curve slope near 0.1 L/min/mmHg that lands around 2,100 — inside the model's own
+range. **There was no order-of-magnitude gap, so there was nothing for an
+unstressed-volume story to explain.**
+
+**Refuted directly by primary data, both arms.** Manning, Coleman, Guyton, Norman & McCaa
+1979 (PMID 434186), 9 dogs on chronic saline: **mean circulatory filling pressure rose 4.7
+Torr by day 3 and was still 2 Torr elevated at two weeks.** Filling pressure rises
+substantially and persistently — the opposite of the near-complete unstressed absorption
+that had been argued. And Cowley & Guyton 1975 (PMID 1116246) refutes the fallback that
+RAP rises so cardiac output does not: **CO rose 40% above control in intact dogs.**
+
+**THE SOURCE SELECTION WAS ALSO WRONG, AND THAT IS THE MORE GENERAL LESSON.** The inputs
+were Maas 2012 (post-cardiac-surgery ICU), Magder 2025 (compiled largely from critically
+ill), Manning 1979 and Cowley 1975 (reduced-renal-mass dogs on 190 mL/kg/day saline, going
+frankly hypertensive), Kim 1980 (anephric), the nonmodulator subgroup (hypertensive by
+definition), and a trout. **A model whose structure is inferred from pathological
+preparations becomes a pathological model** — which is what §3.3 already says has happened
+to `G_pn`. Directive 1.7 is the guard and it was not applied to these.
+
+**What survives, because none of it depends on that composition:**
+
+- The **measured ratio gap**: model 6.173 mmHg/L against a human 2.97–4.16 (§3.7, §3.8).
+  That is ~2×, from data alone, and it is an ordinary discrepancy.
+- The **red cell correction** (§3.8) — independent physiology, and merged.
+- **`G_pn` and `G_vr` are orthogonal** (§3.7) — measured from model runs.
+- `G_vr`'s target of **1012–1941**, which comes from the human salt data and the model, not
+  from venous mechanics.
+
+### 3.10 The pressure-natriuresis curve is not fixed in humans. It is fixed in this model
+
+**Literature plus one code observation. NOTHING HAS BEEN RUN TO TEST THIS, and it is
+recorded as a lead rather than a finding.** Source table:
+`validation/renal_hemodynamics_salt_sources.md` — 24 queries over three sweeps, healthy
+humans first.
+
+**Hall, Guyton, Smith & Coleman 1980** (PMID 6254369), six **conscious control dogs**,
+chronic steps from **5 to 500 meq/day**: sodium balance achieved with **AP rising less
+than 7 mmHg**, GFR +19%, filtration fraction and plasma renin activity both falling. In
+six dogs with **angiotensin II held fixed by infusion**, the same intake steps produced
+**AP +42%**. Their conclusion: the renin-angiotensin system, *independent of changes in
+plasma aldosterone*, is what allows sodium balance without large changes in GFR or AP.
+
+**The same phenomenon in healthy humans, from four groups:** renal plasma flow and GFR
+both **rise** on high salt (Krikken 2007, n = 95, `17091123`; van den Bosch 2021, n = 70,
+ERPF 592 vs 559 and GFR 138 vs 128, `34921521`), renal blood flow rises 79 ± 28
+mL/min/1.73 m² with blood pressure unchanged (Redgrave 1985 normotensive controls,
+`2985655`), and the renal vascular response to angiotensin II is modulated by sodium
+within **3–7 hours** of volume expansion (Conlin 1993, `7503952`).
+
+**Hall 1986** (PMID 3514280) gives the arteriolar mechanism: AngII **preferentially
+constricts efferent arterioles** and does **not** constrict afferent/preglomerular vessels
+at physiological activation; its intrarenal tubular effects are **quantitatively more
+important than the aldosterone-mediated ones.**
+
+**The code observation.** `Renal.jl` carries a constant `G_pn` with the RAAS entering as
+`fr_mod`; `Raas.jl` sets `fr_mod ~ fr_raw - esc` with `D(esc) ~ (fr_raw - esc)/tau_esc`,
+so at steady state `esc = fr_raw` and **`fr_mod = 0`** — which §7 already records as
+*"escape drives fr_mod to ~1e-7 so no steady state moves"*. And `fr_raw ~ k_aldo*(aldo-1)`
+acts through **aldosterone**, the component Hall calls quantitatively minor and which
+genuinely does escape. **The AngII efferent-arteriolar and tubular component is not
+represented at all.**
+
+**What that would mean if it holds — and it has NOT been tested:** the model's renal
+function curve cannot move, so all sodium-balance adaptation must run through arterial
+pressure. That is a candidate explanation for §3.3 and for why `G_pn` needs recalibrating
+at all. **Do not act on it without running something.** Two mechanistic claims were made
+and withdrawn on 2026-09-02 (§3.9); this is a third and it is deliberately not being
+built on.
+
+**What is missing before it can be sized:** filtration fraction across salt intake
+disagrees in direction between healthy humans (Krikken +1.1%, van den Bosch 0.229 → 0.233)
+and the conscious dog control arm (Hall 1980, FF decreased). See the source table §4.
+
 ---
 
 ## 4. NEXT, IN ORDER
@@ -586,27 +675,40 @@ population of an incomplete model is a wider set of wrong answers.**
 
 **Flipping the stroke-volume dependency was item 1 and is DONE, both halves — §3.6.**
 
-1. **Venous compliance and the venous return limb — AND IT NOW HAS A NUMBER TO HIT.**
-   §3.7 measured what `G_vr` has to become: **2880 → about 554**, from an independent human
-   datum that is orthogonal to everything the pressure evidence constrains. That is a
-   target for the sourced relation to EXPLAIN, not a value to enter — refitting 2880 to
-   554 would swap one calibrated constant for another and throw away the falsifiable test
-   in the process. **ADR 0013 is blocked behind this**, so this is now the critical path
-   for the model's headline number as well as for its own sake.
+1. **Renal haemodynamics across salt intake in healthy humans — THE SOURCE TABLE IS
+   ALREADY BUILT.** `validation/renal_hemodynamics_salt_sources.md`, 24 queries, nine
+   healthy-human primaries with numbers. Nothing is extracted from it and it needs a
+   pre-registration before anything is. The two things to settle first are named in its
+   §4: the **direction of the filtration-fraction change** on high salt, which disagrees
+   between healthy humans and the conscious dog, and **one ambiguous sentence in Krikken
+   2007** that needs the full text. This is item 1 because §3.10 is a lead about the
+   MODEL'S OWN renal structure and this is what would let it be sized rather than argued.
+
+2. **Venous compliance and the venous return limb.** §3.7 and §3.8 give `G_vr` a target of
+   **1012–1941** (not the 554 an earlier draft of this item carried — the red cell
+   correction closed 1.83× of the gap). That target comes from the human salt data and the
+   model, and it is for a sourced relation to EXPLAIN, not a value to enter: refitting 2880
+   would swap one calibrated constant for another and destroy the only independent test
+   this line has. **ADR 0013 is blocked behind this.**
+   **READ §3.9 FIRST.** A pass on this in September composed sourced mechanics into a
+   conclusion that was withdrawn, and its inputs were ICU and anaesthetised-animal
+   preparations. **No healthy-human source has been found for systemic compliance, mean
+   systemic filling pressure, or resistance to venous return** — that gap is the real
+   obstacle and it is recorded in §7.
    Pmsf, right atrial pressure, stressed
    vs unstressed volume. Replaces `G_vr`; `relations.csv` already names venous compliance
    as the unsourced step in the `CO` row. Record Beard and Feigl 2011 as a declared
    conflict. **`validation/venous_compliance_extract.py` already refutes ADR 0012's
    concavity requirement** — the filling relation is linear over the physiological range,
    and the operative variable is stressed/unstressed, not central/peripheral.
-2. **Chronotropic baroreflex.** ADR 0009 gives the reflex one effector; HR now exists.
+3. **Chronotropic baroreflex.** ADR 0009 gives the reflex one effector; HR now exists.
    **Deliberately deferred** — ADR 0009 says do not re-separate the arms without a
    protocol that needs it, the reflex resets so it nulls at every steady state, and the
    cardiac gain needs a sourcing pass. Best normative source found: **Schumann 2024**,
    *Am J Physiol Heart Circ Physiol* 326:H158–H165, n=980 healthy — and it is about **sex
    differences in BRS**, so it would also give ADR 0014 a second real dimorphic pair.
-3. **ADR 0013 decision** on `G_pn`, with its ECF falsifiable test run first.
-4. **Body surface area, and it is now worth more than it was.** It was on this list only
+4. **ADR 0013 decision** on `G_pn`, with its ECF falsifiable test run first.
+5. **Body surface area, and it is now worth more than it was.** It was on this list only
    because GFR and cardiac output scale sub-linearly in mass, so `scaling.jl` overstates
    their population spread. It has since acquired two further jobs, both from §3.6.
    **It unlocks the sources.** The two best studies in the cardiac reference literature —
@@ -616,12 +718,12 @@ population of an incomplete model is a wider set of wrong answers.**
    Petersen gives only by age group, while `size_factor` scales it again and the ensemble
    samples mass by sex — so part of the size dimorphism is counted twice. Needs a height
    row and one BSA formula, sourced.
-5. **`RN.URINE.SOLUTE_LOAD = 600 mOsm/day` is now the load-bearing unsourced number on
+6. **`RN.URINE.SOLUTE_LOAD = 600 mOsm/day` is now the load-bearing unsourced number on
    the water side.** `ADH.URINE.OSM_MAX` is sourced, so the obligatory volume, `U_base`,
    `k_adh` and every steady state now hang off a conventional figure that
    `RN.URINE.SOLUTE_NONNA` already records as too low — measured totals are 700–900.
    Correcting it moves every ADH constant and needs its own pre-registration.
-6. **`check_closure.py` is filling up** — 19 hand-coded relationships, does not scale past
+7. **`check_closure.py` is filling up** — 19 hand-coded relationships, does not scale past
    about twenty.
 
 ---
@@ -659,7 +761,20 @@ population of an incomplete model is a wider set of wrong answers.**
         git log --diff-filter=A -- validation/<name>_prereg.md
 
     Fixed for `dependency_inversion_prereg.md` on 2026-09-01; the other six are §7.
-13. **Dead code hides unledgered constants and stale API assumptions.** `reconstruct.jl`
+13. **AN ASSUMPTION YOU WROTE DOWN AND THEN STOPPED SEEING.** On 2026-09-02 a
+    composition was built on "right atrial pressure treated as fixed", the
+    pre-registration said so **in those words**, and the output was then read as a fact
+    about physiology. Withdrawn the same day — §3.9. **Writing an assumption into a
+    pre-registration does not discharge it; it records a debt that the result must be
+    checked against.** The check is mechanical: before believing a composed number, vary
+    each declared assumption and see whether the conclusion survives.
+14. **SOURCING THE STRUCTURE FROM THE DISEASE.** The same pass drew its mechanism from ICU
+    patients, anaesthetised ganglion-blocked dogs, reduced-renal-mass dogs, anephric
+    patients, a hypertensive subgroup and a trout. **A model whose structure is inferred
+    from pathological preparations becomes a pathological model**, which §3.3 says has
+    already happened once to `G_pn`. Directive 1.7 is the guard. Ask of every mechanistic
+    source: **was this preparation designed to show normal physiology, or to break it?**
+15. **Dead code hides unledgered constants and stale API assumptions.** `reconstruct.jl`
     and `ensemble.jl` each carried a hardcoded number. Connecting the ensemble surfaced
     three live SciMLBase API breakages that nothing could have caught while it was dead.
 
@@ -691,7 +806,7 @@ population of an incomplete model is a wider set of wrong answers.**
 - **`CV.SV.NOMINAL` is NOT normalised to the 70 kg reference mass.** Petersen reports
   cohort weight by age group and not by sex, so the sexed pair still carries a body-size
   component — and in the ensemble, where mass is sampled by sex, that component is
-  counted twice. §4 item 4.
+  counted twice. §4 item 5.
 - **`ADH.URINE.OSM_MAX` carries no dispersion and no age.** Tryding reports age-related
   reference intervals; the record read gives means by age, not an SD at one age. Maximal
   concentrating ability falls 16% from 20 to 80 years and this model has no age
@@ -742,6 +857,15 @@ population of an incomplete model is a wider set of wrong answers.**
   reference plus the `--diff-filter=A` check. **Deliberately NOT fixed in the same
   change that sourced stroke volume** — it touches rows that change made no claim
   about, and two changes at once leaves neither testable. It is one clean pass.
+- **No healthy-human source exists in this repo for systemic vascular compliance, mean
+  systemic filling pressure, or resistance to venous return.** Everything currently held
+  is post-cardiac-surgery ICU (Maas 2012), compiled from critically ill patients (Magder
+  2025), or anaesthetised, ganglion-blocked, splenectomised animals
+  (`venous_compliance_extract.py`). **That is the real obstacle on §4 item 2**, not the
+  arithmetic. Recorded in `renal_hemodynamics_salt_sources.md` §5.
+- **Renal haemodynamics across salt intake has been sourced in men only.** Krikken, van den
+  Bosch, Visser, Barba, Textor, Kirkendall and Rorije are all male; Toering 2018 is the
+  only sexed source found and gives a direction, not numbers.
 - **Eight relations carry no `form_citation`**, grandfathered as tracked debt.
 - **`pooling.md` requires columns `ledger/parameters.csv` does not have** — recorded in
   prose instead, by precedent.
