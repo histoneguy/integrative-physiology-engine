@@ -47,19 +47,27 @@ constrain the interactions that make the model integrative.
 
 Populate each with specific citations before implementation of the relevant subsystem.
 
+**FOUR OF THESE ARE NO LONGER TODO.** `validation/challenges.jl` runs them against
+published human data and **exits nonzero on failure**. It is the first external
+validation this repo has had. Homeostasis holds to 5.7e-15 over 400 days and eight
+resting values sit inside human reference ranges; the two-litre saline challenge passes
+on all four endpoints; three failures are recorded and two of them share one diagnosis,
+which is the missing volume-sensing natriuretic path of ADR 0010. See HANDOVER 3.15
+and 3.16.
+
 | Protocol | Primarily constrains | Status |
 |---|---|---|
 | Graded hemorrhage / controlled blood loss | Baroreflex gain, capacitance recruitment, fluid shift | TODO |
 | Lower-body negative pressure (graded) | Cardiopulmonary and arterial baroreflex, orthostatic tolerance | TODO |
 | Head-up tilt / orthostasis | Autonomic control, venous pooling | TODO |
-| High- and low-sodium balance studies | Renal-body fluid feedback, RAAS, pressure natriuresis | TODO |
-| Acute and chronic volume loading | Renal excretory function, ANP, capacitance | TODO |
+| High- and low-sodium balance studies | Renal-body fluid feedback, RAAS, pressure natriuresis | **RUN** - validation/challenges.jl, and salt sensitivity is 2-3x too high |
+| Acute and chronic volume loading | Renal excretory function, ANP, capacitance | **RUN** - Lobo 2001 PASSES on all four endpoints; Jensen 2013 acute natriuresis FAILS at 43% against 123% |
 | Water immersion | Central volume redistribution, renal response | TODO |
 | Graded exercise (submaximal to maximal) | Cardiac output reserve, muscle flow, metabolic coupling, thermal load | TODO |
 | Passive heat stress | Thermoregulatory flow redistribution, sweating, plasma volume | TODO |
 | Acute hypoxia and altitude acclimatization | Chemoreflex, ventilatory control, erythropoietic response | TODO |
 | Hypercapnic rebreathing | Ventilatory control loop gain | TODO |
-| Water deprivation / fluid restriction | Osmoregulation, ADH axis | TODO |
+| Water deprivation / fluid restriction | Osmoregulation, ADH axis | **RUN** - Pross 2013; plasma osmolality rises 6.1 mOsm against unchanged, and the protocol is not expressible with one lumped water intake |
 
 ## Reference anatomy and physiology
 

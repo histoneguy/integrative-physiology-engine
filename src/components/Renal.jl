@@ -46,7 +46,7 @@ using ..LedgerParams:
     RN_URINE_SOLUTE_LOAD, RN_URINE_SOLUTE_NONNA, RN_URINE_OSM_PER_NA,
     RN_AUTOREG_LOWER, RN_AUTOREG_UPPER, ADH_URINE_OSM_MAX, RN_URINE_SOLUTE_LOAD,
     CV_MAP_SETPOINT, BF_H2O_INTAKE_NOMINAL, BF_H2O_INSENSIBLE_LOSS,
-    BF_BODY_MASS_REFERENCE
+    BF_BODY_MASS_REFERENCE, BF_ECF_MASS_FRACTION
 
 """
     Renal(; name)
@@ -61,7 +61,8 @@ reabsorption falls as pressure rises. That single dependence is what makes arter
 pressure self-regulating in the long run.
 """
 function Renal(; name, solute_tracking::Bool = true,
-               body_mass = BF_BODY_MASS_REFERENCE)
+               body_mass = BF_BODY_MASS_REFERENCE,
+               anp_gain = 0.0)
 
     sz = size_factor(body_mass)
 
@@ -103,12 +104,31 @@ function Renal(; name, solute_tracking::Bool = true,
         osm_Na    = RN_URINE_OSM_PER_NA         # INTENSIVE - charge balance
         H2O_in   = BF_H2O_INTAKE_NOMINAL
         H2O_ins  = BF_H2O_INSENSIBLE_LOSS
+        # VOLUME-KEYED NATRIURESIS - ADR 0010, DIAGNOSTIC, DEFAULT ZERO.
+        #
+        # EXTENSIVE, in (mEq/day)/L, and it scales exactly as G_pn does and for the
+        # same reason. G_anp = 0.0 recovers the pressure-only equation identically,
+        # so every existing result is bit-identical unless this is passed a value.
+        #
+        # THIS IS NOT ADR 0010'S PROPOSED COMPONENT. It has no ANP state, no
+        # secretion dynamics and no ledger row, and it must not acquire one until
+        # the input coupling that record names as its blocker is sourced. It exists
+        # so the question "would a volume-keyed path fix the acute natriuresis
+        # deficit, and would it let G_pn fall?" can be ANSWERED rather than argued.
+        # validation/challenges.jl section 3 is the deficit it was built to test.
+        G_anp     = sz * anp_gain
+        V_ecf_ref = body_mass * BF_ECF_MASS_FRACTION
     end
 
     vars = @variables begin
         # All algebraic - no defaults. MAP and C_Na arrive by connection.
         MAP(t)              # mmHg     INPUT from cardiovascular
         C_Na(t)             # mEq/L    INPUT from body fluids
+        # WIRED 2026-09-02. The component docstring above has claimed V_ecf as an
+        # input since the file was written and it was never connected - the kidney
+        # could not see extracellular volume at all. Found by running
+        # validation/challenges.jl, not by any gate.
+        V_ecf(t)            # L        INPUT from body fluids
         fr_mod(t)           # unitless INPUT from RAAS (0.0 = no RAAS action)
         u_osm(t)            # mOsm/kg  INPUT from ADH (urine osmolality)
         renal_mod(t)        # unitless INPUT from circadian clock (1.0 = no rhythm)
@@ -160,8 +180,14 @@ function Renal(; name, solute_tracking::Bool = true,
         # (1 - FR_Na), which is 0.0081. A 25% swing there is a 25% swing in
         # excretion and a 0.2% swing in reabsorption, which is the physiological
         # reading. renal_mod = 1.0 recovers the previous equation exactly.
+        # The G_anp term is the volume-keyed natriuresis of ADR 0010 and is ZERO
+        # by default, so this reduces exactly to the pressure-only form. It enters
+        # with the same sign and the same normalisation as the pressure term:
+        # Na_excr gains G_anp*(V_ecf - V_ecf_ref), i.e. sodium excretion rises when
+        # extracellular volume is above its reference, independently of pressure.
         FR_effective ~ clamp(1.0 - (1.0 - FR_Na) * renal_mod + fr_mod -
-                             G_pn * (MAP - MAP_ref) / Na_filtered, 0.0, 1.0),
+                             G_pn * (MAP - MAP_ref) / Na_filtered -
+                             G_anp * (V_ecf - V_ecf_ref) / Na_filtered, 0.0, 1.0),
 
         Na_reabsorbed ~ FR_effective * Na_filtered,
         Na_excr       ~ Na_filtered - Na_reabsorbed,

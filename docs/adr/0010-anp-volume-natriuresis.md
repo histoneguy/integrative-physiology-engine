@@ -624,3 +624,56 @@ Blocker 3 therefore stays open, but it is now a **specific, cheap, bounded task*
 than an open-ended mechanistic search. The 2.2x figure should not be quoted as a
 quantity anywhere until it is redone; `HANDOVER.md` section 3.2 and the Context section
 of this ADR both currently state it without uncertainty.
+
+---
+
+## Addendum, 2026-09-02: the premise is confirmed quantitatively, and the identifying experiment is named
+
+**Run `julia --project=. bench/anp_diagnostic.jl` and
+`julia --project=. validation/challenges.jl`.**
+
+This record has argued since 2026-08-21 that `G_pn` is inflated because a volume-sensing
+natriuretic path is missing, and that **the inflated slope is the shape of the missing
+component**. That was an argument. It is now a measurement.
+
+**FIRST, THE INPUT WAS NEVER CONNECTED.** `Renal.jl` has named `V_ecf` as an input in its
+docstring since the file was written and **nothing ever wired it**. The kidney could not
+see extracellular volume at all. Found by running a challenge protocol; no gate could
+have caught it. It is now wired, and the component carries a volume-keyed term with
+**gain zero by default**, so the model is bit-identical — 433/433 unchanged.
+
+**SECOND, THE ACUTE DEFICIT IS REAL AND MEASURED.** `validation/challenges.jl` §3: on
+23 mL/kg of isotonic saline this model raises fractional sodium excretion by **43%**
+against **123%** in 23 healthy humans (Jensen JM, Mose FH, Bech JN, Nielsen S, Pedersen
+EB. *BMC Nephrol* 2013;14:202, PMID 24067081). **The model under-natriureses acutely,
+which is exactly what a pressure-only kidney predicts**, because pressure is the slow arm.
+
+**THIRD, AND IT IS EXACT.** At steady state `d(intake) = G_pn·dMAP + G_anp·dV_ecf` with
+`dMAP = 6.173·dV_ecf`, so chronic salt sensitivity is `1/(G_pn + G_anp/6.173)`.
+Confirmed to four decimals: `(20.0, 0)`, `(10.0, 61.7)` and `(5.43, 89.9)` all give a
+shift of **4.957**.
+
+**CONSEQUENCE FOR THIS RECORD, AND IT IS THE USEFUL ONE.** The pressure path and the
+volume path are **indistinguishable at steady state**. No sodium-balance study, however
+long or well controlled, can identify this gain — including Mars500, which
+`validation/targets.md` names as the primary body-fluid target. **Only acute volume
+expansion separates them.** That is now this record's identifying experiment, and Jensen
+2013 is the shape of it.
+
+**AND THE TWO LIMBS DISAGREE BY ABOUT A FACTOR OF TWO.** Landing chronic salt sensitivity
+in the human 1.70–2.30 window needs `G_anp` near 240–330 with `G_pn` at its measured
+animal value; matching Jensen's acute +123% needs roughly half that. **A single linear,
+instantaneous, volume-keyed term cannot satisfy both.** That is evidence about the FORM —
+the real path is lagged or saturating — and it is a better argument for building an ANP
+state with secretion dynamics than anything previously in this record.
+
+**Status stays Proposed. `G_anp` gets no ledger row.** The blocker named in the 2026-08-22
+addendum is unchanged: nothing sourced connects atrial stretch or a volume signal to
+plasma ANP in humans, and Norsk 1986 falsified total blood volume as the sensed variable.
+**Sizing this gain to the discrepancy it explains would be the circularity that HANDOVER
+§3.3 records having already happened to `G_pn`.**
+
+**What this does change.** ADR 0016 sequences `G_vr` first and the fitted constant last.
+**A volume-keyed path now belongs ahead of both** — it is the only candidate that relieves
+an acute failure and a chronic one with the same component, and the only one that makes
+`G_pn` estimable at its measured value rather than as a free constant.
