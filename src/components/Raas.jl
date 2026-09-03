@@ -91,10 +91,37 @@ DIVERGENCES LOGGED
      renin is not zero.
 
      CONSEQUENCE: `g_renin` was calibrated so the low-salt arm doubled PRA
-     from a baseline of 1.0, and that baseline no longer exists. Escape
-     still zeroes `fr_mod` at steady state, so no steady state moves, but
-     the gain must be re-derived before this component is trusted for
-     anything transient.
+     from a baseline of 1.0, and that baseline no longer exists.
+
+     RE-DERIVED 2026-09-02, 19.0 -> 4.35, AND IT IS NO LONGER `assumed`.
+     Pre-registered in validation/renin_gain_prereg.md; run
+     python validation/renin_gain_extract.py. The slope came from the SAME
+     van Ochten meta-analysis already cited above for the threshold and the
+     form: renin rises 50 percentage points of its PLATEAU value per 10 mmHg
+     fall in renal arterial pressure, so 0.05 per mmHg, and this file
+     normalises the drive by MAP_ref, so g_renin = 0.05 * MAP_ref exactly.
+
+     THE OLD LEDGER NOTE WAS WRONG ABOUT THE PAPER, WHICH IS WHY THE ROW SAT
+     `assumed`. It said the slope was in "animal units this model cannot
+     consume directly". The paper's own Limitations say the opposite: it
+     could not meta-analyse ABSOLUTE renin, because studies reported PRA,
+     PRC or renin release on assay-dependent scales, so it converted the
+     dose-response to PERCENTAGE OF BASELINE - the one form a dimensionless
+     normalised `pra` can consume. Nobody had opened it.
+
+     `pra = 1` IS THE PLATEAU, NOT RESTING RENIN. The form is rectified, so
+     the drive is zero at and above P_thr and `pra` is normalised to the
+     floor. Resting `pra` is now 1.30 rather than 2.31 because the operating
+     point sits 6 mmHg below threshold. Conflating the two is what broke this
+     row in the first place.
+
+     WHAT IT CANNOT DO, still. The human salt-induced renin response is NOT
+     reproducible here at any gain. van den Bosch 2021 measures a 2.73-fold
+     PRA difference between high and low sodium at MAP 88 against 86, and
+     this rectified form caps the achievable ratio at (93-86)/(93-88) = 1.4.
+     In humans that response runs mostly through macula densa sodium
+     delivery and renal sympathetic traffic, and this component has neither.
+     Recorded as a structural gap rather than absorbed into the gain.
 
 Inputs   MAP (mmHg)
 Outputs  fr_mod (unitless) - ADDITIVE increment to renal fractional sodium

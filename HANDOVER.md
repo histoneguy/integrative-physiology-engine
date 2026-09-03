@@ -3,7 +3,7 @@
 **Date:** 2026-09-02
 **Repo:** https://github.com/histoneguy/integrative-physiology-engine (public)
 **Owner:** Eric George (`histoneguy`)
-**State:** **428/428**, all five gates exit 0, nothing outstanding.
+**State:** **433/433**, all five gates exit 0, nothing outstanding.
 
 **This header deliberately names NO commit SHA and NO open PR.** Three consecutive
 handovers were wrong in their first line, each in a different way: two pinned a SHA that
@@ -192,7 +192,7 @@ prohibits `range-midpoint`, so an interval cannot become a point estimate.
 
 ## 2. STATE
 
-**428/428, five gates exit 0.** All of the below is on `main` as of 2026-09-02.
+**433/433, five gates exit 0.** All of the below is on `main` as of 2026-09-02.
 
 **THE `VERIFY` CLASS IS EMPTY.** Eight rows carried
 `Standard physiological reference. VERIFY.` Five are now sourced — `CV.MAP.SETPOINT`,
@@ -213,7 +213,7 @@ that is the honest direction — see `validation/verify_rows_prereg.md` branch 6
 | `Cardiovascular.jl` | ECF → plasma → blood volume, partitioned central/peripheral (ADR 0012). **CO = HR × SV**, and stroke volume is now the SOURCED half (ADR 0011). MAP = CO × TPR, sexed. |
 | `Renal.jl` | GFR autoregulation, filtered load, pressure natriuresis, RAAS increment, circadian modulation, osmoregulated water excretion, **urine solute load tracking sodium**. |
 | `Baroreflex.jl` | Lumped, resetting, **TPR effector only**. Setpoint scaled by the clock. |
-| `Raas.jl` | Active at rest — PRA 2.31×. No AngII vasoconstriction, deliberate. |
+| `Raas.jl` | Active at rest — PRA 1.30× the baroreflex plateau since the gain was re-derived (§3.13), 2.31× before. No AngII vasoconstriction, deliberate. |
 | `Adh.jl` | Osmolality → antidiuretic activity → urine osmolality. Algebraic, no states. |
 | `Circadian.jl` | Cosinor clock, connected to renal excretion and the reflex setpoint. **Default OFF** — both arms' parameters contested. |
 | `reconstruct.jl` | **Connected.** SBP/DBP/PP from `SV` and `C_art`. NOT part of the ODE system — see §3.2. |
@@ -223,11 +223,11 @@ that is the honest direction — see `validation/verify_rows_prereg.md` branch 6
 
 | intake (mEq/d) | MAP (mmHg) | SBP | DBP | PP |
 |---|---|---|---|---|
-| 205 | 86.979 | 108.97 | 75.98 | 32.99 |
+| 205 | 86.978 | 108.97 | 75.98 | 32.99 |
 | 154 | 84.450 | 105.81 | 73.77 | 32.03 |
 | 103 | 81.922 | 102.64 | 71.57 | 31.07 |
 
-**Shift 5.0570 mmHg**, and it survived a 19% rise in cardiac output without moving at
+**Shift 5.0565 mmHg** (5.0570 before the renin gain was re-derived, section 3.13), and it survived a 19% rise in cardiac output without moving at
 the fifth significant figure — §3.6. Arterial pressure is nowhere regulated; it lands at a stable
 intake-dependent value through renal–body fluid feedback alone. **Do not quote beyond 5
 significant figures** and do not pin tighter than 1e-4.
@@ -253,8 +253,8 @@ blood volume and haematocrit — and left the compartment fraction alone.
 
 ### Ledger
 
-**71 parameters over 83 rows** — 34 `reported`, 29 `derived`, 18 `assumed`, 2
-`calibrated`. **20 weak.** Tiers: 38 A, 28 B, 17 C.
+**71 parameters over 83 rows** — 34 `reported`, 30 `derived`, 17 `assumed`, 2
+`calibrated`. **19 weak.** Tiers: 38 A, 29 B, 16 C.
 `RN.GFR.VOLUME_SENSITIVITY` was added on 2026-09-02 (§3.12) and **nothing in `src/` reads
 it yet** — declared, not hidden, and in §7.
 **The `assumed` count went DOWN by two on 2026-09-01, and that is as honest as its going
@@ -690,6 +690,11 @@ the run: >20% fall means the pathway is live, <5% means the lead is dead.**
 | **escape OFF** (`tau_esc` = 1e6 d) | **2.4925 mmHg** | **2.444** |
 | human, meta-analytic (Cutler / He / He, k = 3) | — | **1.70–2.30** |
 
+> **THIS TABLE IS AT `g_renin` = 19.0 AND THAT ROW HAS SINCE BEEN SOURCED — §3.13.**
+> At the derived 4.35 the escape-OFF arm is **3.892**, not 2.444, and the fall is
+> **21.5%**, not 50.7%. The verdict below survives the pre-registered 20% rule; the
+> magnitude does not survive at all. Read the two together.
+
 **A 50.7% fall.** The model goes from 2.2–2.9× too salt-sensitive to **6% above the top of
 the human range**, without `G_pn` being touched. The mechanism is visible in the run:
 `fr_mod` is +3.1e-3 at 205 mEq/day and +5.5e-3 at 103 — less reabsorption on high salt,
@@ -710,9 +715,11 @@ against the other.
    a proposal. ADR 0015 proposes the real thing, **default OFF** per ADR 0006's E3 rule.
 2. **The baseline moves.** MAP 86.98 → 90.30 at the high arm, `V_ecf` 14.556 → 15.095. The
    model is off its calibrated operating point and the magnitude carries that confound.
-3. **`RAAS.RENIN.PRESSURE_GAIN` is calibrated against a baseline that no longer exists**
-   (§7). Direction trustworthy, size not. **It has to be re-derived before any magnitude
-   here is believed.**
+3. ~~**`RAAS.RENIN.PRESSURE_GAIN` is calibrated against a baseline that no longer
+   exists.** Direction trustworthy, size not.~~ **RE-DERIVED 2026-09-02 AND THIS CAVEAT
+   WAS RIGHT — §3.13.** Direction survived, size did not: 50.7% became 21.5% and 2.444
+   became 3.892. **That caveat is the reason this section's number was never quoted as a
+   result**, and it is the clearest case in the repo of a stated caveat paying off.
 4. **The volume limb is untouched.** ΔV_ecf goes 0.803 → 0.396 per 100 mmol against a human
    0.553–0.572, overshooting the other way, and `dMAP/dV_ecf` stays at **6.173** —
    unchanged, exactly as §3.7's orthogonality result predicts. The ratio problem is still
@@ -775,6 +782,63 @@ fluid, so the correct figure is **1.157 L, 9% larger.** That makes §3.7's withi
 ratio 1.73 rather than 1.885 mmHg/L and its failure 5.7× rather than 5.2× — same
 direction, slightly worse. It is §4 item 2's business and one clean pass on its own.
 
+### 3.13 The renin gain was blocked by a sentence about a paper nobody had opened
+
+**Run it: `python validation/renin_gain_extract.py`.** Pre-registered in
+`validation/renin_gain_prereg.md`, written before any source was opened.
+**Branch R1: `RAAS.RENIN.PRESSURE_GAIN` 19.0 → 4.35, `assumed` → `derived`, tier C → B.**
+
+**The source was already cited three lines above the problem.** van Ochten 2025 supplies
+`Raas.jl`'s rectification threshold and its linear form. It also supplies the **slope**:
+renin rises **50 percentage points of its plateau value per 10 mmHg** fall in renal
+arterial pressure. `Raas.jl` normalises the drive by `MAP_ref`, so
+
+    g_renin = 0.05 × MAP_ref = 0.05 × 87.0 = 4.35
+
+**Why it sat `assumed` for six days.** The row's own note said the paper *"reports the
+renal baroreflex slope in animal units this model cannot consume directly, so the gain is
+fitted rather than converted."* **The paper says the opposite in its Limitations**: it
+could not meta-analyse *absolute* renin, because studies reported plasma renin activity,
+concentration or release on assay-dependent scales, so it converted the dose-response to
+**percentage of baseline** — the one form a dimensionless normalised `pra` can consume.
+**The units were never the obstacle.** The pre-registration flagged that sentence as a
+previous session's claim about a paper and required it to be tested rather than inherited.
+
+**`pra = 1` IS THE PLATEAU, NOT RESTING RENIN, and conflating them is how the row broke.**
+The form is rectified, so the drive is zero at and above threshold. The voided calibration
+fitted the gain so the low-salt arm *"doubled PRA from a baseline of 1.0"* — true only
+while `CV.MAP.SETPOINT` was also 93 and the drive was identically zero. Resting `pra` is
+now **1.30** rather than 2.31.
+
+**What it changes, measured with `bench/renin_gain_sweep.jl`.** Nothing at steady state:
+escape zeroes `fr_mod`, and a 16-fold change in the gain moves the salt-step shift by at
+most 0.81%. The headline goes 5.056953 → 5.056485 mmHg, the fifth significant figure.
+
+**AND IT COSTS ADR 0015 MORE THAN HALF ITS EFFECT.**
+
+| `g_renin` | fall in salt-step shift | escape-off mmHg/100 mmol |
+|---|---|---|
+| **4.35 (derived)** | **21.5%** | **3.892** |
+| 19.0 (behind §3.11's table) | 50.7% | 2.444 |
+| — human | — | 1.70–2.30 |
+
+**ADR 0015 survives its own pre-registered 20% rule and stops being a near-complete
+explanation.** It closes about a fifth of the salt-sensitivity gap, not nearly all of it.
+**§3.11's 50.7% was a function of an unsourced row**, which is exactly what §7 warned and
+why this was item 3.
+
+**THE STRUCTURE CANNOT CARRY THE HUMAN SALT-RENIN RESPONSE AT ANY GAIN — branch S2.** The
+rectified form caps the achievable PRA ratio between two pressures at the ratio of their
+drives, independently of the gain. van den Bosch measures **PRA 2.10 against 5.74**, a
+2.73-fold change, at **MAP 88 against 86** — where the ceiling is (93−86)/(93−88) = **1.40**.
+Human salt-induced renin runs mostly through macula densa sodium delivery and renal
+sympathetic traffic, and this component has neither. **The pre-registration forbade
+fitting to those data before the search**, because absorbing a missing mechanism into a
+parameter is precisely how `G_pn` became a hypertensive value (§3.3). Recorded in §7.
+
+**No threshold had to be chosen for that test**, which is why it was used. A form-imposed
+ceiling either is or is not exceeded.
+
 ---
 
 ## 4. NEXT, IN ORDER
@@ -829,14 +893,15 @@ population of an incomplete model is a wider set of wrong answers.**
    conflict. **`validation/venous_compliance_extract.py` already refutes ADR 0012's
    concavity requirement** — the filling relation is linear over the physiological range,
    and the operative variable is stressed/unstressed, not central/peripheral.
-3. **Re-derive `RAAS.RENIN.PRESSURE_GAIN`. IT BLOCKS BOTH ADR 0013 AND ADR 0015.**
-   It was fitted so the low-salt arm doubled PRA from 1.0, against a baseline PRA that
-   is now 2.31 — so it is calibrated to a model that no longer exists. §7 called this
-   “not urgent” and transient-only on the grounds that escape zeroes `fr_mod` at steady
-   state. **§3.11 killed that reasoning**: ADR 0015's whole proposal is a tubular term
-   that does not escape, and this gain sets how hard it pushes. Until it is re-derived,
-   any magnitude taken from §3.11 is unreliable and item 4 cannot be settled.
-   **The target should be an absolute resting PRA, not a doubling ratio.**
+3. ~~**Re-derive `RAAS.RENIN.PRESSURE_GAIN`.**~~ **DONE 2026-09-02, §3.13.** 19.0 → 4.35,
+   `derived`, from the slope in the same van Ochten meta-analysis that already supplied
+   this component's threshold and form. **It unblocks item 5 and it resized ADR 0015 from
+   a 50.7% effect to 21.5%.**
+   **What it left behind is bigger than what it settled.** The rectified pressure-only
+   renin control cannot reproduce the human salt-induced renin response **at any gain**
+   (branch S2), because human renin answers to macula densa sodium delivery and renal
+   sympathetic traffic and this component has neither. That is now the live question in
+   this subsystem, and it is a structural one. §7.
 4. **Chronotropic baroreflex.** ADR 0009 gives the reflex one effector; HR now exists.
    **Deliberately deferred** — ADR 0009 says do not re-separate the arms without a
    protocol that needs it, the reflex resets so it nulls at every steady state, and the
@@ -853,9 +918,13 @@ population of an incomplete model is a wider set of wrong answers.**
    20 → 51); ADR 0015 reaches it from a MECHANISM (§3.11, 50.7% of the gap closed
    with no parameter touched). **Adopting both at full strength double-counts the
    same discrepancy.** Its ECF falsifiable test has been run and blocks 0013 anyway
-   (§3.7). **THIS ITEM IS BLOCKED BEHIND ITEM 3** — `RAAS.RENIN.PRESSURE_GAIN` is
-   calibrated against a baseline that no longer exists, ADR 0015 amplifies whatever it
-   carries, and neither record can be decided until it is re-derived.
+   (§3.7). ~~**THIS ITEM IS BLOCKED BEHIND ITEM 3.**~~ **UNBLOCKED 2026-09-02 — and item 3
+   changed the arithmetic.** With `RAAS.RENIN.PRESSURE_GAIN` sourced at 4.35, ADR 0015
+   delivers **21.5%** rather than 50.7%, i.e. **3.892** mmHg/100 mmol rather than 2.444.
+   **The three explanations no longer come close to over-explaining the gap; together they
+   may not even close it.** ADR 0015 ~21%, the GFR limb 8–15% (§3.12), ADR 0013 the
+   remainder by construction because it is fitted. **Decide 0013 last**, since it is the
+   only one that can absorb whatever the mechanisms leave.
 6. **Body surface area, and it is now worth more than it was.** It was on this list only
    because GFR and cardiac output scale sub-linearly in mass, so `scaling.jl` overstates
    their population spread. It has since acquired two further jobs, both from §3.6.
@@ -980,15 +1049,22 @@ population of an incomplete model is a wider set of wrong answers.**
   and matching the human pressure AND volume responses simultaneously** — §3.8.
 - ~~`Cardiovascular.jl` lets red cell volume expand with plasma.~~ **DONE 2026-09-02**, §3.8.
 - ~~Six rows still claim a source that does not exist.~~ **DONE 2026-08-31**, §3.5.
-- **`RAAS.RENIN.PRESSURE_GAIN` was calibrated against a baseline that no longer exists,
-  and it is NO LONGER “not urgent”.** Fitted so the low-salt arm doubled PRA from 1.0;
-  baseline PRA is now 2.31. The old note said escape drives `fr_mod` to ~1e-7 so no
-  steady state moves, and filed it as transient-only. **§3.11 and ADR 0015 make it a
-  STEADY-STATE blocker**: the whole point of that record is a tubular term that does
-  NOT escape, and this gain sets how hard it pushes. **It now blocks BOTH ADR 0013 and
-  ADR 0015, which are competing explanations for the same discrepancy, and it must be
-  re-derived before either is decided** — §4 item 3. The target should be an absolute
-  resting PRA.
+- ~~**`RAAS.RENIN.PRESSURE_GAIN` was calibrated against a baseline that no longer
+  exists.**~~ **DONE 2026-09-02, §3.13.** 19.0 → 4.35, `derived` from van Ochten's own
+  slope. It resized ADR 0015 from 50.7% to 21.5% and unblocked §4 item 5.
+- **THE RENIN CONTROL IS PRESSURE-ONLY AND HUMANS ARE NOT.** The rectified form caps the
+  PRA ratio it can produce between two pressures at the ratio of their drives, whatever
+  the gain. Between MAP 88 and 86 that ceiling is **1.40**; van den Bosch measures **2.73**
+  across sodium intake in the same subjects. **No value of the gain reproduces it**, and
+  the missing inputs are macula densa sodium delivery and renal sympathetic traffic.
+  Asserted in the suite so it cannot be forgotten. **Do not fit the gain to salt data** —
+  that would absorb a missing mechanism into a parameter, which is how
+  `RN.PRESSURE_NATRIURESIS.SLOPE` became a hypertensive value (§3.3). A macula densa
+  renin path is a build-order question under ADR 0006 and has not been opened.
+- **`RAAS.PRA.TAU` (0.0035 d) and `RAAS.ALDO.REABSORPTION_GAIN` (0.011) are still
+  `assumed`, tier C.** Deliberately out of scope of the gain pass — two changes at once
+  leaves neither testable. They are now the weakest rows in a component whose other four
+  are sourced.
 - **`RN.URINE.SOLUTE_NONNA` is a residual and the level is too low.** 292 mOsm/day is
   under-sized for urea + K salts because the parent 600 is an unsourced conventional
   figure. The sodium half responds; protein still moves nothing.
