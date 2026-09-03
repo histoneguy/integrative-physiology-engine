@@ -1,10 +1,18 @@
 # HANDOVER — Integrative Physiology Engine
 
-**Date:** 2026-09-02
+**Date:** 2026-09-03
 **Repo:** https://github.com/histoneguy/integrative-physiology-engine (public)
 **Owner:** Eric George (`histoneguy`)
-**State:** **441/441**, all five gates exit 0, and `validation/challenges.jl` PASSES
-against published human data. **§3.21: `validation/challenges.jl` EXITS 0. Every challenge passes.**
+**State:** **441/441**, all five gates exit 0, and **`validation/challenges.jl` EXITS 0** —
+every challenge passes against published human data.
+
+**THE MODEL REPRODUCES HUMAN SALT SENSITIVITY AND THE HUMAN PRESSURE–VOLUME RATIO, BOTH
+FOR THE FIRST TIME.** 2.000 mmHg per 100 mmol/day against a meta-analytic 1.70–2.30, and
+3.0005 mmHg/L against a measured 2.97–4.16. **Read §3.21's two caveats before quoting
+either**: two of the three parameters that make it do so were solved against those very
+targets, so they are fits. The validations are the four Lobo endpoints, the resting state,
+the 400-day steady state, and Jensen — and **Jensen, the only held-out number, is a third
+low.**
 
 **This header deliberately names NO commit SHA and NO open PR.** Three consecutive
 handovers were wrong in their first line, each in a different way: two pinned a SHA that
@@ -14,8 +22,11 @@ very merge that put the warning about it onto `main`. **Anything a merge can inv
 does not belong in a header.** Run `git log -1` and `gh pr list` for live state; this
 document describes the MODEL, which merging does not change.
 
-**Supersedes** the handover of 2026-08-27, which was accurate about the MAP 93
-correction and silent about everything after it. Folded in; nothing live dropped.
+**Supersedes** the handover of 2026-09-02. **§3 was reordered on 2026-09-03** — new
+findings had been prepended for days and the file read 3.14, 3.21, 3.19, 3.20, 3.18, 3.17,
+3.15, 3.16. It is now sequential and nothing was dropped; the reorder was checked by
+asserting the multiset of lines was unchanged. **§4 was rewritten from scratch**, because
+every numbered item on the old list had been completed.
 
 ---
 
@@ -204,15 +215,16 @@ source could be opened (`CV.CO.NOMINAL`, `RN.H2O.OBLIGATORY_LOSS`). **Four of th
 that could be opened were materially wrong.** The `assumed` count went UP by two, and
 that is the honest direction — see `validation/verify_rows_prereg.md` branch 6.
 
-### The model — 7 states after `structural_simplify`
+### The model — 8 states after `structural_simplify`
 
-`bf.V_icf`, `bf.V_ecf`, `bf.Na_ecf`, `br.tpr_mod`, `br.sp`, `ra.pra`, `ra.esc`
+`bf.V_icf`, `bf.V_ecf`, `bf.Na_ecf`, `br.tpr_mod`, `br.sp`, `ra.pra`, `ra.esc`,
+`rn.anp_sig` — the eighth arrived 2026-09-03 with ADR 0010 (§3.17).
 
 | Component | Status |
 |---|---|
 | `BodyFluids.jl` | ICF/ECF volumes, sodium mass balance, osmotic equilibration. Intakes now scale with body size. Inactive-Na storage **default off** (ADR 0004). |
 | `Cardiovascular.jl` | ECF → plasma → blood volume, partitioned central/peripheral (ADR 0012). **CO = HR × SV**, and stroke volume is now the SOURCED half (ADR 0011). MAP = CO × TPR, sexed. |
-| `Renal.jl` | GFR autoregulation, filtered load, pressure natriuresis, RAAS increment, circadian modulation, osmoregulated water excretion, **urine solute load tracking sodium**. |
+| `Renal.jl` | GFR autoregulation, filtered load, pressure natriuresis, RAAS increment, circadian modulation, osmoregulated water excretion, urine solute load tracking sodium, and **a lagged volume-keyed natriuretic path keyed to `V_blood`** (ADR 0010, §3.17). |
 | `Baroreflex.jl` | Lumped, resetting, **TPR effector only**. Setpoint scaled by the clock. |
 | `Raas.jl` | Active at rest — PRA 1.30× the baroreflex plateau since the gain was re-derived (§3.13), 2.31× before. No AngII vasoconstriction, deliberate. |
 | `Adh.jl` | Osmolality → antidiuretic activity → urine osmolality. Algebraic, no states. |
@@ -222,16 +234,24 @@ that is the honest direction — see `validation/verify_rows_prereg.md` branch 6
 
 ### The result
 
-| intake (mEq/d) | MAP (mmHg) | SBP | DBP | PP |
-|---|---|---|---|---|
-| 205 | 86.978 | 108.97 | 75.98 | 32.99 |
-| 154 | 84.450 | 105.81 | 73.77 | 32.03 |
-| 103 | 81.922 | 102.64 | 71.57 | 31.07 |
+| intake (mEq/d) | MAP (mmHg) | SBP | DBP | PP | `V_ecf` (L) |
+|---|---|---|---|---|---|
+| 205 | 86.994 | 108.99 | 76.00 | 33.00 | 14.5569 |
+| 154 | 85.974 | 107.72 | 75.10 | 32.61 | 14.2169 |
+| 103 | 84.953 | 106.44 | 74.21 | 32.22 | 13.8769 |
 
-**Shift 5.0565 mmHg** (5.0570 before the renin gain was re-derived, section 3.13), and it survived a 19% rise in cardiac output without moving at
-the fifth significant figure — §3.6. Arterial pressure is nowhere regulated; it lands at a stable
-intake-dependent value through renal–body fluid feedback alone. **Do not quote beyond 5
-significant figures** and do not pin tighter than 1e-4.
+**Shift 2.0404 mmHg over the 102 mEq/day step = 2.000 mmHg per 100 mmol/day**, against
+a human meta-analytic **1.70–2.30**. Δ`V_ecf` is 0.680 L and **`dMAP/dV_ecf` is 3.0005
+mmHg/L against a measured human 2.97–4.16.** Both limbs are inside the human range for
+the first time — §3.21, and read the two caveats there before quoting either.
+
+**It was 5.0570 for most of this project's life.** The path from there to here is §3.12
+through §3.21 and no single change did it: a sourced GFR response, a re-derived renin
+gain, a sourced volume-keyed natriuretic path, a sourced venous return relation, and a
+pressure slope moved to the value the human joint constraint implies.
+
+Arterial pressure is nowhere regulated; it lands at a stable intake-dependent value
+through renal–body fluid feedback alone. **Do not quote beyond 5 significant figures.**
 
 SBP/DBP are **reconstructed, not simulated** (ADR 0002) and must be labelled as such
 wherever reported. Agreement with the sourced 109/76 is **consistency, not validation** —
@@ -240,9 +260,11 @@ wherever reported. Agreement with the sourced 109/76 is **consistency, not valid
 ### Population
 
 `sample_population` draws Sobol over sexed NHANES percentiles. `V_ecf` scales with body
-mass — **0.207943 L/kg male, 0.207959 female** — while MAP is invariant across the mass
-range (86.9794 male, 86.9795 female). The population is **uniform** over P05–P95, not
-weight-distributed.
+mass, while MAP is invariant across the mass range. **The invariance is now asserted
+RELATIVELY rather than absolutely** — ADR 0010's term is a difference of two extensive
+volumes times a gain of hundreds, so a 1e-5 relative offset shows up as a visible
+absolute number. The bar is 1e-4 relative, which is TIGHTER than the old absolute bar.
+The population is **uniform** over P05–P95, not weight-distributed.
 
 **ECF per kg is now essentially sex-INVARIANT, and that is a change of meaning, not of
 digits.** It read 0.20788 / 0.20284 before blood volume and haematocrit were sourced as
@@ -254,8 +276,14 @@ blood volume and haematocrit — and left the compartment fraction alone.
 
 ### Ledger
 
-**73 parameters over 85 rows** — 34 `reported`, 32 `derived`, 17 `assumed`, 2
-`calibrated` — **one**, down from two, since `G_vr` was sourced (§3.19).
+**73 parameters over 85 rows** — 34 `reported`, 33 `derived`, 17 `assumed`, and
+**1 `calibrated`, down from two**, since `G_vr` was sourced (§3.19). Tiers: 38 A, 30 B,
+17 C. **`CV.VENOUS_RETURN.SENSITIVITY` was the second most consequential unmeasured
+number in the project and it is now sourced in healthy humans.** The ONE remaining
+`calibrated` row is **`RN.PRESSURE_NATRIURESIS.SLOPE` itself, at 8.4** — and whether
+that label is still right is an open question in §7: 8.4 is not fitted, it is the value
+the human joint constraint implies given the sourced volume gain, which is closer to
+`derived`. It is left as `calibrated` because nothing measured it directly.
 `RN.GFR.VOLUME_SENSITIVITY` was added on 2026-09-02 (§3.12) and **nothing in `src/` reads
 it yet** — declared, not hidden, and in §7.
 **The `assumed` count went DOWN by two on 2026-09-01, and that is as honest as its going
@@ -263,7 +291,8 @@ UP was on 2026-08-31.** `CV.CO.NOMINAL` and `RN.H2O.OBLIGATORY_LOSS` did not acq
 citations; they stopped being primitives. Each is now DERIVED from the quantity that is
 actually measured — stroke volume and maximal urine concentration — and it is those two
 rows that carry the new sources.
-**42 relations** — 14 definitional, 14 empirical, 10 conservation, 4 placeholder.
+**43 relations** — 14 definitional, 15 empirical, 10 conservation, 4 placeholder.
+`Renal.D(anp_sig)` was added on 2026-09-02 with ADR 0010, `sourced-lagged-linear`.
 `Cardiovascular.V_blood` moved definitional → conservation on 2026-09-02 (§3.8).
 **Twelve parameters carry male/female pairs:** `BF.BODY_MASS.{TYPICAL,P05,P95}`,
 `CV.ARTERIAL.COMPLIANCE`, `CV.HR.NOMINAL`, `CV.SV.NOMINAL`,
@@ -890,203 +919,6 @@ baseline** (MAP 86.98 → 88.1–88.4 in every row using it); the GFR limb is st
 overriding `GFR0` per arm. **These numbers size an ordering. They are not model
 predictions**, and step 3 must re-derive the bracket rather than reuse it.
 
-### 3.21 EVERY CHALLENGE PASSES. `G_pn` = 8.4, `G_anp` re-estimated to 585
-
-**`julia --project=. validation/challenges.jl` EXITS 0.** 441/441, five gates clean.
-
-`G_pn` 11.4 → **8.4**, the constraint-consistent partner of the sourced volume gain
-rather than a second free choice. `CV.ANP.NATRIURETIC_GAIN` 700 → **585** and
-`RN.ANP.TAU` 0.50 → **0.15 d**, re-estimated against the corrected inputs exactly as
-that row's own note required once `G_vr` was sourced.
-
-| endpoint | model | human |
-|---|---|---|
-| 400-day drift | 3.9e-15 | — |
-| resting state, 8 endpoints | all inside reference ranges | — |
-| Lobo urine, 6 h | **565.6 mL** | 563 |
-| Lobo urinary sodium, 6 h | **95.1 mmol** | 95 |
-| **chronic salt sensitivity** | **2.000** | **1.70–2.30** |
-| **`dMAP/dV_ecf`** | **3.000 mmHg/L** | **2.97–4.16** |
-| acute fractional Na excretion rise | 82.5% | 123% |
-
-**THE IDENTIFICATION IS CLEAN AND WAS MEASURED, NOT ASSUMED.** Two data, two
-parameters: the chronic salt-step response fixes the gain, Lobo's 6 h time course fixes
-the lag. **A first-order lag cannot move a steady state**, so they are separately
-identified — at gains of 500/700/900 the chronic sensitivity is 2.275/1.720/1.382
-regardless of the lag, and its reciprocal is linear in the gain. The two Lobo endpoints
-agree on the lag independently, 0.171 d from the volume and 0.166 d from the sodium.
-
-**JENSEN 2013 WAS HELD OUT AND IS THE ONE OUT-OF-SAMPLE NUMBER.** It was not used in the
-estimation. The model predicts +82.5% against a reported +123% — inside the band, about a
-third low. **That is the honest standing of this parameterisation on data it was not
-fitted to, and it is the sharpest remaining discrepancy in the sodium limb.**
-
-**THE LAG MOVED BY 3.3× AND THE REASON IS NOT ANP.** `G_pn` fell 20 → 8.4 over the same
-period, so the pressure path contributes far less acutely and the volume path must
-respond faster to reproduce the same 6 h excretion. **`RN.ANP.TAU` is not identified by
-ANP physiology**; it is identified by requiring the model to match one acute dataset given
-everything else, and it will move again if anything upstream moves. Tier C, doing work.
-
-**AND THE DRUMMER CORROBORATION WAS OVERSTATED, CORRECTED ON THE ROW.** At 0.15 d the lag
-reaches 95% of steady state in about 11 h, which is hours not days. Drummer describes how
-long EXCRETING THE LOAD takes, which this model sets by how slowly the volume decays, not
-by this lag. Drummer supports the EXISTENCE of a lag — the algebraic form was refuted
-without one — and does not constrain its value.
-
-**WHAT IS NOT CLAIMED.** Three parameters in the sodium–volume loop now come from human
-data, and two of them were solved against the very targets the harness reports, so those
-are FITS and not validations. **The validations are the four Lobo endpoints, the resting
-state, the 400-day steady state, and Jensen.** The rest is a consistent parameterisation.
-
----
-
-### 3.19 THE VENOUS RETURN RELATION IS SOURCED IN HEALTHY HUMANS. `G_vr` 2880 → 1400
-
-**Run `python validation/venous_return_human_extract.py`.** Pre-registered in
-`validation/venous_return_human_prereg.md`. §4 item 2 is DONE and `calibrated` is down
-to one row in the whole ledger.
-
-**THE EARLIER PASS MISSED IT BY SEARCHING FOR THE WRONG OBJECT.** `G_vr` is
-`dCO/dV_blood`, **not** a compliance in mL/mmHg. §3.9 records a whole line of work
-withdrawn for composing a compliance and a resistance into it. Blood volume can be
-changed by a **known amount** in healthy people, by withdrawal or plasma expansion, and
-cardiac output measured — so the composite is directly measurable in a paradigm that is
-performable. Five such studies exist and none was in this repo.
-
-**The value.** Diaz-Canestro 2022 (PMID 34875180), **30 healthy women** aged 47–77: a 10%
-blood-volume reduction, 0.5 L withdrawn with haematocrit unchanged, cut stroke volume by
-at least 10% **at rest**. That is 0.98 (L/min)/L = **1404**, entered as **1400** and
-entered **as an upper bound**, because a study reporting stroke volume bounds `dCO/dV`
-from above when heart rate can compensate — which the pre-registration said in advance.
-
-**TWO INDEPENDENT LINES AGREE, AND THAT IS THE RESULT.** Chronic sodium balance implied
-1012–1941 (§3.7, §3.8). Acute volume manipulation in healthy people gives 1400. They share
-no data, no subjects, no measurement and no timescale. **The model was 2.06× too stiff**,
-inside the 1.5–2.1× §3.7 estimated from the salt data alone.
-
-**THE PRESSURE–VOLUME RATIO IS NOW HUMAN FOR THE FIRST TIME: 3.001 mmHg/L against a
-measured 2.97–4.16.** It had been 6.173 through every configuration in §3.7, §3.8, §3.14
-and §3.16.
-
-**Asymmetry, measured, and it nearly failed its own test.** Fortney 1983 (PMID 6629925)
-is the only study giving both limbs in the same 5 healthy men: −490 mL gave −2.2 L/min
-and +440 mL gave +1.0, a ratio of **1.98 against a threshold of 2 fixed before the
-numbers**. It passes by 1%. **A linear symmetric gain is at the edge of what the evidence
-supports**, and the direction is the expected one.
-
-**STILL UNSOURCED IN HEALTHY HUMANS**, and the gap is narrowed rather than closed:
-systemic venous compliance in mL/mmHg, mean systemic filling pressure, resistance to
-venous return. The one human compliance value, Takatsu 1989 (PMID 2545936, 2.3 mL/mmHg/kg
-— strikingly close to the anaesthetised dog and pig values already held), is **56 cardiac
-patients graded by NYHA class**, and the pre-registration excluded class I in advance.
-**None of the three is needed now**, because the composite was sourced directly.
-
-### 3.20 Where the model stands with three parameters from data
-
-| | model | human |
-|---|---|---|
-| resting state, 8 endpoints | all inside reference ranges | — |
-| 400-day drift | 6.0e-15 | — |
-| Lobo urine / sodium at 6 h | 482 mL / 79.3 mmol | 563 / 95 |
-| **`dMAP/dV_ecf`** | **3.001** | **2.97–4.16** |
-| chronic salt sensitivity | 1.635 | 1.70–2.30 |
-| acute fractional Na excretion rise | +52% | +123% |
-
-**Two challenges now fail, both NARROWLY LOW**, where the model began 116% high on the
-chronic limb. **The residual is the pair mismatch recorded when `G_pn` was set.** The
-human joint constraint is `G_pn + 0.0594·G_anp = 50`; with the sourced `G_anp` = 700 it
-gives `G_pn` = **8.4**, not the instructed 11.4. Measured as a diagnostic, entering
-nothing: at 8.4 the chronic sensitivity is **1.720, inside the window**, with the ratio
-still 3.001. **The prediction recorded on that row held exactly.**
-
-**AND `CV.ANP.NATRIURETIC_GAIN` IS NOW DUE FOR RE-ESTIMATION.** Its own note said so:
-*part of 700 compensates for a volume excursion 1.5–2.1× too large while `G_vr` is
-calibrated — re-estimate when `G_vr` is sourced.* `G_vr` is now sourced, so that caveat
-has come due, and it is the likely cause of the weak acute natriuresis. **That is the next
-pass, and it is a re-estimation against corrected inputs rather than a new search.**
-
----
-
-### 3.18 `G_pn` set to 11.4, and the last free parameter is now isolated
-
-**2026-09-03, on the owner's explicit instruction**, discharging the parking that had
-stood since 2026-08-25. **It is NOT ADR 0013's 51.0** — that number came from the human
-pressure evidence with no volume path present. 11.4 is the joint estimate that follows
-from `G_pn + 0.0594·G_anp = 50` once ADR 0010's path is sourced.
-
-**Every acute challenge still passes.** They are carried by the volume path, not by this
-row. Lobo 528 mL / 87.8 mmol against 563 / 95; acute fractional excretion +65.8%.
-**Chronic salt sensitivity moves 2.301 → 2.805, outside the human 1.70–2.30**, and a
-chronic check was added to the harness so that is visible rather than implicit.
-
-**AND THAT IS WHAT MAKES IT USEFUL.** At 20.0 the model sat inside the window by
-**double-counting** the volume path. Removing the double count exposes the one parameter
-underneath, and it is `CV.VENOUS_RETURN.SENSITIVITY`. Swept as a diagnostic, entering
-nothing:
-
-| effective venous gain | `dMAP/dV_ecf` | chronic | ΔV per 100 mmol |
-|---|---|---|---|
-| 2880 (current) | 6.173 | 2.805 | 0.454 |
-| 1800 | 3.858 | **1.994** | 0.517 |
-| 1633 | 3.500 | **1.849** | 0.528 |
-| **human** | **2.97–4.16** | **1.70–2.30** | **0.553–0.572** |
-
-**All three human quantities land at once near 1633–1800.** §3.8 called that endpoint
-visible; two of its three parameters are now sourced and the third is isolated to a
-single sweep. **`G_vr` is not entered and must not be** — §4 item 2, and the obstacle
-there is evidence, not arithmetic.
-
-**One caveat, recorded rather than reconciled.** 11.4 pairs with `G_anp` = 650; the
-entered gain is 700, which the same constraint would pair with 8.4. Moving either after
-seeing the result is the circularity this row's history warns about.
-
----
-
-### 3.17 ADR 0010 IS SOURCED AND ON. THE MODEL NOW REPRODUCES HUMAN SALT SENSITIVITY
-
-**Run `julia --project=. validation/challenges.jl`. IT EXITS 0.** Pre-registered in
-`validation/anp_input_coupling_prereg.md`. ADR 0010 is **Accepted**.
-
-`CV.ANP.NATRIURETIC_GAIN` = **700 (mEq/day)/L of BLOOD volume**, with a first-order lag
-`RN.ANP.TAU` = **0.50 d**. **Two human datasets for two parameters**: the chronic
-salt-step response fixes the gain, Lobo 2001's 6 h acute time course fixes the lag.
-Neither is fitted to the salt-sensitivity discrepancy.
-
-| | before | after | human |
-|---|---|---|---|
-| acute fractional Na excretion rise | +43% | **+79%** | +123% |
-| Lobo urinary Na, 6 h | 78.3 mmol | **96.3** | 95 |
-| Lobo urine, 6 h | 481 mL | **575** | 563 |
-| **chronic salt sensitivity** | **4.958** | **2.301** | **1.70–2.30** |
-
-**THE ALGEBRAIC FORM ADR 0010 PROPOSED WAS BUILT FIRST AND REFUTED.** Without a lag the
-acute limb implies ~300 (mEq/day)/L and the chronic ~750, a factor of 2.5 against a
-threshold of 2 fixed before extraction. Drummer 1992 (PMID 1324562) says why: excretion of
-an acute isotonic load takes **days**. **That record was right to drop the ANP state and
-wrong to drop the dynamics.**
-
-**FOUR DEFECTS FOUND BY WIRING IT, NONE CATCHABLE BY A GATE.** `Renal.jl` named a volume
-input in its docstring since it was written and nothing connected it. The gain was written
-**extensive** and must be **intensive**, since it multiplies a volume. `member_remake`'s
-hand-maintained scaling list was missing both new parameters. And the solver-agreement
-metric broke for the third time on a zero-initialised state — **its own note predicted
-exactly that**, and it is now normalised by each state's characteristic scale rather than
-pointwise, which removes the cliff permanently instead of moving a threshold again.
-
-**TWO CAVEATS ON EVERY NUMBER ABOVE.** The gain multiplies the MODEL'S volume excursion,
-1.5–2.1× too large while `G_vr` is calibrated, so part of 700 compensates for that — the
-human data alone give 750 at `G_pn` = 5.43 and 505 at 20.0. And **`G_pn` is unchanged at
-20.0 and now over-determined**, so the model double-counts this path and the chronic
-agreement is partly that double count. The human joint constraint is
-`G_pn + 0.0594·G_anp = 50`, putting `G_pn` at **11.4**.
-
-**A PREDICTION THE MODEL COULD NOT MAKE BEFORE.** Salt sensitivity is now **sex-dependent,
-women 11% higher**, because the path is keyed to a sexed volume; a pressure-only kidney had
-salt sensitivity `1/G_pn`, which carries no sex information. **Nothing here has sourced
-that.** Asserted in the suite, recorded as debt, falsifiable.
-
----
-
 ### 3.15 THE MODEL WAS RUN AGAINST PUBLISHED HUMAN CHALLENGES FOR THE FIRST TIME
 
 **Run it: `julia --project=. validation/challenges.jl`. It EXITS NONZERO on failure.**
@@ -1200,124 +1032,285 @@ because it makes `G_pn` estimable at its measured value instead of as a free con
 
 ---
 
+### 3.17 ADR 0010 IS SOURCED AND ON. THE MODEL NOW REPRODUCES HUMAN SALT SENSITIVITY
+
+**Run `julia --project=. validation/challenges.jl`. IT EXITS 0.** Pre-registered in
+`validation/anp_input_coupling_prereg.md`. ADR 0010 is **Accepted**.
+
+`CV.ANP.NATRIURETIC_GAIN` = **700 (mEq/day)/L of BLOOD volume**, with a first-order lag
+`RN.ANP.TAU` = **0.50 d**. **Two human datasets for two parameters**: the chronic
+salt-step response fixes the gain, Lobo 2001's 6 h acute time course fixes the lag.
+Neither is fitted to the salt-sensitivity discrepancy.
+
+| | before | after | human |
+|---|---|---|---|
+| acute fractional Na excretion rise | +43% | **+79%** | +123% |
+| Lobo urinary Na, 6 h | 78.3 mmol | **96.3** | 95 |
+| Lobo urine, 6 h | 481 mL | **575** | 563 |
+| **chronic salt sensitivity** | **4.958** | **2.301** | **1.70–2.30** |
+
+**THE ALGEBRAIC FORM ADR 0010 PROPOSED WAS BUILT FIRST AND REFUTED.** Without a lag the
+acute limb implies ~300 (mEq/day)/L and the chronic ~750, a factor of 2.5 against a
+threshold of 2 fixed before extraction. Drummer 1992 (PMID 1324562) says why: excretion of
+an acute isotonic load takes **days**. **That record was right to drop the ANP state and
+wrong to drop the dynamics.**
+
+**FOUR DEFECTS FOUND BY WIRING IT, NONE CATCHABLE BY A GATE.** `Renal.jl` named a volume
+input in its docstring since it was written and nothing connected it. The gain was written
+**extensive** and must be **intensive**, since it multiplies a volume. `member_remake`'s
+hand-maintained scaling list was missing both new parameters. And the solver-agreement
+metric broke for the third time on a zero-initialised state — **its own note predicted
+exactly that**, and it is now normalised by each state's characteristic scale rather than
+pointwise, which removes the cliff permanently instead of moving a threshold again.
+
+**TWO CAVEATS ON EVERY NUMBER ABOVE.** The gain multiplies the MODEL'S volume excursion,
+1.5–2.1× too large while `G_vr` is calibrated, so part of 700 compensates for that — the
+human data alone give 750 at `G_pn` = 5.43 and 505 at 20.0. And **`G_pn` is unchanged at
+20.0 and now over-determined**, so the model double-counts this path and the chronic
+agreement is partly that double count. The human joint constraint is
+`G_pn + 0.0594·G_anp = 50`, putting `G_pn` at **11.4**.
+
+**A PREDICTION THE MODEL COULD NOT MAKE BEFORE.** Salt sensitivity is now **sex-dependent,
+women 11% higher**, because the path is keyed to a sexed volume; a pressure-only kidney had
+salt sensitivity `1/G_pn`, which carries no sex information. **Nothing here has sourced
+that.** Asserted in the suite, recorded as debt, falsifiable.
+
+---
+
+### 3.18 `G_pn` set to 11.4, and the last free parameter is now isolated
+
+**2026-09-03, on the owner's explicit instruction**, discharging the parking that had
+stood since 2026-08-25. **It is NOT ADR 0013's 51.0** — that number came from the human
+pressure evidence with no volume path present. 11.4 is the joint estimate that follows
+from `G_pn + 0.0594·G_anp = 50` once ADR 0010's path is sourced.
+
+**Every acute challenge still passes.** They are carried by the volume path, not by this
+row. Lobo 528 mL / 87.8 mmol against 563 / 95; acute fractional excretion +65.8%.
+**Chronic salt sensitivity moves 2.301 → 2.805, outside the human 1.70–2.30**, and a
+chronic check was added to the harness so that is visible rather than implicit.
+
+**AND THAT IS WHAT MAKES IT USEFUL.** At 20.0 the model sat inside the window by
+**double-counting** the volume path. Removing the double count exposes the one parameter
+underneath, and it is `CV.VENOUS_RETURN.SENSITIVITY`. Swept as a diagnostic, entering
+nothing:
+
+| effective venous gain | `dMAP/dV_ecf` | chronic | ΔV per 100 mmol |
+|---|---|---|---|
+| 2880 (current) | 6.173 | 2.805 | 0.454 |
+| 1800 | 3.858 | **1.994** | 0.517 |
+| 1633 | 3.500 | **1.849** | 0.528 |
+| **human** | **2.97–4.16** | **1.70–2.30** | **0.553–0.572** |
+
+**All three human quantities land at once near 1633–1800.** §3.8 called that endpoint
+visible; two of its three parameters are now sourced and the third is isolated to a
+single sweep. **`G_vr` is not entered and must not be** — §4 item 2, and the obstacle
+there is evidence, not arithmetic.
+
+**One caveat, recorded rather than reconciled.** 11.4 pairs with `G_anp` = 650; the
+entered gain is 700, which the same constraint would pair with 8.4. Moving either after
+seeing the result is the circularity this row's history warns about.
+
+---
+
+### 3.19 THE VENOUS RETURN RELATION IS SOURCED IN HEALTHY HUMANS. `G_vr` 2880 → 1400
+
+**Run `python validation/venous_return_human_extract.py`.** Pre-registered in
+`validation/venous_return_human_prereg.md`. §4 item 2 is DONE and `calibrated` is down
+to one row in the whole ledger.
+
+**THE EARLIER PASS MISSED IT BY SEARCHING FOR THE WRONG OBJECT.** `G_vr` is
+`dCO/dV_blood`, **not** a compliance in mL/mmHg. §3.9 records a whole line of work
+withdrawn for composing a compliance and a resistance into it. Blood volume can be
+changed by a **known amount** in healthy people, by withdrawal or plasma expansion, and
+cardiac output measured — so the composite is directly measurable in a paradigm that is
+performable. Five such studies exist and none was in this repo.
+
+**The value.** Diaz-Canestro 2022 (PMID 34875180), **30 healthy women** aged 47–77: a 10%
+blood-volume reduction, 0.5 L withdrawn with haematocrit unchanged, cut stroke volume by
+at least 10% **at rest**. That is 0.98 (L/min)/L = **1404**, entered as **1400** and
+entered **as an upper bound**, because a study reporting stroke volume bounds `dCO/dV`
+from above when heart rate can compensate — which the pre-registration said in advance.
+
+**TWO INDEPENDENT LINES AGREE, AND THAT IS THE RESULT.** Chronic sodium balance implied
+1012–1941 (§3.7, §3.8). Acute volume manipulation in healthy people gives 1400. They share
+no data, no subjects, no measurement and no timescale. **The model was 2.06× too stiff**,
+inside the 1.5–2.1× §3.7 estimated from the salt data alone.
+
+**THE PRESSURE–VOLUME RATIO IS NOW HUMAN FOR THE FIRST TIME: 3.001 mmHg/L against a
+measured 2.97–4.16.** It had been 6.173 through every configuration in §3.7, §3.8, §3.14
+and §3.16.
+
+**Asymmetry, measured, and it nearly failed its own test.** Fortney 1983 (PMID 6629925)
+is the only study giving both limbs in the same 5 healthy men: −490 mL gave −2.2 L/min
+and +440 mL gave +1.0, a ratio of **1.98 against a threshold of 2 fixed before the
+numbers**. It passes by 1%. **A linear symmetric gain is at the edge of what the evidence
+supports**, and the direction is the expected one.
+
+**STILL UNSOURCED IN HEALTHY HUMANS**, and the gap is narrowed rather than closed:
+systemic venous compliance in mL/mmHg, mean systemic filling pressure, resistance to
+venous return. The one human compliance value, Takatsu 1989 (PMID 2545936, 2.3 mL/mmHg/kg
+— strikingly close to the anaesthetised dog and pig values already held), is **56 cardiac
+patients graded by NYHA class**, and the pre-registration excluded class I in advance.
+**None of the three is needed now**, because the composite was sourced directly.
+
+### 3.20 Where the model stands with three parameters from data
+
+| | model | human |
+|---|---|---|
+| resting state, 8 endpoints | all inside reference ranges | — |
+| 400-day drift | 6.0e-15 | — |
+| Lobo urine / sodium at 6 h | 482 mL / 79.3 mmol | 563 / 95 |
+| **`dMAP/dV_ecf`** | **3.001** | **2.97–4.16** |
+| chronic salt sensitivity | 1.635 | 1.70–2.30 |
+| acute fractional Na excretion rise | +52% | +123% |
+
+**Two challenges now fail, both NARROWLY LOW**, where the model began 116% high on the
+chronic limb. **The residual is the pair mismatch recorded when `G_pn` was set.** The
+human joint constraint is `G_pn + 0.0594·G_anp = 50`; with the sourced `G_anp` = 700 it
+gives `G_pn` = **8.4**, not the instructed 11.4. Measured as a diagnostic, entering
+nothing: at 8.4 the chronic sensitivity is **1.720, inside the window**, with the ratio
+still 3.001. **The prediction recorded on that row held exactly.**
+
+**AND `CV.ANP.NATRIURETIC_GAIN` IS NOW DUE FOR RE-ESTIMATION.** Its own note said so:
+*part of 700 compensates for a volume excursion 1.5–2.1× too large while `G_vr` is
+calibrated — re-estimate when `G_vr` is sourced.* `G_vr` is now sourced, so that caveat
+has come due, and it is the likely cause of the weak acute natriuresis. **That is the next
+pass, and it is a re-estimation against corrected inputs rather than a new search.**
+
+---
+
+### 3.21 EVERY CHALLENGE PASSES. `G_pn` = 8.4, `G_anp` re-estimated to 585
+
+**`julia --project=. validation/challenges.jl` EXITS 0.** 441/441, five gates clean.
+
+`G_pn` 11.4 → **8.4**, the constraint-consistent partner of the sourced volume gain
+rather than a second free choice. `CV.ANP.NATRIURETIC_GAIN` 700 → **585** and
+`RN.ANP.TAU` 0.50 → **0.15 d**, re-estimated against the corrected inputs exactly as
+that row's own note required once `G_vr` was sourced.
+
+| endpoint | model | human |
+|---|---|---|
+| 400-day drift | 3.9e-15 | — |
+| resting state, 8 endpoints | all inside reference ranges | — |
+| Lobo urine, 6 h | **565.6 mL** | 563 |
+| Lobo urinary sodium, 6 h | **95.1 mmol** | 95 |
+| **chronic salt sensitivity** | **2.000** | **1.70–2.30** |
+| **`dMAP/dV_ecf`** | **3.000 mmHg/L** | **2.97–4.16** |
+| acute fractional Na excretion rise | 82.5% | 123% |
+
+**THE IDENTIFICATION IS CLEAN AND WAS MEASURED, NOT ASSUMED.** Two data, two
+parameters: the chronic salt-step response fixes the gain, Lobo's 6 h time course fixes
+the lag. **A first-order lag cannot move a steady state**, so they are separately
+identified — at gains of 500/700/900 the chronic sensitivity is 2.275/1.720/1.382
+regardless of the lag, and its reciprocal is linear in the gain. The two Lobo endpoints
+agree on the lag independently, 0.171 d from the volume and 0.166 d from the sodium.
+
+**JENSEN 2013 WAS HELD OUT AND IS THE ONE OUT-OF-SAMPLE NUMBER.** It was not used in the
+estimation. The model predicts +82.5% against a reported +123% — inside the band, about a
+third low. **That is the honest standing of this parameterisation on data it was not
+fitted to, and it is the sharpest remaining discrepancy in the sodium limb.**
+
+**THE LAG MOVED BY 3.3× AND THE REASON IS NOT ANP.** `G_pn` fell 20 → 8.4 over the same
+period, so the pressure path contributes far less acutely and the volume path must
+respond faster to reproduce the same 6 h excretion. **`RN.ANP.TAU` is not identified by
+ANP physiology**; it is identified by requiring the model to match one acute dataset given
+everything else, and it will move again if anything upstream moves. Tier C, doing work.
+
+**AND THE DRUMMER CORROBORATION WAS OVERSTATED, CORRECTED ON THE ROW.** At 0.15 d the lag
+reaches 95% of steady state in about 11 h, which is hours not days. Drummer describes how
+long EXCRETING THE LOAD takes, which this model sets by how slowly the volume decays, not
+by this lag. Drummer supports the EXISTENCE of a lag — the algebraic form was refuted
+without one — and does not constrain its value.
+
+**WHAT IS NOT CLAIMED.** Three parameters in the sodium–volume loop now come from human
+data, and two of them were solved against the very targets the harness reports, so those
+are FITS and not validations. **The validations are the four Lobo endpoints, the resting
+state, the 400-day steady state, and Jensen.** The rest is a consistent parameterisation.
+
+---
+
 ## 4. NEXT, IN ORDER
+
+**Rewritten 2026-09-03. Every numbered item of the previous list is DONE** — the ANP
+input coupling, renal haemodynamics, venous return, the renin gain, and the ADR 0013
+versus ADR 0015 decision. They are §3.12 through §3.21. What follows is what is left.
 
 **Finish the cardiovascular system, then the other systems. Populations are far off — a
 population of an incomplete model is a wider set of wrong answers.**
 
-**0. A VOLUME-SENSING NATRIURETIC PATH — ADR 0010. THIS IS NOW ITEM ZERO AND IT DISPLACES
-   THE ORDER IN ADR 0016.** It is the only candidate that relieves an ACUTE failure and a
-   CHRONIC one with the same component (§3.15, §3.16), and the only one that makes `G_pn`
-   estimable at its measured animal value instead of as a free constant. The term is wired
-   and default-zero; what is missing is the INPUT coupling, which is ADR 0010's own
-   standing blocker: nothing sourced connects a volume signal to plasma ANP in humans, and
-   Norsk 1986 falsified total blood volume as the sensed variable. **The identifying
-   experiment is now named and it is acute, not chronic** — no sodium-balance study can
-   ever separate this gain from `G_pn`, Mars500 included.
+**Two things to read before starting anything.** §3.21's two caveats, because the model
+now matches human salt sensitivity and two of the three parameters that make it do so
+were solved against that very target. And §5, which is how work goes wrong here.
 
-**Flipping the stroke-volume dependency was item 1 and is DONE, both halves — §3.6.**
+1. **WIRE `RN.GFR.VOLUME_SENSITIVITY`. It is entered, sourced, and NOTHING READS IT.**
+   Directive 1.11, and it is item 1 for that reason. It was deliberately sequenced behind
+   the venous return work (§3.12(d)) because it multiplies the model's volume excursion,
+   which was then 1.5–2.1× too large. **`G_vr` is now sourced, so that blocker is gone.**
+   Expect it to change the salt-step numbers, so it is a change that must be re-pinned and
+   re-run against `validation/challenges.jl`, not a free addition.
 
-1. ~~**Renal haemodynamics across salt intake in healthy humans.**~~ **DONE 2026-09-02,
-   §3.12.** Pre-registered, extracted, verdict **G3**. `RN.GFR.VOLUME_SENSITIVITY = 1.30`
-   entered; no ADR written and no code changed, which is what G3 prescribes. The
-   filtration-fraction question came back **F3** and the Krikken sentence was **struck
-   under K2**, both of which the pre-registration named in advance as the branches that
-   must not be avoided.
-   **What it leaves behind, and none of it is item 1 any more:** the sex conflict
-   (§7), the unconsumed row awaiting item 2, and the de-indexing correction owed to
-   `ecf_salt_response_extract.py`.
-   **Four things the pre-registration fixed that were not previously written down.**
-   (a) The model holds GFR **identical to seven figures** at all three salt arms, and
-   `bench/gfr_salt_sweep.jl` measures what a salt-linked GFR would be worth: the fall in
-   the salt-step shift is **4.05 × g**, linear to 1% for `g` ≤ 0.08, so closing the whole
-   human gap by this route alone would need a 26–32% GFR swing across the step.
-   (b) **`dMAP/dV_ecf` stays at 6.173 throughout** — a third independent confirmation of
-   §3.7's orthogonality, after the `G_vr` and escape sweeps. This is a pressure-limb lever
-   and touches item 2 not at all.
-   (c) **GFR cancels between builds and NOT within a run.** `FR_Na` is derived from `GFR0`
-   and absorbs a build-time change, which is §3.5's result; it cannot absorb a GFR that
-   moves while the run proceeds. **§3.5 is true of the level and false of the derivative,
-   exactly as §3.8 found for haematocrit. Two for two** — a quantity that cancels at the
-   operating point need not cancel in the response, and that is now a pattern rather than
-   an incident.
-   (d) **ITEM 1 IMPLEMENTATION IS SEQUENCED BEHIND ITEM 2, though the extraction is not.**
-   The entered quantity is per litre of ECF expansion, so it survives the `G_vr` fix; the
-   model's response to it does not, because the model over-expands by 1.5–2.1×. Extract
-   and enter now, enable after item 2.
+2. **THE ACUTE NATRIURESIS IS A THIRD LOW, AND IT IS THE ONLY OUT-OF-SAMPLE NUMBER.**
+   The model predicts +82.5% fractional sodium excretion on 23 mL/kg of isotonic saline
+   against Jensen 2013's +123%. **Jensen was deliberately held out of the estimation**, so
+   this is the one place the parameterisation is tested rather than fitted, and it is the
+   sharpest discrepancy left in the sodium limb. Do not close it by refitting `G_anp` to
+   Jensen — that would spend the only out-of-sample datum this line has.
 
-2. **Venous compliance and the venous return limb.** §3.7 and §3.8 give `G_vr` a target of
-   **1012–1941** (not the 554 an earlier draft of this item carried — the red cell
-   correction closed 1.83× of the gap). That target comes from the human salt data and the
-   model, and it is for a sourced relation to EXPLAIN, not a value to enter: refitting 2880
-   would swap one calibrated constant for another and destroy the only independent test
-   this line has. **ADR 0013 is blocked behind this.**
-   **READ §3.9 FIRST.** A pass on this in September composed sourced mechanics into a
-   conclusion that was withdrawn, and its inputs were ICU and anaesthetised-animal
-   preparations. **No healthy-human source has been found for systemic compliance, mean
-   systemic filling pressure, or resistance to venous return** — that gap is the real
-   obstacle and it is recorded in §7.
-   Pmsf, right atrial pressure, stressed
-   vs unstressed volume. Replaces `G_vr`; `relations.csv` already names venous compliance
-   as the unsourced step in the `CO` row. Record Beard and Feigl 2011 as a declared
-   conflict. **`validation/venous_compliance_extract.py` already refutes ADR 0012's
-   concavity requirement** — the filling relation is linear over the physiological range,
-   and the operative variable is stressed/unstressed, not central/peripheral.
-3. ~~**Re-derive `RAAS.RENIN.PRESSURE_GAIN`.**~~ **DONE 2026-09-02, §3.13.** 19.0 → 4.35,
-   `derived`, from the slope in the same van Ochten meta-analysis that already supplied
-   this component's threshold and form. **It unblocks item 5 and it resized ADR 0015 from
-   a 50.7% effect to 21.5%.**
-   **What it left behind is bigger than what it settled.** The rectified pressure-only
-   renin control cannot reproduce the human salt-induced renin response **at any gain**
-   (branch S2), because human renin answers to macula densa sodium delivery and renal
-   sympathetic traffic and this component has neither. That is now the live question in
-   this subsystem, and it is a structural one. §7.
-4. **Chronotropic baroreflex.** ADR 0009 gives the reflex one effector; HR now exists.
-   **Deliberately deferred** — ADR 0009 says do not re-separate the arms without a
-   protocol that needs it, the reflex resets so it nulls at every steady state, and the
-   cardiac gain needs a sourcing pass. Best normative source found: **Schumann 2024**,
-   *Am J Physiol Heart Circ Physiol* 326:H158–H165, n=980 healthy — and it is about **sex
-   differences in BRS**, so it would also give ADR 0014 a second real dimorphic pair.
-5. ~~**ADR 0013 versus ADR 0015 versus the GFR limb.**~~ **DECIDED 2026-09-02 — ADR 0016,
-   §3.14. They are SEQUENCED, not competing, and the order is forced.** Measured together
-   rather than composed, the three **over-explain** the gap: mechanisms alone 3.409–3.634,
-   all three 1.536–1.639, human 1.70–2.30. **`G_pn`'s corrected bracket is 32.3–49.0 and
-   ADR 0013's proposed 51.0 is outside it.**
-   **Nothing was accepted, enabled or changed.** ADR 0013 stays Proposed — accepting it is
-   the owner's decision and its own volume test still blocks it — ADR 0015 stays Proposed
-   and default OFF, and the GFR row stays unconsumed. **What was decided is the order**,
-   and it is now items 2, then the mechanisms, then `G_pn` last.
-   **ADR 0016 expires when item 2 lands** and the whole table must be re-run against a
-   sourced `G_vr`.
-   ADR 0013 reaches the human salt sensitivity by moving a FITTED CONSTANT (`G_pn`
-   20 → 51); ADR 0015 reaches it from a MECHANISM (§3.11, 50.7% of the gap closed
-   with no parameter touched). **Adopting both at full strength double-counts the
-   same discrepancy.** Its ECF falsifiable test has been run and blocks 0013 anyway
-   (§3.7). ~~**THIS ITEM IS BLOCKED BEHIND ITEM 3.**~~ **UNBLOCKED 2026-09-02 — and item 3
-   changed the arithmetic.** With `RAAS.RENIN.PRESSURE_GAIN` sourced at 4.35, ADR 0015
-   delivers **21.5%** rather than 50.7%, i.e. **3.892** mmHg/100 mmol rather than 2.444.
-   **The three explanations no longer come close to over-explaining the gap; together they
-   may not even close it.** ADR 0015 ~21%, the GFR limb 8–15% (§3.12), ADR 0013 the
-   remainder by construction because it is fitted. **Decide 0013 last**, since it is the
-   only one that can absorb whatever the mechanisms leave.
-6. **Body surface area, and it is now worth more than it was.** It was on this list only
-   because GFR and cardiac output scale sub-linearly in mass, so `scaling.jl` overstates
-   their population spread. It has since acquired two further jobs, both from §3.6.
-   **It unlocks the sources.** The two best studies in the cardiac reference literature —
-   Luu 2022 (n = 3,206, multi-ethnic) and the Zhan 2024 meta-analysis (12,812) — report
-   ventricular volumes indexed to BSA and were both rejected for that reason alone. **And
-   it stops a double count.** `CV.SV.NOMINAL` is entered as reported at a cohort mass that
-   Petersen gives only by age group, while `size_factor` scales it again and the ensemble
-   samples mass by sex — so part of the size dimorphism is counted twice. Needs a height
-   row and one BSA formula, sourced.
-7. **`RN.URINE.SOLUTE_LOAD = 600 mOsm/day` is now the load-bearing unsourced number on
-   the water side.** `ADH.URINE.OSM_MAX` is sourced, so the obligatory volume, `U_base`,
-   `k_adh` and every steady state now hang off a conventional figure that
+3. **`BF.ICF_ECF.OSMOTIC_TAU` BLOCKS EVERY ACUTE OSMOTIC MAGNITUDE.** `assumed` at 30 min.
+   Near zero on multi-day runs and DOMINANT on acute ones: a 1.4 L water load moves peak
+   plasma osmolality 8.8 → 17.6 mOsm/kg across 1–120 min. A sourcing pass on 2026-09-02 ran
+   10 queries over two sweeps and found nothing usable — the volume-kinetics literature
+   models plasma and interstitium, not ICF–ECF osmotic exchange. **Until it is sourced, no
+   acute osmotic magnitude may be reported.** Directions and steady states are unaffected.
+
+4. **ADR 0013, ADR 0015 AND ADR 0016 ARE ALL OUT OF DATE.** They were written against a
+   model with `G_pn` = 20, no volume path and a wrong venous return. ADR 0016's estimation
+   ORDER was followed and its arithmetic is now stale; ADR 0013's proposed 51 is far
+   outside anything current; ADR 0015's magnitudes were computed at a renin gain that has
+   since been sourced. **Reconcile them with §3.21 or mark them superseded.** This is
+   bookkeeping, but ADRs are decisions and a stale decision is worse than none.
+
+5. **`RN.PRESSURE_NATRIURESIS.SLOPE` IS STILL LABELLED `calibrated` AND IS THE LAST ONE.**
+   8.4 is not fitted — it is the value the human joint constraint implies given the sourced
+   volume gain, which is closer to `derived`. Decide the label deliberately. **If it moves
+   to `derived`, the ledger has no `calibrated` rows left**, which is worth doing properly
+   rather than by accident.
+
+6. **The de-indexing correction owed to `ecf_salt_response_extract.py`** (§3.12). It
+   multiplies an indexed ECF *difference* by ONE body surface area where each arm has its
+   own, understating the expansion by 9%. One clean pass; it touches a document the renal
+   haemodynamics change made no claim about.
+
+7. **The model now PREDICTS sex-dependent salt sensitivity, women 11% higher, and nothing
+   here has sourced it.** A pressure-only kidney had salt sensitivity `1/G_pn`, which
+   carries no sex information; the volume path is keyed to a sexed volume, so it does. It
+   is asserted in the suite as a prediction. **Source it or falsify it.**
+
+8. **`RN.URINE.SOLUTE_LOAD = 600 mOsm/day` is the load-bearing unsourced number on the
+   water side.** `ADH.URINE.OSM_MAX` is sourced, so the obligatory volume, `U_base`,
+   `k_adh` and every steady state hang off a conventional figure that
    `RN.URINE.SOLUTE_NONNA` already records as too low — measured totals are 700–900.
    Correcting it moves every ADH constant and needs its own pre-registration.
-8. **`check_closure.py` is filling up** — 19 hand-coded relationships, does not scale past
-   about twenty.
 
----
+9. **Chronotropic baroreflex.** ADR 0009 gives the reflex one effector; HR now exists.
+   **Deliberately deferred** — the reflex resets so it nulls at every steady state, and the
+   cardiac gain needs a sourcing pass. Best normative source found: **Schumann 2024**,
+   *Am J Physiol Heart Circ Physiol* 326:H158–H165, n=980 healthy, and it is about **sex
+   differences in BRS**, so it would also give item 7 a second dimorphic pair.
+
+10. **Body surface area.** GFR and cardiac output scale sub-linearly in mass, so
+    `scaling.jl` overstates their population spread. It also unlocks Luu 2022 (n = 3,206)
+    and Zhan 2024 (12,812), both rejected for reporting indexed volumes only, and it stops
+    a double count in `CV.SV.NOMINAL`. Needs a height row and one sourced BSA formula.
+
+11. **`check_closure.py` is filling up** — 19 hand-coded relationships, does not scale past
+    about twenty.
+
+12. **The fluid-deprivation comparison is INDETERMINATE and needs one study.** Pross 2013
+    reports plasma osmolality but not the water deficit, so it cannot separate a model
+    defect from a protocol mismatch (§3.15). What resolves it: a human 24 h deprivation
+    study reporting **both** the body-mass or water deficit **and** the osmolality change
+    in the same subjects.
 
 ## 5. HOW THINGS BREAK HERE
 
@@ -1387,10 +1380,12 @@ population of an incomplete model is a wider set of wrong answers.**
 
 ## 7. OPEN ITEMS
 
-- **20 of 70 parameters** are `assumed` or `calibrated`. `unledgered_check()` lists them.
-  The count went UP by two on 2026-08-31 and back DOWN by two on 2026-09-01, and **both
-  directions were honest.** Up, because two rows stopped claiming sources they did not
-  have. Down, because those same two stopped being primitives at all — see §3.6.
+- **18 of 73 parameters** are `assumed` or `calibrated`, down from 20 of 70.
+  `unledgered_check()` lists them. **Only ONE is `calibrated`** —
+  `RN.PRESSURE_NATRIURESIS.SLOPE` — and §4 item 5 asks whether that label is still right,
+  since 8.4 is the value the human joint constraint implies rather than a fitted number.
+  The count has moved in both directions and **both were honest**: up when rows stopped
+  claiming sources they did not have, down when they stopped being primitives.
 - ~~`CV.CO.NOMINAL` and `RN.H2O.OBLIGATORY_LOSS` are `assumed` with EMPTY citations.~~
   **DONE 2026-09-01.** Both are now `derived`, from the quantities that are actually
   measured.
@@ -1411,21 +1406,15 @@ population of an incomplete model is a wider set of wrong answers.**
 - **Only body mass is sampled in the ensemble.** Every other parameter is one number
   for all members, though the ledger carries dispersion for several. Humans are a
   distribution and the population currently is not — see §1.12.
-- **`G_pn` is wrong by 2–19× on the PRESSURE evidence** (§3.3), and **ADR 0013's own
-  falsifiable test now blocks changing it** (§3.7). The volume test fails by 5.2× and
-  convicts `CV.VENOUS_RETURN.SENSITIVITY`, not this row. `G_pn` stays 20.0 in the meantime
-  and that is the pre-registered outcome, not an omission.
-  **AND ITS PROPOSED REPLACEMENT IS NOW STALE TOO — §3.14, ADR 0016.** 51.0 was estimated
-  with no mechanism present. With both mechanisms in, the corrected bracket is
-  **32.3–49.0** and 51 is outside it; the surviving overlap with ADR 0013's own pressure
-  bracket is 43.5–49.0. **`G_pn` is estimated LAST**, after `G_vr` and after the
-  mechanisms, because it is the only fitted constant of the three and will otherwise
-  absorb their share.
-- **`CV.VENOUS_RETURN.SENSITIVITY` is 1.5–2.1× too stiff against human data** (§3.7, §3.8).
-  It was 2.7–5.2× before the red cell correction closed 1.83× of it. Already `calibrated`
-  and already §4 item 1; the measured target is now **1012–1941**, from seven primaries
-  across four groups and two methods. **It is the only thing standing between this model
-  and matching the human pressure AND volume responses simultaneously** — §3.8.
+- ~~**`G_pn` is wrong by 2–19× on the PRESSURE evidence.**~~ **SUPERSEDED 2026-09-03.**
+  It is now **8.4**, set from the human joint constraint `G_pn + 0.0594·G_anp = 50` given
+  the sourced volume gain — not from the pressure evidence alone, and not 51. §3.21. The
+  2–19× finding in §3.3 was about a model with no volume-sensing path, and that model no
+  longer exists. **ADR 0013's 51 is far outside anything current** — §4 item 4.
+- ~~**`CV.VENOUS_RETURN.SENSITIVITY` is 1.5–2.1× too stiff against human data.**~~
+  **DONE 2026-09-03, §3.19.** Sourced in healthy humans, 2880 → 1400, `calibrated` →
+  `derived`. It was 2.06× too stiff, inside the range §3.7 predicted from the salt data
+  alone, and the two lines share no data, subjects, measurement or timescale.
 - ~~`Cardiovascular.jl` lets red cell volume expand with plasma.~~ **DONE 2026-09-02**, §3.8.
 - ~~Six rows still claim a source that does not exist.~~ **DONE 2026-08-31**, §3.5.
 - ~~**`RAAS.RENIN.PRESSURE_GAIN` was calibrated against a baseline that no longer
@@ -1498,6 +1487,33 @@ population of an incomplete model is a wider set of wrong answers.**
   Anyone with institutional access should record which way the value pairs run — the
   abstract's own correlation coefficients suggest all three are printed in reverse order,
   and that is an observation, not a reading.
+- **THE ACUTE NATRIURESIS IS A THIRD LOW AND IT IS THE ONLY OUT-OF-SAMPLE NUMBER.**
+  +82.5% against Jensen 2013's +123%. Jensen was held out of the estimation deliberately,
+  so it is the one place this parameterisation is tested rather than fitted. §4 item 2.
+- **`RN.ANP.TAU` IS NOT IDENTIFIED BY ANP PHYSIOLOGY.** 0.15 d, tier C. It is identified by
+  requiring the model to match one acute human dataset given everything else, and it moved
+  by 3.3× when `G_pn` moved. **It will move again if anything upstream does.** Its note
+  also corrects an earlier overstatement: Drummer supports the EXISTENCE of a lag, not its
+  value.
+- **`CV.ANP.NATRIURETIC_GAIN` AND `RN.ANP.TAU` WERE SOLVED AGAINST TARGETS THE HARNESS
+  REPORTS.** Two of the three parameters that make the model match human salt sensitivity
+  are fits, not validations. **The validations are the four Lobo endpoints, the resting
+  state, the 400-day steady state, and Jensen.** Do not quote the chronic agreement as a
+  validation.
+- **`BF.ICF_ECF.OSMOTIC_TAU` is `assumed`, load-bearing on acute protocols, and searched
+  for without success.** §4 item 3. **No acute osmotic MAGNITUDE may be reported until it
+  is sourced.**
+- **THE MODEL PREDICTS SEX-DEPENDENT SALT SENSITIVITY, WOMEN 11% HIGHER, AND NOTHING HERE
+  HAS SOURCED IT.** New with the volume path, which is keyed to a sexed volume. Asserted in
+  the suite as a prediction rather than a validation. §4 item 7.
+- **SYSTEMIC VENOUS COMPLIANCE IN mL/mmHg IS STILL UNSOURCED IN HEALTHY HUMANS**, along
+  with mean systemic filling pressure and resistance to venous return. The one human
+  compliance value is 56 cardiac patients graded by NYHA class. **None of the three is
+  NEEDED any more** — §3.19 sourced the composite directly — but the gap is real and the
+  earlier withdrawn pass (§3.9) is what happens when it is filled from the wrong
+  preparations.
+- **`RN.GFR.VOLUME_SENSITIVITY` is entered, sourced, and nothing reads it.** Its blocker
+  was `G_vr`, which is now sourced, so it is unblocked. **§4 item 1.**
 - **Eight relations carry no `form_citation`**, grandfathered as tracked debt.
 - **`pooling.md` requires columns `ledger/parameters.csv` does not have** — recorded in
   prose instead, by precedent.
