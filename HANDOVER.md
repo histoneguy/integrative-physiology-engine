@@ -4,7 +4,7 @@
 **Repo:** https://github.com/histoneguy/integrative-physiology-engine (public)
 **Owner:** Eric George (`histoneguy`)
 **State:** **441/441**, all five gates exit 0, and `validation/challenges.jl` PASSES
-against published human data. **The model now reproduces human salt sensitivity.**
+against published human data. **`G_pn` is 11.4 as of 2026-09-03 (§3.18); the last free parameter is `G_vr`.**
 
 **This header deliberately names NO commit SHA and NO open PR.** Three consecutive
 handovers were wrong in their first line, each in a different way: two pinned a SHA that
@@ -889,6 +889,41 @@ disabling aldosterone escape, which is not a non-escaping AngII term and **moves
 baseline** (MAP 86.98 → 88.1–88.4 in every row using it); the GFR limb is stood in for by
 overriding `GFR0` per arm. **These numbers size an ordering. They are not model
 predictions**, and step 3 must re-derive the bracket rather than reuse it.
+
+### 3.18 `G_pn` set to 11.4, and the last free parameter is now isolated
+
+**2026-09-03, on the owner's explicit instruction**, discharging the parking that had
+stood since 2026-08-25. **It is NOT ADR 0013's 51.0** — that number came from the human
+pressure evidence with no volume path present. 11.4 is the joint estimate that follows
+from `G_pn + 0.0594·G_anp = 50` once ADR 0010's path is sourced.
+
+**Every acute challenge still passes.** They are carried by the volume path, not by this
+row. Lobo 528 mL / 87.8 mmol against 563 / 95; acute fractional excretion +65.8%.
+**Chronic salt sensitivity moves 2.301 → 2.805, outside the human 1.70–2.30**, and a
+chronic check was added to the harness so that is visible rather than implicit.
+
+**AND THAT IS WHAT MAKES IT USEFUL.** At 20.0 the model sat inside the window by
+**double-counting** the volume path. Removing the double count exposes the one parameter
+underneath, and it is `CV.VENOUS_RETURN.SENSITIVITY`. Swept as a diagnostic, entering
+nothing:
+
+| effective venous gain | `dMAP/dV_ecf` | chronic | ΔV per 100 mmol |
+|---|---|---|---|
+| 2880 (current) | 6.173 | 2.805 | 0.454 |
+| 1800 | 3.858 | **1.994** | 0.517 |
+| 1633 | 3.500 | **1.849** | 0.528 |
+| **human** | **2.97–4.16** | **1.70–2.30** | **0.553–0.572** |
+
+**All three human quantities land at once near 1633–1800.** §3.8 called that endpoint
+visible; two of its three parameters are now sourced and the third is isolated to a
+single sweep. **`G_vr` is not entered and must not be** — §4 item 2, and the obstacle
+there is evidence, not arithmetic.
+
+**One caveat, recorded rather than reconciled.** 11.4 pairs with `G_anp` = 650; the
+entered gain is 700, which the same constraint would pair with 8.4. Moving either after
+seeing the result is the circularity this row's history warns about.
+
+---
 
 ### 3.17 ADR 0010 IS SOURCED AND ON. THE MODEL NOW REPRODUCES HUMAN SALT SENSITIVITY
 

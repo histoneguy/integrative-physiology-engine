@@ -159,6 +159,19 @@ check("renin falls on volume expansion (fall, positive = correct)",
 
 println()
 println(repeat("=", 100))
+println("3b. CHRONIC SALT SENSITIVITY - the headline, and it belongs in this harness")
+println(repeat("=", 100))
+println("  Meta-analytic normotensive human response to chronic dietary sodium, k = 3:")
+println("  Cutler 1997 (32 trials, n=2635) 1.70; He/Li/MacGregor 2013 (34, n=3230) 1.96;")
+println("  He & MacGregor 2002 (11, n=2220) 2.30 mmHg per 100 mmol/day. HANDOVER 3.3.")
+println()
+let r = IPE.check_pressure_natriuresis(IPE.salt_step())
+    check("chronic salt sensitivity", r.map_shift_mmHg / 102 * 100, 1.70, 2.30,
+          "mmHg/100mmol", "meta-analytic 1.70-2.30, k = 3")
+end
+
+println()
+println(repeat("=", 100))
 println("4. TWENTY-FOUR HOUR FLUID DEPRIVATION")
 println(repeat("=", 100))
 PROSS = "Pross N, Demazieres A, Girard N, Barnouin R, Santoro F, Chevillotte E, Klein A, " *
