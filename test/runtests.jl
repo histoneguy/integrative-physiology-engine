@@ -156,7 +156,7 @@ using SciMLBase
         # direction against the literature - a fact about G_pn, not about ADH.
         r = salt_step()
         v = check_pressure_natriuresis(r)
-        @test isapprox(v.map_shift_mmHg, 2.3013; atol = 0.05)
+        @test isapprox(v.map_shift_mmHg, 2.8613; atol = 0.05)
 
         # AND THE OTHER HALF OF THE PAIR, ADDED 2026-09-02 AT NO EXTRA COMPUTE:
         # dMAP/dV_ecf, which is set by CV.VENOUS_RETURN.SENSITIVITY and NOT by G_pn.
@@ -255,8 +255,8 @@ using SciMLBase
         # toward the anchored high arm. This is a CORRECTION of a physical error,
         # not a tuning: red cell mass does not track plasma over 30 days.
         pre_partition = (205.0 => 87.0046,
-                         154.0 => 85.8807,
-                         103.0 => 84.7570)
+                         154.0 => 85.6186,
+                         103.0 => 84.2315)
         # raas=false ISOLATES what this testset is about. The reference values
         # were measured before RAAS existed, so comparing against a model that
         # now includes it would be testing two changes at once. RAAS having its
@@ -309,7 +309,7 @@ using SciMLBase
         # forces sodium balance to close through the circulation; the default
         # model's shift is unmoved at 5.0570 against 5.0569.
         @test isapprox(check_pressure_natriuresis(r).map_shift_mmHg,
-                       2.2467; rtol = 1e-3)   # 4.9352 -> 4.9067 -> 4.7672 -> 2.2467
+                       2.7731; rtol = 1e-3)   # 4.9352 -> 4.9067 -> 4.7672 -> 2.2467
                        # 2026-09-02: ADR 0010's volume-keyed path landed and the
                        # disabled-ADH branch moved with everything else.
     end
@@ -345,8 +345,8 @@ using SciMLBase
         # blocks pin the same three numbers on purpose - they assert different
         # claims about them - so they move together.
         pre_raas = (205.0 => 87.0046,
-                    154.0 => 85.8807,
-                    103.0 => 84.7570)
+                    154.0 => 85.6186,
+                    103.0 => 84.2315)
         for (lvl, expected) in pre_raas
             got = only(l.MAP_final for l in r.levels if l.level == lvl)
             # 1e-9 -> 1e-7 on 2026-08-27, same reason as the ADR 0012 block: the
@@ -634,7 +634,7 @@ using SciMLBase
         # the RIGHT way. It is small - 0.8% against a discrepancy of 2x at best -
         # so it does not touch that finding, and it must not be read as
         # addressing it: G_pn is still the parameter that sets the shift.
-        @test isapprox(on, 2.3013; atol = 0.02)
+        @test isapprox(on, 2.8613; atol = 0.02)
     end
 
     @testset "the urine solute load tracks sodium (water limb responds to salt)" begin
@@ -832,7 +832,7 @@ using SciMLBase
         # into a quantity that should be intensive.
         @test size_factor(IPE.LedgerParams.BF_BODY_MASS_REFERENCE) == 1.0
         v = check_pressure_natriuresis(salt_step())
-        @test isapprox(v.map_shift_mmHg, 2.3013; atol = 0.02)
+        @test isapprox(v.map_shift_mmHg, 2.8613; atol = 0.02)
 
         # THE INVARIANCE ITSELF, on the whole loop rather than on one arm.
         # With sodium intake scaled along with the individual - which is what an
@@ -1048,7 +1048,7 @@ using SciMLBase
         # that a future source can falsify the size without silently deleting the
         # direction.
         @test f > m
-        @test isapprox(f / m, 1.109; rtol = 0.02)
+        @test isapprox(f / m, 1.140; rtol = 0.02)
 
         # THE PAIR IS NOT INERT ANY MORE, AND THIS IS WHERE IT BITES. ADR 0014's
         # falsifiable test asks that a sexed pair change a result. It changes the
@@ -1089,7 +1089,14 @@ using SciMLBase
         # the sexed pair still reaches the circulation, women still swing less
         # volume, and the two ratios still agree in DIRECTION and to within 11%.
         @test tpv(:female) / tpv(:male) > 1.0
-        @test isapprox(em / ef, tpv(:female) / tpv(:male); rtol = 0.12)
+        # WIDENED 0.12 -> 0.20 ON 2026-09-03 when G_pn moved 20.0 -> 11.4. The two
+        # ratios were already only approximately equal once the volume-keyed path
+        # landed, because the kidney stopped demanding the same pressure shift of
+        # both sexes; lowering G_pn shifts more of the natriuresis onto that path
+        # and widens the gap further, 1.037 against 1.182. The DIRECTION and the
+        # fact that the sexed pair still reaches the circulation are what this
+        # asserts; the closed-form identity belonged to a pressure-only kidney.
+        @test isapprox(em / ef, tpv(:female) / tpv(:male); rtol = 0.20)
     end
 
     @testset "modulators are off by default" begin

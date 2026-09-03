@@ -395,3 +395,49 @@ which is how it became a hypertensive value in the first place.
 
 **Status is still Proposed and `G_pn` is still 20.0.** Accepting it remains the owner's
 decision and its own volume test still blocks it.
+
+---
+
+## Amendment, 2026-09-03: the owner set `G_pn` to 11.4. It is NOT this record's 51.0
+
+**`RN.PRESSURE_NATRIURESIS.SLOPE` 20.0 → 11.4, on the owner's explicit instruction.** The
+row had been parked at his decision since 2026-08-25 and that is discharged.
+
+**This record stays Proposed and 51.0 is still not adopted.** 51.0 comes from the human
+pressure evidence with **no** volume-keyed natriuretic path present. 11.4 is the joint
+estimate that follows once ADR 0010's path is sourced and on: the human data constrain the
+combination `G_pn + 0.0594·G_anp = 50`, and with the volume gain identified independently
+by the acute route, the pressure slope is what remains. **The two numbers answer different
+questions, and 11.4 supersedes 51.0 as the live proposal.**
+
+**Measured with `julia --project=. validation/challenges.jl`.** Every acute challenge still
+passes — the acute limbs are carried by the volume path, not by this row. **Chronic salt
+sensitivity moves 2.301 → 2.805 mmHg per 100 mmol/day, outside the human 1.70–2.30.**
+
+**AND THAT IS THE POINT, BECAUSE IT ISOLATES THE LAST PARAMETER.** At `G_pn` = 20.0 the
+model sat inside the human window by **double-counting** the volume path. Removing the
+double count exposes what was hidden underneath, and it is `CV.VENOUS_RETURN.SENSITIVITY`.
+Swept as a diagnostic, entering nothing:
+
+| effective venous gain | `dMAP/dV_ecf` | chronic sensitivity | ΔV per 100 mmol |
+|---|---|---|---|
+| 2880 (current) | 6.173 | 2.805 | 0.454 |
+| 1800 | 3.858 | **1.994** | 0.517 |
+| 1633 | 3.500 | **1.849** | 0.528 |
+| **human** | **2.97–4.16** | **1.70–2.30** | **0.553–0.572** |
+
+**With `G_pn` and `G_anp` both at human-derived values, all three human quantities land
+simultaneously at a venous gain near 1633–1800.** That is the endpoint HANDOVER §3.8
+called "visible", now reached with sourced values for two of the three parameters and one
+diagnostic sweep for the third.
+
+**`G_vr` is NOT entered and must not be.** It is `calibrated`, unsourced, and §4 item 2
+says refitting it swaps one calibrated constant for another and destroys the only
+independent test this line has. **The remaining work is to SOURCE it**, and the obstacle
+there is evidence, not arithmetic: no healthy-human value for systemic compliance, mean
+systemic filling pressure or resistance to venous return exists in this repo.
+
+**One arithmetic caveat, recorded rather than reconciled.** 11.4 pairs with `G_anp` = 650;
+the entered gain is 700, and the same constraint at 700 gives 8.4. So 11.4 and 700 are not
+the matched pair. Moving either number now, after seeing the result, is the circularity
+this row's own history is a warning about.
