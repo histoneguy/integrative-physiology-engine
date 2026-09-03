@@ -360,3 +360,38 @@ the only independent test this record has.
 `validation/ecf_salt_response_extract.py` → if the ratio lands in 2.97–4.16, accept this
 ADR and move `G_pn` to 51 in the same change, because the table above says the two are only
 correct together.
+
+---
+
+## Amendment, 2026-09-02: the value 51.0 is stale, and the ordering above is now wrong in one step
+
+**See ADR 0016**, which decides the estimation order for the three records that now claim
+this discrepancy, and `bench/explanation_stack.jl`, which measures them together.
+
+**51.0 WAS ESTIMATED WITH NO MECHANISM PRESENT.** Two have since arrived: ADR 0015's
+non-escaping tubular term, and `RN.GFR.VOLUME_SENSITIVITY`, a sourced GFR response to
+volume expansion. Run together in the model rather than composed on paper, the two
+mechanisms alone give **3.409–3.634** mmHg per 100 mmol/day, and adding `G_pn` = 51 on top
+gives **1.536–1.639** — **below** the human 1.70–2.30.
+
+**The corrected bracket, bisected on real solves, is `G_pn` = 32.3–49.0.** Intersecting it
+with this record's own concordant pressure bracket of 43.5–58.8 leaves **43.5–49.0**.
+**51.0 is outside it.**
+
+**The inverse law used in the sequencing paragraph above does not hold** once the
+mechanisms are on. It under-predicts the required `G_pn` by 8–13%, because the
+pressure-independent limbs remove sodium that `G_pn` then does not have to clear. The
+bracket above is bisected for that reason and must not be re-derived by scaling.
+
+**What survives from this record, unchanged.** The pressure evidence. The finding that the
+model is calibrated to hypertensives. The orthogonality of `G_pn` and `G_vr`, now
+confirmed a fourth time — the ratio column is 6.17 across nine configurations spanning
+three mechanisms.
+
+**What does not.** The final sentence above says to move `G_pn` to 51 in the same change
+as the venous compliance fix. **Do not.** ADR 0016 puts this row last precisely because it
+is the only fitted constant of the three and will otherwise absorb the mechanisms' share —
+which is how it became a hypertensive value in the first place.
+
+**Status is still Proposed and `G_pn` is still 20.0.** Accepting it remains the owner's
+decision and its own volume test still blocks it.
