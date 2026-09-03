@@ -41,12 +41,13 @@ WHAT THIS DELIBERATELY OMITS
 using ModelingToolkit
 using ModelingToolkit: t_nounits as t, D_nounits as D
 
+using ..LedgerParams
 using ..LedgerParams:
     RN_GFR_NOMINAL, RN_NA_FRACTIONAL_REABSORPTION, RN_PRESSURE_NATRIURESIS_SLOPE,
     RN_URINE_SOLUTE_LOAD, RN_URINE_SOLUTE_NONNA, RN_URINE_OSM_PER_NA,
     RN_AUTOREG_LOWER, RN_AUTOREG_UPPER, ADH_URINE_OSM_MAX, RN_URINE_SOLUTE_LOAD,
     CV_MAP_SETPOINT, BF_H2O_INTAKE_NOMINAL, BF_H2O_INSENSIBLE_LOSS,
-    BF_BODY_MASS_REFERENCE, BF_ECF_MASS_FRACTION
+    BF_BODY_MASS_REFERENCE, BF_ECF_MASS_FRACTION, CV_ANP_NATRIURETIC_GAIN, RN_ANP_TAU
 
 """
     Renal(; name)
@@ -62,7 +63,8 @@ pressure self-regulating in the long run.
 """
 function Renal(; name, solute_tracking::Bool = true,
                body_mass = BF_BODY_MASS_REFERENCE,
-               anp_gain = 0.0)
+               sex::Symbol = :male,
+               anp_gain = CV_ANP_NATRIURETIC_GAIN)
 
     sz = size_factor(body_mass)
 
@@ -116,19 +118,38 @@ function Renal(; name, solute_tracking::Bool = true,
         # so the question "would a volume-keyed path fix the acute natriuresis
         # deficit, and would it let G_pn fall?" can be ANSWERED rather than argued.
         # validation/challenges.jl section 3 is the deficit it was built to test.
-        G_anp     = sz * anp_gain
-        V_ecf_ref = body_mass * BF_ECF_MASS_FRACTION
+        # INTENSIVE, AND THAT IS NOT THE OBVIOUS CHOICE. G_pn multiplies a
+        # PRESSURE, which is intensive, so G_pn must scale for the product to be
+        # a flow. G_anp multiplies a VOLUME, which already scales, so G_anp must
+        # NOT scale or the term comes out as size squared. It was written
+        # extensive first and the body-size testset caught it within one run:
+        # the salt-step shift stopped being mass-invariant, 2.30 against 2.06
+        # across the population mass range. src/scaling.jl exists for exactly
+        # this and the rule is per-quantity, not per-component.
+        G_anp      = anp_gain
+        V_blood_ref = sz * LedgerParams.param(:CV_BLOOD_VOLUME_NOMINAL, sex)
+        # THE LAG, AND IT IS WHY THE ALGEBRAIC FORM WAS REFUTED. A single
+        # instantaneous gain cannot carry both limbs: the ACUTE natriuretic
+        # response to an isotonic load implies about 300 (mEq/day)/L while the
+        # CHRONIC steady-state sodium balance implies about 750, a factor of 2.5.
+        # Drummer 1992 (PMID 1324562) says why - excretion of an acute isotonic
+        # load takes DAYS, and sodium excretion is still elevated beyond 48 h.
+        # A first-order lag makes the transient response SMALLER than the
+        # steady-state gain, which is exactly the observed direction.
+        tau_anp    = RN_ANP_TAU
     end
 
     vars = @variables begin
         # All algebraic - no defaults. MAP and C_Na arrive by connection.
         MAP(t)              # mmHg     INPUT from cardiovascular
         C_Na(t)             # mEq/L    INPUT from body fluids
-        # WIRED 2026-09-02. The component docstring above has claimed V_ecf as an
-        # input since the file was written and it was never connected - the kidney
-        # could not see extracellular volume at all. Found by running
-        # validation/challenges.jl, not by any gate.
-        V_ecf(t)            # L        INPUT from body fluids
+        # WIRED 2026-09-02. The component docstring above has claimed a volume input
+        # since the file was written and it was never connected - the kidney could
+        # not see volume at all. Found by running validation/challenges.jl, not by
+        # any gate. RE-KEYED from V_ecf to V_blood the same day: ATRIAL STRETCH IS
+        # INTRAVASCULAR, ADR 0010 proposed V_blood, and the two differ by
+        # f_pv = 0.211, so a gain entered against the wrong one is wrong by 4.7x.
+        V_blood(t)          # L        INPUT from cardiovascular
         fr_mod(t)           # unitless INPUT from RAAS (0.0 = no RAAS action)
         u_osm(t)            # mOsm/kg  INPUT from ADH (urine osmolality)
         renal_mod(t)        # unitless INPUT from circadian clock (1.0 = no rhythm)
@@ -139,6 +160,10 @@ function Renal(; name, solute_tracking::Bool = true,
         H2O_excr(t)         # L/day    OUTPUT
         FR_effective(t)     # unitless
         Osm_load(t)         # mOsm/day urinary solute load - NOW TRACKS SODIUM
+        # STATE, added 2026-09-02. The lagged volume-keyed natriuretic signal, in
+        # mEq/day. Its steady-state value is G_anp*(V_blood - V_blood_ref), so the
+        # CHRONIC gain is G_anp exactly and the ACUTE gain is smaller by the lag.
+        anp_sig(t) = 0.0
     end
 
     eqs = [
@@ -187,7 +212,10 @@ function Renal(; name, solute_tracking::Bool = true,
         # extracellular volume is above its reference, independently of pressure.
         FR_effective ~ clamp(1.0 - (1.0 - FR_Na) * renal_mod + fr_mod -
                              G_pn * (MAP - MAP_ref) / Na_filtered -
-                             G_anp * (V_ecf - V_ecf_ref) / Na_filtered, 0.0, 1.0),
+                             anp_sig / Na_filtered, 0.0, 1.0),
+
+        # First-order approach to the volume-keyed natriuretic target.
+        D(anp_sig) ~ (G_anp * (V_blood - V_blood_ref) - anp_sig) / tau_anp,
 
         Na_reabsorbed ~ FR_effective * Na_filtered,
         Na_excr       ~ Na_filtered - Na_reabsorbed,

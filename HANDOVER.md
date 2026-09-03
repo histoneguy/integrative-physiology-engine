@@ -3,7 +3,8 @@
 **Date:** 2026-09-02
 **Repo:** https://github.com/histoneguy/integrative-physiology-engine (public)
 **Owner:** Eric George (`histoneguy`)
-**State:** **433/433**, all five gates exit 0, nothing outstanding.
+**State:** **441/441**, all five gates exit 0, and `validation/challenges.jl` PASSES
+against published human data. **The model now reproduces human salt sensitivity.**
 
 **This header deliberately names NO commit SHA and NO open PR.** Three consecutive
 handovers were wrong in their first line, each in a different way: two pinned a SHA that
@@ -192,7 +193,7 @@ prohibits `range-midpoint`, so an interval cannot become a point estimate.
 
 ## 2. STATE
 
-**433/433, five gates exit 0.** All of the below is on `main` as of 2026-09-02.
+**441/441, five gates exit 0, and the challenge harness exits 0.**
 
 **THE `VERIFY` CLASS IS EMPTY.** Eight rows carried
 `Standard physiological reference. VERIFY.` Five are now sourced — `CV.MAP.SETPOINT`,
@@ -253,8 +254,8 @@ blood volume and haematocrit — and left the compartment fraction alone.
 
 ### Ledger
 
-**71 parameters over 83 rows** — 34 `reported`, 30 `derived`, 17 `assumed`, 2
-`calibrated`. **19 weak.** Tiers: 38 A, 29 B, 16 C.
+**73 parameters over 85 rows** — 34 `reported`, 32 `derived`, 17 `assumed`, 2
+`calibrated`. Tiers: 38 A, 30 B, 17 C.
 `RN.GFR.VOLUME_SENSITIVITY` was added on 2026-09-02 (§3.12) and **nothing in `src/` reads
 it yet** — declared, not hidden, and in §7.
 **The `assumed` count went DOWN by two on 2026-09-01, and that is as honest as its going
@@ -888,6 +889,51 @@ disabling aldosterone escape, which is not a non-escaping AngII term and **moves
 baseline** (MAP 86.98 → 88.1–88.4 in every row using it); the GFR limb is stood in for by
 overriding `GFR0` per arm. **These numbers size an ordering. They are not model
 predictions**, and step 3 must re-derive the bracket rather than reuse it.
+
+### 3.17 ADR 0010 IS SOURCED AND ON. THE MODEL NOW REPRODUCES HUMAN SALT SENSITIVITY
+
+**Run `julia --project=. validation/challenges.jl`. IT EXITS 0.** Pre-registered in
+`validation/anp_input_coupling_prereg.md`. ADR 0010 is **Accepted**.
+
+`CV.ANP.NATRIURETIC_GAIN` = **700 (mEq/day)/L of BLOOD volume**, with a first-order lag
+`RN.ANP.TAU` = **0.50 d**. **Two human datasets for two parameters**: the chronic
+salt-step response fixes the gain, Lobo 2001's 6 h acute time course fixes the lag.
+Neither is fitted to the salt-sensitivity discrepancy.
+
+| | before | after | human |
+|---|---|---|---|
+| acute fractional Na excretion rise | +43% | **+79%** | +123% |
+| Lobo urinary Na, 6 h | 78.3 mmol | **96.3** | 95 |
+| Lobo urine, 6 h | 481 mL | **575** | 563 |
+| **chronic salt sensitivity** | **4.958** | **2.301** | **1.70–2.30** |
+
+**THE ALGEBRAIC FORM ADR 0010 PROPOSED WAS BUILT FIRST AND REFUTED.** Without a lag the
+acute limb implies ~300 (mEq/day)/L and the chronic ~750, a factor of 2.5 against a
+threshold of 2 fixed before extraction. Drummer 1992 (PMID 1324562) says why: excretion of
+an acute isotonic load takes **days**. **That record was right to drop the ANP state and
+wrong to drop the dynamics.**
+
+**FOUR DEFECTS FOUND BY WIRING IT, NONE CATCHABLE BY A GATE.** `Renal.jl` named a volume
+input in its docstring since it was written and nothing connected it. The gain was written
+**extensive** and must be **intensive**, since it multiplies a volume. `member_remake`'s
+hand-maintained scaling list was missing both new parameters. And the solver-agreement
+metric broke for the third time on a zero-initialised state — **its own note predicted
+exactly that**, and it is now normalised by each state's characteristic scale rather than
+pointwise, which removes the cliff permanently instead of moving a threshold again.
+
+**TWO CAVEATS ON EVERY NUMBER ABOVE.** The gain multiplies the MODEL'S volume excursion,
+1.5–2.1× too large while `G_vr` is calibrated, so part of 700 compensates for that — the
+human data alone give 750 at `G_pn` = 5.43 and 505 at 20.0. And **`G_pn` is unchanged at
+20.0 and now over-determined**, so the model double-counts this path and the chronic
+agreement is partly that double count. The human joint constraint is
+`G_pn + 0.0594·G_anp = 50`, putting `G_pn` at **11.4**.
+
+**A PREDICTION THE MODEL COULD NOT MAKE BEFORE.** Salt sensitivity is now **sex-dependent,
+women 11% higher**, because the path is keyed to a sexed volume; a pressure-only kidney had
+salt sensitivity `1/G_pn`, which carries no sex information. **Nothing here has sourced
+that.** Asserted in the suite, recorded as debt, falsifiable.
+
+---
 
 ### 3.15 THE MODEL WAS RUN AGAINST PUBLISHED HUMAN CHALLENGES FOR THE FIRST TIME
 
