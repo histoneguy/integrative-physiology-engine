@@ -4,7 +4,7 @@
 **Repo:** https://github.com/histoneguy/integrative-physiology-engine (public)
 **Owner:** Eric George (`histoneguy`)
 **State:** **441/441**, all five gates exit 0, and `validation/challenges.jl` PASSES
-against published human data. **`G_pn` is 11.4 as of 2026-09-03 (§3.18); the last free parameter is `G_vr`.**
+against published human data. **§3.21: `validation/challenges.jl` EXITS 0. Every challenge passes.**
 
 **This header deliberately names NO commit SHA and NO open PR.** Three consecutive
 handovers were wrong in their first line, each in a different way: two pinned a SHA that
@@ -889,6 +889,56 @@ disabling aldosterone escape, which is not a non-escaping AngII term and **moves
 baseline** (MAP 86.98 → 88.1–88.4 in every row using it); the GFR limb is stood in for by
 overriding `GFR0` per arm. **These numbers size an ordering. They are not model
 predictions**, and step 3 must re-derive the bracket rather than reuse it.
+
+### 3.21 EVERY CHALLENGE PASSES. `G_pn` = 8.4, `G_anp` re-estimated to 585
+
+**`julia --project=. validation/challenges.jl` EXITS 0.** 441/441, five gates clean.
+
+`G_pn` 11.4 → **8.4**, the constraint-consistent partner of the sourced volume gain
+rather than a second free choice. `CV.ANP.NATRIURETIC_GAIN` 700 → **585** and
+`RN.ANP.TAU` 0.50 → **0.15 d**, re-estimated against the corrected inputs exactly as
+that row's own note required once `G_vr` was sourced.
+
+| endpoint | model | human |
+|---|---|---|
+| 400-day drift | 3.9e-15 | — |
+| resting state, 8 endpoints | all inside reference ranges | — |
+| Lobo urine, 6 h | **565.6 mL** | 563 |
+| Lobo urinary sodium, 6 h | **95.1 mmol** | 95 |
+| **chronic salt sensitivity** | **2.000** | **1.70–2.30** |
+| **`dMAP/dV_ecf`** | **3.000 mmHg/L** | **2.97–4.16** |
+| acute fractional Na excretion rise | 82.5% | 123% |
+
+**THE IDENTIFICATION IS CLEAN AND WAS MEASURED, NOT ASSUMED.** Two data, two
+parameters: the chronic salt-step response fixes the gain, Lobo's 6 h time course fixes
+the lag. **A first-order lag cannot move a steady state**, so they are separately
+identified — at gains of 500/700/900 the chronic sensitivity is 2.275/1.720/1.382
+regardless of the lag, and its reciprocal is linear in the gain. The two Lobo endpoints
+agree on the lag independently, 0.171 d from the volume and 0.166 d from the sodium.
+
+**JENSEN 2013 WAS HELD OUT AND IS THE ONE OUT-OF-SAMPLE NUMBER.** It was not used in the
+estimation. The model predicts +82.5% against a reported +123% — inside the band, about a
+third low. **That is the honest standing of this parameterisation on data it was not
+fitted to, and it is the sharpest remaining discrepancy in the sodium limb.**
+
+**THE LAG MOVED BY 3.3× AND THE REASON IS NOT ANP.** `G_pn` fell 20 → 8.4 over the same
+period, so the pressure path contributes far less acutely and the volume path must
+respond faster to reproduce the same 6 h excretion. **`RN.ANP.TAU` is not identified by
+ANP physiology**; it is identified by requiring the model to match one acute dataset given
+everything else, and it will move again if anything upstream moves. Tier C, doing work.
+
+**AND THE DRUMMER CORROBORATION WAS OVERSTATED, CORRECTED ON THE ROW.** At 0.15 d the lag
+reaches 95% of steady state in about 11 h, which is hours not days. Drummer describes how
+long EXCRETING THE LOAD takes, which this model sets by how slowly the volume decays, not
+by this lag. Drummer supports the EXISTENCE of a lag — the algebraic form was refuted
+without one — and does not constrain its value.
+
+**WHAT IS NOT CLAIMED.** Three parameters in the sodium–volume loop now come from human
+data, and two of them were solved against the very targets the harness reports, so those
+are FITS and not validations. **The validations are the four Lobo endpoints, the resting
+state, the 400-day steady state, and Jensen.** The rest is a consistent parameterisation.
+
+---
 
 ### 3.19 THE VENOUS RETURN RELATION IS SOURCED IN HEALTHY HUMANS. `G_vr` 2880 → 1400
 
