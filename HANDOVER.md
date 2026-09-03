@@ -255,7 +255,7 @@ blood volume and haematocrit — and left the compartment fraction alone.
 ### Ledger
 
 **73 parameters over 85 rows** — 34 `reported`, 32 `derived`, 17 `assumed`, 2
-`calibrated`. Tiers: 38 A, 30 B, 17 C.
+`calibrated` — **one**, down from two, since `G_vr` was sourced (§3.19).
 `RN.GFR.VOLUME_SENSITIVITY` was added on 2026-09-02 (§3.12) and **nothing in `src/` reads
 it yet** — declared, not hidden, and in §7.
 **The `assumed` count went DOWN by two on 2026-09-01, and that is as honest as its going
@@ -889,6 +889,73 @@ disabling aldosterone escape, which is not a non-escaping AngII term and **moves
 baseline** (MAP 86.98 → 88.1–88.4 in every row using it); the GFR limb is stood in for by
 overriding `GFR0` per arm. **These numbers size an ordering. They are not model
 predictions**, and step 3 must re-derive the bracket rather than reuse it.
+
+### 3.19 THE VENOUS RETURN RELATION IS SOURCED IN HEALTHY HUMANS. `G_vr` 2880 → 1400
+
+**Run `python validation/venous_return_human_extract.py`.** Pre-registered in
+`validation/venous_return_human_prereg.md`. §4 item 2 is DONE and `calibrated` is down
+to one row in the whole ledger.
+
+**THE EARLIER PASS MISSED IT BY SEARCHING FOR THE WRONG OBJECT.** `G_vr` is
+`dCO/dV_blood`, **not** a compliance in mL/mmHg. §3.9 records a whole line of work
+withdrawn for composing a compliance and a resistance into it. Blood volume can be
+changed by a **known amount** in healthy people, by withdrawal or plasma expansion, and
+cardiac output measured — so the composite is directly measurable in a paradigm that is
+performable. Five such studies exist and none was in this repo.
+
+**The value.** Diaz-Canestro 2022 (PMID 34875180), **30 healthy women** aged 47–77: a 10%
+blood-volume reduction, 0.5 L withdrawn with haematocrit unchanged, cut stroke volume by
+at least 10% **at rest**. That is 0.98 (L/min)/L = **1404**, entered as **1400** and
+entered **as an upper bound**, because a study reporting stroke volume bounds `dCO/dV`
+from above when heart rate can compensate — which the pre-registration said in advance.
+
+**TWO INDEPENDENT LINES AGREE, AND THAT IS THE RESULT.** Chronic sodium balance implied
+1012–1941 (§3.7, §3.8). Acute volume manipulation in healthy people gives 1400. They share
+no data, no subjects, no measurement and no timescale. **The model was 2.06× too stiff**,
+inside the 1.5–2.1× §3.7 estimated from the salt data alone.
+
+**THE PRESSURE–VOLUME RATIO IS NOW HUMAN FOR THE FIRST TIME: 3.001 mmHg/L against a
+measured 2.97–4.16.** It had been 6.173 through every configuration in §3.7, §3.8, §3.14
+and §3.16.
+
+**Asymmetry, measured, and it nearly failed its own test.** Fortney 1983 (PMID 6629925)
+is the only study giving both limbs in the same 5 healthy men: −490 mL gave −2.2 L/min
+and +440 mL gave +1.0, a ratio of **1.98 against a threshold of 2 fixed before the
+numbers**. It passes by 1%. **A linear symmetric gain is at the edge of what the evidence
+supports**, and the direction is the expected one.
+
+**STILL UNSOURCED IN HEALTHY HUMANS**, and the gap is narrowed rather than closed:
+systemic venous compliance in mL/mmHg, mean systemic filling pressure, resistance to
+venous return. The one human compliance value, Takatsu 1989 (PMID 2545936, 2.3 mL/mmHg/kg
+— strikingly close to the anaesthetised dog and pig values already held), is **56 cardiac
+patients graded by NYHA class**, and the pre-registration excluded class I in advance.
+**None of the three is needed now**, because the composite was sourced directly.
+
+### 3.20 Where the model stands with three parameters from data
+
+| | model | human |
+|---|---|---|
+| resting state, 8 endpoints | all inside reference ranges | — |
+| 400-day drift | 6.0e-15 | — |
+| Lobo urine / sodium at 6 h | 482 mL / 79.3 mmol | 563 / 95 |
+| **`dMAP/dV_ecf`** | **3.001** | **2.97–4.16** |
+| chronic salt sensitivity | 1.635 | 1.70–2.30 |
+| acute fractional Na excretion rise | +52% | +123% |
+
+**Two challenges now fail, both NARROWLY LOW**, where the model began 116% high on the
+chronic limb. **The residual is the pair mismatch recorded when `G_pn` was set.** The
+human joint constraint is `G_pn + 0.0594·G_anp = 50`; with the sourced `G_anp` = 700 it
+gives `G_pn` = **8.4**, not the instructed 11.4. Measured as a diagnostic, entering
+nothing: at 8.4 the chronic sensitivity is **1.720, inside the window**, with the ratio
+still 3.001. **The prediction recorded on that row held exactly.**
+
+**AND `CV.ANP.NATRIURETIC_GAIN` IS NOW DUE FOR RE-ESTIMATION.** Its own note said so:
+*part of 700 compensates for a volume excursion 1.5–2.1× too large while `G_vr` is
+calibrated — re-estimate when `G_vr` is sourced.* `G_vr` is now sourced, so that caveat
+has come due, and it is the likely cause of the weak acute natriuresis. **That is the next
+pass, and it is a re-estimation against corrected inputs rather than a new search.**
+
+---
 
 ### 3.18 `G_pn` set to 11.4, and the last free parameter is now isolated
 

@@ -156,7 +156,7 @@ using SciMLBase
         # direction against the literature - a fact about G_pn, not about ADH.
         r = salt_step()
         v = check_pressure_natriuresis(r)
-        @test isapprox(v.map_shift_mmHg, 2.8613; atol = 0.05)
+        @test isapprox(v.map_shift_mmHg, 1.6673; atol = 0.05)
 
         # AND THE OTHER HALF OF THE PAIR, ADDED 2026-09-02 AT NO EXTRA COMPUTE:
         # dMAP/dV_ecf, which is set by CV.VENOUS_RETURN.SENSITIVITY and NOT by G_pn.
@@ -184,7 +184,7 @@ using SciMLBase
         # compliance lands this should fail again and move to about 3.0.
         ratio = v.map_shift_mmHg /
                 (r.levels[1].V_ecf_final - r.levels[end].V_ecf_final)
-        @test isapprox(ratio, 6.1731; rtol = 1e-3)
+        @test isapprox(ratio, 3.0005; rtol = 1e-3)
     end
 
     @testset "ADR 0012 stage 1 is a change of variables, not of behaviour" begin
@@ -255,8 +255,8 @@ using SciMLBase
         # toward the anchored high arm. This is a CORRECTION of a physical error,
         # not a tuning: red cell mass does not track plasma over 30 days.
         pre_partition = (205.0 => 87.0046,
-                         154.0 => 85.6186,
-                         103.0 => 84.2315)
+                         154.0 => 86.2023,
+                         103.0 => 85.3998)
         # raas=false ISOLATES what this testset is about. The reference values
         # were measured before RAAS existed, so comparing against a model that
         # now includes it would be testing two changes at once. RAAS having its
@@ -309,7 +309,7 @@ using SciMLBase
         # forces sodium balance to close through the circulation; the default
         # model's shift is unmoved at 5.0570 against 5.0569.
         @test isapprox(check_pressure_natriuresis(r).map_shift_mmHg,
-                       2.7731; rtol = 1e-3)   # 4.9352 -> 4.9067 -> 4.7672 -> 2.2467
+                       1.6041; rtol = 1e-3)   # 4.9352 -> 4.9067 -> 4.7672 -> 2.2467
                        # 2026-09-02: ADR 0010's volume-keyed path landed and the
                        # disabled-ADH branch moved with everything else.
     end
@@ -345,8 +345,8 @@ using SciMLBase
         # blocks pin the same three numbers on purpose - they assert different
         # claims about them - so they move together.
         pre_raas = (205.0 => 87.0046,
-                    154.0 => 85.6186,
-                    103.0 => 84.2315)
+                    154.0 => 86.2023,
+                    103.0 => 85.3998)
         for (lvl, expected) in pre_raas
             got = only(l.MAP_final for l in r.levels if l.level == lvl)
             # 1e-9 -> 1e-7 on 2026-08-27, same reason as the ADR 0012 block: the
@@ -634,7 +634,7 @@ using SciMLBase
         # the RIGHT way. It is small - 0.8% against a discrepancy of 2x at best -
         # so it does not touch that finding, and it must not be read as
         # addressing it: G_pn is still the parameter that sets the shift.
-        @test isapprox(on, 2.8613; atol = 0.02)
+        @test isapprox(on, 1.6673; atol = 0.02)
     end
 
     @testset "the urine solute load tracks sodium (water limb responds to salt)" begin
@@ -832,7 +832,7 @@ using SciMLBase
         # into a quantity that should be intensive.
         @test size_factor(IPE.LedgerParams.BF_BODY_MASS_REFERENCE) == 1.0
         v = check_pressure_natriuresis(salt_step())
-        @test isapprox(v.map_shift_mmHg, 2.8613; atol = 0.02)
+        @test isapprox(v.map_shift_mmHg, 1.6673; atol = 0.02)
 
         # THE INVARIANCE ITSELF, on the whole loop rather than on one arm.
         # With sodium intake scaled along with the individual - which is what an
@@ -1048,7 +1048,7 @@ using SciMLBase
         # that a future source can falsify the size without silently deleting the
         # direction.
         @test f > m
-        @test isapprox(f / m, 1.140; rtol = 0.02)
+        @test isapprox(f / m, 1.172; rtol = 0.02)
 
         # THE PAIR IS NOT INERT ANY MORE, AND THIS IS WHERE IT BITES. ADR 0014's
         # falsifiable test asks that a sexed pair change a result. It changes the
