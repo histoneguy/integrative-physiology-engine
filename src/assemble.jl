@@ -56,7 +56,7 @@ call `build_model`.
 function build_raw_model(; body_mass = 70.0, storage::Bool = false,
                          circadian::Bool = false, baroreflex::Bool = true,
                          raas::Bool = true, adh::Bool = true,
-                         sex::Symbol = :male)
+                         sex::Symbol = :male, anp_gain = 0.0)
     @named bf = BodyFluids(; body_mass, storage)
     sex in (:male, :female) ||
         error("sex must be :male or :female, got :$sex. There is no :both " *
@@ -68,7 +68,7 @@ function build_raw_model(; body_mass = 70.0, storage::Bool = false,
     # post-placeholder water limb: with adh = false, u_osm is pinned at U_base
     # so that Osm_load/U_base reproduces the old constant 1.7 L/day, and a
     # varying Osm_load would break that recovery. See Renal.jl and ADR 0008.
-    @named rn = Renal(; solute_tracking = adh, body_mass)
+    @named rn = Renal(; solute_tracking = adh, body_mass, anp_gain)
     @named br = Baroreflex(; enabled = baroreflex)
     @named ra = Raas(; enabled = raas)
     @named ad = Adh(; enabled = adh)
@@ -80,6 +80,11 @@ function build_raw_model(; body_mass = 70.0, storage::Bool = false,
         rn.MAP          ~ cv.MAP,
         # body fluids -> renal
         rn.C_Na         ~ bf.C_Na,
+        # ADDED 2026-09-02. Renal.jl has named V_ecf as an input in its docstring
+        # since it was written and nothing ever connected it. ADR 0010's volume-keyed
+        # natriuretic term needs it, and validation/challenges.jl section 3 is the
+        # measured deficit that motivated wiring it.
+        rn.V_ecf        ~ bf.V_ecf,
         # renal -> body fluids (closes the loop)
         bf.Na_excr_rate ~ rn.Na_excr,
         bf.H2O_excr_rate ~ rn.H2O_excr,

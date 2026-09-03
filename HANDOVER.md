@@ -889,12 +889,120 @@ baseline** (MAP 86.98 → 88.1–88.4 in every row using it); the GFR limb is st
 overriding `GFR0` per arm. **These numbers size an ordering. They are not model
 predictions**, and step 3 must re-derive the bracket rather than reuse it.
 
+### 3.15 THE MODEL WAS RUN AGAINST PUBLISHED HUMAN CHALLENGES FOR THE FIRST TIME
+
+**Run it: `julia --project=. validation/challenges.jl`. It EXITS NONZERO on failure.**
+`validation/targets.md` has carried a challenge canon since the beginning with every
+protocol marked TODO. These are the first four connected and run. Directive 1.11.
+
+**IT HOLDS HOMEOSTASIS, AND THAT WAS NOT GUARANTEED.** From the default initial
+condition the model settles by day 30 and then does not move: relative drift between
+day 200 and day 400 is **5.7e-15**, sodium excretion equals intake to 3.5e-14, water
+balance likewise. **In a model where arterial pressure is an output rather than a
+setpoint, it could have drifted anywhere.** Eight resting values all sit inside human
+reference ranges — MAP 86.98, ECF 14.556 L, plasma sodium 140.3, plasma osmolality
+287.6, urine 1.70 L/day at 413 mOsm/kg, GFR 152.6 L/day.
+
+**IT REPRODUCES A TWO-LITRE SALINE CHALLENGE, ON ALL FOUR ENDPOINTS.** Lobo DN et al.,
+*Clin Sci (Lond)* 2001;101(2):173-9, PMID 11473492, 10 healthy men, double-blind
+crossover, 2 L of 0.9% saline over 1 h.
+
+| endpoint, 6 h after infusion | model | Lobo |
+|---|---|---|
+| urine volume | 481 mL | 563 mL |
+| urinary sodium | 78.3 mmol | 95 mmol |
+| urine osmolality | 478 mOsm/kg | 630 mOsm/kg |
+| fraction of the sodium load excreted | 25.4% | "one third" |
+
+**That is the first external validation this repo has ever had**, and it is the
+integrated renal-body-fluid loop being tested, not a parameter.
+
+**THREE FAILURES, AND THE FIRST TWO HAVE ONE DIAGNOSIS — §3.16.**
+
+1. **Acute natriuresis is too weak.** Fractional sodium excretion rises **43%** on
+   23 mL/kg of isotonic saline against **123%** in 23 healthy humans (Jensen JM et al.,
+   *BMC Nephrol* 2013;14:202, PMID 24067081). Renin falls, correctly, but the kidney
+   does not dump sodium fast enough.
+2. **Twenty-four hour fluid deprivation raises plasma osmolality by 6.1 mOsm/kg** at a
+   realistic 1.0 L/day of food and oxidative water, against **unchanged** in 20 healthy
+   women (Pross N et al., *Br J Nutr* 2013;109(2):313-21, PMID 22716932).
+   **The model cannot express this protocol**: `BF.H2O.INTAKE_NOMINAL` is one lumped
+   number and deprivation removes only the beverage share, which national surveys put at
+   64–81% of total water intake (Kant 2009 NHANES, PMID 19640962; Guelinckx 2016,
+   PMID 27754402). The residual is swept in the harness and reported as a range.
+3. **`BF.ICF_ECF.OSMOTIC_TAU` is `assumed` at 30 min and load-bearing on every acute
+   protocol.** Its own ledger note says *"sensitivity to this value should be near zero
+   on multi-day runs — verify that in testing, and if it is not, the compartment
+   structure is wrong."* **That check had never been run.** On multi-day runs it is
+   indeed near zero. On a 1.4 L water load the peak plasma osmolality excursion runs
+   **8.8 mOsm at 1 min to 17.6 at 120 min** — a factor of two across the plausible range
+   of an unsourced constant.
+
+### 3.16 The acute natriuresis deficit confirms ADR 0010, and the arithmetic is exact
+
+**Run it: `julia --project=. bench/anp_diagnostic.jl`.**
+
+**`Renal.jl` claimed `V_ecf` as an input in its docstring from the day it was written and
+nothing ever connected it.** The kidney could not see extracellular volume. Found by
+running a challenge, not by any of the five gates. It is now wired, and `Renal.jl`
+carries a volume-keyed natriuretic term with **gain zero by default**, so every existing
+result is bit-identical — 433/433 unchanged.
+
+**THE STEADY-STATE ARITHMETIC, WRITTEN DOWN BEFORE THE RUN AND THEN CONFIRMED EXACTLY.**
+At steady state `d(intake) = G_pn·dMAP + G_anp·dV_ecf` and `dMAP = 6.173·dV_ecf`, so
+
+    dMAP/d(intake) = 1 / (G_pn + G_anp/6.173)
+
+| `G_pn` | `G_anp` | combination | chronic shift | acute FENa rise |
+|---|---|---|---|---|
+| 20.00 | 0 | 20.00 | 4.957 | +43% ← shipped |
+| 10.00 | 61.7 | 20.00 | **4.957** | +76% |
+| 5.43 | 89.9 | 20.00 | **4.957** | +91% |
+| 5.43 | 0 | 5.43 | **18.245** | +19% |
+| 5.43 | 238 | 43.98 | **2.254** | +207% |
+| 5.43 | 285 | 51.60 | **1.921** | +243% |
+| human | | | 1.70–2.30 | +123% |
+
+1. **Chronic salt sensitivity depends ONLY on the combination.** Three configurations
+   with combination 20.00 give the same shift to four decimals. **The two paths are
+   indistinguishable chronically and differ only acutely** — which tells ADR 0010 exactly
+   which experiment can identify its gain, and that no amount of salt-balance data ever
+   will.
+2. **The measured animal slope alone is catastrophic.** `G_pn` = 5.43 with no volume path
+   gives 18.2 mmHg per 100 mmol/day. ADR 0010 predicted this and it is why the measured
+   value was never adopted.
+3. **With the volume path carrying the difference, `G_pn` sits at its MEASURED value
+   while chronic salt sensitivity lands in the human window and the acute response rises
+   out of the deficit.** **Both failures are relieved by the same missing component.**
+
+**NOTHING IS ENTERED AND `G_anp` HAS NO LEDGER ROW.** The chronic window wants 240–330
+and the acute datum wants roughly half that, **so a single linear instantaneous term
+cannot satisfy both** — evidence that the real path is lagged or saturating, not that
+this one is calibrated. ADR 0010's blocker is the INPUT coupling and is still open.
+Sizing this gain to the discrepancy it explains is the circularity §3.3 records happening
+to `G_pn` already.
+
+**This changes the estimation order in ADR 0016.** That record put `G_vr` first and the
+fitted constant last. **A volume-keyed natriuretic path now sits ahead of both**, because
+it is the only candidate that relieves an acute failure and a chronic one at once, and
+because it makes `G_pn` estimable at its measured value instead of as a free constant.
+
 ---
 
 ## 4. NEXT, IN ORDER
 
 **Finish the cardiovascular system, then the other systems. Populations are far off — a
 population of an incomplete model is a wider set of wrong answers.**
+
+**0. A VOLUME-SENSING NATRIURETIC PATH — ADR 0010. THIS IS NOW ITEM ZERO AND IT DISPLACES
+   THE ORDER IN ADR 0016.** It is the only candidate that relieves an ACUTE failure and a
+   CHRONIC one with the same component (§3.15, §3.16), and the only one that makes `G_pn`
+   estimable at its measured animal value instead of as a free constant. The term is wired
+   and default-zero; what is missing is the INPUT coupling, which is ADR 0010's own
+   standing blocker: nothing sourced connects a volume signal to plasma ANP in humans, and
+   Norsk 1986 falsified total blood volume as the sensed variable. **The identifying
+   experiment is now named and it is acute, not chronic** — no sodium-balance study can
+   ever separate this gain from `G_pn`, Mars500 included.
 
 **Flipping the stroke-volume dependency was item 1 and is DONE, both halves — §3.6.**
 
