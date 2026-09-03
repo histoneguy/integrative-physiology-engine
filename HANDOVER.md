@@ -22,7 +22,7 @@ correction and silent about everything after it. Folded in; nothing live dropped
 
 **An ADR is an Architecture Decision Record** — a short document in `docs/adr/`
 recording a structural choice: what was decided, the evidence, what it forecloses, and
-what would show it wrong. There are fifteen and they are referenced constantly. Each
+what would show it wrong. There are sixteen and they are referenced constantly. Each
 carries a **Status**, an **Evidence tier** (ADR 0006), and a **Falsifiable test**.
 `tools/check_adrs.py` enforces that much. They are decisions, not documentation: a wrong
 parameter gets re-estimated, a wrong structure invalidates every estimate resting on it.
@@ -53,7 +53,7 @@ run something, hand him one block he can paste. Windows and PowerShell: `python`
 `python3`.
 
 ### 1.2 Build physiology, not process
-Five gates and fourteen ADRs already exist. **Do not add tooling unless something breaks
+Five gates and sixteen ADRs already exist. **Do not add tooling unless something breaks
 that cannot be worked around.** Two changes have met that bar in the whole project: the
 `sex` column, and `src/scaling.jl`.
 
@@ -839,6 +839,56 @@ parameter is precisely how `G_pn` became a hypertensive value (§3.3). Recorded 
 **No threshold had to be chosen for that test**, which is why it was used. A form-imposed
 ceiling either is or is not exceeded.
 
+### 3.14 The three explanations over-explain the gap, and the fitted constant must go last
+
+**Run it: `julia --project=. bench/explanation_stack.jl`. ADR 0016 is the record.**
+Decision rule D1–D4 and the human window were fixed in that file's header and **committed
+before the first run**.
+
+**Every row below is a real solve.** Multiplying three published percentages together is
+the move made and withdrawn on 2026-09-02 (§3.9), and it would have been wrong here.
+
+| configuration | mmHg/100 mmol | ΔV L/100 mmol | ratio | |
+|---|---|---|---|---|
+| baseline | 4.957 | 0.803 | 6.173 | high |
+| ADR 0013 alone (51) | 1.944 | 0.315 | 6.173 | **in** |
+| **both mechanisms** | **3.409–3.634** | **0.552–0.589** | 6.172 | high |
+| **all three** | **1.536–1.639** | 0.249–0.266 | 6.173 | **low** |
+| **human** | **1.70–2.30** | **0.553–0.572** | **2.97–4.16** | |
+
+**Branch D2. The three over-explain the gap** — mechanisms alone sit above the window,
+adding `G_pn` = 51 drops below it.
+
+**THE CORRECTED `G_pn` BRACKET IS 32.3–49.0, BISECTED ON REAL SOLVES, AND 51 IS OUTSIDE
+IT.** Intersecting with ADR 0013's own concordant pressure bracket of 43.5–58.8 leaves
+**43.5–49.0**. **The inverse law does not hold once the mechanisms are on** — it
+under-predicts the required `G_pn` by 8–13%, because the pressure-independent limbs remove
+sodium `G_pn` never has to clear. That 8–13% is the entire reason this was run rather than
+composed.
+
+**THE MECHANISMS PUT THE VOLUME RESPONSE ON THE HUMAN VALUE AND THE FITTED CONSTANT
+DESTROYS IT.** 0.552 against a human 0.553; `G_pn` = 51 alone gives 0.315. §3.7's verdict,
+reproduced from a completely different direction.
+
+**AND IT IS NOT A SUCCESS.** The ratio is **6.17 in all nine configurations** against a
+human 2.97–4.16. The mechanisms get ΔV right by having ΔMAP ~1.7× too high *and* the ratio
+~1.8× too high, and the two errors cancelling. **No value of `G_pn` satisfies both limbs
+while the ratio is wrong**, which is the fourth independent confirmation of the
+orthogonality result and the reason the ordering is forced:
+
+1. **`G_vr` first.** The ratio is the only quantity no other parameter can move.
+2. **The mechanisms second.** Both are identified by something other than the discrepancy
+   they explain.
+3. **`G_pn` last, and jointly.** It is the only fitted constant of the three, so it is the
+   only one that can absorb the others' share — which is how it became a hypertensive
+   value in the first place (§3.3).
+
+**Two proxies carry every number here and both are declared.** ADR 0015 is stood in for by
+disabling aldosterone escape, which is not a non-escaping AngII term and **moves the
+baseline** (MAP 86.98 → 88.1–88.4 in every row using it); the GFR limb is stood in for by
+overriding `GFR0` per arm. **These numbers size an ordering. They are not model
+predictions**, and step 3 must re-derive the bracket rather than reuse it.
+
 ---
 
 ## 4. NEXT, IN ORDER
@@ -908,12 +958,17 @@ population of an incomplete model is a wider set of wrong answers.**
    cardiac gain needs a sourcing pass. Best normative source found: **Schumann 2024**,
    *Am J Physiol Heart Circ Physiol* 326:H158–H165, n=980 healthy — and it is about **sex
    differences in BRS**, so it would also give ADR 0014 a second real dimorphic pair.
-5. **ADR 0013 versus ADR 0015 versus THE GFR LIMB — THREE COMPETING EXPLANATIONS NOW,
-   NOT TWO, AND NOT A QUEUE.** §3.12 added the third: a sourced GFR response to volume
-   expansion worth 8–15% of the same discrepancy, from a measurement that is not a
-   pressure. It is the only one of the three whose magnitude is not inferred from the gap
-   it explains. **The total explained must not exceed the gap**, so whichever lands second
-   and third must be re-estimated against those already in.
+5. ~~**ADR 0013 versus ADR 0015 versus the GFR limb.**~~ **DECIDED 2026-09-02 — ADR 0016,
+   §3.14. They are SEQUENCED, not competing, and the order is forced.** Measured together
+   rather than composed, the three **over-explain** the gap: mechanisms alone 3.409–3.634,
+   all three 1.536–1.639, human 1.70–2.30. **`G_pn`'s corrected bracket is 32.3–49.0 and
+   ADR 0013's proposed 51.0 is outside it.**
+   **Nothing was accepted, enabled or changed.** ADR 0013 stays Proposed — accepting it is
+   the owner's decision and its own volume test still blocks it — ADR 0015 stays Proposed
+   and default OFF, and the GFR row stays unconsumed. **What was decided is the order**,
+   and it is now items 2, then the mechanisms, then `G_pn` last.
+   **ADR 0016 expires when item 2 lands** and the whole table must be re-run against a
+   sourced `G_vr`.
    ADR 0013 reaches the human salt sensitivity by moving a FITTED CONSTANT (`G_pn`
    20 → 51); ADR 0015 reaches it from a MECHANISM (§3.11, 50.7% of the gap closed
    with no parameter touched). **Adopting both at full strength double-counts the
@@ -1039,9 +1094,14 @@ population of an incomplete model is a wider set of wrong answers.**
   distribution and the population currently is not — see §1.12.
 - **`G_pn` is wrong by 2–19× on the PRESSURE evidence** (§3.3), and **ADR 0013's own
   falsifiable test now blocks changing it** (§3.7). The volume test fails by 5.2× and
-  convicts `CV.VENOUS_RETURN.SENSITIVITY`, not this row. Sequencing: `G_vr` first, re-run
-  the test, then accept. `G_pn` stays 20.0 in the meantime and that is the pre-registered
-  outcome, not an omission.
+  convicts `CV.VENOUS_RETURN.SENSITIVITY`, not this row. `G_pn` stays 20.0 in the meantime
+  and that is the pre-registered outcome, not an omission.
+  **AND ITS PROPOSED REPLACEMENT IS NOW STALE TOO — §3.14, ADR 0016.** 51.0 was estimated
+  with no mechanism present. With both mechanisms in, the corrected bracket is
+  **32.3–49.0** and 51 is outside it; the surviving overlap with ADR 0013's own pressure
+  bracket is 43.5–49.0. **`G_pn` is estimated LAST**, after `G_vr` and after the
+  mechanisms, because it is the only fitted constant of the three and will otherwise
+  absorb their share.
 - **`CV.VENOUS_RETURN.SENSITIVITY` is 1.5–2.1× too stiff against human data** (§3.7, §3.8).
   It was 2.7–5.2× before the red cell correction closed 1.83× of it. Already `calibrated`
   and already §4 item 1; the measured target is now **1012–1941**, from seven primaries

@@ -171,10 +171,20 @@ pressure — Hall 1980, and the human salt-step literature already in
 
 - **Nothing moves until it is enabled.** Default OFF, so 428/428 stands and every pinned
   result is unchanged.
-- **ADR 0013 becomes a competing explanation rather than a complementary one.** It raises
-  `G_pn` 20 → 51 to get 1.944 mmHg/100 mmol from a fitted constant; this gets 2.444 from a
-  mechanism. **Both cannot be adopted at full strength** — that would double-count the same
-  discrepancy. Whichever lands second must be re-estimated against the other.
+- ~~**ADR 0013 becomes a competing explanation rather than a complementary one.**~~
+  **MEASURED 2026-09-02 — see ADR 0016.** They are not competing; they are **sequenced**,
+  and there are **three** claimants rather than two. Run together in the model rather than
+  composed on paper, this term and the sourced GFR limb give **3.409–3.634** mmHg per 100
+  mmol/day, and adding `G_pn` = 51 on top gives **1.536–1.639**, below the human
+  1.70–2.30. **The corrected `G_pn` bracket is 32.3–49.0 and 51 is outside it.**
+  **This record is necessary and nowhere near sufficient**: 21.5% of the gap at the sourced
+  renin gain, against the 50.7% its own motivating diagnostic showed before that gain was
+  sourced. ADR 0016 puts this record **second** and the fitted constant **last**.
+- **AND THE MECHANISMS GET THE VOLUME RESPONSE RIGHT WHERE THE FITTED CONSTANT DESTROYS
+  IT.** Both mechanisms together give ΔV = 0.552 L per 100 mmol/day against a human 0.553;
+  `G_pn` = 51 alone gives 0.315. That is §3.7's verdict reproduced from a different
+  direction — but it is **not** a success, because it happens by ΔMAP being ~1.7× too high
+  and the ratio ~1.8× too high and the two errors cancelling. Fixing either alone breaks it.
 - ~~**`RAAS.RENIN.PRESSURE_GAIN` must be re-derived first.**~~ **DONE 2026-09-02, and it
   cost this record more than half its effect.** 19.0 → 4.35, `assumed` → `derived`, from
   the same van Ochten meta-analysis that already supplied this component's threshold and

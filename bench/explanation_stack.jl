@@ -93,7 +93,11 @@ function salt_step_stack(; g_gfr = 0.0, gpn = nothing, tau_esc = nothing,
      ratio = dm / dv, base_map = results[1].MAP)
 end
 
-inwin(x) = HUMAN[1] <= x <= HUMAN[2]
+# Tolerance because the bisection below lands ON the boundary by construction, and a
+# strict comparison then reports the target it just hit as outside the window. Sized from
+# the bisection tolerance: 1e-3 in G_pn is about 7e-5 in the shift, so 1e-3 clears it.
+const EDGE = 1e-3
+inwin(x) = (HUMAN[1] - EDGE) <= x <= (HUMAN[2] + EDGE)
 mark(x) = inwin(x) ? "IN " : (x > HUMAN[2] ? "high" : "low ")
 
 g_hi = VOL_HALF * S_GFR      # per-litre route,  HANDOVER 3.12
@@ -119,20 +123,50 @@ for (label, kw) in CONFIGS
             label, r.per100, r.dv100, r.ratio, r.base_map, mark(r.per100))
 end
 
-# What G_pn would put the mechanism stack inside the window? G_pn scales the shift
-# inversely, so solve rather than sweep - then CONFIRM by running it.
+# What G_pn puts the mechanism stack inside the window?
+#
+# The obvious move is to assume G_pn scales the shift inversely and solve. THAT IS WRONG
+# HERE and the error is printed below: with the mechanisms on, the inverse law
+# under-predicts the required G_pn by 7-12%, because the pressure-independent limbs
+# remove sodium that G_pn then does not have to clear. So the inverse solve is used only
+# as a BRACKET and the answer is bisected on real solves. This is section 5 item 13 in
+# practice - the composed number was checked and did not survive.
+function bisect_gpn(g, target; lo = 15.0, hi = 90.0, tol = 1e-3, maxit = 24)
+    f(x) = salt_step_stack(; g_gfr = g, gpn = x, tau_esc = 1.0e6).per100 - target
+    flo, fhi = f(lo), f(hi)
+    (flo * fhi > 0) && return (NaN, 0)
+    it = 0
+    while it < maxit && (hi - lo) > tol
+        mid = 0.5 * (lo + hi)
+        fm = f(mid)
+        if flo * fm <= 0
+            hi, fhi = mid, fm
+        else
+            lo, flo = mid, fm
+        end
+        it += 1
+    end
+    (0.5 * (lo + hi), it)
+end
+
 println()
-println("SOLVING for the G_pn that lands the mechanism stack in the window, then RUNNING it")
+println("THE CORRECTED G_pn TARGET, BISECTED ON REAL SOLVES")
 for (label, g) in (("per-litre", g_hi), ("per-intake", g_lo))
     m = salt_step_stack(; g_gfr = g, gpn = nothing, tau_esc = 1.0e6)
-    lo = 20.0 * m.per100 / HUMAN[2]
-    hi = 20.0 * m.per100 / HUMAN[1]
-    @printf("  %-11s mechanisms give %.3f  ->  G_pn in %.1f - %.1f\n",
-            label, m.per100, lo, hi)
-    for gpn in (lo, hi)
+    naive_lo = 20.0 * m.per100 / HUMAN[2]
+    naive_hi = 20.0 * m.per100 / HUMAN[1]
+    gl, il = bisect_gpn(g, HUMAN[2])
+    gh, ih = bisect_gpn(g, HUMAN[1])
+    @printf("  %-11s mechanisms give %.3f\n", label, m.per100)
+    @printf("      inverse-law guess   %.1f - %.1f\n", naive_lo, naive_hi)
+    @printf("      BISECTED            %.1f - %.1f   (%d and %d iterations)\n",
+            gl, gh, il, ih)
+    @printf("      the guess is low by %.1f%% and %.1f%%\n",
+            (gl - naive_lo) / gl * 100, (gh - naive_hi) / gh * 100)
+    for gpn in (gl, gh)
         r = salt_step_stack(; g_gfr = g, gpn = gpn, tau_esc = 1.0e6)
-        @printf("      G_pn = %5.1f  ->  %.3f per 100 mmol/day  %s\n",
-                gpn, r.per100, mark(r.per100))
+        @printf("      G_pn = %5.1f -> %.3f per 100 mmol/day, dV %.3f L  %s\n",
+                gpn, r.per100, r.dv100, mark(r.per100))
     end
 end
 
