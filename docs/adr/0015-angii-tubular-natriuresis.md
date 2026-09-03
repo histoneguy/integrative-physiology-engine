@@ -76,6 +76,27 @@ term persists:
 205 mEq/day and +5.5e-3 at 103 — less reabsorption on high salt, more on low. That is
 pressure-independent natriuresis, and it does the work `G_pn` is currently doing alone.
 
+> **RESIZED 2026-09-02, AND THE 50.7% ABOVE WAS A FUNCTION OF AN UNSOURCED ROW.**
+> `RAAS.RENIN.PRESSURE_GAIN` has been re-derived from van Ochten's own slope, 19.0 → 4.35
+> (`validation/renin_gain_prereg.md`, branch R1). **The fall becomes 21.5% and the
+> escape-off salt sensitivity goes 2.444 → 3.892 mmHg per 100 mmol/day** against a human
+> 1.70–2.30. Measured with `bench/renin_gain_sweep.jl`:
+>
+> | `g_renin` | fall | escape-off mmHg/100 mmol |
+> |---|---|---|
+> | **4.35 (derived)** | **21.5%** | **3.892** |
+> | 9.50 | 35.7% | 3.188 |
+> | 19.0 (the value behind the table above) | 50.7% | 2.444 |
+> | 38.0 | 65.8% | 1.696 |
+>
+> **This record survives its own pre-registered rule and loses most of its size.** The
+> pathway is still live at 21.5%, but it now closes about a fifth of the salt-sensitivity
+> gap rather than nearly all of it. The renin pre-registration recorded *before its
+> search* that it could resize this record but not overturn it, because the fall stays
+> above 20% even at a quarter of the incumbent gain. **The consequences section below is
+> corrected accordingly: this is no longer a mechanism that reaches the human range on its
+> own.**
+
 **This diagnostic is NOT the proposed change.** Disabling aldosterone escape is wrong
 physiology; escape is real. It demonstrates that the *pathway* is capable of carrying salt
 balance in this model, nothing more. Three caveats travel with it, all in the bench script:
@@ -154,8 +175,21 @@ pressure — Hall 1980, and the human salt-step literature already in
   `G_pn` 20 → 51 to get 1.944 mmHg/100 mmol from a fitted constant; this gets 2.444 from a
   mechanism. **Both cannot be adopted at full strength** — that would double-count the same
   discrepancy. Whichever lands second must be re-estimated against the other.
-- **`RAAS.RENIN.PRESSURE_GAIN` must be re-derived first.** It is calibrated against a
-  baseline that no longer exists, and this term amplifies whatever it carries.
+- ~~**`RAAS.RENIN.PRESSURE_GAIN` must be re-derived first.**~~ **DONE 2026-09-02, and it
+  cost this record more than half its effect.** 19.0 → 4.35, `assumed` → `derived`, from
+  the same van Ochten meta-analysis that already supplied this component's threshold and
+  form. The blocker was never the physiology: the row's note claimed the paper reported
+  the slope in unconsumable units, and the paper in fact converted its dose-response to
+  percentage of the plateau precisely so it could be consumed. Nobody had opened it.
+- **A STRUCTURAL LIMIT WAS FOUND WHILE DOING IT, and it bears on this record.** The
+  rectified pressure-only renin control **cannot reproduce the human salt-induced renin
+  response at any gain** — van den Bosch measures a 2.73-fold PRA change between sodium
+  intakes at 2 mmHg of pressure difference, where this form's ceiling is 1.40. Human
+  renin answers to macula densa sodium delivery and renal sympathetic traffic, and this
+  component has neither. **The tubular term this record proposes is driven by that same
+  renin signal**, so whatever `fr_angii` ends up representing is being driven by an input
+  that is known to be incomplete. That is not a reason to reject the record; it is a
+  reason its magnitude must never be fitted to salt data.
 - **The volume limb is untouched.** `dMAP/dV_ecf` stays 6.173 against a human 2.97–4.16.
   §4 item 2 is unaffected.
 

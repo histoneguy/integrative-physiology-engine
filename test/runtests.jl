@@ -371,7 +371,8 @@ using SciMLBase
         # RAAS used to be inactive at baseline BY CONSTRUCTION, because the van
         # Ochten threshold of 93 mmHg happened to equal the old setpoint. The
         # setpoint moved to 87, so the model now sits 6 mmHg BELOW threshold and
-        # RAAS IS ACTIVE AT REST: renin drive 0.069, PRA 2.31x. on and off are
+        # RAAS IS ACTIVE AT REST: renin drive 0.069, PRA 1.30x since the gain was
+        # re-derived on 2026-09-02 and 2.31x before it. on and off are
         # therefore no longer comparing an active branch against a dead one.
         # They still agree to 1.0e-3 mmHg - one part in 87,000 - because escape
         # drives fr_mod to 7.7e-7 rather than to exactly zero. THE CLAIM IS
@@ -428,6 +429,31 @@ using SciMLBase
         # rise in renin produces a PROPORTIONALLY SMALLER rise in aldosterone.
         # If this ever exceeds 1 someone has re-attached it to angiotensin II.
         @test 0.0 < IPE.LedgerParams.RAAS_ALDO_PRA_LOG_SLOPE < 1.0
+
+        # THE GAIN IS NOW DERIVED, NOT ASSUMED, AND THIS ASSERTS THE DERIVATION
+        # RATHER THAN THE DIGITS. Re-derived 2026-09-02, 19.0 -> 4.35, from the
+        # SAME van Ochten meta-analysis that supplies the threshold above:
+        # renin rises 50 percentage points of its plateau value per 10 mmHg fall
+        # in renal arterial pressure, so 0.05 per mmHg. Raas.jl normalises the
+        # drive by MAP_ref, so g_renin = 0.05 * MAP_ref exactly.
+        #
+        # Asserting the IDENTITY and not the number is deliberate: CV.MAP.SETPOINT
+        # has already moved once (93 -> 87) and silently voided this row's old
+        # calibration target for six days. If it moves again, this fails loudly
+        # instead of leaving a stale constant behind. Same reasoning as inverting
+        # the coincidence test above.
+        @test isapprox(IPE.LedgerParams.RAAS_RENIN_PRESSURE_GAIN,
+                       0.05 * IPE.LedgerParams.CV_MAP_SETPOINT; rtol = 1e-3)
+
+        # AND THE STRUCTURAL CEILING, ASSERTED SO IT CANNOT BE FORGOTTEN. The
+        # rectified linear form caps the achievable PRA ratio between two
+        # pressures at the ratio of their drives, whatever the gain. Between the
+        # MAP 88 and 86 at which van den Bosch 2021 measured a 2.73-fold PRA
+        # difference across sodium intake, that ceiling is 1.4. The model cannot
+        # reproduce the human salt-renin response and must not be tuned to try -
+        # see validation/renin_gain_prereg.md branch S2.
+        P = IPE.LedgerParams.RAAS_RENIN_PRESSURE_THRESHOLD
+        @test (P - 86.0) / (P - 88.0) < 2.73
     end
 
     @testset "the operating range sits INSIDE the autoregulation plateau" begin
