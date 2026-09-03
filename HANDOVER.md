@@ -923,15 +923,28 @@ integrated renal-body-fluid loop being tested, not a parameter.
    23 mL/kg of isotonic saline against **123%** in 23 healthy humans (Jensen JM et al.,
    *BMC Nephrol* 2013;14:202, PMID 24067081). Renin falls, correctly, but the kidney
    does not dump sodium fast enough.
-2. **Twenty-four hour fluid deprivation raises plasma osmolality by 6.1 mOsm/kg** at a
+2. **INDETERMINATE, not failed, and the reason is not the number.** Twenty-four hour
+   fluid deprivation raises plasma osmolality by 6.1 mOsm/kg at a
    realistic 1.0 L/day of food and oxidative water, against **unchanged** in 20 healthy
    women (Pross N et al., *Br J Nutr* 2013;109(2):313-21, PMID 22716932).
-   **The model cannot express this protocol**: `BF.H2O.INTAKE_NOMINAL` is one lumped
-   number and deprivation removes only the beverage share, which national surveys put at
-   64–81% of total water intake (Kant 2009 NHANES, PMID 19640962; Guelinckx 2016,
-   PMID 27754402). The residual is swept in the harness and reported as a range.
+   **Pross reports the osmolality but NOT the water deficit its subjects ran**, and
+   without that the comparison cannot separate a model defect from a protocol mismatch.
+   **The model conserves correctly**: over 24 h it loses 0.748 L, which is 1.07% of body
+   mass and inside the 1–1.5% published deprivation produces, and 5.69 of its 6.09 mOsm
+   rise is pure concentration of that loss. **Four candidate causes were excluded by
+   measurement, not argument** — insensible loss swept 0.50–0.90, non-beverage water swept
+   0.75–1.20, total intake at the sourced NHANES 3.18 L/day with food fractions 0.19–0.36
+   (Kant 2009, PMID 19640962; Guelinckx 2016, PMID 27754402), and the volume-keyed
+   natriuretic path, which makes it **worse** (6.09 → 6.91) because retaining sodium raises
+   plasma sodium as fast as it saves water. **What would resolve it: one human study
+   reporting both the water deficit and the osmolality change in the same subjects.**
 3. **`BF.ICF_ECF.OSMOTIC_TAU` is `assumed` at 30 min and load-bearing on every acute
-   protocol.** Its own ledger note says *"sensitivity to this value should be near zero
+   protocol.** **A sourcing pass was run and found nothing usable** — 10 queries, two
+   sweeps; the volume-kinetics literature models plasma and interstitium rather than the
+   ICF–ECF osmotic exchange this governs, and erythrocyte permeability is not a
+   whole-body constant. **The row stays `assumed` and the debt is now measured, bounded
+   and searched instead of unexamined. No acute osmotic MAGNITUDE may be reported from
+   this model until it is sourced**; directions and multi-day steady states are unaffected. Its own ledger note says *"sensitivity to this value should be near zero
    on multi-day runs — verify that in testing, and if it is not, the compartment
    structure is wrong."* **That check had never been run.** On multi-day runs it is
    indeed near zero. On a 1.4 L water load the peak plasma osmolality excursion runs
