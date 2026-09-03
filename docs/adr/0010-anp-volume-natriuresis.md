@@ -1,6 +1,6 @@
 # ADR 0010: ANP - a volume-sensing natriuretic path, built before the slope is re-estimated
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-08-21
 **Evidence tier:** E1 for the existence, stretch-coupled secretion and natriuretic
 action of ANP; E2 for the quantitative human dose-response; E3 for the claim that
@@ -677,3 +677,69 @@ plasma ANP in humans, and Norsk 1986 falsified total blood volume as the sensed 
 **A volume-keyed path now belongs ahead of both** — it is the only candidate that relieves
 an acute failure and a chronic one with the same component, and the only one that makes
 `G_pn` estimable at its measured value rather than as a free constant.
+
+
+---
+
+## Addendum, 2026-09-02: UNBLOCKED, SOURCED, ON. Status Proposed -> Accepted
+
+**Run `julia --project=. validation/challenges.jl`** (exits 0) and
+`bench/anp_diagnostic.jl`. Pre-registered in
+`validation/anp_input_coupling_prereg.md`.
+
+**The blocker is closed.** The input coupling is
+`CV.ANP.NATRIURETIC_GAIN = 700 (mEq/day)/L of BLOOD volume`, with a first-order lag
+`RN.ANP.TAU = 0.50 d`. Identified by **two human datasets for two parameters**: the
+chronic salt-step response fixes the gain, and Lobo 2001's 6 h acute time course fixes
+the time constant. **Neither is fitted to the salt-sensitivity discrepancy**, which is the
+circularity HANDOVER §3.3 records having already happened to `G_pn`.
+
+**THE ALGEBRAIC FORM THIS RECORD PROPOSED WAS IMPLEMENTED FIRST AND REFUTED.** With no
+lag, the acute limb implies about 300 (mEq/day)/L once the pressure contribution is
+subtracted at the **measured** animal slope, while the chronic limb implies about 750 — a
+factor of 2.5 against a threshold of 2 fixed before extraction. Drummer 1992
+(PMID 1324562) says why: **excretion of an acute isotonic load takes days**, sodium
+excretion is still elevated beyond 48 h, and a lag makes the transient response smaller
+than the steady-state gain, which is the observed direction. **The 2026-08-22 revision
+that dropped the ANP state was right to drop the state and wrong to drop the dynamics.**
+
+**Falsifiable test 2 is PASSED and test 1 is now runnable.** This record required that
+adding ANP let `G_pn` become re-estimable downward while the salt step survives. Measured:
+`G_pn + 0.0594·G_anp = 50` is the human joint constraint, and at the sourced gain that
+puts `G_pn` at **11.4**, materially toward the Mizelle-consistent 5.43 and away from 20.0.
+
+| | before | after | human |
+|---|---|---|---|
+| acute fractional Na excretion rise | +43% | **+79%** | +123% |
+| Lobo urinary Na, 6 h | 78.3 mmol | **96.3** | 95 |
+| Lobo urine, 6 h | 481 mL | **575** | 563 |
+| chronic salt sensitivity | 4.958 | **2.301** | 1.70–2.30 |
+
+**What was found by wiring it, and no gate could have caught any of it.** `Renal.jl` named
+a volume input in its docstring from the day it was written and **nothing ever connected
+it**. The gain was written **extensive** and must be **intensive** — it multiplies a
+volume, which already scales — and the body-size testset caught that within one run.
+`member_remake`'s hand-maintained scaling list was missing both new parameters, which the
+same testset caught. And the solver-agreement metric broke for the third time on a
+zero-initialised state, exactly as its own note predicted.
+
+**TWO CAVEATS THAT TRAVEL WITH EVERY NUMBER ABOVE.**
+
+1. **The gain multiplies the MODEL'S volume excursion**, which is 1.5–2.1× too large while
+   `CV.VENOUS_RETURN.SENSITIVITY` is calibrated. Part of 700 compensates for that. The
+   human data alone give 750 at `G_pn` = 5.43 and 505 at 20.0. **Re-estimate when `G_vr`
+   is sourced.**
+2. **`G_pn` is unchanged at 20.0 and is now over-determined**, so the model double-counts
+   this path and the chronic agreement above is partly that double count. The
+   pre-registration fixed that before extraction and ADR 0016 sequences it last.
+
+**A NEW PREDICTION THIS MODEL COULD NOT MAKE BEFORE.** Salt sensitivity is now
+**sex-dependent, women 11% higher**, because the path is keyed to a sexed volume. A
+pressure-only kidney had salt sensitivity `1/G_pn`, which carries no sex information.
+**Nothing in this repo has sourced a sex difference in human salt sensitivity.** It is
+debt, it is asserted in the suite, and it is falsifiable.
+
+**The sensed-variable question is closed for stage 1.** `V_blood`, as this record
+proposed. Blocker 4's wording — "IPE has no central compartment" — was stale: `V_central`
+has existed since ADR 0012. Immersion stays excluded, but because `V_central = f_c·V_blood`
+carries no independent information at stage 1, not because the compartment is absent.

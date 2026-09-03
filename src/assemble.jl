@@ -56,7 +56,8 @@ call `build_model`.
 function build_raw_model(; body_mass = 70.0, storage::Bool = false,
                          circadian::Bool = false, baroreflex::Bool = true,
                          raas::Bool = true, adh::Bool = true,
-                         sex::Symbol = :male, anp_gain = 0.0)
+                         sex::Symbol = :male,
+                         anp_gain = IPE.LedgerParams.CV_ANP_NATRIURETIC_GAIN)
     @named bf = BodyFluids(; body_mass, storage)
     sex in (:male, :female) ||
         error("sex must be :male or :female, got :$sex. There is no :both " *
@@ -68,7 +69,7 @@ function build_raw_model(; body_mass = 70.0, storage::Bool = false,
     # post-placeholder water limb: with adh = false, u_osm is pinned at U_base
     # so that Osm_load/U_base reproduces the old constant 1.7 L/day, and a
     # varying Osm_load would break that recovery. See Renal.jl and ADR 0008.
-    @named rn = Renal(; solute_tracking = adh, body_mass, anp_gain)
+    @named rn = Renal(; solute_tracking = adh, body_mass, sex, anp_gain)
     @named br = Baroreflex(; enabled = baroreflex)
     @named ra = Raas(; enabled = raas)
     @named ad = Adh(; enabled = adh)
@@ -84,7 +85,7 @@ function build_raw_model(; body_mass = 70.0, storage::Bool = false,
         # since it was written and nothing ever connected it. ADR 0010's volume-keyed
         # natriuretic term needs it, and validation/challenges.jl section 3 is the
         # measured deficit that motivated wiring it.
-        rn.V_ecf        ~ bf.V_ecf,
+        rn.V_blood      ~ cv.V_blood,
         # renal -> body fluids (closes the loop)
         bf.Na_excr_rate ~ rn.Na_excr,
         bf.H2O_excr_rate ~ rn.H2O_excr,
@@ -175,6 +176,7 @@ model_edges() = Set([
     (:bodyfluids, :cardiovascular),   # cv.V_ecf ~ bf.V_ecf
     (:cardiovascular, :renal),        # rn.MAP ~ cv.MAP
     (:bodyfluids, :renal),            # rn.C_Na ~ bf.C_Na
+    (:cardiovascular, :renal),        # rn.V_blood ~ cv.V_blood - ADR 0010
     (:renal, :bodyfluids),            # bf.Na_excr_rate, bf.H2O_excr_rate
     (:cardiovascular, :bodyfluids),   # bf.MAP ~ cv.MAP - INERT, ADR 0010 hook
     (:cardiovascular, :baroreflex),   # br.MAP ~ cv.MAP
@@ -498,7 +500,27 @@ function solver_agreement(sys; solvers = [FBDF(), Rodas5P()],
         # any future component with a zero-valued state would have hit it too. A
         # deviation below `atol` is below any physiological meaning for every state
         # in this model - the largest, Na_ecf, is order 2000.
-        worst = max(worst, maximum(abs.(A .- ref) ./ (atol .+ rtol .* abs.(ref))))
+        #
+        # THIRD REVISION, 2026-09-02, AND THE NOTE ABOVE PREDICTED IT: "any future
+        # component with a zero-valued state would have hit it too." ADR 0010's
+        # volume-keyed natriuretic signal is one. It is initialised at exactly 0.0
+        # and grows to 12.1 mEq/day; the two solvers disagreed by 2.9e-5 in
+        # absolute terms, which is 2.4e-6 of the state's own magnitude and 1.4e-7
+        # of the sodium flux it modifies, and the metric reported 2.9.
+        #
+        # THE FIRST TWO REVISIONS FIXED THE FLOOR AND KEPT THE CRITERION
+        # POINTWISE, and that is the actual defect. A pointwise denominator is
+        # degenerate wherever a trajectory passes through zero, which is a
+        # property of TRAJECTORIES rather than of components - so no choice of
+        # floor can fix it, and each new near-zero state re-breaks it.
+        #
+        # Normalising by the state's own CHARACTERISTIC SCALE over the run removes
+        # the cliff permanently: near zero the comparison is still absolute
+        # through atol, at scale it is still relative through rtol, and a state
+        # that starts at zero is judged against the magnitude it actually reaches
+        # rather than against the instant it happened to be crossing zero.
+        scale = maximum(abs.(ref); dims = 2)
+        worst = max(worst, maximum(abs.(A .- ref) ./ (atol .+ rtol .* scale)))
     end
     return (max_rel_deviation = worst, solutions = sols)
 end

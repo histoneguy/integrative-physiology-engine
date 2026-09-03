@@ -163,6 +163,17 @@ function member_remake(prob, sys, member; sex::Symbol = :male)
              sys.rn.G_pn           => sz * RN_PRESSURE_NATRIURESIS_SLOPE,
              sys.rn.Osm_ref        => sz * RN_URINE_SOLUTE_LOAD,
              sys.rn.Osm_nonNa      => sz * RN_URINE_SOLUTE_NONNA,
+             # ADR 0010's volume-keyed natriuretic path, added 2026-09-02. BOTH
+             # halves scale: the gain is an excretion per litre and the reference
+             # is a volume. OMITTING V_blood_ref made every heavy member read as
+             # massively volume-expanded, and the body-size testset below caught
+             # it immediately - MAP spread went from under 1e-4 mmHg to 37.8.
+             # That is exactly the "two encodings of one rule" this list warns
+             # about, and it is why the assertion exists.
+             # INTENSIVE - it multiplies a volume, which already scales. See the
+             # note in Renal.jl. Only the REFERENCE volume scales here.
+             sys.rn.G_anp          => CV_ANP_NATRIURETIC_GAIN,
+             sys.rn.V_blood_ref    => sz * LedgerParams.param(:CV_BLOOD_VOLUME_NOMINAL, sex),
              sys.cv.CO0            => sz * LedgerParams.param(:CV_CO_NOMINAL, sex),
              sys.cv.BV0            => sz * LedgerParams.param(:CV_BLOOD_VOLUME_NOMINAL, sex),
              sys.cv.VC0            => sz * LedgerParams.param(:CV_CENTRAL_VOLUME_NOMINAL, sex),
