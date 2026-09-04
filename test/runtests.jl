@@ -739,7 +739,14 @@ using SciMLBase
         # 13 -> 14 on 2026-09-04, ADR 0017: respiratory -> bodyfluids, the water
         # vapour flux. It is Conservation and not a signal, so the partition rule
         # below covers it too.
-        @test r.n_couplings == 14
+        #
+        # 14 -> 16 the same day, ADR 0018: respiratory -> blood and
+        # cardiovascular -> blood. TWO INBOUND EDGES AND NO OUTBOUND ONE, which is
+        # what a forward computation looks like in the coupling graph. If an
+        # outbound edge from blood ever appears, an oxygen feedback has been built
+        # and ADR 0018 says that needs its own record - so this count is the cheapest
+        # tripwire for exactly that.
+        @test r.n_couplings == 16
 
         cs = model_couplings()
         # ADR 0003: instantaneous couplings are not partitionable. If this ever
@@ -1270,6 +1277,84 @@ using SciMLBase
         @test isapprox(voff, L.RESP_VENTILATION_BASAL; rtol = 1e-9)
 
         @info "respiration" PaCO2=fin("PaCO2") V_E=fin("rs₊V_E") H2O_resp=fin("H2O_resp")
+    end
+
+    @testset "ADR 0018: blood oxygen transport, and this one IS a prediction" begin
+        L = IPE.LedgerParams
+        function arterial(; sex = :male, body_mass = 70.0)
+            s = build_model(; sex, body_mass)
+            sl = IPE.solve_individual(s; tspan_days = 60.0)
+            g(n) = begin
+                v = NaN
+                for o in observed(s)
+                    occursin(n, String(Symbol(o.lhs))) && (v = sl[o.lhs][end])
+                end
+                v
+            end
+            (SaO2 = g("SaO2"), PaO2 = g("bl₊PaO2"), PAO2 = g("PAO2"),
+             CaO2 = g("CaO2"), DO2 = g("DO2"))
+        end
+        m = arterial()
+
+        # FALSIFIABLE TEST 1. Saturation must land in the human range with NOTHING
+        # set to put it there. This is the real difference from ADR 0017, where
+        # resting PCO2 is an INPUT and the model makes no claim to predict it.
+        # Here haemoglobin, the curve, the exchange ratio and the A-a difference are
+        # all sourced or assumed independently of saturation, and saturation follows
+        # by arithmetic - so the model CAN be wrong about it.
+        @test 0.95 <= m.SaO2 <= 0.99
+        @test 80.0 <= m.PaO2 <= 110.0
+        @test m.PAO2 > m.PaO2                       # the gradient has the right sign
+
+        # AND IT DOES NOT TURN ON THE WEAKEST INPUT, which is what stops it being a
+        # number that was chosen. BLOOD.O2.AA_GRADIENT is assumed and sits directly
+        # upstream; the pre-registration forbids tuning it. Swept over a fivefold
+        # range the saturation stays inside the human window - because the sigmoid's
+        # upper limb is flat, which is also why this is a WEAK test of the curve.
+        sev(po2) = 1.0 / (L.BLOOD_O2_CURVE_A / (po2^3 + L.BLOOD_O2_CURVE_B * po2) + 1.0)
+        for aa in (5.0, 10.0, 15.0, 20.0, 25.0)
+            @test 0.94 <= sev(m.PAO2 - aa) <= 0.99
+        end
+
+        # FALSIFIABLE TEST 2. The sexed pair must move CONTENT and DELIVERY and must
+        # NOT move saturation or tension. Haemoglobin differs between the sexes; the
+        # dissociation curve does not. If saturation came out sexed, haemoglobin
+        # would have leaked into the wrong equation.
+        f = arterial(sex = :female)
+        @test isapprox(f.SaO2, m.SaO2; rtol = 1e-9)
+        @test isapprox(f.PaO2, m.PaO2; rtol = 1e-9)
+        @test f.CaO2 < m.CaO2
+        @test f.DO2 < m.DO2
+
+        # FALSIFIABLE TEST 3. Content must scale with haemoglobin at fixed curve
+        # position - the property that distinguishes CONTENT from TENSION, and the
+        # one most easily got wrong. The bound term is 98.7% of content, so the
+        # ratio should track the haemoglobin ratio closely but not exactly, the
+        # difference being the dissolved term which does NOT scale with haemoglobin.
+        hb_ratio = L.param(:BLOOD_HB_CONCENTRATION, :female) /
+                   L.param(:BLOOD_HB_CONCENTRATION, :male)
+        @test isapprox(f.CaO2 / m.CaO2, hb_ratio; rtol = 0.02)
+        @test f.CaO2 / m.CaO2 > hb_ratio            # dissolved O2 does not scale
+
+        # FALSIFIABLE TEST 4 is asserted on the LEDGER by check_closure.py rather
+        # than here - haemoglobin over haematocrit must give a human mean corpuscular
+        # haemoglobin concentration. It is a property of the rows, not of a solve,
+        # and putting it where it belongs keeps this testset to one build per sex.
+
+        # OXYGEN DELIVERY IS THE FIRST QUANTITY NEEDING TWO SUBSYSTEMS AT ONCE, and
+        # the unit chain crossing them is where it would silently go wrong: cardiac
+        # output is in L/DAY here because the model's time base is days, while
+        # delivery is conventionally per minute. A missing 1440 would put this out
+        # by three orders of magnitude and still look plausible in some other unit.
+        @test 700.0 <= m.DO2 <= 1600.0
+
+        # NO FEEDBACK. ADR 0018 decision 1 says this component closes no loop, so
+        # removing it must leave every other result untouched. Asserted by the
+        # STATE COUNT rather than by re-solving: an oxygen feedback would have to
+        # enter through a differential equation somewhere, and there are still eight.
+        @test length(IPE.mtk_unknowns(build_model())) == 8
+
+        @info "blood gas" SaO2=m.SaO2 PaO2=m.PaO2 CaO2=m.CaO2 DO2=m.DO2
     end
 
     @testset "modulators are off by default" begin
