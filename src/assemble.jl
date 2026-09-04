@@ -56,6 +56,7 @@ call `build_model`.
 function build_raw_model(; body_mass = 70.0, storage::Bool = false,
                          circadian::Bool = false, baroreflex::Bool = true,
                          raas::Bool = true, adh::Bool = true,
+                         respiration::Bool = true,
                          sex::Symbol = :male,
                          anp_gain = IPE.LedgerParams.CV_ANP_NATRIURETIC_GAIN)
     @named bf = BodyFluids(; body_mass, storage)
@@ -73,6 +74,8 @@ function build_raw_model(; body_mass = 70.0, storage::Bool = false,
     @named br = Baroreflex(; enabled = baroreflex)
     @named ra = Raas(; enabled = raas)
     @named ad = Adh(; enabled = adh)
+    # ADR 0017. Quasi-static, no state, and its only outward flux is water.
+    @named rs = Respiratory(; body_mass, enabled = respiration)
 
     connections = [
         # body fluids -> cardiovascular
@@ -106,9 +109,14 @@ function build_raw_model(; body_mass = 70.0, storage::Bool = false,
         # body fluids -> adh -> renal (osmoregulation)
         ad.Osm_ecf      ~ bf.Osm_ecf,
         rn.u_osm        ~ ad.u_osm,
+        # respiratory -> body fluids. ADDED 2026-09-04, ADR 0017. This is the
+        # coupling that stops the respiratory component being an island on the day
+        # it is built - the failure ADR 0006 records for Circadian, which sat
+        # unconnected because it was built ahead of its dependency.
+        bf.H2O_resp_rate ~ rs.H2O_resp,
     ]
 
-    systems = [bf, cv, rn, br, ra, ad]
+    systems = [bf, cv, rn, br, ra, ad, rs]
 
     # CONNECTED 2026-08-25. ADR 0006 build order item 6: the clock modulates
     # renal tubular sodium handling and the reflex pressure setpoint, both of
@@ -155,7 +163,7 @@ for `assert_couplings_match_model` to reject.
 function model_couplings()
     all = vcat(bodyfluids_couplings(), cardiovascular_couplings(), renal_couplings(),
                baroreflex_couplings(), raas_couplings(), adh_couplings(),
-               circadian_couplings())
+               circadian_couplings(), respiratory_couplings())
     seen = Set{Tuple{Symbol,Symbol,CouplingKind}}()
     out = Coupling[]
     for c in all
@@ -184,6 +192,7 @@ model_edges() = Set([
     (:bodyfluids, :renal),            # rn.C_Na ~ bf.C_Na, rn.V_ecf ~ bf.V_ecf
     (:cardiovascular, :renal),        # rn.V_blood ~ cv.V_blood - ADR 0010
     (:renal, :bodyfluids),            # bf.Na_excr_rate, bf.H2O_excr_rate
+    (:respiratory, :bodyfluids),      # bf.H2O_resp_rate ~ rs.H2O_resp - ADR 0017
     (:cardiovascular, :bodyfluids),   # bf.MAP ~ cv.MAP - INERT, ADR 0010 hook
     (:cardiovascular, :baroreflex),   # br.MAP ~ cv.MAP
     (:baroreflex, :cardiovascular),   # cv.tpr_mod ~ br.tpr_mod
@@ -213,7 +222,7 @@ function assert_couplings_match_model()
     phantom    = setdiff(declared, actual)
 
     subsystems = Set([:bodyfluids, :cardiovascular, :renal, :baroreflex,
-                      :raas, :adh, :circadian])
+                      :raas, :adh, :circadian, :respiratory])
     unknown = [c for c in cs if !(c.from in subsystems) || !(c.to in subsystems)]
 
     dangling = Symbol[]

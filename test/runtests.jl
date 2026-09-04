@@ -736,7 +736,10 @@ using SciMLBase
         @test isempty(r.phantom)
         @test isempty(r.unknown)
         @test isempty(r.dangling)
-        @test r.n_couplings == 13
+        # 13 -> 14 on 2026-09-04, ADR 0017: respiratory -> bodyfluids, the water
+        # vapour flux. It is Conservation and not a signal, so the partition rule
+        # below covers it too.
+        @test r.n_couplings == 14
 
         cs = model_couplings()
         # ADR 0003: instantaneous couplings are not partitionable. If this ever
@@ -892,6 +895,24 @@ using SciMLBase
                     salt_step(body_mass = bm,
                               levels_mEq_day = (205.0 * f, 154.0 * f, 103.0 * f)))
             @test isapprox(r.map_shift_mmHg, base.map_shift_mmHg; rtol = 1e-3)
+        end
+
+        # ADR 0017 FOLDED IN HERE RATHER THAN GIVEN ITS OWN TESTSET, at no extra
+        # compute: PaCO2 must be INTENSIVE. VCO2, the chemoreflex slope and basal
+        # ventilation all scale with mass while the dead space fraction, the alveolar
+        # constant and the recruitment threshold do not, so the metabolic hyperbola
+        # and the ventilation it balances against scale TOGETHER and their ratio does
+        # not. Written the other way round, PaCO2 would drift with body size and a
+        # 90 kg adult would be hypercapnic for being large - the same error the ADR
+        # 0010 gain made, which this testset caught within one run.
+        for bm in (50.0, 90.0)
+            s = build_model(body_mass = bm)
+            sl = IPE.solve_individual(s; tspan_days = 60.0)
+            pc = NaN
+            for o in observed(s)
+                occursin("PaCO2", String(Symbol(o.lhs))) && (pc = sl[o.lhs][end])
+            end
+            @test isapprox(pc, IPE.LedgerParams.RESP_CO2_ARTERIAL_RESTING; rtol = 1e-3)
         end
     end
 
@@ -1143,6 +1164,112 @@ using SciMLBase
         # fact that the sexed pair still reaches the circulation are what this
         # asserts; the closed-form identity belonged to a pressure-only kidney.
         @test isapprox(em / ef, tpv(:female) / tpv(:male); rtol = 0.20)
+    end
+
+    @testset "ADR 0017: respiration, and PCO2 is an INPUT not an output" begin
+        L = IPE.LedgerParams
+        sys = build_model()
+        sol = IPE.solve_individual(sys; tspan_days = 60.0)
+        fin(n) = begin
+            v = NaN
+            for u in IPE.mtk_unknowns(sys)
+                occursin(n, String(Symbol(u))) && (v = sol[u][end])
+            end
+            if isnan(v)
+                for o in observed(sys)
+                    occursin(n, String(Symbol(o.lhs))) && (v = sol[o.lhs][end])
+                end
+            end
+            v
+        end
+
+        # NO NEW STATE. ADR 0017 decision 2 says the loop is quasi-static at this
+        # model's horizon - PaCO2 re-equilibrates in minutes, the shortest protocol
+        # here is six hours - so the chemoreflex and the alveolar equation are solved
+        # together in CLOSED FORM. A state would be paid for on every future run
+        # (directive 1.10). Eight states before respiration, eight after.
+        @test length(IPE.mtk_unknowns(sys)) == 8
+
+        # RESTING PaCO2 RETURNS THE SOURCED INPUT, AND THIS IS NOT A PREDICTION.
+        # ADR 0017's ORIGINAL decision 1 made PaCO2 an output of the chemoreflex, as
+        # arterial pressure is an output of the renal loop. Its own falsifiable test
+        # killed that: the ventilatory recruitment threshold is 45.28 mmHg and resting
+        # PaCO2 is near 40, so AT REST THE CHEMOREFLEX IS BELOW ITS OWN THRESHOLD and
+        # is not the operative control. The dependency was inverted - resting PaCO2 is
+        # sourced, basal ventilation is derived from it.
+        #
+        # So this assertion is a CLOSURE CHECK on that derivation, not evidence that
+        # the model reproduces human PaCO2. It cannot be, and the ledger row says so.
+        @test isapprox(fin("PaCO2"), L.RESP_CO2_ARTERIAL_RESTING; rtol = 1e-4)
+
+        # AT REST THE MODEL SITS ON THE FLAT LIMB. Ventilation is basal and the
+        # chemoreflex is doing nothing at all.
+        @test isapprox(fin("rs₊V_E"), L.RESP_VENTILATION_BASAL; rtol = 1e-4)
+        @test fin("PaCO2") < L.RESP_CHEMO_VRT
+
+        # THE WATER SPLIT REPRODUCES THE OLD CONSTANT. BF.H2O.INSENSIBLE_LOSS was one
+        # assumed number cited "Convention pending primary source"; it is now a
+        # computed respiratory flux plus a cutaneous residual. The reference
+        # individual must be unmoved, because every ADH constant is derived from a
+        # water balance that closes here. check_closure.py asserts the same identity
+        # on the ledger; this asserts it on the SOLVED model.
+        @test isapprox(fin("H2O_resp") + L.BF_H2O_CUTANEOUS_LOSS,
+                       L.BF_H2O_INSENSIBLE_LOSS; rtol = 1e-3)
+        @test 0.25 < fin("H2O_resp") < 0.40
+
+        # ADR 0017'S REPLACEMENT FALSIFIABLE TEST. The original asked whether PCO2
+        # behaves as an output; that question is void now. What IS claimed is the
+        # PIECEWISE structure, so the test is that the chemoreflex bites above the
+        # recruitment threshold and not below it.
+        #
+        # Raising metabolic CO2 production 0.20 -> 0.25 pushes the balance point past
+        # the threshold. Without the reflex PaCO2 would rise in proportion, to 50.0.
+        # Done algebraically rather than by five more solves - the closed form IS the
+        # component, so exercising it directly tests the same equation at a fraction
+        # of the cost. Directive 1.10: assert more per unit of compute.
+        C(vco2) = L.RESP_ALVEOLAR_K * vco2 / (1.0 - L.RESP_DEADSPACE_FRACTION)
+        function ve(vco2)
+            c = C(vco2)
+            b = L.RESP_CHEMO_CO2_SLOPE * L.RESP_CHEMO_VRT - L.RESP_VENTILATION_BASAL
+            c >= L.RESP_VENTILATION_BASAL * L.RESP_CHEMO_VRT ?
+                (-b + sqrt(b * b + 4 * L.RESP_CHEMO_CO2_SLOPE * c)) / 2 :
+                L.RESP_VENTILATION_BASAL
+        end
+        pco2(vco2) = C(vco2) / ve(vco2)
+
+        # BELOW THE THRESHOLD THE REFLEX IS INERT and PaCO2 rises in proportion to
+        # production. That is the half most likely to be got wrong by writing the
+        # branch condition on the wrong variable.
+        @test isapprox(ve(0.20), L.RESP_VENTILATION_BASAL; rtol = 1e-9)
+        @test isapprox(pco2(0.21) / pco2(0.20), 0.21 / 0.20; rtol = 1e-6)
+
+        # ABOVE IT THE REFLEX BITES. Ventilation rises and PaCO2 rises by LESS than
+        # proportion - which is what a negative feedback is.
+        @test ve(0.25) > L.RESP_VENTILATION_BASAL
+        @test pco2(0.25) < 0.25 / 0.20 * L.RESP_CO2_ARTERIAL_RESTING
+        @test pco2(0.25) > L.RESP_CHEMO_VRT          # and it stays on the upper limb
+
+        # THE TWO LIMBS MEET CONTINUOUSLY. A jump here would land straight in
+        # D(V_ecf) through the water flux. The breakpoint is where
+        # C = V_basal*VRT, i.e. VCO2 = V_basal*VRT*(1-Vd/Vt)/K.
+        vco2_break = L.RESP_VENTILATION_BASAL * L.RESP_CHEMO_VRT *
+                     (1.0 - L.RESP_DEADSPACE_FRACTION) / L.RESP_ALVEOLAR_K
+        @test isapprox(ve(vco2_break * (1 - 1e-9)), ve(vco2_break * (1 + 1e-9));
+                       rtol = 1e-6)
+
+        # THE DISABLED BRANCH IS EXACTLY INERT. With respiration = false ventilation
+        # is frozen at basal, so the water flux is exactly its reference value and
+        # every existing protocol is untouched. Same pattern as the ADH and RAAS
+        # disabled branches (ADR 0008).
+        off = build_model(respiration = false)
+        soff = IPE.solve_individual(off; tspan_days = 60.0)
+        voff = NaN
+        for o in observed(off)
+            occursin("rs₊V_E", String(Symbol(o.lhs))) && (voff = soff[o.lhs][end])
+        end
+        @test isapprox(voff, L.RESP_VENTILATION_BASAL; rtol = 1e-9)
+
+        @info "respiration" PaCO2=fin("PaCO2") V_E=fin("rs₊V_E") H2O_resp=fin("H2O_resp")
     end
 
     @testset "modulators are off by default" begin

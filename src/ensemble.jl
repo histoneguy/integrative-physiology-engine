@@ -158,7 +158,6 @@ function member_remake(prob, sys, member; sex::Symbol = :male)
              sys.bf.Osm_solute_icf => BF_OSM_PLASMA_SETPOINT * bm * BF_ICF_MASS_FRACTION,
              sys.bf.Na_intake      => sz * BF_NA_INTAKE_NOMINAL,
              sys.bf.H2O_intake     => sz * BF_H2O_INTAKE_NOMINAL,
-             sys.bf.H2O_insens     => sz * BF_H2O_INSENSIBLE_LOSS,
              sys.rn.GFR0           => sz * RN_GFR_NOMINAL,
              sys.rn.G_pn           => sz * RN_PRESSURE_NATRIURESIS_SLOPE,
              sys.rn.Osm_ref        => sz * RN_URINE_SOLUTE_LOAD,
@@ -188,7 +187,20 @@ function member_remake(prob, sys, member; sex::Symbol = :male)
              sys.cv.SV0            => sz * LedgerParams.param(:CV_SV_NOMINAL, sex),
              # RECIPROCAL. MAP = CO*TPR and CO scales, so resistance must fall or
              # larger people come out hypertensive. See src/scaling.jl.
-             sys.cv.TPR0           => LedgerParams.param(:CV_TPR_NOMINAL, sex) / sz],
+             sys.cv.TPR0           => LedgerParams.param(:CV_TPR_NOMINAL, sex) / sz,
+             # ADR 0017's respiratory component, added 2026-09-04. THREE extensive
+             # parameters and they must all appear or the loop stops being size
+             # invariant: VCO2 sets the metabolic load, S_co2 is a ventilation per
+             # mmHg, and V_basal is a ventilation. f_dead, K_alv, VRT and w_gas are
+             # INTENSIVE - a fraction, a pressure constant, a partial pressure and
+             # a content per litre of gas - so none of them belongs here.
+             #
+             # PaCO2 stays invariant because C and V_basal both scale, and their
+             # ratio is what sets it. The body-size testset asserts that.
+             sys.rs.VCO2           => sz * RESP_CO2_PRODUCTION,
+             sys.rs.S_co2          => sz * RESP_CHEMO_CO2_SLOPE,
+             sys.rs.V_basal        => sz * RESP_VENTILATION_BASAL,
+             sys.bf.H2O_cutan      => sz * BF_H2O_CUTANEOUS_LOSS],
         u0 = [sys.bf.V_icf  => bm * BF_ICF_MASS_FRACTION,
               sys.bf.V_ecf  => bm * BF_ECF_MASS_FRACTION,
               sys.bf.Na_ecf => bm * BF_ECF_MASS_FRACTION * BF_NA_PLASMA_SETPOINT])

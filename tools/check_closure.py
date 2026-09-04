@@ -250,6 +250,39 @@ def _check_one(p: dict[str, float]) -> int:
     # since the solute load became variable - so this gate was asserting the
     # opposite direction to the code it exists to check. U_max is now sourced
     # (Tryding 1988) and the obligatory volume is derived from it.
+    # ADR 0017. Insensible loss stopped being one constant on 2026-09-04: it is a
+    # CUTANEOUS residual plus a RESPIRATORY flux computed from ventilation. The two
+    # halves must reproduce the old total at the reference individual, because every
+    # ADH constant below is derived from a water balance that closes on it. If this
+    # drifts, the resting state has moved and the ADH chain is silently describing a
+    # different model.
+    #
+    # THE RESPIRATORY HALF IS COMPUTED THE WAY Respiratory.jl COMPUTES IT, from
+    # V_basal and the gas water content, rather than read from a stored total. That
+    # is deliberate: a check that reads the same number the code reads asserts
+    # nothing. This one recomputes it and compares.
+    resp_h2o = (p["RESP.VENTILATION.BASAL"] * 1440.0 *
+                p["RESP.H2O.GAS_CONTENT"] / 1.0e6)
+    check("insensible loss splits into respiratory and cutaneous",
+          p["BF.H2O.INSENSIBLE_LOSS"],
+          resp_h2o + p["BF.H2O.CUTANEOUS_LOSS"],
+          "V_basal*1440*w_gas/1e6 + cutaneous residual must return the total "
+          "insensible loss the water balance was closed on before respiration "
+          "existed. ADR 0017 required the reference individual to be unmoved.",
+          errors)
+
+    # And the derivation that produces V_basal in the first place, checked in the
+    # direction the ADR 0017 amendment settled: PaCO2 is the sourced INPUT and
+    # ventilation is derived from it, not the other way round.
+    check("basal ventilation from the alveolar equation",
+          p["RESP.VENTILATION.BASAL"],
+          p["RESP.ALVEOLAR.K"] * p["RESP.CO2.PRODUCTION"] /
+          ((1.0 - p["RESP.DEADSPACE.FRACTION"]) * p["RESP.CO2.ARTERIAL_RESTING"]),
+          "V_basal = K*VCO2/((1-Vd/Vt)*PaCO2_rest). The dependency inversion of "
+          "the ADR 0017 amendment: resting PaCO2 is measured, basal ventilation "
+          "is not, so ventilation is the derived one.",
+          errors)
+
     check("obligatory urine volume from maximal concentration",
           p["RN.H2O.OBLIGATORY_LOSS"],
           solute / p["ADH.URINE.OSM_MAX"],
