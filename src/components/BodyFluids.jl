@@ -33,6 +33,7 @@ using ..LedgerParams:
     BF_NA_OSMOTICALLY_INACTIVE_FRACTION, BF_NA_STORAGE_TAU,
     BF_ICF_ECF_OSMOTIC_TAU,
     BF_NA_INTAKE_NOMINAL, BF_H2O_INTAKE_NOMINAL, BF_H2O_INSENSIBLE_LOSS,
+    BF_H2O_CUTANEOUS_LOSS,
     BF_OSM_NONSODIUM,
     BF_BODY_MASS_REFERENCE
 
@@ -68,7 +69,18 @@ function BodyFluids(; name, body_mass = BF_BODY_MASS_REFERENCE,
         # loses more water insensibly than a 50 kg adult. See src/scaling.jl.
         Na_intake   = sz * BF_NA_INTAKE_NOMINAL            # protocol input
         H2O_intake  = sz * BF_H2O_INTAKE_NOMINAL           # protocol input
-        H2O_insens  = sz * BF_H2O_INSENSIBLE_LOSS
+        # INSENSIBLE LOSS IS NOW A SPLIT, NOT A CONSTANT. 2026-09-04, ADR 0017.
+        # BF.H2O.INSENSIBLE_LOSS was 0.8 L/day, `assumed`, cited "Convention
+        # pending primary source." Respiratory loss is computable from ventilation
+        # and physical constants, so the total is now cutaneous + respiratory, and
+        # the respiratory half arrives by connection from Respiratory.jl.
+        #
+        # THE CUTANEOUS ROW IS A RESIDUAL, pinned so the two halves reproduce the
+        # old total at the reference individual. Same construction as
+        # RN.URINE.SOLUTE_NONNA, and check_closure.py asserts the identity. The
+        # resting state must not move: every ADH constant is derived from a water
+        # balance that closes here.
+        H2O_cutan   = sz * BF_H2O_CUTANEOUS_LOSS
         # Intracellular osmotically active solute content, CONSERVED. Set so that
         # at nominal ICF volume the cell is iso-osmolar with plasma. Cells do not
         # gain or lose solute on the timescales this model covers - only water
@@ -98,6 +110,9 @@ function BodyFluids(; name, body_mass = BF_BODY_MASS_REFERENCE,
         Na_excr_rate(t)     # mEq/day  INPUT from renal
         H2O_excr_rate(t)    # L/day    INPUT from renal
         MAP(t)              # mmHg     INPUT from cardiovascular
+        # WIRED 2026-09-04. Ventilation carries water vapour out of the body, so
+        # this is a mass flux and not a signal. It arrives from Respiratory.jl.
+        H2O_resp_rate(t)    # L/day    INPUT from respiratory
         V_total(t)          # L        conservation observable
         Na_total(t)         # mEq      conservation observable
     end
@@ -142,7 +157,7 @@ function BodyFluids(; name, body_mass = BF_BODY_MASS_REFERENCE,
 
     balance = [
         D(Na_ecf) ~ Na_intake - Na_excr_rate - J_store,
-        D(V_ecf)  ~ H2O_intake - H2O_excr_rate - H2O_insens - J_osm,
+        D(V_ecf)  ~ H2O_intake - H2O_excr_rate - H2O_cutan - H2O_resp_rate - J_osm,
         D(V_icf)  ~ J_osm,
     ]
 
