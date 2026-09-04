@@ -10,9 +10,11 @@ every challenge passes against published human data.
 FOR THE FIRST TIME.** **1.849** mmHg per 100 mmol/day against a meta-analytic 1.70–2.30,
 and 3.0005 mmHg/L against a measured 2.97–4.16. **Read §3.21's two caveats before quoting
 either**: two of the three parameters that make it do so were solved against those very
-targets, so they are fits. The validations are the four Lobo endpoints, the resting state,
-the 400-day steady state, and Jensen — and **Jensen, the only held-out number, is a third
-low.**
+targets, so they are fits. **The validations are the resting state, the 400-day steady
+state, and Jensen. THE FOUR LOBO ENDPOINTS ARE NOT AMONG THEM** — that claim stood in
+this file for a day and was wrong; Lobo's 6 h time course is what fixed `RN.ANP.TAU`, so
+it is an ESTIMATION set. §3.15's correction says when it stopped being a validation and
+why nobody noticed. **Jensen, the only held-out number, is a third low.**
 
 **FOUR PARAMETERS IN THE SODIUM–VOLUME LOOP NOW COME FROM HUMAN DATA.** The GFR response
 to extracellular volume was wired on 2026-09-03 (§3.22), which moved salt sensitivity
@@ -956,6 +958,41 @@ crossover, 2 L of 0.9% saline over 1 h.
 **That is the first external validation this repo has ever had**, and it is the
 integrated renal-body-fluid loop being tested, not a parameter.
 
+> **CORRECTED 2026-09-04: IT STOPPED BEING A VALIDATION ON 2026-09-03 AND THIS SENTENCE
+> DID NOT.** It was true when written. §3.17 then fitted `RN.ANP.TAU` to **this same 6 h
+> time course**, which converts Lobo from a held-out comparison into an estimation set,
+> and §3.21 re-estimated the lag against it again. Three later sections went on quoting
+> "the validations are the four Lobo endpoints" while §3.21 said two paragraphs above
+> that Lobo fixed the lag. **Nothing here was fabricated — a true claim was left standing
+> while a later change made it false**, which is the same failure mode as a stale SHA
+> (§5 item 12) and a stale proxy (§3.22), and no gate can see any of the three.
+>
+> **What survives.** The two Lobo endpoints agree on the lag independently, 0.171 d from
+> the volume and 0.166 d from the sodium (§3.21). That is a real internal consistency
+> check and it is worth something. It is NOT external validation, because a second
+> endpoint from the same protocol in the same subjects is not an independent test.
+>
+> **AND "FOUR ENDPOINTS" OVERSTATES THE CONTENT BY TWO, WHICH NOBODY HAD CHECKED.** Read
+> `validation/challenges.jl` and the four reduce to **two** measured quantities:
+>
+> - urine volume over 6 h — independent
+> - urinary sodium over 6 h — independent
+> - urine osmolality — computed as the integrated solute load over that same urine
+>   volume, and the load is `Osm_nonNa + osm_Na*Na_excr`, so it is a function of the
+>   two above plus a constant
+> - fraction of the load excreted — computed as `na6/308`, a **pure rescaling** of the
+>   sodium endpoint
+>
+> **The fourth check is mathematically incapable of failing on its own.** Its band is
+> 20–45%, and the sodium band it is derived from, 63–127 mmol, maps to **20.45–41.23%** —
+> strictly inside. So it can only fail after the sodium check has already failed, and it
+> tests nothing the sodium check does not. **This is §5 item 3 in a new form**: a passing
+> suite is not evidence about a quantity it does not independently assert, and four green
+> lines read as four facts when two of them are restatements. Directive 1.10 wants more
+> assertion per unit of compute, and this is the opposite. **Recorded, not changed** — the
+> fix is either to widen the derived checks until they can bite or to drop them, and that
+> is a decision about the harness rather than about the model.
+
 **THREE FAILURES, AND THE FIRST TWO HAVE ONE DIAGNOSIS — §3.16.**
 
 1. **Acute natriuresis is too weak.** Fractional sodium excretion rises **43%** on
@@ -1236,8 +1273,22 @@ without one — and does not constrain its value.
 
 **WHAT IS NOT CLAIMED.** Three parameters in the sodium–volume loop now come from human
 data, and two of them were solved against the very targets the harness reports, so those
-are FITS and not validations. **The validations are the four Lobo endpoints, the resting
-state, the 400-day steady state, and Jensen.** The rest is a consistent parameterisation.
+are FITS and not validations. **The validations are the resting state, the 400-day steady
+state, and Jensen** — and **NOT the four Lobo endpoints**, which this section itself says
+fixed the lag four paragraphs above. The rest is a consistent parameterisation.
+
+**AND THE ACUTE EVIDENCE BASE IS A MONOCULTURE, WHICH MATTERS MORE THAN EITHER
+CORRECTION.** Lobo and Jensen are **the same manoeuvre** — an intravenous isotonic saline
+bolus into healthy volunteers — differing in dose and in what they report. So Jensen is
+held out in the sense that nothing was fitted to it, and NOT in the sense that it probes
+a different mechanism. **One protocol class carries the whole acute limb**, it runs on
+the two least-sourced constants in the model (`BF.ICF_ECF.OSMOTIC_TAU`, `assumed`, and
+`RN.ANP.TAU`, identified by nothing but this data), and it drives the model roughly three
+times outside the volume range over which `RN.GFR.VOLUME_SENSITIVITY` is evidenced
+(§3.22). **Deliberately volume-loading a healthy person is not something that happens
+outside a research protocol**, and while directive 1.7 welcomes a perturbation that
+TRACES a relationship — Guyton 1957 stepping right atrial pressure to get the venous
+return curve — a few endpoints at one dose traces very little. §7.
 
 ---
 
@@ -1286,8 +1337,10 @@ only.**
 
 **IT MOVED JENSEN THE WRONG WAY, AND THE ARITHMETIC IS WORTH UNDERSTANDING BEFORE ANYONE
 CALLS IT A DEFECT.** Jensen 2013 is the only out-of-sample number this parameterisation
-has, and the acute fractional sodium excretion rise falls 82.5% → 79.3% against a reported
-123%. **Absolute excretion rose** — both Lobo endpoints moved toward their targets. The
+has **in the fitting sense — nothing was estimated against it — and NOT in the mechanism
+sense**, because it is the same intravenous saline bolus into healthy volunteers that
+Lobo is (§3.21, §7). The acute fractional sodium excretion rise falls 82.5% → 79.3%
+against a reported 123%. **Absolute excretion rose** — both Lobo endpoints moved toward their targets. The
 two are not in conflict:
 
     FENa = 1 - FR_effective = (1 - FR_Na)*renal_mod - fr_mod
@@ -1627,9 +1680,24 @@ were solved against that very target. And §5, which is how work goes wrong here
   value.
 - **`CV.ANP.NATRIURETIC_GAIN` AND `RN.ANP.TAU` WERE SOLVED AGAINST TARGETS THE HARNESS
   REPORTS.** Two of the three parameters that make the model match human salt sensitivity
-  are fits, not validations. **The validations are the four Lobo endpoints, the resting
-  state, the 400-day steady state, and Jensen.** Do not quote the chronic agreement as a
-  validation.
+  are fits, not validations. **The validations are the resting state, the 400-day steady
+  state, and Jensen — NOT the four Lobo endpoints**, which fixed `RN.ANP.TAU` and are
+  therefore an estimation set. Corrected 2026-09-04; see §3.15. Do not quote the chronic
+  agreement as a validation either.
+- **THE ACUTE LIMB RESTS ON ONE PROTOCOL CLASS AND THAT IS ITS REAL WEAKNESS.** Both
+  acute challenges — Lobo and Jensen — are intravenous isotonic saline boluses into
+  healthy volunteers. Different dose, different reported endpoints, **same manoeuvre**.
+  Three consequences, and none of them is that the studies are bad. **(1)** Jensen is
+  out-of-sample only in the fitting sense, not in the mechanism sense. **(2)** The regime
+  is one healthy people never enter unless a researcher puts them there, so it exercises
+  the model far from where its chronic claim lives. **(3)** It leans on the two weakest
+  constants in the repo and pushes `RN.GFR.VOLUME_SENSITIVITY` about three times past its
+  evidenced range, so those numbers sit at a clamp rather than on a measured line
+  (§3.22). **What would fix it is an acute protocol that is not a saline infusion** —
+  an oral water or salt load, or a deprivation study with the deficit reported. §4 item
+  11 already wants the second of those for a different reason. **Directive 1.7 is not
+  violated by perturbing people**; it is the thinness of what a single dose traces that
+  is the problem.
 - **`BF.ICF_ECF.OSMOTIC_TAU` is `assumed`, load-bearing on acute protocols, and searched
   for without success.** §4 item 2. **No acute osmotic MAGNITUDE may be reported until it
   is sourced.**
