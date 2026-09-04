@@ -86,6 +86,12 @@ function build_raw_model(; body_mass = 70.0, storage::Bool = false,
         # natriuretic term needs it, and validation/challenges.jl section 3 is the
         # measured deficit that motivated wiring it.
         rn.V_blood      ~ cv.V_blood,
+        # ADDED 2026-09-03. RN.GFR.VOLUME_SENSITIVITY was entered on 2026-09-02
+        # and nothing read it; HANDOVER section 4 item 1. GFR rises with
+        # EXTRACELLULAR volume in healthy humans, so this is bf.V_ecf and not
+        # cv.V_blood - the two differ by f_pv and the sourced sensitivity is
+        # against the iothalamate space.
+        rn.V_ecf        ~ bf.V_ecf,
         # renal -> body fluids (closes the loop)
         bf.Na_excr_rate ~ rn.Na_excr,
         bf.H2O_excr_rate ~ rn.H2O_excr,
@@ -175,7 +181,7 @@ mistake would reintroduce the class of defect this function exists to catch.
 model_edges() = Set([
     (:bodyfluids, :cardiovascular),   # cv.V_ecf ~ bf.V_ecf
     (:cardiovascular, :renal),        # rn.MAP ~ cv.MAP
-    (:bodyfluids, :renal),            # rn.C_Na ~ bf.C_Na
+    (:bodyfluids, :renal),            # rn.C_Na ~ bf.C_Na, rn.V_ecf ~ bf.V_ecf
     (:cardiovascular, :renal),        # rn.V_blood ~ cv.V_blood - ADR 0010
     (:renal, :bodyfluids),            # bf.Na_excr_rate, bf.H2O_excr_rate
     (:cardiovascular, :bodyfluids),   # bf.MAP ~ cv.MAP - INERT, ADR 0010 hook

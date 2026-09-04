@@ -20,6 +20,15 @@
 # a sensitivity so that a sourced value can be judged material or immaterial against a
 # threshold fixed in advance.
 #
+# ANSWERED, AND STALE AS A DIAGNOSTIC AS OF 2026-09-03. The sourced value came back
+# at RN.GFR.VOLUME_SENSITIVITY = 1.30 (branch G3, real but minor) and is now WIRED
+# into Renal.jl as gfr_vol_mod. The model therefore carries this response already,
+# so the GFR0 override here applies it a SECOND time and g = 0 is no longer the
+# without-it baseline. The sensitivity map it established - a fractional fall in the
+# salt-step shift of 4.05 x g, linear to within 1% for g <= 0.08 - was measured at
+# G_pn = 20, G_vr = 2880 and no volume-keyed natriuretic path, none of which is
+# still true. Kept as the record of the measurement that sized the decision.
+#
 using IPE
 using ModelingToolkit
 using OrdinaryDiffEq

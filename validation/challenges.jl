@@ -302,7 +302,8 @@ println("     it last. So this model still double-counts the path, and the chron
 println("     agreement above is partly that double count.")
 println()
 println("  AND A NEW PREDICTION THE MODEL COULD NOT MAKE BEFORE: salt sensitivity is now")
-println("  SEX-DEPENDENT, women 11% higher, because the path is keyed to a sexed volume.")
+println("  SEX-DEPENDENT, women 17.7% higher, because the path is keyed to a sexed")
+println("  volume - 11% when ADR 0010 landed, widened by the GFR volume response.")
 println("  A pressure-only kidney had salt sensitivity 1/G_pn, which carries no sex")
 println("  information. Nothing here has sourced it. It is debt, and it is falsifiable.")
 
