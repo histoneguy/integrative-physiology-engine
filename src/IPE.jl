@@ -54,12 +54,13 @@ include("components/Baroreflex.jl")
 include("components/Raas.jl")
 include("components/Adh.jl")
 include("components/Respiratory.jl")
+include("components/Blood.jl")
 include("assemble.jl")
 include("ensemble.jl")
 
 export MTKSystem, mtk_simplify, mtk_unknowns
 export build_model, build_raw_model, solve_individual, run_population, salt_step, check_pressure_natriuresis
-export BodyFluids, Cardiovascular, Renal, Baroreflex, Raas, Adh, Respiratory
+export BodyFluids, Cardiovascular, Renal, Baroreflex, Raas, Adh, Respiratory, Blood
 export FullTrace, StreamingStats, EventWindows, projected_storage
 # recording.jl and ensemble.jl internals, connected 2026-08-27 - all of this
 # was dead code, including the ensemble path HANDOVER calls the primary workload.
@@ -71,7 +72,8 @@ export Coupling, CouplingKind, Neurohumoral, Mechanical, Conservation
 # function had existed since its component was written and none was ever called.
 export model_couplings, model_edges, assert_couplings_match_model
 export bodyfluids_couplings, cardiovascular_couplings, renal_couplings
-export baroreflex_couplings, raas_couplings, adh_couplings, respiratory_couplings, circadian_couplings
+export baroreflex_couplings, raas_couplings, adh_couplings, respiratory_couplings
+export blood_couplings, circadian_couplings
 export coupling_ledger_rows
 export CircadianClock, cycle_average
 # Within-cycle reconstruction (ADR 0002). NOT simulated quantities - see
