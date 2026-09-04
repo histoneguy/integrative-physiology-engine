@@ -283,6 +283,37 @@ def _check_one(p: dict[str, float]) -> int:
           "is not, so ventilation is the derived one.",
           errors)
 
+    # ADR 0018. Haemoglobin and haematocrit are entered from INDEPENDENT measurements
+    # in the same cohort rather than derived from one another - deriving one from the
+    # other would repeat the dependency error HANDOVER section 3.6 records - so their
+    # ratio is a TEST that can fail. It is the mean corpuscular haemoglobin
+    # concentration and the human range is roughly 32-36 g/dL of red cells.
+    # _check_one already runs once per sex, so the pair is exercised by the caller.
+    mchc = p["BLOOD.HB.CONCENTRATION"] / p["CV.HEMATOCRIT.NOMINAL"]
+    if not (32.0 <= mchc <= 36.0):
+        errors.append("MCHC outside the human 32-36 g/dL: %.2f" % mchc)
+    else:
+        print("  ok   mean corpuscular Hb concentration  %.2f g/dL rbc  "
+              "(human 32-36)" % mchc)
+
+    # The dissociation curve's implied P50, solved from the adopted equation rather
+    # than entered as a row. Deliberately NOT a parameter, so it cannot silently
+    # disagree with the curve it comes from - which makes this a test of the equation
+    # rather than a second definition of the same quantity.
+    lo_p, hi_p = 1.0, 100.0
+    for _ in range(200):
+        mid = (lo_p + hi_p) / 2.0
+        s = 1.0 / (p["BLOOD.O2.CURVE_A"] / (mid ** 3 + p["BLOOD.O2.CURVE_B"] * mid) + 1.0)
+        if s < 0.5:
+            lo_p = mid
+        else:
+            hi_p = mid
+    p50 = (lo_p + hi_p) / 2.0
+    if not (24.0 <= p50 <= 29.0):
+        errors.append("Severinghaus curve implies P50 %.2f Torr, outside human 24-29" % p50)
+    else:
+        print("  ok   Severinghaus curve implies P50   %.2f Torr  (human 24-29)" % p50)
+
     check("obligatory urine volume from maximal concentration",
           p["RN.H2O.OBLIGATORY_LOSS"],
           solute / p["ADH.URINE.OSM_MAX"],
