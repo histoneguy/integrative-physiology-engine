@@ -28,7 +28,24 @@
 #   D4  mechanisms alone land BELOW the window
 #         -> the mechanisms over-explain the gap and at least one of them is wrong.
 #
-# TWO PROXIES, AND BOTH ARE DECLARED BECAUSE NEITHER TERM IS IMPLEMENTED.
+# STALE AS OF 2026-09-03, AND IT DOUBLE-COUNTS IF RE-RUN. THE GFR LIMB IS NOW
+# IMPLEMENTED. RN.GFR.VOLUME_SENSITIVITY was wired into Renal.jl as gfr_vol_mod
+# (HANDOVER section 4 item 1), so the model already carries the response this
+# script stands in for with a GFR0 override. Running it now applies the GFR limb
+# TWICE, once in the model and once in the proxy, and the g = 0 rows are no longer
+# a baseline without it.
+#
+# THE NUMBERS BELOW ARE NOT REPRODUCIBLE AGAINST THE CURRENT MODEL FOR THREE
+# FURTHER REASONS, and they are recorded so the table in ADR 0016 is read as the
+# history it is: G_pn has moved 20 -> 8.4, CV.VENOUS_RETURN.SENSITIVITY 2880 ->
+# 1400, and ADR 0010's volume-keyed natriuretic path is sourced and ON. The
+# baseline this script was written against was 4.958 mmHg per 100 mmol/day; it is
+# now 2.000 before this change. THE ORDERING IT ESTABLISHED SURVIVES - G_vr first,
+# mechanisms second, the fitted constant last - and that ordering was followed.
+# The ARITHMETIC does not. Kept as the record of a run, not as a live diagnostic.
+#
+# TWO PROXIES, AND BOTH ARE DECLARED BECAUSE NEITHER TERM WAS IMPLEMENTED WHEN
+# THIS WAS WRITTEN.
 #
 #   ADR 0015 -> tau_esc = 1e6 d, the escape diagnostic from bench/escape_sweep.jl. It is
 #     NOT the proposed change: it disables aldosterone escape rather than adding a

@@ -174,6 +174,14 @@ function member_remake(prob, sys, member; sex::Symbol = :male)
              # note in Renal.jl. Only the REFERENCE volume scales here.
              sys.rn.G_anp          => CV_ANP_NATRIURETIC_GAIN,
              sys.rn.V_blood_ref    => sz * LedgerParams.param(:CV_BLOOD_VOLUME_NOMINAL, sex),
+             # RN.GFR.VOLUME_SENSITIVITY's reference volume, added 2026-09-03.
+             # S_gfr_v and dV_gfr_max are both INTENSIVE - a fractional GFR change
+             # per fractional volume change, and a fractional bound - so neither
+             # appears here. Only the reference volume scales, exactly as
+             # V_blood_ref does above, and omitting it would make every heavy
+             # member read as volume-expanded in the same way omitting V_blood_ref
+             # did. That failure is recorded above; this list is where it happens.
+             sys.rn.V_ecf_ref      => sz * BF_ECF_MASS_FRACTION * BF_BODY_MASS_REFERENCE,
              sys.cv.CO0            => sz * LedgerParams.param(:CV_CO_NOMINAL, sex),
              sys.cv.BV0            => sz * LedgerParams.param(:CV_BLOOD_VOLUME_NOMINAL, sex),
              sys.cv.VC0            => sz * LedgerParams.param(:CV_CENTRAL_VOLUME_NOMINAL, sex),

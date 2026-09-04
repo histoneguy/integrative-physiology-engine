@@ -154,9 +154,21 @@ using SciMLBase
         # Note that ADR 0013 finds the model already 2 to 19 times more
         # salt-sensitive than normotensive humans, so this shift is in the wrong
         # direction against the literature - a fact about G_pn, not about ADH.
+        # REPINNED 2026-09-03, 2.0404 -> 1.8858, AND THE CAUSE IS NOT G_pn.
+        # RN.GFR.VOLUME_SENSITIVITY was wired (HANDOVER section 3.22): GFR now
+        # rises with extracellular volume, so part of the sodium a salt load
+        # delivers is cleared by a larger FILTERED LOAD instead of by a higher
+        # pressure. A 7.6% fall, inside the 5-20% band branch G3 of
+        # validation/renal_hemodynamics_prereg.md fixed before the extraction.
+        # The model stays inside the human 1.70-2.30 mmHg per 100 mmol/day at
+        # 1.849 and now sits nearer the floor of that window than the middle.
+        #
+        # THE HIGH ARM DID NOT MOVE - 87.0046 in the two blocks below is unchanged
+        # - because the modifier is exactly 1.0 at the nominal operating point by
+        # construction. What moved is the RESPONSE, which is the whole point.
         r = salt_step()
         v = check_pressure_natriuresis(r)
-        @test isapprox(v.map_shift_mmHg, 2.0404; atol = 0.05)
+        @test isapprox(v.map_shift_mmHg, 1.8858; atol = 0.05)
 
         # AND THE OTHER HALF OF THE PAIR, ADDED 2026-09-02 AT NO EXTRA COMPUTE:
         # dMAP/dV_ecf, which is set by CV.VENOUS_RETURN.SENSITIVITY and NOT by G_pn.
@@ -254,9 +266,18 @@ using SciMLBase
         # move as the CO0 repin above and for the same reason - the arms compress
         # toward the anchored high arm. This is a CORRECTION of a physical error,
         # not a tuning: red cell mass does not track plasma over 30 days.
+        # REPINNED 2026-09-03, 86.0329 -> 86.1329 and 85.0601 -> 85.2040, with
+        # the HIGH ARM UNMOVED at 87.0046. RN.GFR.VOLUME_SENSITIVITY was wired and
+        # GFR now responds to extracellular volume; below the nominal volume the
+        # kidney filters less, so the low arms sit HIGHER and the three arms
+        # compress toward the anchored high arm. Same shape of move as the CO0
+        # repin and the red cell correction before it, and for the same structural
+        # reason: the operating point is pinned by construction and only the
+        # response can move. This is a sourced physiological term landing, not a
+        # tuning.
         pre_partition = (205.0 => 87.0046,
-                         154.0 => 86.0329,
-                         103.0 => 85.0601)
+                         154.0 => 86.1329,
+                         103.0 => 85.2040)
         # raas=false ISOLATES what this testset is about. The reference values
         # were measured before RAAS existed, so comparing against a model that
         # now includes it would be testing two changes at once. RAAS having its
@@ -308,8 +329,11 @@ using SciMLBase
         # is the DISABLED-ADH branch, where the placeholder pins urine output and
         # forces sodium balance to close through the circulation; the default
         # model's shift is unmoved at 5.0570 against 5.0569.
+        # 1.9441 -> 1.8001 on 2026-09-03 with the GFR volume response. This is
+        # still the DISABLED-ADH branch, so it moves for its own reasons and by its
+        # own amount; the default model moved 2.0404 -> 1.8858 over the same change.
         @test isapprox(check_pressure_natriuresis(r).map_shift_mmHg,
-                       1.9441; rtol = 1e-3)   # 4.9352 -> 4.9067 -> 4.7672 -> 2.2467
+                       1.8001; rtol = 1e-3)   # 4.9352 -> 4.9067 -> 4.7672 -> 2.2467
                        # 2026-09-02: ADR 0010's volume-keyed path landed and the
                        # disabled-ADH branch moved with everything else.
     end
@@ -344,9 +368,12 @@ using SciMLBase
         # with it; see the ADR 0012 block above for the mechanism. These two
         # blocks pin the same three numbers on purpose - they assert different
         # claims about them - so they move together.
+        # REPINNED 2026-09-03 with the ADR 0012 block above, and they move
+        # together on purpose: these two blocks pin the SAME three numbers to
+        # assert DIFFERENT claims about them. RN.GFR.VOLUME_SENSITIVITY wired.
         pre_raas = (205.0 => 87.0046,
-                    154.0 => 86.0329,
-                    103.0 => 85.0601)
+                    154.0 => 86.1329,
+                    103.0 => 85.2040)
         for (lvl, expected) in pre_raas
             got = only(l.MAP_final for l in r.levels if l.level == lvl)
             # 1e-9 -> 1e-7 on 2026-08-27, same reason as the ADR 0012 block: the
@@ -634,7 +661,12 @@ using SciMLBase
         # the RIGHT way. It is small - 0.8% against a discrepancy of 2x at best -
         # so it does not touch that finding, and it must not be read as
         # addressing it: G_pn is still the parameter that sets the shift.
-        @test isapprox(on, 2.0404; atol = 0.02)
+        # REPINNED 2026-09-03, 2.0404 -> 1.8858. The GFR volume response is a
+        # THIRD route to sodium excretion, through the filtered load rather than
+        # the reabsorbed fraction, and it damps the pressure excursion. The
+        # `on > off` assertion above is the claim this testset exists to make and
+        # it is untouched: ADH still amplifies, from a lower base.
+        @test isapprox(on, 1.8858; atol = 0.02)
     end
 
     @testset "the urine solute load tracks sodium (water limb responds to salt)" begin
@@ -831,8 +863,17 @@ using SciMLBase
         # not move the default model at all. If this fails, the scaling has leaked
         # into a quantity that should be intensive.
         @test size_factor(IPE.LedgerParams.BF_BODY_MASS_REFERENCE) == 1.0
+        # REPINNED 2026-09-03, 2.0404 -> 1.8858, RN.GFR.VOLUME_SENSITIVITY wired.
+        # THE INVARIANCE ASSERTION BELOW DID NOT FAIL AND THAT IS THE RESULT THAT
+        # MATTERS HERE. This line pins a VALUE; the loop below pins that the value
+        # is the same for an 85 kg individual eating an 85 kg diet, and it passed
+        # unchanged. The new term is intensive (a fractional GFR change per
+        # fractional volume change) against an extensive reference volume, so the
+        # product scales exactly as GFR0 does. Had that been written the other way
+        # round - which is the mistake ADR 0010's gain made and this testset caught
+        # within one run - the loop below would have failed and this line passed.
         v = check_pressure_natriuresis(salt_step())
-        @test isapprox(v.map_shift_mmHg, 2.0404; atol = 0.02)
+        @test isapprox(v.map_shift_mmHg, 1.8858; atol = 0.02)
 
         # THE INVARIANCE ITSELF, on the whole loop rather than on one arm.
         # With sodium intake scaled along with the individual - which is what an
@@ -1035,8 +1076,13 @@ using SciMLBase
         # VOLUME, which is sexed, so the dimorphism now propagates into salt
         # sensitivity for the first time.
         #
-        # WOMEN COME OUT MORE SALT-SENSITIVE, 2.5530 against 2.3013 mmHg per 100
-        # mmol/day, an 11% difference. The mechanism is the one the block below
+        # WOMEN COME OUT MORE SALT-SENSITIVE, 2.1757 against 1.8488 mmHg per 100
+        # mmol/day, a 17.7% difference.
+        #
+        # THIS COMMENT SAID 11% AND THE ASSERTION BELOW HAS SAID 1.172 SINCE G_pn
+        # MOVED - a comment and an assertion disagreeing, in the same block, about
+        # the same number. Corrected 2026-09-03 when the GFR volume response moved
+        # the ratio again, to 1.1768. The mechanism is the one the block below
         # already describes: dMAP/dV_ecf scales as TPR0*f_pv and that product is
         # larger in women, so the same volume-keyed natriuresis buys less pressure
         # correction.

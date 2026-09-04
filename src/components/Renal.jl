@@ -18,6 +18,21 @@ STRUCTURE SOURCES
 EVIDENCE (ADR 0006)
   E1  Pressure natriuresis exists and is steep. Multiply replicated.
   E1  GFR is autoregulated over a plateau of arterial pressure.
+  E1  GFR RISES WITH EXTRACELLULAR VOLUME EXPANSION across chronic sodium
+      intake in healthy humans. Four independent groups, human: van den Bosch
+      2021 (PMID 34921521, n = 70, GFR and ECFV both by 125I-iothalamate),
+      Roos 1985 (PMID 3907374, n = 8, inulin, an independent tracer),
+      Redgrave 1985 (PMID 2985655, normotensive controls) and
+      Pechere-Bertschi 2002/2003. The PHENOMENON is E1; the LINEAR FORM is a
+      straight line between two measured intake levels, which is E2 inside
+      the tested volume range and nothing at all outside it - hence the
+      clamp on RN.GFR.VOLUME_RANGE below. Autoregulation is flat in PRESSURE
+      and this term is a response to VOLUME; they are not in conflict, and
+      the salt step never leaves the autoregulatory plateau.
+      NOT tubuloglomerular feedback, which has the sign backwards: macula
+      densa sensing LOWERS GFR when distal delivery rises. Ruled out in
+      validation/renal_hemodynamics_prereg.md before the search, so it
+      cannot be reached for later to rescue a null.
   E2  The UPPER limit is at or above 160 mmHg. Rat, Roman 1985, hormones clamped.
       No human study raises arterial pressure to find where autoregulation fails,
       and none may - the human literature only ever lowers it. Per ADR 0006
@@ -47,14 +62,15 @@ using ..LedgerParams:
     RN_URINE_SOLUTE_LOAD, RN_URINE_SOLUTE_NONNA, RN_URINE_OSM_PER_NA,
     RN_AUTOREG_LOWER, RN_AUTOREG_UPPER, ADH_URINE_OSM_MAX, RN_URINE_SOLUTE_LOAD,
     CV_MAP_SETPOINT, BF_H2O_INTAKE_NOMINAL, BF_H2O_INSENSIBLE_LOSS,
-    BF_BODY_MASS_REFERENCE, BF_ECF_MASS_FRACTION, CV_ANP_NATRIURETIC_GAIN, RN_ANP_TAU
+    BF_BODY_MASS_REFERENCE, BF_ECF_MASS_FRACTION, CV_ANP_NATRIURETIC_GAIN, RN_ANP_TAU,
+    RN_GFR_VOLUME_SENSITIVITY, RN_GFR_VOLUME_RANGE
 
 """
     Renal(; name)
 
 Filtration, pressure-dependent reabsorption, excretion.
 
-Inputs   MAP (mmHg), C_Na (mEq/L), V_ecf (L)
+Inputs   MAP (mmHg), C_Na (mEq/L), V_ecf (L), V_blood (L)
 Outputs  Na_excr (mEq/day), H2O_excr (L/day), GFR (L/day)
 
 The whole component is one idea: filtered sodium minus reabsorbed sodium, where
@@ -84,6 +100,35 @@ function Renal(; name, solute_tracking::Bool = true,
         MAP_lo   = RN_AUTOREG_LOWER
         MAP_hi   = RN_AUTOREG_UPPER
         MAP_ref  = CV_MAP_SETPOINT
+        # GFR RESPONDS TO VOLUME, NOT ONLY TO PRESSURE. WIRED 2026-09-03.
+        #
+        # The row was entered on 2026-09-02 and NOTHING READ IT, which is the
+        # state directive 1.11 calls not evidence about anything. Its blocker was
+        # named on the row and has been discharged: this term multiplies the
+        # model's volume excursion, which was 1.5-2.1x too large while G_vr was
+        # calibrated, and G_vr is now sourced in healthy humans.
+        #
+        # S_gfr_v is INTENSIVE - a ratio of a fractional GFR change to a
+        # fractional volume change, and a fraction does not care how big you are.
+        # dV_gfr_max likewise. Only the REFERENCE VOLUME scales. The product
+        # GFR0*(1 + S*dV/V) therefore stays proportional to size exactly as GFR0
+        # does, which is what keeps the salt-step shift mass-invariant.
+        S_gfr_v    = RN_GFR_VOLUME_SENSITIVITY
+        # THE CENSORING BOUND, and it is a parameter rather than a literal for
+        # the reason directive 1.4 gives. Outside the volumes van den Bosch
+        # measured, the straight line has no support of any kind - so the
+        # fractional deviation is clamped and the term saturates rather than
+        # extrapolating. It is INERT on the chronic salt step, which moves ECF
+        # about 2.4% either way against this 2.9%, and it BINDS on the acute
+        # saline challenges, which move it about 9%.
+        dV_gfr_max = RN_GFR_VOLUME_RANGE
+        # EXTENSIVE. This is the same expression BodyFluids.jl initialises V_ecf
+        # with, so the modifier is exactly 1.0 at the nominal operating point and
+        # FR_Na - which is derived to close sodium balance against GFR0 - is not
+        # silently re-based. It is written in the sz form rather than as
+        # body_mass*f_ecf so that it reads identically to the line in
+        # ensemble.jl's member_remake, which must reapply it.
+        V_ecf_ref  = sz * BF_ECF_MASS_FRACTION * BF_BODY_MASS_REFERENCE
         # V_min (RN.H2O.OBLIGATORY_LOSS) IS DELIBERATELY NO LONGER A PARAMETER
         # HERE. It was a constant 0.5 L/day floor, which equalled
         # RN.URINE.SOLUTE_LOAD / ADH.URINE.OSM_MAX only while the solute load was
@@ -150,10 +195,19 @@ function Renal(; name, solute_tracking::Bool = true,
         # INTRAVASCULAR, ADR 0010 proposed V_blood, and the two differ by
         # f_pv = 0.211, so a gain entered against the wrong one is wrong by 4.7x.
         V_blood(t)          # L        INPUT from cardiovascular
+        # WIRED 2026-09-03, and it is a SECOND volume input rather than a reuse of
+        # V_blood. The two are keyed to different measurements and must not be
+        # conflated: the natriuretic path above is keyed to V_blood because atrial
+        # stretch is intravascular, and this term is keyed to V_ecf because that
+        # is what van den Bosch measured by iothalamate. They differ by
+        # f_pv = 0.211, so a sensitivity entered against the wrong one is wrong by
+        # 4.7x - the same error this file already records being made and caught.
+        V_ecf(t)            # L        INPUT from body fluids
         fr_mod(t)           # unitless INPUT from RAAS (0.0 = no RAAS action)
         u_osm(t)            # mOsm/kg  INPUT from ADH (urine osmolality)
         renal_mod(t)        # unitless INPUT from circadian clock (1.0 = no rhythm)
         GFR(t)              # L/day
+        gfr_vol_mod(t)      # unitless GFR multiplier from ECF volume
         Na_filtered(t)      # mEq/day
         Na_reabsorbed(t)    # mEq/day
         Na_excr(t)          # mEq/day  OUTPUT
@@ -182,7 +236,33 @@ function Renal(; name, solute_tracking::Bool = true,
         # autoregulation, and it happened to equal GFR0 at MAP = MAP_ref so it
         # looked correct at the operating point.
         GFR ~ GFR0 * ifelse(MAP < MAP_lo, MAP / MAP_lo,
-                     ifelse(MAP > MAP_hi, MAP / MAP_hi, 1.0)),
+                     ifelse(MAP > MAP_hi, MAP / MAP_hi, 1.0)) * gfr_vol_mod,
+
+        # THE VOLUME RESPONSE, ledger relation Renal.gfr_vol_mod.
+        #
+        # It is a SEPARATE equation rather than another factor written inline, and
+        # that is a provenance decision rather than a stylistic one. Renal.GFR is
+        # in check_relations.py's GRANDFATHERED_UNSOURCED list because its
+        # piecewise autoregulatory FORM is uncited. This term is sourced, and
+        # folding it into that row would have filed a sourced relation under a
+        # permanent exemption. Split, it carries its own form_citation and its own
+        # form_status and the exemption keeps shrinking rather than absorbing.
+        # structural_simplify aliases it away, so it costs no state.
+        #
+        # SIGN. Volume above reference RAISES GFR, which raises filtered load and
+        # therefore excretion. It is a NEGATIVE feedback on volume, in the same
+        # direction as pressure natriuresis and the ADR 0010 path, and it reaches
+        # excretion through a THIRD route: the filtered load rather than the
+        # reabsorbed fraction.
+        #
+        # WHY THIS BITES WHEN HANDOVER 3.5 SAID GFR CANCELS. It cancels BETWEEN
+        # BUILDS, because FR_Na is derived as 1 - intake/(GFR0*C_Na) and absorbs
+        # any change in GFR0. It does NOT cancel WITHIN a run: a GFR that moves
+        # while FR_Na is fixed changes Na_filtered*(1 - FR_Na) directly. That is
+        # the same shape of error as the haematocrit one in 3.8 - a quantity that
+        # cancels at the operating point need not cancel in the response.
+        gfr_vol_mod ~ 1.0 + S_gfr_v * clamp((V_ecf - V_ecf_ref) / V_ecf_ref,
+                                            -dV_gfr_max, dV_gfr_max),
 
         Na_filtered ~ GFR * C_Na,
 
@@ -205,11 +285,20 @@ function Renal(; name, solute_tracking::Bool = true,
         # (1 - FR_Na), which is 0.0081. A 25% swing there is a 25% swing in
         # excretion and a 0.2% swing in reabsorption, which is the physiological
         # reading. renal_mod = 1.0 recovers the previous equation exactly.
-        # The G_anp term is the volume-keyed natriuresis of ADR 0010 and is ZERO
-        # by default, so this reduces exactly to the pressure-only form. It enters
+        # The anp_sig term is the volume-keyed natriuresis of ADR 0010. It enters
         # with the same sign and the same normalisation as the pressure term:
-        # Na_excr gains G_anp*(V_ecf - V_ecf_ref), i.e. sodium excretion rises when
-        # extracellular volume is above its reference, independently of pressure.
+        # Na_excr gains anp_sig, whose target is G_anp*(V_blood - V_blood_ref), so
+        # sodium excretion rises when BLOOD volume is above its reference,
+        # independently of pressure. G_anp = 0 recovers the pressure-only form.
+        #
+        # CORRECTED 2026-09-03. This comment read "G_anp*(V_ecf - V_ecf_ref)" and
+        # said "extracellular volume". The path was RE-KEYED to V_blood on
+        # 2026-09-02, because atrial stretch is intravascular, and the comment was
+        # not carried over. It was harmless while no V_ecf_ref existed and stopped
+        # being harmless the moment one did: this file now holds BOTH volume
+        # references, for two different paths, and they differ by f_pv = 0.211.
+        # HANDOVER section 5 item 11 - a name carrying a convention its value
+        # contradicts, twice recorded, and no gate sees it.
         FR_effective ~ clamp(1.0 - (1.0 - FR_Na) * renal_mod + fr_mod -
                              G_pn * (MAP - MAP_ref) / Na_filtered -
                              anp_sig / Na_filtered, 0.0, 1.0),
@@ -292,5 +381,10 @@ function renal_couplings()
                  note = "MAP drives filtration and pressure natriuresis; hydraulic"),
         Coupling(:renal, :bodyfluids, Conservation,
                  note = "Na and water excretion are mass fluxes out of ECF"),
+        # DECLARED 2026-09-03. bodyfluids -> renal already existed for C_Na and is
+        # declared in BodyFluids.jl; V_ecf now drives filtration through
+        # gfr_vol_mod as well, and the note there already said it did.
+        Coupling(:bodyfluids, :renal, Conservation,
+                 note = "V_ecf raises GFR (RN.GFR.VOLUME_SENSITIVITY); algebraic"),
     ]
 end
