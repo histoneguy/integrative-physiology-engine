@@ -3,7 +3,7 @@
 **Date:** 2026-09-03
 **Repo:** https://github.com/histoneguy/integrative-physiology-engine (public)
 **Owner:** Eric George (`histoneguy`)
-**State:** **444/444**, all five gates exit 0, and **`validation/challenges.jl` EXITS 0** —
+**State:** **531/531**, all five gates exit 0, and **`validation/challenges.jl` EXITS 0** —
 every challenge passes against published human data.
 
 **THE MODEL REPRODUCES HUMAN SALT SENSITIVITY AND THE HUMAN PRESSURE–VOLUME RATIO, BOTH
@@ -215,7 +215,11 @@ prohibits `range-midpoint`, so an interval cannot become a point estimate.
 
 ## 2. STATE
 
-**444/444, five gates exit 0, and the challenge harness exits 0.**
+**531/531, five gates exit 0, and the challenge harness exits 0.**
+
+**THE MODEL IS NO LONGER ONLY A RENAL–CARDIOVASCULAR MODEL.** Two subsystems outside
+that axis landed on 2026-09-04 — **respiratory** and **blood** — and a third, thyroid,
+was refused for cause. §3.24.
 
 **THE `VERIFY` CLASS IS EMPTY.** Eight rows carried
 `Standard physiological reference. VERIFY.` Five are now sourced — `CV.MAP.SETPOINT`,
@@ -241,7 +245,9 @@ that is the honest direction — see `validation/verify_rows_prereg.md` branch 6
 | `Adh.jl` | Osmolality → antidiuretic activity → urine osmolality. Algebraic, no states. |
 | `Circadian.jl` | Cosinor clock, connected to renal excretion and the reflex setpoint. **Default OFF** — both arms' parameters contested. |
 | `reconstruct.jl` | **Connected.** SBP/DBP/PP from `SV` and `C_art`. NOT part of the ODE system — see §3.2. |
-| `scaling.jl` | **New.** Extensive quantities scale with body mass, intensive ones do not. |
+| `Respiratory.jl` | **New 2026-09-04, ADR 0017.** Piecewise chemoreflex and the alveolar ventilation equation, solved together in closed form. **No state.** Drives respiratory water loss into `BodyFluids`. **Arterial PCO2 is an INPUT, not an output** — §3.24. |
+| `Blood.jl` | **New 2026-09-04, ADR 0018.** Alveolar gas equation, Severinghaus dissociation, oxygen content and delivery. **A forward computation — two inbound edges, no feedback, no state.** First quantity needing two subsystems at once. |
+| `scaling.jl` | Extensive quantities scale with body mass, intensive ones do not. |
 
 ### The result
 
@@ -295,9 +301,9 @@ blood volume and haematocrit — and left the compartment fraction alone.
 
 ### Ledger
 
-**74 parameters over 86 rows** — 34 `reported`, 34 `derived`, 17 `assumed`, and
-**1 `calibrated`**, since `G_vr` was sourced (§3.19). `RN.GFR.VOLUME_RANGE` was added on 2026-09-03 as the censoring bound on the GFR volume response (§3.22) — the same treatment `RN.AUTOREG.UPPER` gets, and for the same reason. Tiers: 38 A, 31 B,
-17 C. **`CV.VENOUS_RETURN.SENSITIVITY` was the second most consequential unmeasured
+**91 parameters over 104 rows** — 40 `reported`, 39 `derived`, 24 `assumed`, and
+**1 `calibrated`**, since `G_vr` was sourced (§3.19). `RN.GFR.VOLUME_RANGE` was added on 2026-09-03 as the censoring bound on the GFR volume response (§3.22) — the same treatment `RN.AUTOREG.UPPER` gets, and for the same reason. Tiers: 43 A, 36 B,
+25 C. **`CV.VENOUS_RETURN.SENSITIVITY` was the second most consequential unmeasured
 number in the project and it is now sourced in healthy humans.** The ONE remaining
 `calibrated` row is **`RN.PRESSURE_NATRIURESIS.SLOPE` itself, at 8.4** — and whether
 that label is still right is an open question in §7: 8.4 is not fitted, it is the value
@@ -310,7 +316,10 @@ UP was on 2026-08-31.** `CV.CO.NOMINAL` and `RN.H2O.OBLIGATORY_LOSS` did not acq
 citations; they stopped being primitives. Each is now DERIVED from the quantity that is
 actually measured — stroke volume and maximal urine concentration — and it is those two
 rows that carry the new sources.
-**44 relations** — 14 definitional, 16 empirical, 10 conservation, 4 placeholder.
+**53 relations** — 18 definitional, 18 empirical, 13 conservation, 4 placeholder.
+Nine landed on 2026-09-04 with the respiratory and blood components (§3.24), including
+`Renal.gfr_vol_mod`'s siblings `Respiratory.V_E` (`sourced-piecewise-threshold`) and
+`Blood.SaO2` (`sourced-published-fit`).
 `Renal.gfr_vol_mod` was added on 2026-09-03, `sourced-linear-censored`, and it is **split out of `Renal.GFR` deliberately**: that row sits in `check_relations.py`'s grandfathered-unsourced set, and folding a sourced relation into it would file sourced work under a permanent exemption that is documented to shrink only.
 `Renal.D(anp_sig)` was added on 2026-09-02 with ADR 0010, `sourced-lagged-linear`.
 `Cardiovascular.V_blood` moved definitional → conservation on 2026-09-02 (§3.8).
@@ -1506,6 +1515,117 @@ reporting everywhere.
 
 ---
 
+### 3.24 THE MODEL LEFT THE RENAL AXIS. RESPIRATION AND BLOOD GAS ARE BUILT; THYROID IS NOT
+
+**2026-09-04.** `julia --project=. validation/challenges.jl` **exits 0**, 531/531, five
+gates clean. **ADR 0006's build order was finished** — all five spine steps and both
+modulators — and nothing declared what came next, which is why §4 had degenerated to
+eleven items of which one added physiology. ADR 0017 extends it by one step.
+
+**Two new subsystems, and the ledger is no longer all one axis.**
+
+| subsystem | rows |
+|---|---|
+| body-fluids, cardiovascular, renal, raas, adh, neural, circadian | 87 |
+| **respiratory** | **10** |
+| **blood** | **7** |
+
+#### Respiration — and PCO2 is an INPUT, which is the opposite of pressure
+
+ADR 0017 originally decided arterial PCO2 would be an **output** of the chemoreflex
+loop, as arterial pressure is an output of the renal loop. **Its own falsifiable test
+killed that**, and the refutation is the useful part.
+
+The accepted structure is **piecewise**: ventilation is flat below a **ventilatory
+recruitment threshold** and rises above it (Duffin's model; Guluzade 2022 fits exactly
+that form and finds the threshold far more reproducible than the slope). **The threshold
+sits at 45.28 mmHg and resting PCO2 is near 40** (Mateika 2003, n = 8 awake healthy
+controls), so **at rest the chemoreflex is below its own threshold and is not the
+operative control.** On the extrapolated line, ventilation at PCO2 40 comes out at
+**19.3 L/min against a real 6.2**.
+
+**So the dependency is inverted** — resting PCO2 sourced, basal ventilation derived from
+it — which is §3.6's lesson applied a second time. **The asymmetry is physiological, not
+a modelling failure:** pressure natriuresis is measured **at** the operating point; the
+chemoreflex only **above** a threshold that lies above it. **The project's thesis does
+not generalise to every variable**, and that belongs wherever the thesis is stated.
+
+**It is not an island.** `BF.H2O.INSENSIBLE_LOSS` was 0.8 L/day, `assumed`, cited
+*"Convention pending primary source."* It is now a computed respiratory flux of 0.3120
+plus a cutaneous residual of 0.4880 — **39% of it derived from physical constants and a
+sourced chemoreflex**, leaving a plausible cutaneous loss reached without being aimed at.
+The water balance now spans two subsystems, the first conservation law here to do so.
+
+**No new state.** Eight before, eight after. The chemoreflex and the alveolar equation
+are solved together as one quadratic, the branch condition written on the metabolic
+numerator rather than on PCO2 so nothing iterates, and the limbs meet continuously —
+which matters because a jump would land in `D(V_ecf)`.
+
+#### Blood gas — and this one IS a prediction
+
+| | model | human |
+|---|---|---|
+| PaO2 | 89.4 mmHg | — |
+| **SaO2** | **96.9%** | **95–99%** |
+| CaO2 | 20.9 mL/dL | — |
+| DO2 | 1243 mL/min | — |
+
+**Unlike resting PCO2, every input here is sourced or derived independently of the
+output, so the model CAN be wrong about it.** It is not. **And it does not turn on its
+weakest input**: sweeping the assumed alveolar-arterial difference from 5 to 25 mmHg
+leaves saturation inside the human window throughout, so it cannot be accused of having
+been chosen. **That is also why it is a WEAK test of the curve** — the sigmoid's upper
+limb is flat, and a real test needs the steep part, which means hypoxia, which ADR 0017
+forbids.
+
+**Oxygen delivery is the first quantity in this model that needs two subsystems at
+once** — flow from the cardiovascular side, content from the respiratory side, and it is
+their *product*. Every earlier coupling passed a signal or a flux.
+
+**Haemoglobin is sexed and comes from the same cohort and stratum as the haematocrit
+already held**, so the mean corpuscular haemoglobin concentration is a real check rather
+than a definition: 33.8 and 33.4 g/dL of red cells, both inside 32–36, and it could have
+failed.
+
+#### Thyroid — BRANCH T3, and one logarithm stopped it
+
+Chosen over cortisol and glucose because it is the only endocrine axis that drives a
+quantity another component already consumes: metabolic rate sets `RESP.CO2.PRODUCTION`.
+
+**The slope was found, in the right preparation, and cannot be used.** Benhadi 2010
+(PMID 19926783), 21 healthy volunteers: `log TSH = 1.50 − 0.059 × FT4`. **The abstract
+does not state the base of the logarithm and the paper is not open access.** Read as
+base ten the euthyroid point sits at the top of the reference interval; read as natural
+log it sits mid-range. **The two differ by 2.3× in the feedback gain.**
+
+**It is not resolved by picking the one that works.** The pre-registration forbids using
+either reference interval to set a parameter, and makes the euthyroid point the target
+its second falsifiable test judges. Choosing the base by which one lands in range is
+setting a parameter from the target — the Lobo failure exactly (§3.15).
+
+**A UNIT AMBIGUITY IS WORSE THAN A MISSING NUMBER, and that is the finding.** A missing
+number is honestly `assumed` and visibly absent. An ambiguous one looks sourced, carries
+a real citation and a real cohort, **passes every gate in this repository**, and would be
+wrong by 2.3× silently. **No row, no component, ADR 0019 stays Proposed.**
+
+#### What the searches cost, because it is a pattern now
+
+**Directive 1.7 disqualified almost the entire literature in three of four searches.**
+The CO2 response slope returns remifentanil, alfentanil, midazolam, propofol, clonidine,
+diphenhydramine and buprenorphine — in every one the response is the *instrument* for
+measuring a drug's respiratory depression. Measured P50 and Hill exponents return
+chronic obstructive lung disease, sickle cell disease, sleep apnoea and congenital heart
+disease, several existing to characterise a pulse oximeter. Resting metabolic rate
+returns children, kidney disease and **calorimeter validation studies**.
+
+**And the binding constraint is now ACCESS, not existence.** Six of the sources these
+three records need were identified precisely and could not be opened. **One article,
+Crapo 1999, would discharge three `assumed` rows across two subsystems**; one more,
+Benhadi 2010, would unblock an entire axis. That is the highest-value work available and
+it is not something more searching will fix.
+
+---
+
 ## 4. NEXT, IN ORDER
 
 **Rewritten 2026-09-03, and item 1 was discharged the same day.** The previous list's
@@ -1517,6 +1637,19 @@ below is renumbered. What follows is what is left.
 
 **Finish the cardiovascular system, then the other systems. Populations are far off — a
 population of an incomplete model is a wider set of wrong answers.**
+
+**AND THE BINDING CONSTRAINT HAS CHANGED. IT IS NOW ACCESS, NOT SEARCHING.** Six sources
+needed by §3.24's three records were identified precisely and could not be opened. Two of
+them are worth naming as work items in their own right because each unblocks more than a
+row:
+
+0. **GET TWO PAPERS.** `Crapo RO et al. Am J Respir Crit Care Med 1999;160(5 Pt
+   1):1525-31` (PMID 10556115) discharges **three `assumed` rows across two
+   subsystems** — resting arterial PCO2, the alveolar-arterial difference, and the
+   arterial PO2 that follows. `Benhadi N et al. Eur J Endocrinol 2010;162(2):323-9`
+   (PMID 19926783) states the base of one logarithm and **unblocks the entire thyroid
+   axis** (§3.24). Institutional access or an author request. **No amount of further
+   searching substitutes**, and both were found by searching correctly.
 
 **Two things to read before starting anything.** §3.21's two caveats, because the model
 now matches human salt sensitivity and two of the three parameters that make it do so
@@ -1798,6 +1931,31 @@ were solved against that very target. And §5, which is how work goes wrong here
   error bar, and **parameter uncertainty is not propagated** here. That is the same open
   item as the ensemble sampling only body mass, seen from the validation side, and §3.23
   records that the two are one problem.
+- **RESP.CO2.PRODUCTION AND RESP.DEADSPACE.FRACTION ARE ASSUMED AND NOT SEPARATELY
+  IDENTIFIABLE.** They enter only through `VCO2/(1 - Vd/Vt)`, so resting data can never
+  distinguish them — recorded on both rows so a future sourcing pass on either knows it.
+  Both are round teaching numbers and no admissible source could be opened; the searches
+  return children, kidney disease and calorimeter validation studies. §3.24.
+- **BLOOD.O2.BINDING_CAPACITY IS KNOWN TO BE ABOUT 4% HIGH AND IS USED ANYWAY.** 1.391 is
+  derived from two physical constants; empirical whole-blood values cluster near 1.34
+  because of inactive haemoglobin species ADR 0018 omits. **The physiological argument
+  favours 1.34 and it could not be sourced.** A traceable number that is 4% high beats an
+  untraceable one that is right — the error is declared, one-directional, and affects
+  content and delivery only, not saturation.
+- **THE SEVERINGHAUS COEFFICIENTS ARE NOT SEPARATELY MEASURABLE AND MUST MOVE TOGETHER.**
+  Branch B3: the Hill decomposition into a sourced P50 and exponent was preferred and
+  failed, because every measured pair found was in a diseased preparation. The cost is
+  that neither coefficient means anything alone.
+- **ARTERIAL SATURATION IS A REAL PREDICTION BUT A WEAK TEST OF THE CURVE.** It lands at
+  96.9% against a human 95–99 with nothing set to put it there, and it stays inside that
+  window across a fivefold sweep of the assumed A-a difference. **The sigmoid's upper limb
+  is flat, so that robustness and that weakness are the same fact.** Testing the curve
+  needs the steep part, which means hypoxia, which ADR 0017 forbids by omitting the
+  hypoxic drive.
+- **THE MODEL IS SEA LEVEL ONLY, IN THREE PLACES NOW.** ADR 0017 omits the hypoxic drive;
+  `RESP.ALVEOLAR.K`'s derivation assumes sea-level barometric pressure; `Blood.jl` reuses
+  that same constant for inspired PO2. **The haemoglobin row's own source shows why it
+  matters** — the same cohort reads 16.7 g/dL above 2000 m against 15.3 at sea level.
 - **THE ACUTE LIMB RESTS ON ONE PROTOCOL CLASS AND THAT IS ITS REAL WEAKNESS.** Both
   acute challenges — Lobo and Jensen — are intravenous isotonic saline boluses into
   healthy volunteers. Different dose, different reported endpoints, **same manoeuvre**.
