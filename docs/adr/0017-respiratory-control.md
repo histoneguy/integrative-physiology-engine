@@ -138,3 +138,77 @@ methodological choice and is the part most likely to be wrong.
   ratio is fixed.
 - **Every numeric value.** All deferred to `validation/respiratory_prereg.md`.
 - **What system comes after this one.**
+
+---
+
+## AMENDMENT 2026-09-04 — DECISION 1 IS SUPERSEDED BY ITS OWN FALSIFIABLE TEST
+
+**Evidence tier:** E1 for the piecewise recruitment-threshold structure; E2 for the
+threshold's position relative to eupnoea, on two groups with a protocol caveat.
+
+**Decision 1 said arterial PCO2 is an OUTPUT of the chemoreflex loop, as arterial
+pressure is an output of the renal loop. The literature survey refutes that, and the
+refutation is the useful part of this record.**
+
+### What the survey found
+
+**The rectified-to-zero form is wrong, and the accepted structure is piecewise.**
+Ventilation is not a straight line running to zero at a projected apnoea threshold. It
+is flat below a **ventilatory recruitment threshold** and rises with a slope above it.
+This is Duffin's modified rebreathing model and it is the standard characterisation.
+
+| finding | source |
+|---|---|
+| Piecewise fit with a recruitment threshold and a slope above it is the standard model; threshold reproducibility is excellent (ICC 0.93–0.97, CV 2.2–3.0%) and far better than the slope's (CV 14–18%) | Guluzade NA, Huggard JD, Keltz RR, Duffin J, Keir DA. *Exp Physiol* 2022;107(12):1507–20. PMID 36177675. n = 13, four visits, six repetitions. **Abstract only — not open access** |
+| In awake healthy controls the threshold is **45.28 ± 0.75 mmHg** hyperoxic and **41.05 ± 0.67** hypoxic, and ventilation below it is **non-zero**, 10.83 ± 1.24 L/min | Mateika JH, Ellythy M. *Respir Physiol Neurobiol* 2003;138(1):45–57. PMID 14519377. n = 8 matched healthy controls. **Abstract only — not open access** |
+
+**THE THRESHOLD SITS ABOVE EUPNOEA, AND THAT IS WHAT KILLS DECISION 1.** Normal resting
+arterial PCO2 is about 40 mmHg and the recruitment threshold is 41–45. **So at rest the
+central chemoreflex is below its own recruitment threshold and is not the operative
+control.** A model that derives resting PCO2 from the chemoreflex derives it from a
+mechanism that is not yet recruited.
+
+The first extraction reached the same wall arithmetically without knowing why: on the
+extrapolated line, ventilation at PCO2 40 would be 19.3 L/min against a real 6.2.
+
+### What is decided instead
+
+**Resting arterial PCO2 becomes a sourced INPUT and basal ventilation is DERIVED from
+it, through the alveolar equation.** This is the dependency inversion of HANDOVER §3.6
+applied a second time: **derive from the quantity that is actually measured.** Arterial
+PCO2 at rest is among the best-characterised quantities in human physiology. Resting
+basal ventilation is not, and the only sub-threshold value found comes from a
+rebreathing protocol after voluntary hyperventilation — using it gives a resting PCO2
+of **22.8 mmHg**, which is how badly a protocol-contaminated number transfers.
+
+    V_E   = V_basal                                  PaCO2 < VRT
+    V_E   = V_basal + slope*(PaCO2 - VRT)            PaCO2 >= VRT
+    PaCO2 = K*VCO2 / ((1 - Vd/Vt) * V_E)
+    V_basal derived so the reference individual sits at the sourced resting PaCO2
+
+**The component's claim shrinks and the smaller claim is honest.** It no longer predicts
+resting PCO2. It predicts the RESPONSE to a CO2 challenge, which is the thing the
+chemoreflex data actually measure, and it supplies ventilation to the water balance.
+
+### AND THIS IS A REAL ASYMMETRY BETWEEN THE TWO SYSTEMS, NOT A FAILURE OF EFFORT
+
+Arterial pressure can be an output of this model because the renal loop's gain is
+measured **at** the operating point — pressure natriuresis operates continuously around
+the resting pressure. Arterial PCO2 cannot be, because the chemoreflex's gain is
+measured only **above** a threshold that lies above the operating point. **The
+difference is in the physiology and in what is measurable, not in the modelling.** It
+should be stated wherever the project's thesis is stated, because the thesis does not
+generalise to every variable.
+
+### What this changes in the record above
+
+- **Decision 1 is superseded.** Decisions 2 to 5 stand: quasi-static, no state, the
+  water coupling, the unchanged reference individual, and the one-step build order.
+- **Falsifiable test 1 is void as written** — it tested whether PCO2 responds as an
+  output. **Replaced:** raising inspired CO2 above the recruitment threshold must raise
+  ventilation with the sourced slope, and below the threshold must not. That is a test
+  of the piecewise structure, which is what is now claimed.
+- **Falsifiable test 2 is void** — the resting operating point is now an input, so it
+  cannot also be a prediction. Saying otherwise would be the circularity
+  `validation/respiratory_prereg.md` §3 forbids.
+- **Status stays Proposed.**
