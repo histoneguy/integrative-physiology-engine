@@ -839,7 +839,7 @@ de-indexes van den Bosch by multiplying the indexed ECF *difference* by one body
 area, giving 1.061 L. Each arm has its own BSA, and BSA itself rose with the retained
 fluid, so the correct figure is **1.157 L, 9% larger.** That makes §3.7's within-subject
 ratio 1.73 rather than 1.885 mmHg/L and its failure 5.7× rather than 5.2× — same
-direction, slightly worse. It is **§4 item 5**'s business and one clean pass on its own.
+direction, slightly worse. It is **§4 item 6**'s business and one clean pass on its own.
 
 ### 3.13 The renin gain was blocked by a sentence about a paper nobody had opened
 
@@ -1325,7 +1325,7 @@ the `ledger provenance` testset asserts units, tier and method for every paramet
 it for a day**, which is the state directive 1.11 calls not evidence about anything. It is
 read now, as the relation **`Renal.gfr_vol_mod`**. **It was the item that HEADED §4**,
 and that list has been renumbered around its removal rather than left with a done
-entry in it — so "§4 item 1" now means something else, and every cross-reference to
+entry in it — so "§4 item 2" now means something else, and every cross-reference to
 §4 in this file was audited one at a time rather than decremented. Four of them were
 ALREADY stale, pointing at the pre-2026-09-03 list; those now name the finding rather
 than a position, which is §5 item 12's lesson applied one level up.
@@ -1380,7 +1380,7 @@ two are not in conflict:
 the FRACTIONAL measure while raising the absolute flux. The model therefore excretes more
 sodium and reports a smaller fractional rise. Whether that is right depends on
 glomerulotubular balance, which this model does not represent and nothing here sources.
-**DO NOT close it by refitting anything to Jensen** — §4 item 1 says spending the only
+**DO NOT close it by refitting anything to Jensen** — §4 item 2 says spending the only
 out-of-sample datum on a fit is how this line loses its one test.
 
 **THE CENSORING IS A LEDGER ROW, NOT A LITERAL.** `RN.GFR.VOLUME_RANGE` = **0.029**, the
@@ -1655,7 +1655,25 @@ row:
 now matches human salt sensitivity and two of the three parameters that make it do so
 were solved against that very target. And §5, which is how work goes wrong here.
 
-1. **THE ACUTE NATRIURESIS IS A THIRD LOW, AND IT IS THE ONLY OUT-OF-SAMPLE NUMBER.**
+1. **THE ENDOCRINE AXIS IS BLOCKED ON ONE PAPER, AND THE ALTERNATIVES ARE WORSE.**
+   Thyroid was chosen over cortisol, glucose and growth hormone for one reason: it is
+   the only endocrine axis that drives a quantity another component already consumes —
+   resting metabolic rate sets `RESP.CO2.PRODUCTION`, which respiration balances and
+   which is `assumed` at a round number. It reached branch T3 (§3.24).
+
+   **Do NOT substitute a different axis to keep moving.** Cortisol, insulin and glucose
+   connect to nothing currently in this model, and an endocrine component built for
+   completeness rather than connection is exactly what ADR 0006 records Circadian being
+   — built ahead of its dependency and sitting unwired. Directive 1.11 is the guard.
+
+   **What unblocks it is item 0's second paper.** Failing that, the honest alternative is
+   NOT another hormone but the **control layer**: the baroreflex has one effector while
+   heart rate exists, and renin is pressure-only when §7 already records that no gain
+   reproduces the human salt-renin response because macula densa delivery and renal
+   sympathetic traffic are absent. Both are E1, both are inside components that already
+   exist, and neither needs a paper nobody can open.
+
+2. **THE ACUTE NATRIURESIS IS A THIRD LOW, AND IT IS THE ONLY OUT-OF-SAMPLE NUMBER.**
    The model predicts **+79.3%** fractional sodium excretion on 23 mL/kg of isotonic
    saline against Jensen 2013's +123%. **It was +82.5% before the GFR volume response
    was wired on 2026-09-03, so that change moved the one held-out number slightly the
@@ -1665,57 +1683,57 @@ were solved against that very target. And §5, which is how work goes wrong here
    sharpest discrepancy left in the sodium limb. Do not close it by refitting `G_anp` to
    Jensen — that would spend the only out-of-sample datum this line has.
 
-2. **`BF.ICF_ECF.OSMOTIC_TAU` BLOCKS EVERY ACUTE OSMOTIC MAGNITUDE.** `assumed` at 30 min.
+3. **`BF.ICF_ECF.OSMOTIC_TAU` BLOCKS EVERY ACUTE OSMOTIC MAGNITUDE.** `assumed` at 30 min.
    Near zero on multi-day runs and DOMINANT on acute ones: a 1.4 L water load moves peak
    plasma osmolality 8.8 → 17.6 mOsm/kg across 1–120 min. A sourcing pass on 2026-09-02 ran
    10 queries over two sweeps and found nothing usable — the volume-kinetics literature
    models plasma and interstitium, not ICF–ECF osmotic exchange. **Until it is sourced, no
    acute osmotic magnitude may be reported.** Directions and steady states are unaffected.
 
-3. **ADR 0013, ADR 0015 AND ADR 0016 ARE ALL OUT OF DATE.** They were written against a
+4. **ADR 0013, ADR 0015 AND ADR 0016 ARE ALL OUT OF DATE.** They were written against a
    model with `G_pn` = 20, no volume path and a wrong venous return. ADR 0016's estimation
    ORDER was followed and its arithmetic is now stale; ADR 0013's proposed 51 is far
    outside anything current; ADR 0015's magnitudes were computed at a renin gain that has
    since been sourced. **Reconcile them with §3.21 or mark them superseded.** This is
    bookkeeping, but ADRs are decisions and a stale decision is worse than none.
 
-4. **`RN.PRESSURE_NATRIURESIS.SLOPE` IS STILL LABELLED `calibrated` AND IS THE LAST ONE.**
+5. **`RN.PRESSURE_NATRIURESIS.SLOPE` IS STILL LABELLED `calibrated` AND IS THE LAST ONE.**
    8.4 is not fitted — it is the value the human joint constraint implies given the sourced
    volume gain, which is closer to `derived`. Decide the label deliberately. **If it moves
    to `derived`, the ledger has no `calibrated` rows left**, which is worth doing properly
    rather than by accident.
 
-5. **The de-indexing correction owed to `ecf_salt_response_extract.py`** (§3.12). It
+6. **The de-indexing correction owed to `ecf_salt_response_extract.py`** (§3.12). It
    multiplies an indexed ECF *difference* by ONE body surface area where each arm has its
    own, understating the expansion by 9%. One clean pass; it touches a document the renal
    haemodynamics change made no claim about.
 
-6. **The model now PREDICTS sex-dependent salt sensitivity, women 17.7% higher, and nothing
+7. **The model now PREDICTS sex-dependent salt sensitivity, women 17.7% higher, and nothing
    here has sourced it.** A pressure-only kidney had salt sensitivity `1/G_pn`, which
    carries no sex information; the volume path is keyed to a sexed volume, so it does. It
    is asserted in the suite as a prediction. **Source it or falsify it.**
 
-7. **`RN.URINE.SOLUTE_LOAD = 600 mOsm/day` is the load-bearing unsourced number on the
+8. **`RN.URINE.SOLUTE_LOAD = 600 mOsm/day` is the load-bearing unsourced number on the
    water side.** `ADH.URINE.OSM_MAX` is sourced, so the obligatory volume, `U_base`,
    `k_adh` and every steady state hang off a conventional figure that
    `RN.URINE.SOLUTE_NONNA` already records as too low — measured totals are 700–900.
    Correcting it moves every ADH constant and needs its own pre-registration.
 
-8. **Chronotropic baroreflex.** ADR 0009 gives the reflex one effector; HR now exists.
+9. **Chronotropic baroreflex.** ADR 0009 gives the reflex one effector; HR now exists.
    **Deliberately deferred** — the reflex resets so it nulls at every steady state, and the
    cardiac gain needs a sourcing pass. Best normative source found: **Schumann 2024**,
    *Am J Physiol Heart Circ Physiol* 326:H158–H165, n=980 healthy, and it is about **sex
    differences in BRS**, so it would also give item 7 a second dimorphic pair.
 
-9. **Body surface area.** GFR and cardiac output scale sub-linearly in mass, so
+10. **Body surface area.** GFR and cardiac output scale sub-linearly in mass, so
     `scaling.jl` overstates their population spread. It also unlocks Luu 2022 (n = 3,206)
     and Zhan 2024 (12,812), both rejected for reporting indexed volumes only, and it stops
     a double count in `CV.SV.NOMINAL`. Needs a height row and one sourced BSA formula.
 
-10. **`check_closure.py` is filling up** — 19 hand-coded relationships, does not scale past
+11. **`check_closure.py` is filling up** — 19 hand-coded relationships, does not scale past
     about twenty.
 
-11. **The fluid-deprivation comparison is INDETERMINATE and needs one study.** Pross 2013
+12. **The fluid-deprivation comparison is INDETERMINATE and needs one study.** Pross 2013
     reports plasma osmolality but not the water deficit, so it cannot separate a model
     defect from a protocol mismatch (§3.15). What resolves it: a human 24 h deprivation
     study reporting **both** the body-mass or water deficit **and** the osmolality change
@@ -1791,7 +1809,7 @@ were solved against that very target. And §5, which is how work goes wrong here
 
 - **18 of 73 parameters** are `assumed` or `calibrated`, down from 20 of 70.
   `unledgered_check()` lists them. **Only ONE is `calibrated`** —
-  `RN.PRESSURE_NATRIURESIS.SLOPE` — and §4 item 4 asks whether that label is still right,
+  `RN.PRESSURE_NATRIURESIS.SLOPE` — and §4 item 5 asks whether that label is still right,
   since 8.4 is the value the human joint constraint implies rather than a fitted number.
   The count has moved in both directions and **both were honest**: up when rows stopped
   claiming sources they did not have, down when they stopped being primitives.
@@ -1801,7 +1819,7 @@ were solved against that very target. And §5, which is how work goes wrong here
 - **`CV.SV.NOMINAL` is NOT normalised to the 70 kg reference mass.** Petersen reports
   cohort weight by age group and not by sex, so the sexed pair still carries a body-size
   component — and in the ensemble, where mass is sampled by sex, that component is
-  counted twice. **§4 item 9**, the body surface area row — which is what unlocks it,
+  counted twice. **§4 item 10**, the body surface area row — which is what unlocks it,
   and the number this pointed at before was the de-indexing item, which is a different
   correction to a different document.
 - **`ADH.URINE.OSM_MAX` carries no dispersion and no age.** Tryding reports age-related
@@ -1821,7 +1839,7 @@ were solved against that very target. And §5, which is how work goes wrong here
   It is now **8.4**, set from the human joint constraint `G_pn + 0.0594·G_anp = 50` given
   the sourced volume gain — not from the pressure evidence alone, and not 51. §3.21. The
   2–19× finding in §3.3 was about a model with no volume-sensing path, and that model no
-  longer exists. **ADR 0013's 51 is far outside anything current** — §4 item 3.
+  longer exists. **ADR 0013's 51 is far outside anything current** — §4 item 4.
 - ~~**`CV.VENOUS_RETURN.SENSITIVITY` is 1.5–2.1× too stiff against human data.**~~
   **DONE 2026-09-03, §3.19.** Sourced in healthy humans, 2880 → 1400, `calibrated` →
   `derived`. It was 2.06× too stiff, inside the range §3.7 predicted from the salt data
@@ -1898,7 +1916,7 @@ were solved against that very target. And §5, which is how work goes wrong here
   fluid. It makes §3.7's within-subject ratio 1.73 rather than 1.885 mmHg/L and the
   failure 5.7× rather than 5.2×. **Deliberately not fixed inside the renal haemodynamics
   change** — it touches a document that change made no claim about, and two changes at
-  once leaves neither testable. One clean pass — **§4 item 5**.
+  once leaves neither testable. One clean pass — **§4 item 6**.
 - **Krikken 2007's filtration-fraction sentence is still unread.** Struck under branch K2,
   not reinterpreted. Subscription-only, absent from PubMed Central, 403 on ScienceDirect.
   Anyone with institutional access should record which way the value pairs run — the
@@ -1906,7 +1924,7 @@ were solved against that very target. And §5, which is how work goes wrong here
   and that is an observation, not a reading.
 - **THE ACUTE NATRIURESIS IS A THIRD LOW AND IT IS THE ONLY OUT-OF-SAMPLE NUMBER.**
   +82.5% against Jensen 2013's +123%. Jensen was held out of the estimation deliberately,
-  so it is the one place this parameterisation is tested rather than fitted. §4 item 1.
+  so it is the one place this parameterisation is tested rather than fitted. §4 item 2.
 - **`RN.ANP.TAU` IS NOT IDENTIFIED BY ANP PHYSIOLOGY.** 0.15 d, tier C. It is identified by
   requiring the model to match one acute human dataset given everything else, and it moved
   by 3.3× when `G_pn` moved. **It will move again if anything upstream does.** Its note
@@ -1971,14 +1989,14 @@ were solved against that very target. And §5, which is how work goes wrong here
   violated by perturbing people**; it is the thinness of what a single dose traces that
   is the problem.
 - **`BF.ICF_ECF.OSMOTIC_TAU` is `assumed`, load-bearing on acute protocols, and searched
-  for without success.** §4 item 2. **No acute osmotic MAGNITUDE may be reported until it
+  for without success.** §4 item 3. **No acute osmotic MAGNITUDE may be reported until it
   is sourced.**
 - **THE MODEL PREDICTS SEX-DEPENDENT SALT SENSITIVITY, WOMEN 17.7% HIGHER, AND NOTHING
   HERE HAS SOURCED IT.** It was 11% when ADR 0010's path landed and the GFR volume
   response widened it (§3.22); **the prediction has now moved twice without anyone
   measuring it**, which is the reason it is asserted as a direction AND a magnitude
   separately in the suite. New with the volume path, which is keyed to a sexed volume. Asserted in
-  the suite as a prediction rather than a validation. §4 item 6.
+  the suite as a prediction rather than a validation. §4 item 7.
 - **SYSTEMIC VENOUS COMPLIANCE IN mL/mmHg IS STILL UNSOURCED IN HEALTHY HUMANS**, along
   with mean systemic filling pressure and resistance to venous return. The one human
   compliance value is 56 cardiac patients graded by NYHA class. **None of the three is
