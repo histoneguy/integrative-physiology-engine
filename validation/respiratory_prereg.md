@@ -144,3 +144,71 @@ mechanism and became a hypertensive value nobody noticed for weeks.
 Fixing the sources and the decision rule first is the only defence, and branch P2 is
 written down so that the interesting outcome has somewhere to go other than into a
 parameter.
+
+---
+
+## 8. AMENDMENT, 2026-09-04 — THE SUB-EUPNOEIC LIMB
+
+**Written before any source is opened on this question**, after the first extraction
+returned branch P2. Verify the ordering against `respiratory_extract.py`'s successor.
+
+### 8.1 The diagnosis is sharper than "a missing wakefulness drive"
+
+The first extraction concluded a non-chemoreflex drive was missing. **That was stated
+before the arithmetic was inspected and it is only half the story.** On the sourced
+line, ventilation at a normal arterial PCO2 of 40 would be **19.3 L/min**, three times
+resting. The line does not pass through the resting operating point at all.
+
+**It was never measured there.** A hypercapnic ventilatory response test RAISES CO2;
+the line is fitted above eupnoea and the "projected apnoea threshold" is, in the
+source's own word, **projected** — an extrapolation to zero ventilation from data that
+never went there. **Using it as the operating intercept extrapolates a straight line
+outside its measured range**, which is exactly what `RN.GFR.VOLUME_RANGE` was created
+to stop for the GFR volume response. The same error, in a second component, found the
+same way.
+
+### 8.2 The quantity to be sourced
+
+**What governs ventilation BELOW eupnoea, between the apnoeic threshold and the
+resting operating point.** Recorded for every source: whether the measurement was made
+awake or asleep, the eupnoeic PCO2, the apnoeic threshold, the difference between them
+(the **CO2 reserve**), and the slope below eupnoea where reported.
+
+### 8.3 Three candidate structures, declared before searching
+
+1. **Additive wakefulness drive.** `V_E = V_wake + S·(PaCO2 − P_thr)`, a non-chemoreflex
+   baseline present awake and absent asleep.
+2. **Two-slope, "dogleg".** A lower slope below eupnoea than above, so the response
+   line kinks rather than continuing to a low intercept.
+3. **Censoring only.** The measured line is clamped to its measured range and the
+   resting point is set by the metabolic balance elsewhere.
+
+**No preference is expressed here.** Whichever the literature supports is taken, and if
+it supports 2, **both slopes must be sourced** — sourcing the upper and fitting the
+lower is the prohibited move.
+
+### 8.4 THE PROHIBITION, AND IT IS THE POINT OF THIS AMENDMENT
+
+Every candidate above contains a parameter that **would produce a normal resting PCO2
+if chosen to**. The threshold alone does it: moving it from 29.3 to 36.5 lands PCO2 at
+39.9 without touching anything else.
+
+**So: the sub-eupnoeic parameter must come from data measured BELOW eupnoea.** It may
+not be inferred from the resting point, back-solved from a target PCO2, or preferred
+among candidates because of where it puts the operating point. **If the only way to get
+a value is to solve for it, the answer is branch W3 and the component is not built.**
+
+### 8.5 Branches
+
+- **W1** — a sub-eupnoeic structure is sourced in awake healthy humans. Build it,
+  report the resting PCO2 that results **whatever it is**, and if it is still outside
+  35–45 that is reported too rather than pursued further.
+- **W2** — sourced only in sleep. Enter it with species and state recorded, default the
+  awake model to it **only if** the source itself licenses the transfer; otherwise W3.
+  Sleep and wakefulness differ in exactly the term being sourced, so this transfer is
+  the one most likely to be wrong.
+- **W3** — nothing admissible. **The component is NOT built**, the chemoreflex rows are
+  entered with their measured range recorded as a censoring bound, and the finding
+  stands as the result: a rectified linear chemoreflex extrapolated below its measured
+  range cannot produce a normal operating point, and this repository has now hit that
+  same error twice.
