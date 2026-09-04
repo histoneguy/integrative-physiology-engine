@@ -8,7 +8,9 @@ every challenge passes against published human data.
 
 **THE MODEL REPRODUCES HUMAN SALT SENSITIVITY AND THE HUMAN PRESSURE–VOLUME RATIO, BOTH
 FOR THE FIRST TIME.** **1.849** mmHg per 100 mmol/day against a meta-analytic 1.70–2.30,
-and 3.0005 mmHg/L against a measured 2.97–4.16. **Read §3.21's two caveats before quoting
+and 3.00 mmHg/L against a measured 2.97–4.16. **Quote neither to more than three
+significant figures.** The model emits five and the targets support two or three;
+see §3.23, which derived what the comparison bands can actually carry. **Read §3.21's two caveats before quoting
 either**: two of the three parameters that make it do so were solved against those very
 targets, so they are fits. **The validations are the resting state, the 400-day steady
 state, and Jensen. THE FOUR LOBO ENDPOINTS ARE NOT AMONG THEM** — that claim stood in
@@ -250,8 +252,15 @@ that is the honest direction — see `validation/verify_rows_prereg.md` branch 6
 | 103 | 85.109 | 106.63 | 74.35 | 32.28 | 13.9288 |
 
 **Shift 1.8858 mmHg over the 102 mEq/day step = 1.849 mmHg per 100 mmol/day**, against
-a human meta-analytic **1.70–2.30**. Δ`V_ecf` is 0.6285 L and **`dMAP/dV_ecf` is 3.0005
-mmHg/L against a measured human 2.97–4.16.** Both limbs are inside the human range —
+a human meta-analytic **1.70–2.30**. Δ`V_ecf` is 0.6285 L and **`dMAP/dV_ecf` is 3.00
+mmHg/L against a measured human 2.97–4.16.**
+
+**THE FIGURES IN THIS TABLE ARE MODEL PRECISION, NOT AGREEMENT PRECISION.** They are
+carried to five places because the test suite pins them there and a loose pin catches
+nothing. **The comparisons are not resolved to anything like that** — 1.70–2.30 is the
+spread of three meta-analytic point estimates rather than a confidence interval, and
+2.97–4.16 spans forty per cent. §3.23 derived the bands and found that the two acute
+datasets cannot supply one at all. Both limbs are inside the human range —
 §3.21 for the caveats, §3.22 for the GFR volume response that moved the pressure limb
 from 2.000 and left the ratio untouched to five figures.
 
@@ -1241,7 +1250,7 @@ that row's own note required once `G_vr` was sourced.
 |---|---|---|
 | 400-day drift | 3.9e-15 | — |
 | resting state, 8 endpoints | all inside reference ranges | — |
-| Lobo urine, 6 h | **565.6 mL** | 563 |
+| Lobo urine, 6 h | **566 mL** | 563 |
 | Lobo urinary sodium, 6 h | **95.1 mmol** | 95 |
 | **chronic salt sensitivity** | **2.000** | **1.70–2.30** |
 | **`dMAP/dV_ecf`** | **3.000 mmHg/L** | **2.97–4.16** |
@@ -1253,6 +1262,12 @@ the lag. **A first-order lag cannot move a steady state**, so they are separatel
 identified — at gains of 500/700/900 the chronic sensitivity is 2.275/1.720/1.382
 regardless of the lag, and its reciprocal is linear in the gain. The two Lobo endpoints
 agree on the lag independently, 0.171 d from the volume and 0.166 d from the sodium.
+
+**DO NOT READ THE TWO LOBO ROWS AS AGREEMENT TO THREE FIGURES.** `RN.ANP.TAU` was
+estimated against those very numbers, so they are fit residuals, and §3.23 established
+that **Lobo publishes no dispersion at all** — its full text is paywalled and its
+abstract gives bare means. There is no band to be inside of. Quoting a half-percent
+match against an unbounded target is the precision that does not exist, directive 1.9.
 
 **JENSEN 2013 WAS HELD OUT AND IS THE ONE OUT-OF-SAMPLE NUMBER.** It was not used in the
 estimation. The model predicts +82.5% against a reported +123% — inside the band, about a
@@ -1316,9 +1331,15 @@ phenomenon defaults **ON** under ADR 0006, so **this term is not a flag.**
 |---|---|---|---|
 | chronic salt sensitivity | 2.000 | **1.849** | 1.70–2.30 |
 | `dMAP/dV_ecf` | 3.0005 | **3.0005** | 2.97–4.16 |
-| Lobo urine, 6 h | 565.6 mL | **576.6** | 563 |
+| Lobo urine, 6 h | 566 mL | **577** | 563 |
 | Lobo urinary sodium, 6 h | 95.1 mmol | **97.1** | 95 |
 | **acute fractional Na excretion rise** | **82.5%** | **79.3%** | **123%** |
+
+**READ THE MIDDLE COLUMN AS MODEL MOVEMENT, NOT AS CHANGED AGREEMENT.** The
+`dMAP/dV_ecf` row is carried to five figures because it is pinned there and the pin is
+what makes an unintended change visible; the human range it sits beside spans forty per
+cent, so the agreement is unchanged in any sense the data can resolve. Same for the two
+Lobo rows, whose target has no published dispersion at all (§3.23).
 
 **A 7.6% FALL, AND THE TWO PROXIES BOTH OVER-PREDICTED IT.** The pre-registration measured
 8.1% by the per-intake route and 15.2% by the per-litre route, against thresholds of 20%
@@ -1402,6 +1423,86 @@ change, and a fractional bound — against an **extensive** reference volume, so
 scales exactly as `GFR0` does. Written the other way round it would have come out as size
 squared, which is the mistake ADR 0010's gain made and which the body-size testset caught
 within one run. It was written correctly this time and the same testset confirms it.
+
+---
+
+### 3.23 THE COMPARISON BANDS WERE INVENTED, AND DERIVING THEM MADE THREE OF THEM WIDER
+
+**Run `python validation/challenge_bands_extract.py`.** Pre-registered in
+`validation/challenge_bands_prereg.md`, written before any source was opened and sitting
+before the extract in history. **No parameter and no equation changed.**
+
+**WHAT PROVOKED IT.** `validation/challenges.jl` judged the model against published human
+data using bands **nothing derived**. The Lobo comparisons used "±33%", a round number
+appearing in no paper with no derivation recorded anywhere here. Meanwhile `RN.ANP.TAU`
+had been estimated against that same dataset to about **0.5%** agreement. One repository,
+one dataset, **two tolerances differing roughly sixtyfold**, and at n = 10 the tight one
+cannot be right.
+
+**THE PRE-REGISTERED BRANCH F DID NOT FIRE, AND THAT IS REPORTED RATHER THAN OMITTED.**
+The rule fixed in advance was that a derived band turning a passing check red gets
+**recorded as a failure**, not widened away. Nothing went red. Every model value sits
+inside both the old band and the new one. **This pass made the harness honest; it did not
+make the model look better or worse.**
+
+**THE TWO ACUTE DATASETS CANNOT SUPPLY A BAND AT ALL, AND THAT IS THE RESULT.**
+
+- **Lobo is unobtainable.** `elink pubmed_pmc` returns no PMC record; Europe PMC reports
+  `isOpenAccess=N`, `inEPMC=N`, `hasPDF=N`, every full-text link "Subscription required".
+  **What was opened is the PubMed abstract and nothing else** — directive 1.5 — and it
+  reports the three endpoints this model is judged on as **bare means**. Reading
+  dispersion off a figure was prohibited in advance. Branch N: bands unchanged, relabelled
+  `assumed`.
+- **Jensen is open access and was read in full, and the ratio still cannot be banded.**
+  Table 3 gives FE_Na 1.26 (SD 0.53) → 2.80 (SD 0.75), n = 23, reproducing the abstract's
+  +123%. But **baseline and peak are the same subjects**, so the ratio's variance needs
+  their correlation and the paper reports neither paired differences nor a covariance.
+  Identical obstacle to the one on `RN.GFR.VOLUME_SENSITIVITY`, whose pre-registration
+  forbade fabricating an interval from unpaired SDs. Honoured, not re-argued.
+
+**AND THE JENSEN BAND INVERTS THE WORRY THAT STARTED THIS.** ±60–250% looks absurdly
+wide. Assuming zero correlation — which **overstates** the spread, so it is an upper
+bound — the reported statistics support **−18% to +502%**. **The existing band is tighter
+than the data can justify**, not looser.
+
+**WHERE A BAND COULD BE DERIVED IT CAME OUT WIDER. THREE OF FIVE.**
+
+| resting check | was | derived Band I |
+|---|---|---|
+| MAP | 80–95 | **71–103** |
+| ECF volume | 13–17 | **11.34–17.78** |
+| GFR | 130–180 | **100.8–204.4** |
+| plasma sodium | 135–145 | 135–145, already agreed |
+| plasma osmolality | 280–295 | **275–295, and the harness was wrong** |
+
+**ONE REAL DEFECT, AND NO GATE COULD SEE IT.** The plasma osmolality check used 280–295
+while `BF.OSM.PLASMA_SETPOINT`, the row it exists to test against, carries **275–295**.
+The harness had invented a tighter floor than its own ledger. Corrected.
+
+**WHY BAND I GATES AND BAND M ONLY PRINTS.** Band I is mean ± 2 SD, "is the model a
+plausible member of that population". Band M is mean ± 2 SEM, "does it predict the
+population central value". **Band I gates, and the pre-registration calls it WEAK in
+advance rather than discovering that later.** The reason is a real defect: **every
+parameter here is a point estimate and its uncertainty is not propagated** (§7, only body
+mass is sampled), so a model output carries no error bar. Judging an error-bar-free point
+against a confidence interval would fail the model for its missing propagation and fail it
+**harder the larger the study**, which is the wrong direction for evidence to push. **Band
+M becomes the real test the day parameter uncertainty is propagated.**
+
+**TWO RESTING BANDS HAVE NO SOURCE AT ALL** — urine volume 0.8–2.5 L/day and urine
+osmolality 300–900 mOsm/kg. Conventional clinical figures, now labelled `assumed`, per
+directive 1.12.
+
+**AND THE CHRONIC WINDOW IS A SPREAD, NOT AN INTERVAL.** 1.70–2.30 is the range across
+three meta-analytic **point estimates**, not a pooled confidence interval. Left alone —
+pooling three meta-analyses that share primary trials is the silent re-pooling
+`pooling.md` prohibits — with the label corrected so nobody reads it as a CI.
+
+**THE HONEST SUMMARY.** The worry that started this was **half right and half backwards.**
+Quoting four-figure agreement against these targets is indefensible and that half stands,
+and §2, §3.21 and §3.22 have been cut back accordingly. But the harness was **not lenient
+anywhere.** It was arbitrarily strict in three places and arbitrarily precise in its
+reporting everywhere.
 
 ---
 
@@ -1684,6 +1785,19 @@ were solved against that very target. And §5, which is how work goes wrong here
   state, and Jensen — NOT the four Lobo endpoints**, which fixed `RN.ANP.TAU` and are
   therefore an estimation set. Corrected 2026-09-04; see §3.15. Do not quote the chronic
   agreement as a validation either.
+- **NO ACUTE COMPARISON IN THIS REPO HAS A DERIVED TOLERANCE, AND ONE OF THEM NEVER
+  CAN FROM PUBLISHED TEXT.** §3.23. Lobo's dispersion is unobtainable — paywalled, no
+  PMC, bare means in the abstract — and Jensen's ratio needs a within-subject correlation
+  it does not report. Both bands are now labelled `assumed` rather than presented as
+  though someone had checked. **What would fix Lobo specifically: institutional access to
+  Clin Sci 2001;101(2):173-9, or an author request.** Until then the acute agreement is
+  unbounded in both directions and must not be quoted tightly.
+- **BAND M IS THE TEST THAT MATTERS AND IT CANNOT BE RUN YET.** The harness gates on
+  mean ± 2 SD, which asks only whether the model is a plausible INDIVIDUAL. The stronger
+  question — does it predict the population CENTRAL value — needs the model to carry an
+  error bar, and **parameter uncertainty is not propagated** here. That is the same open
+  item as the ensemble sampling only body mass, seen from the validation side, and §3.23
+  records that the two are one problem.
 - **THE ACUTE LIMB RESTS ON ONE PROTOCOL CLASS AND THAT IS ITS REAL WEAKNESS.** Both
   acute challenges — Lobo and Jensen — are intravenous isotonic saline boluses into
   healthy volunteers. Different dose, different reported endpoints, **same manoeuvre**.
