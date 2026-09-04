@@ -786,6 +786,69 @@ using SciMLBase
         @info "declared coupling timescales" taus=b.taus gap_ratio=b.gap[1] boundary_s=b.suggested_boundary_seconds
     end
 
+    @testset "member_remake re-sexes and re-sizes to match a natively built model" begin
+        # THIS CHECKS THE CLASS, NOT ONE PARAMETER, and it exists because the same
+        # defect has now happened three times. member_remake keeps a HAND-MAINTAINED
+        # list that must mirror what the components do at build time:
+        #
+        #   ADR 0010  V_blood_ref omitted  -> every heavy member read as volume-expanded
+        #   ADR 0017  H2O_insens left behind after the water split removed it -> error
+        #   ADR 0018  Hb omitted           -> a re-sexed member keeps MALE haemoglobin
+        #
+        # The first two failed loudly elsewhere. THE THIRD WOULD NOT HAVE: haemoglobin
+        # touches no pressure, volume or sodium quantity, so every other assertion in
+        # this file would have passed while population oxygen content stayed male.
+        #
+        # ONE BASE BUILD AND ONE NATIVE BUILD, which is the cheapest configuration that
+        # can catch both failure modes at once. The base is built MALE at the reference
+        # mass and remade as FEMALE at 95 kg, so a parameter member_remake forgets to
+        # rescale AND a parameter it forgets to re-sex both show up as a mismatch
+        # against the natively built female. Building both sexes separately costs two
+        # more simplifications and catches nothing this does not - directive 1.10.
+        base   = build_model(sex = :male)
+        native = build_model(sex = :female, body_mass = 95.0)
+        prob   = ODEProblem(base, [], (0.0, 1.0), []; jac = true, sparse = true)
+        remade = IPE.member_remake(prob, base, (body_mass = 95.0,); sex = :female)
+
+        # `parameters()` on a SIMPLIFIED system is not only the ledger-backed
+        # parameters: it also carries dummy-derivative symbols such as
+        # `bf₊Na_store#0(t)`, which have no default and throw on getdefault. Found by
+        # this test erroring on its first two runs, which is a fair price for a guard
+        # that catches a whole class. The ODEProblem must also be built positionally,
+        # exactly as run_population builds it - a Dict throws on the same symbols.
+        npars = Dict{String,Any}()
+        for p in parameters(native)
+            try
+                npars[String(Symbol(p))] = ModelingToolkit.getdefault(p)
+            catch
+            end
+        end
+
+        worst, worst_name, compared = 0.0, "", 0
+        for p in parameters(base)
+            nm = String(Symbol(p))
+            haskey(npars, nm) || continue
+            want = npars[nm]
+            got = try
+                remade.ps[p]
+            catch
+                continue
+            end
+            (want isa Number && got isa Number) || continue
+            compared += 1
+            rel = abs(got - want) / max(abs(want), 1e-12)
+            if rel > worst
+                worst, worst_name = rel, nm
+            end
+        end
+
+        # Guard the guard. A comparison that silently matched nothing would pass
+        # forever while asserting nothing - HANDOVER section 5 item 3.
+        @test compared > 20
+        @test worst < 1e-9
+        worst >= 1e-9 && @warn "member_remake disagrees with a built model" worst_name worst
+    end
+
     @testset "the ensemble actually varies its members (and mostly cannot)" begin
         # CONNECTED 2026-08-27. HANDOVER calls ensembles "the primary workload".
         # run_population, sample_population, member_parameters, prob_func and

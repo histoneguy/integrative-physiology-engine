@@ -200,7 +200,40 @@ function member_remake(prob, sys, member; sex::Symbol = :male)
              sys.rs.VCO2           => sz * RESP_CO2_PRODUCTION,
              sys.rs.S_co2          => sz * RESP_CHEMO_CO2_SLOPE,
              sys.rs.V_basal        => sz * RESP_VENTILATION_BASAL,
-             sys.bf.H2O_cutan      => sz * BF_H2O_CUTANEOUS_LOSS],
+             sys.bf.H2O_cutan      => sz * BF_H2O_CUTANEOUS_LOSS,
+             # ADR 0018's haemoglobin, added 2026-09-04. IT IS INTENSIVE AND IT IS
+             # STILL HERE, which looks inconsistent with this list's own heading and
+             # is not: the list resets every parameter that depends on mass OR ON
+             # SEX, because a member is remade from a problem built for one sex.
+             # Omitting it would pair female cardiovascular parameters with male
+             # haemoglobin, silently, in every population run.
+             #
+             # THIS IS THE THIRD DEFECT OF THIS EXACT CLASS. V_blood_ref was omitted
+             # when ADR 0010 landed and made every heavy member read as
+             # volume-expanded; H2O_insens was left here after the water split
+             # removed it and errored. A hand-maintained list that must mirror
+             # another file is the failure mode, so the testset below no longer
+             # checks one parameter - it compares a remade member against a natively
+             # built one across EVERY parameter, which catches the class rather than
+             # the instance.
+             sys.bl.Hb             => LedgerParams.param(:BLOOD_HB_CONCENTRATION, sex),
+             # THREE MORE SEXED PARAMETERS, ALL OMITTED SINCE THE DAY THEY BECAME
+             # SEXED, AND ALL FOUND AT ONCE BY THE TESTSET BELOW. None of them scales
+             # with mass - a haematocrit, a plasma fraction and a heart rate are all
+             # INTENSIVE - which is exactly why they were missed: this list was read
+             # as "the extensive ones" when what it actually has to be is "everything
+             # that depends on mass OR ON SEX", because a member is remade from a
+             # problem built for one sex.
+             #
+             # cv.f_pv IS THE CONSEQUENTIAL ONE. HANDOVER section 3.8 establishes that
+             # dV_blood/dV_ecf IS f_pv once red cell volume is held fixed, and that
+             # the sourced haematocrit pair moves the male/female ECF excursion ratio
+             # to 1.182. A re-sexed ensemble member was carrying the MALE value, so
+             # the ensemble could not have reproduced that finding - the one result
+             # section 3.8 reports as evidence that haematocrit is identifiable at all.
+             sys.cv.Hct            => LedgerParams.param(:CV_HEMATOCRIT_NOMINAL, sex),
+             sys.cv.f_pv           => LedgerParams.param(:CV_PLASMA_ECF_FRACTION, sex),
+             sys.cv.HR0            => LedgerParams.param(:CV_HR_NOMINAL, sex)],
         u0 = [sys.bf.V_icf  => bm * BF_ICF_MASS_FRACTION,
               sys.bf.V_ecf  => bm * BF_ECF_MASS_FRACTION,
               sys.bf.Na_ecf => bm * BF_ECF_MASS_FRACTION * BF_NA_PLASMA_SETPOINT])
