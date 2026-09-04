@@ -67,7 +67,7 @@ it. The file has not been rewritten yet.
 | Path | What |
 |---|---|
 | `HANDOVER.md` | the brief — read it |
-| `src/components/` | the model — all seven components wired, including RAAS, ADH and the clock |
+| `src/components/` | the model — all **nine** components wired, including RAAS, ADH, the clock, and **Respiratory and Blood** (ADR 0017, ADR 0018) |
 | `ledger/` | parameters and relations, with provenance |
 | `docs/adr/` | **A**rchitecture **D**ecision **R**ecords - structural decisions, each with an evidence tier and a falsifiable test; ADR 0006 defines the tiers |
 | `validation/` | targets, averaging and pooling policy, pre-registrations |

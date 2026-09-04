@@ -235,6 +235,13 @@ that is the honest direction — see `validation/verify_rows_prereg.md` branch 6
 `bf.V_icf`, `bf.V_ecf`, `bf.Na_ecf`, `br.tpr_mod`, `br.sp`, `ra.pra`, `ra.esc`,
 `rn.anp_sig` — the eighth arrived 2026-09-03 with ADR 0010 (§3.17).
 
+**STILL EIGHT AFTER TWO NEW SUBSYSTEMS LANDED ON 2026-09-04, AND THAT WAS THE
+DESIGN.** Respiration is quasi-static at this horizon — arterial PCO2 re-equilibrates
+in minutes and the shortest protocol here is six hours — so its chemoreflex and
+alveolar equation are solved together in closed form. Blood gas is a forward
+computation. **Neither contributes a state, and directive 1.10 is why**: a state is
+paid for on every future run, forever. The suite is 1m48 with 531 assertions.
+
 | Component | Status |
 |---|---|
 | `BodyFluids.jl` | ICF/ECF volumes, sodium mass balance, osmotic equilibration. Intakes now scale with body size. Inactive-Na storage **default off** (ADR 0004). |
@@ -333,7 +340,7 @@ from the sourced stroke volume.
 
 ### Couplings — connected 2026-08-27
 
-13 couplings, cross-checked against the built model by
+**16 couplings** as of 2026-09-04 — 13, plus respiratory to bodyfluids (ADR 0017) and two INBOUND to blood with none outbound, which is what a forward computation looks like in the graph (ADR 0018). **An outbound edge from blood would mean an oxygen feedback had been built**, and the count is the cheapest tripwire for that. Cross-checked against the built model by
 `assert_couplings_match_model()`. Declared time constants **3.0 / 302.4 / 3600 / 3600 s**,
 largest gap **100.8×**, suggested boundary **30.1 s**. `cost_profile` on a real solution
 returns `nf/nw = 2.5` — **linear-algebra bound, so partitioning is the right lever.** Both
@@ -1607,6 +1614,44 @@ setting a parameter from the target — the Lobo failure exactly (§3.15).
 number is honestly `assumed` and visibly absent. An ambiguous one looks sourced, carries
 a real citation and a real cohort, **passes every gate in this repository**, and would be
 wrong by 2.3× silently. **No row, no component, ADR 0019 stays Proposed.**
+
+#### SIX INSTANCES OF ONE DEFECT, THREE OF THEM FOUND IN ONE RUN
+
+`member_remake` keeps a **hand-maintained list** that must mirror what the components
+do at build time. It has now been wrong six times.
+
+| when | what was omitted | how it surfaced |
+|---|---|---|
+| ADR 0010 | `V_blood_ref` | loudly — every heavy member read as volume-expanded, MAP spread 1e-4 → 37.8 |
+| ADR 0017 | `H2O_insens`, left behind after the water split removed it | loudly — errored |
+| ADR 0018 | `bl.Hb` | **silently** — found by inspection, not by a test |
+| **2026-09-04** | **`cv.Hct`, `cv.f_pv`, `cv.HR0`** | **all three at once, by the new testset, on its first passing run** |
+
+**THE THREE FOUND TONIGHT HAD BEEN WRONG SINCE THE DAY THEY BECAME SEXED, AND NOTHING
+COULD HAVE NOTICED.** The ensemble's own tests run male only, so a parameter that is
+correct for men and stale for women fails nothing. All three are **intensive**, which is
+why the list missed them: it reads as "the extensive parameters" when what it has to be
+is **everything that depends on mass OR ON SEX**, because a member is remade from a
+problem built for one sex.
+
+**`cv.f_pv` IS THE CONSEQUENTIAL ONE AND IT IS NOT A ROUNDING ISSUE.** §3.8 establishes
+that with red cell volume held fixed `dV_blood/dV_ecf` **is** `f_pv`, and that the
+sourced haematocrit pair moves the male/female ECF excursion ratio to **1.182** — the
+result that section reports as the evidence haematocrit is identifiable at all. **A
+re-sexed ensemble member carried the male value, so the ensemble could not have
+reproduced that finding.**
+
+**THE FIX IS THE TEST, NOT THE THREE LINES.** Naming a fourth parameter would have left
+the fifth. The testset now builds a male model at the reference mass, remakes it as
+**female at 95 kg**, and compares against a natively built female across **every shared
+parameter** — so it catches a missed rescale and a missed re-sex together, and catches
+whatever is added next rather than what someone thought of. It costs two model builds
+and the suite is **1m37 with 533 assertions**, against 1m47 with 486 before it existed.
+
+**IT ALSO ERRORED TWICE ON ITS OWN CONSTRUCTION BEFORE IT RAN**, and both are recorded in
+its comments: `parameters()` on a simplified system carries dummy-derivative symbols with
+no default, and the problem must be built positionally the way `run_population` builds it
+because a `Dict` throws on the states `storage = false` eliminates.
 
 #### What the searches cost, because it is a pattern now
 
