@@ -31,6 +31,7 @@ closure relationship must have that relationship expressed here.
 from __future__ import annotations
 
 import csv
+import math
 import sys
 from pathlib import Path
 
@@ -250,6 +251,70 @@ def _check_one(p: dict[str, float]) -> int:
     # since the solute load became variable - so this gate was asserting the
     # opposite direction to the code it exists to check. U_max is now sourced
     # (Tryding 1988) and the obligatory volume is derived from it.
+    # ADR 0017. Insensible loss stopped being one constant on 2026-09-04: it is a
+    # CUTANEOUS residual plus a RESPIRATORY flux computed from ventilation. The two
+    # halves must reproduce the old total at the reference individual, because every
+    # ADH constant below is derived from a water balance that closes on it. If this
+    # drifts, the resting state has moved and the ADH chain is silently describing a
+    # different model.
+    #
+    # THE RESPIRATORY HALF IS COMPUTED THE WAY Respiratory.jl COMPUTES IT, from
+    # V_basal and the gas water content, rather than read from a stored total. That
+    # is deliberate: a check that reads the same number the code reads asserts
+    # nothing. This one recomputes it and compares.
+    resp_h2o = (p["RESP.VENTILATION.BASAL"] * 1440.0 *
+                p["RESP.H2O.GAS_CONTENT"] / 1.0e6)
+    check("insensible loss splits into respiratory and cutaneous",
+          p["BF.H2O.INSENSIBLE_LOSS"],
+          resp_h2o + p["BF.H2O.CUTANEOUS_LOSS"],
+          "V_basal*1440*w_gas/1e6 + cutaneous residual must return the total "
+          "insensible loss the water balance was closed on before respiration "
+          "existed. ADR 0017 required the reference individual to be unmoved.",
+          errors)
+
+    # And the derivation that produces V_basal in the first place, checked in the
+    # direction the ADR 0017 amendment settled: PaCO2 is the sourced INPUT and
+    # ventilation is derived from it, not the other way round.
+    check("basal ventilation from the alveolar equation",
+          p["RESP.VENTILATION.BASAL"],
+          p["RESP.ALVEOLAR.K"] * p["RESP.CO2.PRODUCTION"] /
+          ((1.0 - p["RESP.DEADSPACE.FRACTION"]) * p["RESP.CO2.ARTERIAL_RESTING"]),
+          "V_basal = K*VCO2/((1-Vd/Vt)*PaCO2_rest). The dependency inversion of "
+          "the ADR 0017 amendment: resting PaCO2 is measured, basal ventilation "
+          "is not, so ventilation is the derived one.",
+          errors)
+
+    # ADR 0018. Haemoglobin and haematocrit are entered from INDEPENDENT measurements
+    # in the same cohort rather than derived from one another - deriving one from the
+    # other would repeat the dependency error HANDOVER section 3.6 records - so their
+    # ratio is a TEST that can fail. It is the mean corpuscular haemoglobin
+    # concentration and the human range is roughly 32-36 g/dL of red cells.
+    # _check_one already runs once per sex, so the pair is exercised by the caller.
+    mchc = p["BLOOD.HB.CONCENTRATION"] / p["CV.HEMATOCRIT.NOMINAL"]
+    if not (32.0 <= mchc <= 36.0):
+        errors.append("MCHC outside the human 32-36 g/dL: %.2f" % mchc)
+    else:
+        print("  ok   mean corpuscular Hb concentration  %.2f g/dL rbc  "
+              "(human 32-36)" % mchc)
+
+    # The dissociation curve's implied P50, solved from the adopted equation rather
+    # than entered as a row. Deliberately NOT a parameter, so it cannot silently
+    # disagree with the curve it comes from - which makes this a test of the equation
+    # rather than a second definition of the same quantity.
+    lo_p, hi_p = 1.0, 100.0
+    for _ in range(200):
+        mid = (lo_p + hi_p) / 2.0
+        s = 1.0 / (p["BLOOD.O2.CURVE_A"] / (mid ** 3 + p["BLOOD.O2.CURVE_B"] * mid) + 1.0)
+        if s < 0.5:
+            lo_p = mid
+        else:
+            hi_p = mid
+    p50 = (lo_p + hi_p) / 2.0
+    if not (24.0 <= p50 <= 29.0):
+        errors.append("Severinghaus curve implies P50 %.2f Torr, outside human 24-29" % p50)
+    else:
+        print("  ok   Severinghaus curve implies P50   %.2f Torr  (human 24-29)" % p50)
+
     check("obligatory urine volume from maximal concentration",
           p["RN.H2O.OBLIGATORY_LOSS"],
           solute / p["ADH.URINE.OSM_MAX"],
@@ -294,6 +359,85 @@ def _check_one(p: dict[str, float]) -> int:
           solute / u_base_from_adh, v_base,
           "Composed end to end: osmolality -> antidiuretic activity -> urine "
           "osmolality -> volume must return intake minus insensible loss.",
+          errors)
+
+    # ADR 0018's DEFERRED FICK ARM, discharged 2026-09-05 with no new source.
+    # Oxygen consumption is CO2 production over the exchange ratio, both already
+    # in the ledger. Asserted here rather than only in the suite because it is a
+    # property of the ROWS - if either moves, the model's oxygen consumption
+    # silently moves with it, and 250 mL/min at rest is the number a reader
+    # checks first.
+    # SOURCED 2026-09-05 rather than assumed. Oxygen consumption now comes from a
+    # weighted meta-analysis of 197 indirect-calorimetry studies through Weir's
+    # equation, and CO2 production is derived BACK from it - the dependency runs
+    # the way the measurement does, which is HANDOVER section 3.6's rule.
+    check("oxygen consumption from resting metabolic rate",
+          p["RESP.O2.CONSUMPTION"],
+          p["RESP.METABOLIC_RATE"] * p["BF.BODY_MASS.REFERENCE"] / 60.0
+          / (3.941 + 1.106 * p["RESP.EXCHANGE_RATIO"]),
+          "VO2 = RMR*m/60 / (3.941 + 1.106*R), Weir 1949 without urinary "
+          "nitrogen. If this drifts the model's whole metabolic scale has moved "
+          "and CO2 production, basal ventilation, the respiratory water flux and "
+          "the oxygen extraction ratio move with it.",
+          errors)
+
+    check("CO2 production from oxygen consumption",
+          p["RESP.CO2.PRODUCTION"],
+          p["RESP.EXCHANGE_RATIO"] * p["RESP.O2.CONSUMPTION"],
+          "VCO2 = R*VO2, the definition of the exchange ratio. This row was "
+          "`assumed` at a round 0.20 until the metabolic rate was sourced.",
+          errors)
+
+    # ------------------------------------------------------------------ thyroid
+    #
+    # ADR 0019. THY.FT4.GAIN is the one derived number in the thyroid loop, and
+    # it is derived so that the loop rests at the SOURCED free thyroxine rather
+    # than wherever two independent gains happen to cross. Recomputed here, not
+    # read back - the same discipline as the respiratory water split.
+    tsh_ref = math.exp(p["THY.TSH.INTERCEPT"] -
+                       p["THY.TSH.FT4_SLOPE"] * p["THY.FT4.EUTHYROID"])
+    # THE WHOLE THYROID AXIS NOW HANGS OFF ONE DIMENSIONLESS NUMBER, and these
+    # three checks are what keep the scale-dependent rows consistent with it.
+    # A slope in 1/(pmol/L) and an intercept in ln(mIU/L) are both specific to a
+    # free-thyroxine assay; the loop gain is not, which is why it is the sourced
+    # row and they are derived from it.
+    check("feedback slope is the loop gain over the operating free thyroxine",
+          p["THY.TSH.FT4_SLOPE"] * p["THY.FT4.EUTHYROID"], p["THY.LOOP_GAIN"],
+          "b*FT4* = G. If these drift apart the model is running a different "
+          "loop gain from the one that was sourced, and the loop gain is the "
+          "only thing about this axis that transfers between assays.",
+          errors)
+
+    check("intercept is the operating point plus the loop gain",
+          p["THY.TSH.INTERCEPT"],
+          math.log(p["THY.TSH.EUTHYROID"]) + p["THY.LOOP_GAIN"],
+          "a = ln(TSH*) + G. The intercept is DERIVED from the operating point "
+          "and not the other way round - the dependency inversion ADR 0017 made "
+          "for arterial PCO2, made again here for the reason recorded on "
+          "THY.TSH.EUTHYROID.",
+          errors)
+
+    check("thyroid loop rests at the sourced free thyroxine",
+          p["THY.FT4.GAIN"] * tsh_ref, p["THY.FT4.EUTHYROID"],
+          "G_T * exp(a - b*FT4_ref) = FT4_ref. If this drifts the model starts "
+          "with thyroxine off its equilibrium and every run opens with a "
+          "spurious ten-day transient - and the metabolic multiplier is no "
+          "longer 1.0 at rest, which is what keeps the respiratory CO2 load "
+          "unchanged when the arm is off.",
+          errors)
+
+    # AND THE OPERATING POINT COMES BACK, WHICH IS A CLOSURE CHECK AND NOT A
+    # PREDICTION - said plainly because for one day this repository reported it as
+    # a prediction that failed by 2.4x. It was not a failing prediction; it was a
+    # unit error, composing a pituitary line measured on one free-thyroxine assay
+    # with a concentration measured by equilibrium dialysis. NHANES measured the
+    # gap: at total thyroxine agreeing to 6%, the free fractions differ 1.73-fold.
+    # See validation/nhanes_hpt_extract.py section 3.
+    check("thyroid operating point returns the sourced thyrotropin",
+          tsh_ref, p["THY.TSH.EUTHYROID"],
+          "exp(a - b*FT4*) = TSH*, which is true by construction now that a is "
+          "derived from TSH*. It is here because every OTHER thyroid row feeds "
+          "it, so it is the cheapest single tripwire for the whole subsystem.",
           errors)
 
     print()

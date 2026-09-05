@@ -154,9 +154,21 @@ using SciMLBase
         # Note that ADR 0013 finds the model already 2 to 19 times more
         # salt-sensitive than normotensive humans, so this shift is in the wrong
         # direction against the literature - a fact about G_pn, not about ADH.
+        # REPINNED 2026-09-03, 2.0404 -> 1.8858, AND THE CAUSE IS NOT G_pn.
+        # RN.GFR.VOLUME_SENSITIVITY was wired (HANDOVER section 3.22): GFR now
+        # rises with extracellular volume, so part of the sodium a salt load
+        # delivers is cleared by a larger FILTERED LOAD instead of by a higher
+        # pressure. A 7.6% fall, inside the 5-20% band branch G3 of
+        # validation/renal_hemodynamics_prereg.md fixed before the extraction.
+        # The model stays inside the human 1.70-2.30 mmHg per 100 mmol/day at
+        # 1.849 and now sits nearer the floor of that window than the middle.
+        #
+        # THE HIGH ARM DID NOT MOVE - 87.0046 in the two blocks below is unchanged
+        # - because the modifier is exactly 1.0 at the nominal operating point by
+        # construction. What moved is the RESPONSE, which is the whole point.
         r = salt_step()
         v = check_pressure_natriuresis(r)
-        @test isapprox(v.map_shift_mmHg, 2.0404; atol = 0.05)
+        @test isapprox(v.map_shift_mmHg, 1.8858; atol = 0.05)
 
         # AND THE OTHER HALF OF THE PAIR, ADDED 2026-09-02 AT NO EXTRA COMPUTE:
         # dMAP/dV_ecf, which is set by CV.VENOUS_RETURN.SENSITIVITY and NOT by G_pn.
@@ -254,9 +266,18 @@ using SciMLBase
         # move as the CO0 repin above and for the same reason - the arms compress
         # toward the anchored high arm. This is a CORRECTION of a physical error,
         # not a tuning: red cell mass does not track plasma over 30 days.
+        # REPINNED 2026-09-03, 86.0329 -> 86.1329 and 85.0601 -> 85.2040, with
+        # the HIGH ARM UNMOVED at 87.0046. RN.GFR.VOLUME_SENSITIVITY was wired and
+        # GFR now responds to extracellular volume; below the nominal volume the
+        # kidney filters less, so the low arms sit HIGHER and the three arms
+        # compress toward the anchored high arm. Same shape of move as the CO0
+        # repin and the red cell correction before it, and for the same structural
+        # reason: the operating point is pinned by construction and only the
+        # response can move. This is a sourced physiological term landing, not a
+        # tuning.
         pre_partition = (205.0 => 87.0046,
-                         154.0 => 86.0329,
-                         103.0 => 85.0601)
+                         154.0 => 86.1329,
+                         103.0 => 85.2040)
         # raas=false ISOLATES what this testset is about. The reference values
         # were measured before RAAS existed, so comparing against a model that
         # now includes it would be testing two changes at once. RAAS having its
@@ -308,8 +329,11 @@ using SciMLBase
         # is the DISABLED-ADH branch, where the placeholder pins urine output and
         # forces sodium balance to close through the circulation; the default
         # model's shift is unmoved at 5.0570 against 5.0569.
+        # 1.9441 -> 1.8001 on 2026-09-03 with the GFR volume response. This is
+        # still the DISABLED-ADH branch, so it moves for its own reasons and by its
+        # own amount; the default model moved 2.0404 -> 1.8858 over the same change.
         @test isapprox(check_pressure_natriuresis(r).map_shift_mmHg,
-                       1.9441; rtol = 1e-3)   # 4.9352 -> 4.9067 -> 4.7672 -> 2.2467
+                       1.8001; rtol = 1e-3)   # 4.9352 -> 4.9067 -> 4.7672 -> 2.2467
                        # 2026-09-02: ADR 0010's volume-keyed path landed and the
                        # disabled-ADH branch moved with everything else.
     end
@@ -344,9 +368,12 @@ using SciMLBase
         # with it; see the ADR 0012 block above for the mechanism. These two
         # blocks pin the same three numbers on purpose - they assert different
         # claims about them - so they move together.
+        # REPINNED 2026-09-03 with the ADR 0012 block above, and they move
+        # together on purpose: these two blocks pin the SAME three numbers to
+        # assert DIFFERENT claims about them. RN.GFR.VOLUME_SENSITIVITY wired.
         pre_raas = (205.0 => 87.0046,
-                    154.0 => 86.0329,
-                    103.0 => 85.0601)
+                    154.0 => 86.1329,
+                    103.0 => 85.2040)
         for (lvl, expected) in pre_raas
             got = only(l.MAP_final for l in r.levels if l.level == lvl)
             # 1e-9 -> 1e-7 on 2026-08-27, same reason as the ADR 0012 block: the
@@ -634,7 +661,12 @@ using SciMLBase
         # the RIGHT way. It is small - 0.8% against a discrepancy of 2x at best -
         # so it does not touch that finding, and it must not be read as
         # addressing it: G_pn is still the parameter that sets the shift.
-        @test isapprox(on, 2.0404; atol = 0.02)
+        # REPINNED 2026-09-03, 2.0404 -> 1.8858. The GFR volume response is a
+        # THIRD route to sodium excretion, through the filtered load rather than
+        # the reabsorbed fraction, and it damps the pressure excursion. The
+        # `on > off` assertion above is the claim this testset exists to make and
+        # it is untouched: ADH still amplifies, from a lower base.
+        @test isapprox(on, 1.8858; atol = 0.02)
     end
 
     @testset "the urine solute load tracks sodium (water limb responds to salt)" begin
@@ -704,7 +736,23 @@ using SciMLBase
         @test isempty(r.phantom)
         @test isempty(r.unknown)
         @test isempty(r.dangling)
-        @test r.n_couplings == 13
+        # 13 -> 14 on 2026-09-04, ADR 0017: respiratory -> bodyfluids, the water
+        # vapour flux. It is Conservation and not a signal, so the partition rule
+        # below covers it too.
+        #
+        # 14 -> 16 the same day, ADR 0018: respiratory -> blood and
+        # cardiovascular -> blood. TWO INBOUND EDGES AND NO OUTBOUND ONE, which is
+        # what a forward computation looks like in the coupling graph. If an
+        # outbound edge from blood ever appears, an oxygen feedback has been built
+        # and ADR 0018 says that needs its own record - so this count is the cheapest
+        # tripwire for exactly that.
+        #
+        # 16 -> 17 on 2026-09-05, ADR 0019: thyroid -> respiratory. ONE OUTBOUND
+        # EDGE AND NO INBOUND ONE, which is the mirror image of blood - the axis
+        # drives a metabolic load and nothing in this model feeds back onto it.
+        # An inbound edge appearing means something has been wired into thyroid
+        # secretion, which ADR 0019 does not decide.
+        @test r.n_couplings == 17
 
         cs = model_couplings()
         # ADR 0003: instantaneous couplings are not partitionable. If this ever
@@ -737,11 +785,80 @@ using SciMLBase
         # effector) to 302.4 s (renin) is a ~100x gap. That is a statement about
         # PHYSIOLOGY rather than about the Jacobian spectrum, and it is the other
         # half of the ADR 0003 argument, which is deferred on state count.
+        #
+        # 4 -> 5 on 2026-09-05, ADR 0019: thyroxine turnover, 10.3 DAYS. It is by two
+        # orders of magnitude the slowest declared coupling in this model, and it
+        # widens the largest adjacent gap rather than narrowing it - so the ADR 0003
+        # argument is strengthened, not threatened, by the one state this model has
+        # ever chosen to add.
         b = suggest_boundary(cs)
-        @test length(b.taus) == 4
+        @test length(b.taus) == 5
         @test b.gap !== nothing
         @test b.gap[1] > 10.0
         @info "declared coupling timescales" taus=b.taus gap_ratio=b.gap[1] boundary_s=b.suggested_boundary_seconds
+    end
+
+    @testset "member_remake re-sexes and re-sizes to match a natively built model" begin
+        # THIS CHECKS THE CLASS, NOT ONE PARAMETER, and it exists because the same
+        # defect has now happened three times. member_remake keeps a HAND-MAINTAINED
+        # list that must mirror what the components do at build time:
+        #
+        #   ADR 0010  V_blood_ref omitted  -> every heavy member read as volume-expanded
+        #   ADR 0017  H2O_insens left behind after the water split removed it -> error
+        #   ADR 0018  Hb omitted           -> a re-sexed member keeps MALE haemoglobin
+        #
+        # The first two failed loudly elsewhere. THE THIRD WOULD NOT HAVE: haemoglobin
+        # touches no pressure, volume or sodium quantity, so every other assertion in
+        # this file would have passed while population oxygen content stayed male.
+        #
+        # ONE BASE BUILD AND ONE NATIVE BUILD, which is the cheapest configuration that
+        # can catch both failure modes at once. The base is built MALE at the reference
+        # mass and remade as FEMALE at 95 kg, so a parameter member_remake forgets to
+        # rescale AND a parameter it forgets to re-sex both show up as a mismatch
+        # against the natively built female. Building both sexes separately costs two
+        # more simplifications and catches nothing this does not - directive 1.10.
+        base   = build_model(sex = :male)
+        native = build_model(sex = :female, body_mass = 95.0)
+        prob   = ODEProblem(base, [], (0.0, 1.0), []; jac = true, sparse = true)
+        remade = IPE.member_remake(prob, base, (body_mass = 95.0,); sex = :female)
+
+        # `parameters()` on a SIMPLIFIED system is not only the ledger-backed
+        # parameters: it also carries dummy-derivative symbols such as
+        # `bf₊Na_store#0(t)`, which have no default and throw on getdefault. Found by
+        # this test erroring on its first two runs, which is a fair price for a guard
+        # that catches a whole class. The ODEProblem must also be built positionally,
+        # exactly as run_population builds it - a Dict throws on the same symbols.
+        npars = Dict{String,Any}()
+        for p in parameters(native)
+            try
+                npars[String(Symbol(p))] = ModelingToolkit.getdefault(p)
+            catch
+            end
+        end
+
+        worst, worst_name, compared = 0.0, "", 0
+        for p in parameters(base)
+            nm = String(Symbol(p))
+            haskey(npars, nm) || continue
+            want = npars[nm]
+            got = try
+                remade.ps[p]
+            catch
+                continue
+            end
+            (want isa Number && got isa Number) || continue
+            compared += 1
+            rel = abs(got - want) / max(abs(want), 1e-12)
+            if rel > worst
+                worst, worst_name = rel, nm
+            end
+        end
+
+        # Guard the guard. A comparison that silently matched nothing would pass
+        # forever while asserting nothing - HANDOVER section 5 item 3.
+        @test compared > 20
+        @test worst < 1e-9
+        worst >= 1e-9 && @warn "member_remake disagrees with a built model" worst_name worst
     end
 
     @testset "the ensemble actually varies its members (and mostly cannot)" begin
@@ -831,8 +948,17 @@ using SciMLBase
         # not move the default model at all. If this fails, the scaling has leaked
         # into a quantity that should be intensive.
         @test size_factor(IPE.LedgerParams.BF_BODY_MASS_REFERENCE) == 1.0
+        # REPINNED 2026-09-03, 2.0404 -> 1.8858, RN.GFR.VOLUME_SENSITIVITY wired.
+        # THE INVARIANCE ASSERTION BELOW DID NOT FAIL AND THAT IS THE RESULT THAT
+        # MATTERS HERE. This line pins a VALUE; the loop below pins that the value
+        # is the same for an 85 kg individual eating an 85 kg diet, and it passed
+        # unchanged. The new term is intensive (a fractional GFR change per
+        # fractional volume change) against an extensive reference volume, so the
+        # product scales exactly as GFR0 does. Had that been written the other way
+        # round - which is the mistake ADR 0010's gain made and this testset caught
+        # within one run - the loop below would have failed and this line passed.
         v = check_pressure_natriuresis(salt_step())
-        @test isapprox(v.map_shift_mmHg, 2.0404; atol = 0.02)
+        @test isapprox(v.map_shift_mmHg, 1.8858; atol = 0.02)
 
         # THE INVARIANCE ITSELF, on the whole loop rather than on one arm.
         # With sodium intake scaled along with the individual - which is what an
@@ -851,6 +977,24 @@ using SciMLBase
                     salt_step(body_mass = bm,
                               levels_mEq_day = (205.0 * f, 154.0 * f, 103.0 * f)))
             @test isapprox(r.map_shift_mmHg, base.map_shift_mmHg; rtol = 1e-3)
+        end
+
+        # ADR 0017 FOLDED IN HERE RATHER THAN GIVEN ITS OWN TESTSET, at no extra
+        # compute: PaCO2 must be INTENSIVE. VCO2, the chemoreflex slope and basal
+        # ventilation all scale with mass while the dead space fraction, the alveolar
+        # constant and the recruitment threshold do not, so the metabolic hyperbola
+        # and the ventilation it balances against scale TOGETHER and their ratio does
+        # not. Written the other way round, PaCO2 would drift with body size and a
+        # 90 kg adult would be hypercapnic for being large - the same error the ADR
+        # 0010 gain made, which this testset caught within one run.
+        for bm in (50.0, 90.0)
+            s = build_model(body_mass = bm)
+            sl = IPE.solve_individual(s; tspan_days = 60.0)
+            pc = NaN
+            for o in observed(s)
+                occursin("PaCO2", String(Symbol(o.lhs))) && (pc = sl[o.lhs][end])
+            end
+            @test isapprox(pc, IPE.LedgerParams.RESP_CO2_ARTERIAL_RESTING; rtol = 1e-3)
         end
     end
 
@@ -1035,8 +1179,13 @@ using SciMLBase
         # VOLUME, which is sexed, so the dimorphism now propagates into salt
         # sensitivity for the first time.
         #
-        # WOMEN COME OUT MORE SALT-SENSITIVE, 2.5530 against 2.3013 mmHg per 100
-        # mmol/day, an 11% difference. The mechanism is the one the block below
+        # WOMEN COME OUT MORE SALT-SENSITIVE, 2.1757 against 1.8488 mmHg per 100
+        # mmol/day, a 17.7% difference.
+        #
+        # THIS COMMENT SAID 11% AND THE ASSERTION BELOW HAS SAID 1.172 SINCE G_pn
+        # MOVED - a comment and an assertion disagreeing, in the same block, about
+        # the same number. Corrected 2026-09-03 when the GFR volume response moved
+        # the ratio again, to 1.1768. The mechanism is the one the block below
         # already describes: dMAP/dV_ecf scales as TPR0*f_pv and that product is
         # larger in women, so the same volume-keyed natriuresis buys less pressure
         # correction.
@@ -1097,6 +1246,469 @@ using SciMLBase
         # fact that the sexed pair still reaches the circulation are what this
         # asserts; the closed-form identity belonged to a pressure-only kidney.
         @test isapprox(em / ef, tpv(:female) / tpv(:male); rtol = 0.20)
+    end
+
+    @testset "ADR 0017: respiration, and PCO2 is an INPUT not an output" begin
+        L = IPE.LedgerParams
+        sys = build_model()
+        sol = IPE.solve_individual(sys; tspan_days = 60.0)
+        fin(n) = begin
+            v = NaN
+            for u in IPE.mtk_unknowns(sys)
+                occursin(n, String(Symbol(u))) && (v = sol[u][end])
+            end
+            if isnan(v)
+                for o in observed(sys)
+                    occursin(n, String(Symbol(o.lhs))) && (v = sol[o.lhs][end])
+                end
+            end
+            v
+        end
+
+        # NO NEW STATE. ADR 0017 decision 2 says the loop is quasi-static at this
+        # model's horizon - PaCO2 re-equilibrates in minutes, the shortest protocol
+        # here is six hours - so the chemoreflex and the alveolar equation are solved
+        # together in CLOSED FORM. A state would be paid for on every future run
+        # (directive 1.10). Eight states before respiration, eight after.
+        #
+        # 8 -> 9 on 2026-09-05, and the one added state is thyroxine (ADR 0019).
+        # It is the only state in this model that was added rather than avoided,
+        # and the reason is written on THY.FT4.TAU: ten days cannot be represented
+        # algebraically on a model that runs four hundred. Thyrotropin, which
+        # equilibrates in minutes, got no state - same argument as this one.
+        @test length(IPE.mtk_unknowns(sys)) == 9
+
+        # RESTING PaCO2 RETURNS THE SOURCED INPUT, AND THIS IS NOT A PREDICTION.
+        # ADR 0017's ORIGINAL decision 1 made PaCO2 an output of the chemoreflex, as
+        # arterial pressure is an output of the renal loop. Its own falsifiable test
+        # killed that: the ventilatory recruitment threshold is 45.28 mmHg and resting
+        # PaCO2 is near 40, so AT REST THE CHEMOREFLEX IS BELOW ITS OWN THRESHOLD and
+        # is not the operative control. The dependency was inverted - resting PaCO2 is
+        # sourced, basal ventilation is derived from it.
+        #
+        # So this assertion is a CLOSURE CHECK on that derivation, not evidence that
+        # the model reproduces human PaCO2. It cannot be, and the ledger row says so.
+        @test isapprox(fin("PaCO2"), L.RESP_CO2_ARTERIAL_RESTING; rtol = 1e-4)
+
+        # AT REST THE MODEL SITS ON THE FLAT LIMB. Ventilation is basal and the
+        # chemoreflex is doing nothing at all.
+        @test isapprox(fin("rs₊V_E"), L.RESP_VENTILATION_BASAL; rtol = 1e-4)
+        @test fin("PaCO2") < L.RESP_CHEMO_VRT
+
+        # THE WATER SPLIT REPRODUCES THE OLD CONSTANT. BF.H2O.INSENSIBLE_LOSS was one
+        # assumed number cited "Convention pending primary source"; it is now a
+        # computed respiratory flux plus a cutaneous residual. The reference
+        # individual must be unmoved, because every ADH constant is derived from a
+        # water balance that closes here. check_closure.py asserts the same identity
+        # on the ledger; this asserts it on the SOLVED model.
+        @test isapprox(fin("H2O_resp") + L.BF_H2O_CUTANEOUS_LOSS,
+                       L.BF_H2O_INSENSIBLE_LOSS; rtol = 1e-3)
+        @test 0.25 < fin("H2O_resp") < 0.40
+
+        # ADR 0017'S REPLACEMENT FALSIFIABLE TEST. The original asked whether PCO2
+        # behaves as an output; that question is void now. What IS claimed is the
+        # PIECEWISE structure, so the test is that the chemoreflex bites above the
+        # recruitment threshold and not below it.
+        #
+        # Raising metabolic CO2 production 0.20 -> 0.25 pushes the balance point past
+        # the threshold. Without the reflex PaCO2 would rise in proportion, to 50.0.
+        # Done algebraically rather than by five more solves - the closed form IS the
+        # component, so exercising it directly tests the same equation at a fraction
+        # of the cost. Directive 1.10: assert more per unit of compute.
+        C(vco2) = L.RESP_ALVEOLAR_K * vco2 / (1.0 - L.RESP_DEADSPACE_FRACTION)
+        function ve(vco2)
+            c = C(vco2)
+            b = L.RESP_CHEMO_CO2_SLOPE * L.RESP_CHEMO_VRT - L.RESP_VENTILATION_BASAL
+            c >= L.RESP_VENTILATION_BASAL * L.RESP_CHEMO_VRT ?
+                (-b + sqrt(b * b + 4 * L.RESP_CHEMO_CO2_SLOPE * c)) / 2 :
+                L.RESP_VENTILATION_BASAL
+        end
+        pco2(vco2) = C(vco2) / ve(vco2)
+
+        # EXPRESSED AS MULTIPLES OF THE RESTING LOAD, NOT AS LITERALS. This block
+        # used 0.20 and 0.25 L/min directly, which silently encoded the old assumed
+        # CO2 production; when that row was sourced on 2026-09-05 and fell to
+        # 0.1824, the literals would still have passed while testing a load the
+        # model no longer has. A test written against a number rather than against
+        # the row it came from is a test that stops asking the question.
+        V0 = L.RESP_CO2_PRODUCTION
+        hi = 1.37 * V0                    # above the recruitment threshold
+
+        # BELOW THE THRESHOLD THE REFLEX IS INERT and PaCO2 rises in proportion to
+        # production. That is the half most likely to be got wrong by writing the
+        # branch condition on the wrong variable.
+        @test isapprox(ve(V0), L.RESP_VENTILATION_BASAL; rtol = 1e-9)
+        @test isapprox(pco2(1.05 * V0) / pco2(V0), 1.05; rtol = 1e-6)
+
+        # ABOVE IT THE REFLEX BITES. Ventilation rises and PaCO2 rises by LESS than
+        # proportion - which is what a negative feedback is.
+        @test ve(hi) > L.RESP_VENTILATION_BASAL
+        @test pco2(hi) < (hi / V0) * L.RESP_CO2_ARTERIAL_RESTING
+        @test pco2(hi) > L.RESP_CHEMO_VRT          # and it stays on the upper limb
+
+        # THE TWO LIMBS MEET CONTINUOUSLY. A jump here would land straight in
+        # D(V_ecf) through the water flux. The breakpoint is where
+        # C = V_basal*VRT, i.e. VCO2 = V_basal*VRT*(1-Vd/Vt)/K.
+        vco2_break = L.RESP_VENTILATION_BASAL * L.RESP_CHEMO_VRT *
+                     (1.0 - L.RESP_DEADSPACE_FRACTION) / L.RESP_ALVEOLAR_K
+        @test isapprox(ve(vco2_break * (1 - 1e-9)), ve(vco2_break * (1 + 1e-9));
+                       rtol = 1e-6)
+
+        # THE DISABLED BRANCH IS EXACTLY INERT. With respiration = false ventilation
+        # is frozen at basal, so the water flux is exactly its reference value and
+        # every existing protocol is untouched. Same pattern as the ADH and RAAS
+        # disabled branches (ADR 0008).
+        off = build_model(respiration = false)
+        soff = IPE.solve_individual(off; tspan_days = 60.0)
+        voff = NaN
+        for o in observed(off)
+            occursin("rs₊V_E", String(Symbol(o.lhs))) && (voff = soff[o.lhs][end])
+        end
+        @test isapprox(voff, L.RESP_VENTILATION_BASAL; rtol = 1e-9)
+
+        @info "respiration" PaCO2=fin("PaCO2") V_E=fin("rs₊V_E") H2O_resp=fin("H2O_resp")
+    end
+
+    @testset "ADR 0018: blood oxygen transport, and this one IS a prediction" begin
+        L = IPE.LedgerParams
+        function arterial(; sex = :male, body_mass = 70.0)
+            s = build_model(; sex, body_mass)
+            sl = IPE.solve_individual(s; tspan_days = 60.0)
+            g(n) = begin
+                v = NaN
+                for o in observed(s)
+                    occursin(n, String(Symbol(o.lhs))) && (v = sl[o.lhs][end])
+                end
+                v
+            end
+            (SaO2 = g("SaO2"), PaO2 = g("bl₊PaO2"), PAO2 = g("PAO2"),
+             CaO2 = g("CaO2"), DO2 = g("DO2"), VO2 = g("bl₊VO2"),
+             avDO2 = g("avDO2"), CvO2 = g("CvO2"), SvO2 = g("SvO2"),
+             ER = g("bl₊ER"), CO = g("cv₊CO"))
+        end
+        m = arterial()
+
+        # FALSIFIABLE TEST 1. Saturation must land in the human range with NOTHING
+        # set to put it there. This is the real difference from ADR 0017, where
+        # resting PCO2 is an INPUT and the model makes no claim to predict it.
+        # Here haemoglobin, the curve, the exchange ratio and the A-a difference are
+        # all sourced or assumed independently of saturation, and saturation follows
+        # by arithmetic - so the model CAN be wrong about it.
+        @test 0.95 <= m.SaO2 <= 0.99
+        @test 80.0 <= m.PaO2 <= 110.0
+        @test m.PAO2 > m.PaO2                       # the gradient has the right sign
+
+        # AND IT DOES NOT TURN ON THE WEAKEST INPUT, which is what stops it being a
+        # number that was chosen. BLOOD.O2.AA_GRADIENT is assumed and sits directly
+        # upstream; the pre-registration forbids tuning it. Swept over a fivefold
+        # range the saturation stays inside the human window - because the sigmoid's
+        # upper limb is flat, which is also why this is a WEAK test of the curve.
+        sev(po2) = 1.0 / (L.BLOOD_O2_CURVE_A / (po2^3 + L.BLOOD_O2_CURVE_B * po2) + 1.0)
+        for aa in (5.0, 10.0, 15.0, 20.0, 25.0)
+            @test 0.94 <= sev(m.PAO2 - aa) <= 0.99
+        end
+
+        # FALSIFIABLE TEST 2. The sexed pair must move CONTENT and DELIVERY and must
+        # NOT move saturation or tension. Haemoglobin differs between the sexes; the
+        # dissociation curve does not. If saturation came out sexed, haemoglobin
+        # would have leaked into the wrong equation.
+        f = arterial(sex = :female)
+        @test isapprox(f.SaO2, m.SaO2; rtol = 1e-9)
+        @test isapprox(f.PaO2, m.PaO2; rtol = 1e-9)
+        @test f.CaO2 < m.CaO2
+        @test f.DO2 < m.DO2
+
+        # FALSIFIABLE TEST 3. Content must scale with haemoglobin at fixed curve
+        # position - the property that distinguishes CONTENT from TENSION, and the
+        # one most easily got wrong. The bound term is 98.7% of content, so the
+        # ratio should track the haemoglobin ratio closely but not exactly, the
+        # difference being the dissolved term which does NOT scale with haemoglobin.
+        hb_ratio = L.param(:BLOOD_HB_CONCENTRATION, :female) /
+                   L.param(:BLOOD_HB_CONCENTRATION, :male)
+        @test isapprox(f.CaO2 / m.CaO2, hb_ratio; rtol = 0.02)
+        @test f.CaO2 / m.CaO2 > hb_ratio            # dissolved O2 does not scale
+
+        # FALSIFIABLE TEST 4 is asserted on the LEDGER by check_closure.py rather
+        # than here - haemoglobin over haematocrit must give a human mean corpuscular
+        # haemoglobin concentration. It is a property of the rows, not of a solve,
+        # and putting it where it belongs keeps this testset to one build per sex.
+
+        # OXYGEN DELIVERY IS THE FIRST QUANTITY NEEDING TWO SUBSYSTEMS AT ONCE, and
+        # the unit chain crossing them is where it would silently go wrong: cardiac
+        # output is in L/DAY here because the model's time base is days, while
+        # delivery is conventionally per minute. A missing 1440 would put this out
+        # by three orders of magnitude and still look plausible in some other unit.
+        @test 700.0 <= m.DO2 <= 1600.0
+
+        # NO FEEDBACK. ADR 0018 decision 1 says this component closes no loop, so
+        # removing it must leave every other result untouched. Asserted by the
+        # STATE COUNT rather than by re-solving: an oxygen feedback would have to
+        # enter through a differential equation somewhere, and there are still nine
+        # - eight plus thyroxine, and none of them is an oxygen state.
+        @test length(IPE.mtk_unknowns(build_model())) == 9
+
+        # ------------------------------------------------------------------
+        # THE FICK ARM, ADDED 2026-09-05. ADR 0018 deferred venous content, the
+        # Fick relation and the extraction ratio because "they need tissue oxygen
+        # consumption, which is a metabolic row this model does not have". IT DID
+        # HAVE ONE, under another name: CO2 production over the exchange ratio.
+        # Both rows were already in the ledger and neither moved.
+
+        # OXYGEN CONSUMPTION. 250 mL/min at rest, which is what 0.20 L/min of CO2
+        # at an exchange ratio of 0.80 means. Asserted as a range because both
+        # parent rows are `assumed` at round teaching numbers - directive 1.12 -
+        # so a narrow pin here would be false precision about a number nobody
+        # measured for this model.
+        # 228 mL/min, from a weighted meta-analysis of 197 indirect-calorimetry
+        # studies rather than from the metabolic-equivalent convention. The range
+        # is the STRATUM choice in metabolic_rate_prereg.md section 3 - normal
+        # weight against all-BMI - which is far wider than either stratum's own
+        # confidence interval and is the honest statement of what is uncertain.
+        @test 200.0 <= m.VO2 <= 240.0
+
+        # THE FICK RELATION CLOSES EXACTLY, and that is the check the unit chain
+        # needs: cardiac output is carried in L/DAY because the model's time base
+        # is days, while consumption is per minute and content is per dL. A
+        # missing 1440 would be three orders of magnitude and would still look
+        # like a plausible number in some other unit.
+        @test isapprox(m.CO * (1000.0 / 1440.0) * m.avDO2 / 100.0, m.VO2;
+                       rtol = 1e-9)
+        @test isapprox(m.CvO2, m.CaO2 - m.avDO2; rtol = 1e-12)
+        @test isapprox(m.ER, m.avDO2 / m.CaO2; rtol = 1e-12)
+
+        # THE ARTERIOVENOUS DIFFERENCE lands at 4.2 mL/dL. This one IS comparable
+        # to the human literature without a catheter, because it follows from
+        # oxygen uptake and cardiac output, both of which are measured
+        # non-invasively in every indirect-calorimetry study.
+        # 3.83 mL/dL. IT MOVED AWAY FROM THE TEXTBOOK 4-5 WHEN OXYGEN CONSUMPTION
+        # WAS SOURCED, and metabolic_rate_prereg.md branch M3 required that be
+        # reported rather than rescued. The arithmetic is not in dispute: with
+        # cardiac output at 5.95 L/min and consumption at 228 mL/min the
+        # difference is 3.83, so the extraction ratio is 18.3% against roughly 23%
+        # implied by a measured mixed venous saturation near 75%.
+        #
+        # THE DISCREPANCY POINTS AT CARDIAC OUTPUT, NOT AT CONSUMPTION. The
+        # Fick-consistent cardiac output would be 4.75 L/min; CV.CO.NOMINAL is
+        # 5.95, derived from a CARDIAC-MRI stroke volume, while mixed venous
+        # saturation is measured in populations whose cardiac output came from
+        # thermodilution or Fick. That is a methodological difference between two
+        # ways of measuring one quantity, which is the same class of error the
+        # thyroid axis turned out to have. It is recorded, not closed.
+        @test 3.0 <= m.avDO2 <= 5.5
+
+        # MIXED VENOUS SATURATION AND EXTRACTION ARE REPORTED, AND NO HUMAN TARGET
+        # IS ASSERTED AGAINST THEM. Not for want of searching: mixed venous
+        # saturation needs a pulmonary artery catheter, which is not placed in
+        # healthy people, so the literature is critical care and cardiac disease
+        # and directive 1.7 disqualifies it. The same ethical ceiling ADR 0006's
+        # amendment records for RN.AUTOREG.UPPER. These bounds are a sanity
+        # bracket on the ARITHMETIC - saturation between arterial and zero,
+        # extraction a fraction - not a comparison with a measurement.
+        @test 0.0 < m.SvO2 < m.SaO2
+        @test 0.0 < m.ER < 1.0
+
+        # ANAEMIA IS THE PROPERTY THAT MAKES THIS ARM WORTH HAVING. Haemoglobin
+        # falls, arterial content and delivery fall with it, consumption does not,
+        # so EXTRACTION RISES and mixed venous saturation falls - while arterial
+        # saturation and tension do not move at all, because they are properties
+        # of the curve and not of the carrying capacity.
+        @test isapprox(f.SaO2, m.SaO2; rtol = 1e-9)      # restated deliberately
+        @test f.ER > m.ER
+        @test f.SvO2 < m.SvO2
+        @test isapprox(f.VO2, m.VO2; rtol = 1e-9)        # demand is not sexed
+
+        # THE THYROID ARM'S REACH INTO OXYGEN CONSUMPTION IS ASSERTED IN THE ADR
+        # 0019 TESTSET, not here, because that testset already builds the model
+        # with the metabolic arm on. Directive 1.10: a second build of the same
+        # system to assert a related fact is the kind of cost that is paid on
+        # every future run forever.
+
+        @info "blood gas" SaO2=m.SaO2 CaO2=m.CaO2 DO2=m.DO2 VO2=m.VO2 avDO2=m.avDO2 SvO2=m.SvO2 ER=m.ER
+    end
+
+    @testset "ADR 0019: the thyroid axis, on ONE free-thyroxine scale" begin
+        L = IPE.LedgerParams
+        sys = build_model()
+        sol = IPE.solve_individual(sys; tspan_days = 60.0)
+        fin(s, so, n) = begin
+            v = NaN
+            for u in IPE.mtk_unknowns(s)
+                occursin(n, String(Symbol(u))) && (v = so[u][end])
+            end
+            if isnan(v)
+                for o in observed(s)
+                    occursin(n, String(Symbol(o.lhs))) && (v = so[o.lhs][end])
+                end
+            end
+            v
+        end
+
+        # THE LOOP RESTS WHERE IT IS SOURCED TO REST. THY.FT4.GAIN is derived so
+        # that G_T*TSH_ref = FT4_ref, so the model opens at equilibrium and no run
+        # begins with a spurious ten-day transient. check_closure.py asserts the
+        # same identity on the ledger; this asserts it on the SOLVED model.
+        @test isapprox(fin(sys, sol, "ty₊FT4"), L.THY_FT4_EUTHYROID; rtol = 1e-4)
+
+        # THE EUTHYROID THYROTROPIN IS AN INPUT, NOT A PREDICTION, AND SAYING SO IS
+        # THE POINT OF THIS BLOCK. For one day this suite asserted it as a
+        # prediction the model failed by 2.4x. It was not a failing prediction: it
+        # was a unit error, a pituitary line measured on one free-thyroxine
+        # immunoassay composed with a concentration measured by equilibrium
+        # dialysis. NHANES measured the gap - total thyroxine agreeing to 6% while
+        # the free fractions differ 1.73-fold (validation/nhanes_hpt_extract.py).
+        #
+        # So this is a CLOSURE CHECK on a sourced operating point, exactly as the
+        # respiratory testset's PaCO2 assertion is, and for the same reason: ADR
+        # 0017's dependency inversion, made a second time. ADR 0019's falsifiable
+        # test 2 is VOID and the ledger says so on THY.TSH.EUTHYROID.
+        tsh = fin(sys, sol, "ty₊TSH")
+        @test isapprox(tsh, L.THY_TSH_EUTHYROID; rtol = 1e-3)
+
+        # AND THE ONE NUMBER THAT IS SCALE-INVARIANT, WHICH IS WHAT THE MODEL
+        # ACTUALLY RUNS ON. b*FT4* is dimensionless, so unlike either measured
+        # slope it transfers between assays. It came from two independent
+        # estimates and nothing here was fitted to it.
+        @test isapprox(L.THY_TSH_FT4_SLOPE * L.THY_FT4_EUTHYROID, L.THY_LOOP_GAIN;
+                       rtol = 1e-3)
+        @test 1.7 < L.THY_LOOP_GAIN < 2.9
+
+        # THE METABOLIC ARM IS OFF AND IT IS OFF EXACTLY. ADR 0019 decision 4 and
+        # thyroid_prereg.md section 6 require bit-identity, not closeness, so this
+        # is == and not isapprox. Every pinned pressure, PaCO2 and water number
+        # elsewhere in this file is the rest of that assertion.
+        @test fin(sys, sol, "ty₊th_mod") == 1.0
+
+        # THE RESPONSE, DONE ALGEBRAICALLY. The loop is a scalar fixed point,
+        # FT4 = G_T*S*exp(a - b*FT4), so its equilibrium and its gain can be
+        # exercised directly instead of by four more full-model solves. Directive
+        # 1.10: assert more per unit of compute. The wiring is what needs a solve,
+        # and it got one above.
+        a, b = L.THY_TSH_INTERCEPT, L.THY_TSH_FT4_SLOPE
+        G_T, tau = L.THY_FT4_GAIN, L.THY_FT4_TAU
+        # BISECTION, NOT FIXED-POINT ITERATION. G_T*S*exp(a - b*FT4) is decreasing in
+        # FT4 and the identity is increasing, so the root is unique and bracketed.
+        # A damped fixed point looks simpler and DIVERGES above about FT4 = 22,
+        # which is inside the range a thyrotoxic capacity reaches - a quiet wrong
+        # answer rather than a failure.
+        function ft4_star(S)
+            lo, hi = 1e-6, 500.0
+            for _ in 1:200
+                m = 0.5 * (lo + hi)
+                m - G_T * S * exp(a - b * m) < 0.0 ? (lo = m) : (hi = m)
+            end
+            0.5 * (lo + hi)
+        end
+        tsh_star(S) = exp(a - b * ft4_star(S))
+
+        # rtol 1e-4 and not tighter: every thyroid row is carried at four
+        # significant figures, which is what its sources support, so the
+        # equilibrium sits 7e-5 off the free thyroxine it is derived from. That is
+        # the rounding and nothing else - and the rounding is deliberate, because
+        # entering more digits than a measurement carries is the error the owner
+        # corrected on 2026-09-05 and pooling.md now records.
+        @test isapprox(ft4_star(1.0), L.THY_FT4_EUTHYROID; rtol = 1e-4)
+
+        # ADR 0019 FALSIFIABLE TEST 1. Raise thyroid secretory capacity: thyrotropin
+        # must FALL, free thyroxine must RISE, and it must rise by LESS than with
+        # the loop open. Open-loop is thyrotropin held at its euthyroid value, which
+        # is exactly what build_model(thyroid = false) does, and there FT4 is
+        # proportional to capacity.
+        @test tsh_star(1.3) < tsh_star(1.0)
+        @test ft4_star(1.3) > ft4_star(1.0)
+        @test ft4_star(1.3) / ft4_star(1.0) < 1.3          # closed loop absorbs it
+        @test ft4_star(0.7) / ft4_star(1.0) > 0.7          # in both directions
+
+        # AND THE AMOUNT IT ABSORBS IS A RESULT, not a tuned number. The open-loop
+        # gain is b*FT4 = 2.26, so d ln FT4 / d ln S = 1/(1 + b*FT4) = 0.31: the
+        # human axis holds about 70% of a change in secretory capacity. Nothing in
+        # this repository was fitted to produce that.
+        dlnS = log(1.02)
+        dlnF = log(ft4_star(1.02) / ft4_star(1.0))
+        @test isapprox(dlnF / dlnS,
+                       1.0 / (1.0 + b * L.THY_FT4_EUTHYROID); rtol = 5e-3)
+
+        # ADR 0019 FALSIFIABLE TEST 3. THE SLOW STATE MUST ACTUALLY BE SLOW. If the
+        # time constant were entered in hours, or in the wrong direction, the axis
+        # would settle within a day and decision 3's whole justification for paying
+        # a state would evaporate. Closed-loop relaxation is tau/(1 + b*FT4) = 3.2
+        # days, so one day gets nowhere near and thirty is essentially done.
+        tau_eff = tau / (1.0 + b * L.THY_FT4_EUTHYROID)
+        @test 2.0 < tau_eff < 5.0
+        @test 1.0 - exp(-1.0 / tau_eff) < 0.40             # one day: far from done
+        @test 1.0 - exp(-30.0 / tau_eff) > 0.99            # thirty: done
+
+        # AND THE ARM ACTUALLY REACHES ANOTHER COMPONENT WHEN IT IS SWITCHED ON,
+        # which is the whole reason thyroid was built before cortisol or glucose
+        # (directive 1.11, and ADR 0006's record of Circadian sitting unconnected).
+        # ONE extra solve, and it is the one that proves the component is not an
+        # island.
+        #
+        # BUT IT REACHES PaCO2 AND STOPS THERE, AND THAT IS ADR 0017'S FINDING
+        # BITING A SECOND TIME. Raising CO2 production raises arterial PCO2, and
+        # ventilation does NOT respond, because at rest the model sits on the FLAT
+        # limb of the chemoreflex - the ventilatory recruitment threshold is 45.28
+        # mmHg and resting PaCO2 is 40. So the respiratory water flux is untouched.
+        # Asserted in BOTH directions below, because "the arm connects" and "the arm
+        # moves the water balance" are different claims and only the first is true.
+        hyper = build_model(thyroid_metabolic = true, thyroid_secretion = 1.5)
+        shy = IPE.solve_individual(hyper; tspan_days = 60.0)
+        @test fin(hyper, shy, "ty₊FT4")    > L.THY_FT4_EUTHYROID
+        @test fin(hyper, shy, "ty₊TSH")    < tsh
+        @test fin(hyper, shy, "ty₊th_mod") > 1.0
+        @test fin(hyper, shy, "PaCO2")     > fin(sys, sol, "PaCO2")
+
+        # AND IT REACHES OXYGEN CONSUMPTION, WHICH MAKES THIS THE MODEL'S ONLY
+        # THREE-HOP COUPLING: thyroid -> respiratory -> blood -> venous oxygen.
+        # Consumption is CO2 production over the exchange ratio, so scaling the
+        # metabolic load scales it; delivery does not move, so extraction rises
+        # and mixed venous saturation falls. Asserted here rather than in the ADR
+        # 0018 testset because this model is already built.
+        @test fin(hyper, shy, "bl₊VO2")   > fin(sys, sol, "bl₊VO2")
+        @test fin(hyper, shy, "SvO2")     < fin(sys, sol, "SvO2")
+        @test fin(hyper, shy, "bl₊ER")    > fin(sys, sol, "bl₊ER")
+
+        # AND IT REACHES BLOOD GAS THROUGH PaCO2, WHICH IS THE ONLY TWO-HOP COUPLING
+        # in this model: thyroid -> respiratory -> blood. The alveolar gas equation
+        # trades CO2 against O2 through the exchange ratio, so a higher PaCO2 is a
+        # lower alveolar and arterial PO2 and a lower saturation.
+        @test fin(hyper, shy, "bl₊SaO2")   < fin(sys, sol, "bl₊SaO2")
+
+        # THE FLAT LIMB, ASSERTED. Ventilation and the water flux are EXACTLY what
+        # they were - not close, identical - because nothing about V_E depends on
+        # the CO2 load below the threshold.
+        @test fin(hyper, shy, "rs₊V_E")    == fin(sys, sol, "rs₊V_E")
+        @test fin(hyper, shy, "H2O_resp")  == fin(sys, sol, "H2O_resp")
+
+        # AND NO ATTAINABLE THYROID STATE CROSSES IT, done algebraically. At twice
+        # normal secretory capacity PaCO2 reaches 41.9 against a threshold of 45.28.
+        # THE METABOLIC ARM CANNOT MOVE THE WATER BALANCE OF THIS MODEL, and that is
+        # a fact about two sourced components meeting rather than a modelling choice.
+        #
+        # ASSERTED AT 2x AND NOT HIGHER DELIBERATELY. The margin narrows as
+        # capacity rises, and an assertion that thin is a tripwire for parameter
+        # drift dressed up as a physiological claim. Beyond about 2x the sourced
+        # pituitary line has also stopped being usable: it cannot suppress
+        # thyrotropin anywhere near the sub-0.01 mIU/L of real thyrotoxicosis,
+        # because it is fitted across the euthyroid range. Assert where the model
+        # is valid; report the edge in the note.
+        thmod(S) = 1.0 + L.THY_METABOLIC_GAIN *
+                         (ft4_star(S) / L.THY_FT4_EUTHYROID - 1.0)
+        @test thmod(2.0) * L.RESP_CO2_ARTERIAL_RESTING < L.RESP_CHEMO_VRT
+        @test thmod(2.0) > 1.0
+
+        # THE TRANSIENT IS SLOW IN THE SOLVED MODEL TOO, not only in the
+        # linearisation above. Read from the SAME solve rather than a new one.
+        ft4_1 = NaN
+        for u in IPE.mtk_unknowns(hyper)
+            if occursin("ty₊FT4", String(Symbol(u)))
+                ft4_1 = shy(1.0; idxs = u)
+            end
+        end
+        frac = (ft4_1 - L.THY_FT4_EUTHYROID) /
+               (fin(hyper, shy, "ty₊FT4") - L.THY_FT4_EUTHYROID)
+        @test 0.0 < frac < 0.40
+
+        @info "thyroid" FT4=fin(sys, sol, "ty₊FT4") TSH=tsh th_mod=fin(sys, sol, "ty₊th_mod") tau_eff=tau_eff
     end
 
     @testset "modulators are off by default" begin

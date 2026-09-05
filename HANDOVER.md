@@ -1,18 +1,29 @@
 # HANDOVER — Integrative Physiology Engine
 
-**Date:** 2026-09-03
+**Date:** 2026-09-05
 **Repo:** https://github.com/histoneguy/integrative-physiology-engine (public)
 **Owner:** Eric George (`histoneguy`)
-**State:** **441/441**, all five gates exit 0, and **`validation/challenges.jl` EXITS 0** —
+**State:** **531/531**, all five gates exit 0, and **`validation/challenges.jl` EXITS 0** —
 every challenge passes against published human data.
 
 **THE MODEL REPRODUCES HUMAN SALT SENSITIVITY AND THE HUMAN PRESSURE–VOLUME RATIO, BOTH
-FOR THE FIRST TIME.** 2.000 mmHg per 100 mmol/day against a meta-analytic 1.70–2.30, and
-3.0005 mmHg/L against a measured 2.97–4.16. **Read §3.21's two caveats before quoting
+FOR THE FIRST TIME.** **1.849** mmHg per 100 mmol/day against a meta-analytic 1.70–2.30,
+and 3.00 mmHg/L against a measured 2.97–4.16. **Quote neither to more than three
+significant figures.** The model emits five and the targets support two or three;
+see §3.23, which derived what the comparison bands can actually carry. **Read §3.21's two caveats before quoting
 either**: two of the three parameters that make it do so were solved against those very
-targets, so they are fits. The validations are the four Lobo endpoints, the resting state,
-the 400-day steady state, and Jensen — and **Jensen, the only held-out number, is a third
-low.**
+targets, so they are fits. **The validations are the resting state, the 400-day steady
+state, and Jensen. THE FOUR LOBO ENDPOINTS ARE NOT AMONG THEM** — that claim stood in
+this file for a day and was wrong; Lobo's 6 h time course is what fixed `RN.ANP.TAU`, so
+it is an ESTIMATION set. §3.15's correction says when it stopped being a validation and
+why nobody noticed. **Jensen, the only held-out number, is a third low.**
+
+**FOUR PARAMETERS IN THE SODIUM–VOLUME LOOP NOW COME FROM HUMAN DATA.** The GFR response
+to extracellular volume was wired on 2026-09-03 (§3.22), which moved salt sensitivity
+2.000 → 1.849 and left the pressure–volume ratio untouched. **It is the only one of the
+four that was neither fitted to a target this harness reports nor solved against one** —
+it comes from a GFR and a volume, neither of which is a pressure. **It also moved Jensen
+from a third low to slightly worse**, and that is in §3.22 rather than buried.
 
 **This header deliberately names NO commit SHA and NO open PR.** Three consecutive
 handovers were wrong in their first line, each in a different way: two pinned a SHA that
@@ -27,6 +38,12 @@ findings had been prepended for days and the file read 3.14, 3.21, 3.19, 3.20, 3
 3.15, 3.16. It is now sequential and nothing was dropped; the reorder was checked by
 asserting the multiset of lines was unchanged. **§4 was rewritten from scratch**, because
 every numbered item on the old list had been completed.
+
+**`OPEN-QUESTIONS.md` is new on 2026-09-05** and is the short list: every unresolved
+item, sorted by whether it needs a decision, a paper, or more work, each with what would
+resolve it. **`gui/index.html` is also new** — the model's resting state, its response
+curves and the full cited ledger in one self-contained page that opens without Julia.
+Rebuild it after any change with `tools/export_gui_data.jl` then `tools/build_gui.py`.
 
 ---
 
@@ -204,7 +221,11 @@ prohibits `range-midpoint`, so an interval cannot become a point estimate.
 
 ## 2. STATE
 
-**441/441, five gates exit 0, and the challenge harness exits 0.**
+**531/531, five gates exit 0, and the challenge harness exits 0.**
+
+**THE MODEL IS NO LONGER ONLY A RENAL–CARDIOVASCULAR MODEL.** Two subsystems outside
+that axis landed on 2026-09-04 — **respiratory** and **blood** — and a third, thyroid,
+was refused for cause. §3.24.
 
 **THE `VERIFY` CLASS IS EMPTY.** Eight rows carried
 `Standard physiological reference. VERIFY.` Five are now sourced — `CV.MAP.SETPOINT`,
@@ -220,33 +241,50 @@ that is the honest direction — see `validation/verify_rows_prereg.md` branch 6
 `bf.V_icf`, `bf.V_ecf`, `bf.Na_ecf`, `br.tpr_mod`, `br.sp`, `ra.pra`, `ra.esc`,
 `rn.anp_sig` — the eighth arrived 2026-09-03 with ADR 0010 (§3.17).
 
+**STILL EIGHT AFTER TWO NEW SUBSYSTEMS LANDED ON 2026-09-04, AND THAT WAS THE
+DESIGN.** Respiration is quasi-static at this horizon — arterial PCO2 re-equilibrates
+in minutes and the shortest protocol here is six hours — so its chemoreflex and
+alveolar equation are solved together in closed form. Blood gas is a forward
+computation. **Neither contributes a state, and directive 1.10 is why**: a state is
+paid for on every future run, forever. The suite is 1m48 with 531 assertions.
+
 | Component | Status |
 |---|---|
 | `BodyFluids.jl` | ICF/ECF volumes, sodium mass balance, osmotic equilibration. Intakes now scale with body size. Inactive-Na storage **default off** (ADR 0004). |
 | `Cardiovascular.jl` | ECF → plasma → blood volume, partitioned central/peripheral (ADR 0012). **CO = HR × SV**, and stroke volume is now the SOURCED half (ADR 0011). MAP = CO × TPR, sexed. |
-| `Renal.jl` | GFR autoregulation, filtered load, pressure natriuresis, RAAS increment, circadian modulation, osmoregulated water excretion, urine solute load tracking sodium, and **a lagged volume-keyed natriuretic path keyed to `V_blood`** (ADR 0010, §3.17). |
+| `Renal.jl` | GFR autoregulation, filtered load, pressure natriuresis, RAAS increment, circadian modulation, osmoregulated water excretion, urine solute load tracking sodium, **a lagged volume-keyed natriuretic path keyed to `V_blood`** (ADR 0010, §3.17), and **a censored GFR response to `V_ecf`** (§3.22). **It now reads TWO volumes and they are different volumes** — blood for atrial stretch, extracellular for filtration. |
 | `Baroreflex.jl` | Lumped, resetting, **TPR effector only**. Setpoint scaled by the clock. |
 | `Raas.jl` | Active at rest — PRA 1.30× the baroreflex plateau since the gain was re-derived (§3.13), 2.31× before. No AngII vasoconstriction, deliberate. |
 | `Adh.jl` | Osmolality → antidiuretic activity → urine osmolality. Algebraic, no states. |
 | `Circadian.jl` | Cosinor clock, connected to renal excretion and the reflex setpoint. **Default OFF** — both arms' parameters contested. |
 | `reconstruct.jl` | **Connected.** SBP/DBP/PP from `SV` and `C_art`. NOT part of the ODE system — see §3.2. |
-| `scaling.jl` | **New.** Extensive quantities scale with body mass, intensive ones do not. |
+| `Respiratory.jl` | **New 2026-09-04, ADR 0017.** Piecewise chemoreflex and the alveolar ventilation equation, solved together in closed form. **No state.** Drives respiratory water loss into `BodyFluids`. **Arterial PCO2 is an INPUT, not an output** — §3.24. |
+| `Blood.jl` | **New 2026-09-04, ADR 0018.** Alveolar gas equation, Severinghaus dissociation, oxygen content and delivery. **A forward computation — two inbound edges, no feedback, no state.** First quantity needing two subsystems at once. |
+| `scaling.jl` | Extensive quantities scale with body mass, intensive ones do not. |
 
 ### The result
 
 | intake (mEq/d) | MAP (mmHg) | SBP | DBP | PP | `V_ecf` (L) |
 |---|---|---|---|---|---|
-| 205 | 86.994 | 108.99 | 76.00 | 33.00 | 14.5569 |
-| 154 | 85.974 | 107.72 | 75.10 | 32.61 | 14.2169 |
-| 103 | 84.953 | 106.44 | 74.21 | 32.22 | 13.8769 |
+| 205 | 86.995 | 108.99 | 76.00 | 33.00 | 14.5572 |
+| 154 | 86.086 | 107.86 | 75.20 | 32.65 | 14.2545 |
+| 103 | 85.109 | 106.63 | 74.35 | 32.28 | 13.9288 |
 
-**Shift 2.0404 mmHg over the 102 mEq/day step = 2.000 mmHg per 100 mmol/day**, against
-a human meta-analytic **1.70–2.30**. Δ`V_ecf` is 0.680 L and **`dMAP/dV_ecf` is 3.0005
-mmHg/L against a measured human 2.97–4.16.** Both limbs are inside the human range for
-the first time — §3.21, and read the two caveats there before quoting either.
+**Shift 1.8858 mmHg over the 102 mEq/day step = 1.849 mmHg per 100 mmol/day**, against
+a human meta-analytic **1.70–2.30**. Δ`V_ecf` is 0.6285 L and **`dMAP/dV_ecf` is 3.00
+mmHg/L against a measured human 2.97–4.16.**
+
+**THE FIGURES IN THIS TABLE ARE MODEL PRECISION, NOT AGREEMENT PRECISION.** They are
+carried to five places because the test suite pins them there and a loose pin catches
+nothing. **The comparisons are not resolved to anything like that** — 1.70–2.30 is the
+spread of three meta-analytic point estimates rather than a confidence interval, and
+2.97–4.16 spans forty per cent. §3.23 derived the bands and found that the two acute
+datasets cannot supply one at all. Both limbs are inside the human range —
+§3.21 for the caveats, §3.22 for the GFR volume response that moved the pressure limb
+from 2.000 and left the ratio untouched to five figures.
 
 **It was 5.0570 for most of this project's life.** The path from there to here is §3.12
-through §3.21 and no single change did it: a sourced GFR response, a re-derived renin
+through §3.22 and no single change did it: a sourced GFR response, a re-derived renin
 gain, a sourced volume-keyed natriuretic path, a sourced venous return relation, and a
 pressure slope moved to the value the human joint constraint implies.
 
@@ -276,22 +314,26 @@ blood volume and haematocrit — and left the compartment fraction alone.
 
 ### Ledger
 
-**73 parameters over 85 rows** — 34 `reported`, 33 `derived`, 17 `assumed`, and
-**1 `calibrated`, down from two**, since `G_vr` was sourced (§3.19). Tiers: 38 A, 30 B,
-17 C. **`CV.VENOUS_RETURN.SENSITIVITY` was the second most consequential unmeasured
+**91 parameters over 104 rows** — 40 `reported`, 39 `derived`, 24 `assumed`, and
+**1 `calibrated`**, since `G_vr` was sourced (§3.19). `RN.GFR.VOLUME_RANGE` was added on 2026-09-03 as the censoring bound on the GFR volume response (§3.22) — the same treatment `RN.AUTOREG.UPPER` gets, and for the same reason. Tiers: 43 A, 36 B,
+25 C. **`CV.VENOUS_RETURN.SENSITIVITY` was the second most consequential unmeasured
 number in the project and it is now sourced in healthy humans.** The ONE remaining
 `calibrated` row is **`RN.PRESSURE_NATRIURESIS.SLOPE` itself, at 8.4** — and whether
 that label is still right is an open question in §7: 8.4 is not fitted, it is the value
 the human joint constraint implies given the sourced volume gain, which is closer to
 `derived`. It is left as `calibrated` because nothing measured it directly.
-`RN.GFR.VOLUME_SENSITIVITY` was added on 2026-09-02 (§3.12) and **nothing in `src/` reads
-it yet** — declared, not hidden, and in §7.
+`RN.GFR.VOLUME_SENSITIVITY` was added on 2026-09-02 (§3.12) and **is now read** —
+wired 2026-09-03, §3.22.
 **The `assumed` count went DOWN by two on 2026-09-01, and that is as honest as its going
 UP was on 2026-08-31.** `CV.CO.NOMINAL` and `RN.H2O.OBLIGATORY_LOSS` did not acquire
 citations; they stopped being primitives. Each is now DERIVED from the quantity that is
 actually measured — stroke volume and maximal urine concentration — and it is those two
 rows that carry the new sources.
-**43 relations** — 14 definitional, 15 empirical, 10 conservation, 4 placeholder.
+**53 relations** — 18 definitional, 18 empirical, 13 conservation, 4 placeholder.
+Nine landed on 2026-09-04 with the respiratory and blood components (§3.24), including
+`Renal.gfr_vol_mod`'s siblings `Respiratory.V_E` (`sourced-piecewise-threshold`) and
+`Blood.SaO2` (`sourced-published-fit`).
+`Renal.gfr_vol_mod` was added on 2026-09-03, `sourced-linear-censored`, and it is **split out of `Renal.GFR` deliberately**: that row sits in `check_relations.py`'s grandfathered-unsourced set, and folding a sourced relation into it would file sourced work under a permanent exemption that is documented to shrink only.
 `Renal.D(anp_sig)` was added on 2026-09-02 with ADR 0010, `sourced-lagged-linear`.
 `Cardiovascular.V_blood` moved definitional → conservation on 2026-09-02 (§3.8).
 **Twelve parameters carry male/female pairs:** `BF.BODY_MASS.{TYPICAL,P05,P95}`,
@@ -304,7 +346,7 @@ from the sourced stroke volume.
 
 ### Couplings — connected 2026-08-27
 
-13 couplings, cross-checked against the built model by
+**16 couplings** as of 2026-09-04 — 13, plus respiratory to bodyfluids (ADR 0017) and two INBOUND to blood with none outbound, which is what a forward computation looks like in the graph (ADR 0018). **An outbound edge from blood would mean an oxygen feedback had been built**, and the count is the cheapest tripwire for that. Cross-checked against the built model by
 `assert_couplings_match_model()`. Declared time constants **3.0 / 302.4 / 3600 / 3600 s**,
 largest gap **100.8×**, suggested boundary **30.1 s**. `cost_profile` on a real solution
 returns `nf/nw = 2.5` — **linear-algebra bound, so partitioning is the right lever.** Both
@@ -604,7 +646,7 @@ model reproduces every human quantity at once:
 | **human** | **1.70–2.30** | **0.553–0.572** | **2.97–4.16** |
 
 **Neither correction alone lands; together they land on all three.** 1400 is illustrative,
-not a value to enter — `G_vr` must be REPLACED by sourced venous compliance (§4 item 1),
+not a value to enter — `G_vr` must be REPLACED by a sourced value (**done 2026-09-03, §3.19**),
 and this table is the target that work has to explain. It also **vindicates ADR 0013's 51**:
 the pressure evidence was right and the volume objection was never about `G_pn`.
 
@@ -810,7 +852,7 @@ de-indexes van den Bosch by multiplying the indexed ECF *difference* by one body
 area, giving 1.061 L. Each arm has its own BSA, and BSA itself rose with the retained
 fluid, so the correct figure is **1.157 L, 9% larger.** That makes §3.7's within-subject
 ratio 1.73 rather than 1.885 mmHg/L and its failure 5.7× rather than 5.2× — same
-direction, slightly worse. It is §4 item 2's business and one clean pass on its own.
+direction, slightly worse. It is **§4 item 6**'s business and one clean pass on its own.
 
 ### 3.13 The renin gain was blocked by a sentence about a paper nobody had opened
 
@@ -947,6 +989,41 @@ crossover, 2 L of 0.9% saline over 1 h.
 **That is the first external validation this repo has ever had**, and it is the
 integrated renal-body-fluid loop being tested, not a parameter.
 
+> **CORRECTED 2026-09-04: IT STOPPED BEING A VALIDATION ON 2026-09-03 AND THIS SENTENCE
+> DID NOT.** It was true when written. §3.17 then fitted `RN.ANP.TAU` to **this same 6 h
+> time course**, which converts Lobo from a held-out comparison into an estimation set,
+> and §3.21 re-estimated the lag against it again. Three later sections went on quoting
+> "the validations are the four Lobo endpoints" while §3.21 said two paragraphs above
+> that Lobo fixed the lag. **Nothing here was fabricated — a true claim was left standing
+> while a later change made it false**, which is the same failure mode as a stale SHA
+> (§5 item 12) and a stale proxy (§3.22), and no gate can see any of the three.
+>
+> **What survives.** The two Lobo endpoints agree on the lag independently, 0.171 d from
+> the volume and 0.166 d from the sodium (§3.21). That is a real internal consistency
+> check and it is worth something. It is NOT external validation, because a second
+> endpoint from the same protocol in the same subjects is not an independent test.
+>
+> **AND "FOUR ENDPOINTS" OVERSTATES THE CONTENT BY TWO, WHICH NOBODY HAD CHECKED.** Read
+> `validation/challenges.jl` and the four reduce to **two** measured quantities:
+>
+> - urine volume over 6 h — independent
+> - urinary sodium over 6 h — independent
+> - urine osmolality — computed as the integrated solute load over that same urine
+>   volume, and the load is `Osm_nonNa + osm_Na*Na_excr`, so it is a function of the
+>   two above plus a constant
+> - fraction of the load excreted — computed as `na6/308`, a **pure rescaling** of the
+>   sodium endpoint
+>
+> **The fourth check is mathematically incapable of failing on its own.** Its band is
+> 20–45%, and the sodium band it is derived from, 63–127 mmol, maps to **20.45–41.23%** —
+> strictly inside. So it can only fail after the sodium check has already failed, and it
+> tests nothing the sodium check does not. **This is §5 item 3 in a new form**: a passing
+> suite is not evidence about a quantity it does not independently assert, and four green
+> lines read as four facts when two of them are restatements. Directive 1.10 wants more
+> assertion per unit of compute, and this is the opposite. **Recorded, not changed** — the
+> fix is either to widen the derived checks until they can bite or to drop them, and that
+> is a decision about the harness rather than about the model.
+
 **THREE FAILURES, AND THE FIRST TWO HAVE ONE DIAGNOSIS — §3.16.**
 
 1. **Acute natriuresis is too weak.** Fractional sodium excretion rises **43%** on
@@ -1071,7 +1148,8 @@ agreement is partly that double count. The human joint constraint is
 `G_pn + 0.0594·G_anp = 50`, putting `G_pn` at **11.4**.
 
 **A PREDICTION THE MODEL COULD NOT MAKE BEFORE.** Salt sensitivity is now **sex-dependent,
-women 11% higher**, because the path is keyed to a sexed volume; a pressure-only kidney had
+women 11% higher** — **17.7% once the GFR volume response landed, §3.22** — because the
+path is keyed to a sexed volume; a pressure-only kidney had
 salt sensitivity `1/G_pn`, which carries no sex information. **Nothing here has sourced
 that.** Asserted in the suite, recorded as debt, falsifiable.
 
@@ -1103,7 +1181,8 @@ nothing:
 
 **All three human quantities land at once near 1633–1800.** §3.8 called that endpoint
 visible; two of its three parameters are now sourced and the third is isolated to a
-single sweep. **`G_vr` is not entered and must not be** — §4 item 2, and the obstacle
+single sweep. **`G_vr` is not entered and must not be** — **it was entered the next
+day, §3.19**, and the obstacle
 there is evidence, not arithmetic.
 
 **One caveat, recorded rather than reconciled.** 11.4 pairs with `G_anp` = 650; the
@@ -1115,7 +1194,8 @@ seeing the result is the circularity this row's history warns about.
 ### 3.19 THE VENOUS RETURN RELATION IS SOURCED IN HEALTHY HUMANS. `G_vr` 2880 → 1400
 
 **Run `python validation/venous_return_human_extract.py`.** Pre-registered in
-`validation/venous_return_human_prereg.md`. §4 item 2 is DONE and `calibrated` is down
+`validation/venous_return_human_prereg.md`. **The venous return item is DONE** and
+`calibrated` is down
 to one row in the whole ledger.
 
 **THE EARLIER PASS MISSED IT BY SEARCHING FOR THE WRONG OBJECT.** `G_vr` is
@@ -1192,7 +1272,7 @@ that row's own note required once `G_vr` was sourced.
 |---|---|---|
 | 400-day drift | 3.9e-15 | — |
 | resting state, 8 endpoints | all inside reference ranges | — |
-| Lobo urine, 6 h | **565.6 mL** | 563 |
+| Lobo urine, 6 h | **566 mL** | 563 |
 | Lobo urinary sodium, 6 h | **95.1 mmol** | 95 |
 | **chronic salt sensitivity** | **2.000** | **1.70–2.30** |
 | **`dMAP/dV_ecf`** | **3.000 mmHg/L** | **2.97–4.16** |
@@ -1204,6 +1284,12 @@ the lag. **A first-order lag cannot move a steady state**, so they are separatel
 identified — at gains of 500/700/900 the chronic sensitivity is 2.275/1.720/1.382
 regardless of the lag, and its reciprocal is linear in the gain. The two Lobo endpoints
 agree on the lag independently, 0.171 d from the volume and 0.166 d from the sodium.
+
+**DO NOT READ THE TWO LOBO ROWS AS AGREEMENT TO THREE FIGURES.** `RN.ANP.TAU` was
+estimated against those very numbers, so they are fit residuals, and §3.23 established
+that **Lobo publishes no dispersion at all** — its full text is paywalled and its
+abstract gives bare means. There is no band to be inside of. Quoting a half-percent
+match against an unbounded target is the precision that does not exist, directive 1.9.
 
 **JENSEN 2013 WAS HELD OUT AND IS THE ONE OUT-OF-SAMPLE NUMBER.** It was not used in the
 estimation. The model predicts +82.5% against a reported +123% — inside the band, about a
@@ -1224,34 +1310,880 @@ without one — and does not constrain its value.
 
 **WHAT IS NOT CLAIMED.** Three parameters in the sodium–volume loop now come from human
 data, and two of them were solved against the very targets the harness reports, so those
-are FITS and not validations. **The validations are the four Lobo endpoints, the resting
-state, the 400-day steady state, and Jensen.** The rest is a consistent parameterisation.
+are FITS and not validations. **The validations are the resting state, the 400-day steady
+state, and Jensen** — and **NOT the four Lobo endpoints**, which this section itself says
+fixed the lag four paragraphs above. The rest is a consistent parameterisation.
+
+**AND THE ACUTE EVIDENCE BASE IS A MONOCULTURE, WHICH MATTERS MORE THAN EITHER
+CORRECTION.** Lobo and Jensen are **the same manoeuvre** — an intravenous isotonic saline
+bolus into healthy volunteers — differing in dose and in what they report. So Jensen is
+held out in the sense that nothing was fitted to it, and NOT in the sense that it probes
+a different mechanism. **One protocol class carries the whole acute limb**, it runs on
+the two least-sourced constants in the model (`BF.ICF_ECF.OSMOTIC_TAU`, `assumed`, and
+`RN.ANP.TAU`, identified by nothing but this data), and it drives the model roughly three
+times outside the volume range over which `RN.GFR.VOLUME_SENSITIVITY` is evidenced
+(§3.22). **Deliberately volume-loading a healthy person is not something that happens
+outside a research protocol**, and while directive 1.7 welcomes a perturbation that
+TRACES a relationship — Guyton 1957 stepping right atrial pressure to get the venous
+return curve — a few endpoints at one dose traces very little. §7.
+
+---
+
+### 3.22 THE GFR VOLUME RESPONSE IS WIRED, AND IT MOVED THE ONE HELD-OUT NUMBER THE WRONG WAY
+
+**Run `julia --project=. validation/challenges.jl`. IT EXITS 0.** **444/444** with eight
+pins moved. The count rose from 441 by exactly three and NOT because a test was added:
+the `ledger provenance` testset asserts units, tier and method for every parameter, and
+`RN.GFR.VOLUME_RANGE` is one new parameter. Checked rather than assumed. `RN.GFR.VOLUME_SENSITIVITY` was entered on 2026-09-02 and **nothing in `src/` read
+it for a day**, which is the state directive 1.11 calls not evidence about anything. It is
+read now, as the relation **`Renal.gfr_vol_mod`**. **It was the item that HEADED §4**,
+and that list has been renumbered around its removal rather than left with a done
+entry in it — so "§4 item 2" now means something else, and every cross-reference to
+§4 in this file was audited one at a time rather than decremented. Four of them were
+ALREADY stale, pointing at the pre-2026-09-03 list; those now name the finding rather
+than a position, which is §5 item 12's lesson applied one level up.
+
+**No ADR, and that is the pre-registered outcome rather than an omission.**
+`validation/renal_hemodynamics_prereg.md` reached branch G3 — *real but minor: enter the
+row, write NO structural ADR, and record the magnitude as a partial contribution the other
+two records must be re-estimated against.* It also fixed, before the search, that an E1
+phenomenon defaults **ON** under ADR 0006, so **this term is not a flag.**
+
+| | before | after | human |
+|---|---|---|---|
+| chronic salt sensitivity | 2.000 | **1.849** | 1.70–2.30 |
+| `dMAP/dV_ecf` | 3.0005 | **3.0005** | 2.97–4.16 |
+| Lobo urine, 6 h | 566 mL | **577** | 563 |
+| Lobo urinary sodium, 6 h | 95.1 mmol | **97.1** | 95 |
+| **acute fractional Na excretion rise** | **82.5%** | **79.3%** | **123%** |
+
+**READ THE MIDDLE COLUMN AS MODEL MOVEMENT, NOT AS CHANGED AGREEMENT.** The
+`dMAP/dV_ecf` row is carried to five figures because it is pinned there and the pin is
+what makes an unintended change visible; the human range it sits beside spans forty per
+cent, so the agreement is unchanged in any sense the data can resolve. Same for the two
+Lobo rows, whose target has no published dispersion at all (§3.23).
+
+**A 7.6% FALL, AND THE TWO PROXIES BOTH OVER-PREDICTED IT.** The pre-registration measured
+8.1% by the per-intake route and 15.2% by the per-litre route, against thresholds of 20%
+(live) and 5% (dead). The measured 7.6% is below both and **in the same band, so the
+verdict does not move** — which is the thing that was being tested. The reason it is
+lower is that both proxies were computed at `G_pn` = 20, `G_vr` = 2880 and **no
+volume-keyed natriuretic path**, so this term now competes with a sourced ADR 0010 path
+for the same sodium. A proxy measured against a superseded model predicts a superseded
+number.
+
+**`dMAP/dV_ecf` DID NOT MOVE AT ALL, AND THAT IS THE FIFTH INDEPENDENT CONFIRMATION.**
+§3.7 established that `G_pn` and `G_vr` are orthogonal; the `G_vr` sweep, the escape
+sweep, the GFR sweep and §3.14 each confirmed it, and this is the first confirmation from
+a term that is actually IN the model rather than proxied. **This is a pressure-limb lever
+only.**
+
+**IT MOVED JENSEN THE WRONG WAY, AND THE ARITHMETIC IS WORTH UNDERSTANDING BEFORE ANYONE
+CALLS IT A DEFECT.** Jensen 2013 is the only out-of-sample number this parameterisation
+has **in the fitting sense — nothing was estimated against it — and NOT in the mechanism
+sense**, because it is the same intravenous saline bolus into healthy volunteers that
+Lobo is (§3.21, §7). The acute fractional sodium excretion rise falls 82.5% → 79.3%
+against a reported 123%. **Absolute excretion rose** — both Lobo endpoints moved toward their targets. The
+two are not in conflict:
+
+    FENa = 1 - FR_effective = (1 - FR_Na)*renal_mod - fr_mod
+                              + [G_pn*(MAP - MAP_ref) + anp_sig] / Na_filtered
+
+**Both natriuretic terms are NORMALISED BY FILTERED LOAD**, so raising GFR dilutes them in
+the FRACTIONAL measure while raising the absolute flux. The model therefore excretes more
+sodium and reports a smaller fractional rise. Whether that is right depends on
+glomerulotubular balance, which this model does not represent and nothing here sources.
+**DO NOT close it by refitting anything to Jensen** — §4 item 2 says spending the only
+out-of-sample datum on a fit is how this line loses its one test.
+
+**THE CENSORING IS A LEDGER ROW, NOT A LITERAL.** `RN.GFR.VOLUME_RANGE` = **0.029**, the
+fractional ECF half-span van den Bosch actually measured, de-indexed with **each arm's own
+body surface area** — the correction §3.12 records owing to `ecf_salt_response_extract.py`,
+applied here at the point of first use rather than inherited. Outside that range a straight
+line between two points has no support of any kind, so the term **saturates instead of
+extrapolating**. It is **inert on the chronic salt step**, which moves ECF about 2.4%
+either way, and it **binds on every acute challenge**, which move it about 9% — so every
+acute number above is at the bound rather than on the line. Same treatment
+`RN.AUTOREG.UPPER` gets, for the same reason, and fixed in the pre-registration before the
+search.
+
+**WHAT IS CENSORED IS THE MAGNITUDE. WHAT IS NOT IS THE TIMESCALE.** The source is
+chronic, seven days per level; the term is algebraic and therefore instantaneous. Conlin
+1993 (PMID 7503952) puts the renal response to volume expansion *per se* at 3–7 hours, by
+saline or dextran alike, so instantaneous is **fast rather than backwards**. **A lag was
+deliberately not added**: its time constant would be identified by nothing, which is
+exactly the debt `RN.ANP.TAU` carries and states on its own row, and branch G3 forbids the
+structural addition in any case. Declared, not bounded.
+
+**SPLIT OUT OF `Renal.GFR` FOR PROVENANCE, NOT FOR STYLE.** `Renal.GFR` sits in
+`check_relations.py`'s `GRANDFATHERED_UNSOURCED` set because its piecewise autoregulatory
+form is uncited, and that list is documented to **shrink only**. Multiplying a sourced term
+into that expression would have filed sourced work under a permanent exemption.
+`Renal.gfr_vol_mod` carries its own `form_citation` and its own `form_status`
+(`sourced-linear-censored`), and `structural_simplify` aliases the extra variable away, so
+it costs no state.
+
+**IT READS A SECOND VOLUME AND THEY ARE DIFFERENT VOLUMES.** ADR 0010's natriuretic path is
+keyed to `V_blood`, because atrial stretch is intravascular. This is keyed to `V_ecf`,
+because that is what the iothalamate space measures. **They differ by `f_pv` = 0.211, so a
+sensitivity entered against the wrong one is wrong by 4.7×** — the error this component
+already records being made and caught once. Wiring it also surfaced a comment in
+`Renal.jl` that described the ADR 0010 path as `G_anp*(V_ecf - V_ecf_ref)`; it was
+harmless while no `V_ecf_ref` existed and stopped being harmless the moment one did.
+Corrected. **§5 item 11 for the third time.**
+
+**THE FALSIFICATION RUN WAS REQUIRED IN TERMS AND WAS RUN.** The pre-registration says the
+change is subject to the full discipline — revert the value, confirm the tests genuinely
+fail, re-pin. **At `S_gfr_v` = 0 the salt-step shift returns to 2.0404 — the old pin, to
+four decimal places — and the new pin of 1.8858 fails.** The fall is 7.58%. So the whole
+move is attributable to this one term and to nothing else that changed, and the eight
+re-pinned assertions bite on it rather than on solver noise or on a coincident edit.
+
+**AND THE MASS-INVARIANCE ASSERTION DID NOT FAIL, WHICH IS THE CHECK THAT MATTERED.**
+`S_gfr_v` and the clamp are **intensive** — a fractional GFR change per fractional volume
+change, and a fractional bound — against an **extensive** reference volume, so the product
+scales exactly as `GFR0` does. Written the other way round it would have come out as size
+squared, which is the mistake ADR 0010's gain made and which the body-size testset caught
+within one run. It was written correctly this time and the same testset confirms it.
+
+---
+
+### 3.23 THE COMPARISON BANDS WERE INVENTED, AND DERIVING THEM MADE THREE OF THEM WIDER
+
+**Run `python validation/challenge_bands_extract.py`.** Pre-registered in
+`validation/challenge_bands_prereg.md`, written before any source was opened and sitting
+before the extract in history. **No parameter and no equation changed.**
+
+**WHAT PROVOKED IT.** `validation/challenges.jl` judged the model against published human
+data using bands **nothing derived**. The Lobo comparisons used "±33%", a round number
+appearing in no paper with no derivation recorded anywhere here. Meanwhile `RN.ANP.TAU`
+had been estimated against that same dataset to about **0.5%** agreement. One repository,
+one dataset, **two tolerances differing roughly sixtyfold**, and at n = 10 the tight one
+cannot be right.
+
+**THE PRE-REGISTERED BRANCH F DID NOT FIRE, AND THAT IS REPORTED RATHER THAN OMITTED.**
+The rule fixed in advance was that a derived band turning a passing check red gets
+**recorded as a failure**, not widened away. Nothing went red. Every model value sits
+inside both the old band and the new one. **This pass made the harness honest; it did not
+make the model look better or worse.**
+
+**THE TWO ACUTE DATASETS CANNOT SUPPLY A BAND AT ALL, AND THAT IS THE RESULT.**
+
+- **Lobo is unobtainable.** `elink pubmed_pmc` returns no PMC record; Europe PMC reports
+  `isOpenAccess=N`, `inEPMC=N`, `hasPDF=N`, every full-text link "Subscription required".
+  **What was opened is the PubMed abstract and nothing else** — directive 1.5 — and it
+  reports the three endpoints this model is judged on as **bare means**. Reading
+  dispersion off a figure was prohibited in advance. Branch N: bands unchanged, relabelled
+  `assumed`.
+- **Jensen is open access and was read in full, and the ratio still cannot be banded.**
+  Table 3 gives FE_Na 1.26 (SD 0.53) → 2.80 (SD 0.75), n = 23, reproducing the abstract's
+  +123%. But **baseline and peak are the same subjects**, so the ratio's variance needs
+  their correlation and the paper reports neither paired differences nor a covariance.
+  Identical obstacle to the one on `RN.GFR.VOLUME_SENSITIVITY`, whose pre-registration
+  forbade fabricating an interval from unpaired SDs. Honoured, not re-argued.
+
+**AND THE JENSEN BAND INVERTS THE WORRY THAT STARTED THIS.** ±60–250% looks absurdly
+wide. Assuming zero correlation — which **overstates** the spread, so it is an upper
+bound — the reported statistics support **−18% to +502%**. **The existing band is tighter
+than the data can justify**, not looser.
+
+**WHERE A BAND COULD BE DERIVED IT CAME OUT WIDER. THREE OF FIVE.**
+
+| resting check | was | derived Band I |
+|---|---|---|
+| MAP | 80–95 | **71–103** |
+| ECF volume | 13–17 | **11.34–17.78** |
+| GFR | 130–180 | **100.8–204.4** |
+| plasma sodium | 135–145 | 135–145, already agreed |
+| plasma osmolality | 280–295 | **275–295, and the harness was wrong** |
+
+**ONE REAL DEFECT, AND NO GATE COULD SEE IT.** The plasma osmolality check used 280–295
+while `BF.OSM.PLASMA_SETPOINT`, the row it exists to test against, carries **275–295**.
+The harness had invented a tighter floor than its own ledger. Corrected.
+
+**WHY BAND I GATES AND BAND M ONLY PRINTS.** Band I is mean ± 2 SD, "is the model a
+plausible member of that population". Band M is mean ± 2 SEM, "does it predict the
+population central value". **Band I gates, and the pre-registration calls it WEAK in
+advance rather than discovering that later.** The reason is a real defect: **every
+parameter here is a point estimate and its uncertainty is not propagated** (§7, only body
+mass is sampled), so a model output carries no error bar. Judging an error-bar-free point
+against a confidence interval would fail the model for its missing propagation and fail it
+**harder the larger the study**, which is the wrong direction for evidence to push. **Band
+M becomes the real test the day parameter uncertainty is propagated.**
+
+**TWO RESTING BANDS HAVE NO SOURCE AT ALL** — urine volume 0.8–2.5 L/day and urine
+osmolality 300–900 mOsm/kg. Conventional clinical figures, now labelled `assumed`, per
+directive 1.12.
+
+**AND THE CHRONIC WINDOW IS A SPREAD, NOT AN INTERVAL.** 1.70–2.30 is the range across
+three meta-analytic **point estimates**, not a pooled confidence interval. Left alone —
+pooling three meta-analyses that share primary trials is the silent re-pooling
+`pooling.md` prohibits — with the label corrected so nobody reads it as a CI.
+
+**THE HONEST SUMMARY.** The worry that started this was **half right and half backwards.**
+Quoting four-figure agreement against these targets is indefensible and that half stands,
+and §2, §3.21 and §3.22 have been cut back accordingly. But the harness was **not lenient
+anywhere.** It was arbitrarily strict in three places and arbitrarily precise in its
+reporting everywhere.
+
+---
+
+### 3.24 THE MODEL LEFT THE RENAL AXIS. RESPIRATION AND BLOOD GAS ARE BUILT; THYROID IS NOT
+
+**2026-09-04.** `julia --project=. validation/challenges.jl` **exits 0**, 531/531, five
+gates clean. **ADR 0006's build order was finished** — all five spine steps and both
+modulators — and nothing declared what came next, which is why §4 had degenerated to
+eleven items of which one added physiology. ADR 0017 extends it by one step.
+
+**Two new subsystems, and the ledger is no longer all one axis.**
+
+| subsystem | rows |
+|---|---|
+| body-fluids, cardiovascular, renal, raas, adh, neural, circadian | 87 |
+| **respiratory** | **10** |
+| **blood** | **7** |
+
+#### Respiration — and PCO2 is an INPUT, which is the opposite of pressure
+
+ADR 0017 originally decided arterial PCO2 would be an **output** of the chemoreflex
+loop, as arterial pressure is an output of the renal loop. **Its own falsifiable test
+killed that**, and the refutation is the useful part.
+
+The accepted structure is **piecewise**: ventilation is flat below a **ventilatory
+recruitment threshold** and rises above it (Duffin's model; Guluzade 2022 fits exactly
+that form and finds the threshold far more reproducible than the slope). **The threshold
+sits at 45.28 mmHg and resting PCO2 is near 40** (Mateika 2003, n = 8 awake healthy
+controls), so **at rest the chemoreflex is below its own threshold and is not the
+operative control.** On the extrapolated line, ventilation at PCO2 40 comes out at
+**19.3 L/min against a real 6.2**.
+
+**So the dependency is inverted** — resting PCO2 sourced, basal ventilation derived from
+it — which is §3.6's lesson applied a second time. **The asymmetry is physiological, not
+a modelling failure:** pressure natriuresis is measured **at** the operating point; the
+chemoreflex only **above** a threshold that lies above it. **The project's thesis does
+not generalise to every variable**, and that belongs wherever the thesis is stated.
+
+**It is not an island.** `BF.H2O.INSENSIBLE_LOSS` was 0.8 L/day, `assumed`, cited
+*"Convention pending primary source."* It is now a computed respiratory flux of 0.3120
+plus a cutaneous residual of 0.4880 — **39% of it derived from physical constants and a
+sourced chemoreflex**, leaving a plausible cutaneous loss reached without being aimed at.
+The water balance now spans two subsystems, the first conservation law here to do so.
+
+**No new state.** Eight before, eight after. The chemoreflex and the alveolar equation
+are solved together as one quadratic, the branch condition written on the metabolic
+numerator rather than on PCO2 so nothing iterates, and the limbs meet continuously —
+which matters because a jump would land in `D(V_ecf)`.
+
+#### Blood gas — and this one IS a prediction
+
+| | model | human |
+|---|---|---|
+| PaO2 | 89.4 mmHg | — |
+| **SaO2** | **96.9%** | **95–99%** |
+| CaO2 | 20.9 mL/dL | — |
+| DO2 | 1243 mL/min | — |
+
+**Unlike resting PCO2, every input here is sourced or derived independently of the
+output, so the model CAN be wrong about it.** It is not. **And it does not turn on its
+weakest input**: sweeping the assumed alveolar-arterial difference from 5 to 25 mmHg
+leaves saturation inside the human window throughout, so it cannot be accused of having
+been chosen. **That is also why it is a WEAK test of the curve** — the sigmoid's upper
+limb is flat, and a real test needs the steep part, which means hypoxia, which ADR 0017
+forbids.
+
+**Oxygen delivery is the first quantity in this model that needs two subsystems at
+once** — flow from the cardiovascular side, content from the respiratory side, and it is
+their *product*. Every earlier coupling passed a signal or a flux.
+
+**Haemoglobin is sexed and comes from the same cohort and stratum as the haematocrit
+already held**, so the mean corpuscular haemoglobin concentration is a real check rather
+than a definition: 33.8 and 33.4 g/dL of red cells, both inside 32–36, and it could have
+failed.
+
+#### Thyroid — BRANCH T3, and one logarithm stopped it
+
+Chosen over cortisol and glucose because it is the only endocrine axis that drives a
+quantity another component already consumes: metabolic rate sets `RESP.CO2.PRODUCTION`.
+
+**The slope was found, in the right preparation, and cannot be used.** Benhadi 2010
+(PMID 19926783), 21 healthy volunteers: `log TSH = 1.50 − 0.059 × FT4`. **The abstract
+does not state the base of the logarithm and the paper is not open access.** Read as
+base ten the euthyroid point sits at the top of the reference interval; read as natural
+log it sits mid-range. **The two differ by 2.3× in the feedback gain.**
+
+**It is not resolved by picking the one that works.** The pre-registration forbids using
+either reference interval to set a parameter, and makes the euthyroid point the target
+its second falsifiable test judges. Choosing the base by which one lands in range is
+setting a parameter from the target — the Lobo failure exactly (§3.15).
+
+**A UNIT AMBIGUITY IS WORSE THAN A MISSING NUMBER, and that is the finding.** A missing
+number is honestly `assumed` and visibly absent. An ambiguous one looks sourced, carries
+a real citation and a real cohort, **passes every gate in this repository**, and would be
+wrong by 2.3× silently. **No row, no component, ADR 0019 stays Proposed.**
+
+#### SIX INSTANCES OF ONE DEFECT, THREE OF THEM FOUND IN ONE RUN
+
+`member_remake` keeps a **hand-maintained list** that must mirror what the components
+do at build time. It has now been wrong six times.
+
+| when | what was omitted | how it surfaced |
+|---|---|---|
+| ADR 0010 | `V_blood_ref` | loudly — every heavy member read as volume-expanded, MAP spread 1e-4 → 37.8 |
+| ADR 0017 | `H2O_insens`, left behind after the water split removed it | loudly — errored |
+| ADR 0018 | `bl.Hb` | **silently** — found by inspection, not by a test |
+| **2026-09-04** | **`cv.Hct`, `cv.f_pv`, `cv.HR0`** | **all three at once, by the new testset, on its first passing run** |
+
+**THE THREE FOUND TONIGHT HAD BEEN WRONG SINCE THE DAY THEY BECAME SEXED, AND NOTHING
+COULD HAVE NOTICED.** The ensemble's own tests run male only, so a parameter that is
+correct for men and stale for women fails nothing. All three are **intensive**, which is
+why the list missed them: it reads as "the extensive parameters" when what it has to be
+is **everything that depends on mass OR ON SEX**, because a member is remade from a
+problem built for one sex.
+
+**`cv.f_pv` IS THE CONSEQUENTIAL ONE AND IT IS NOT A ROUNDING ISSUE.** §3.8 establishes
+that with red cell volume held fixed `dV_blood/dV_ecf` **is** `f_pv`, and that the
+sourced haematocrit pair moves the male/female ECF excursion ratio to **1.182** — the
+result that section reports as the evidence haematocrit is identifiable at all. **A
+re-sexed ensemble member carried the male value, so the ensemble could not have
+reproduced that finding.**
+
+**THE FIX IS THE TEST, NOT THE THREE LINES.** Naming a fourth parameter would have left
+the fifth. The testset now builds a male model at the reference mass, remakes it as
+**female at 95 kg**, and compares against a natively built female across **every shared
+parameter** — so it catches a missed rescale and a missed re-sex together, and catches
+whatever is added next rather than what someone thought of. It costs two model builds
+and the suite is **1m37 with 533 assertions**, against 1m47 with 486 before it existed.
+
+**IT ALSO ERRORED TWICE ON ITS OWN CONSTRUCTION BEFORE IT RAN**, and both are recorded in
+its comments: `parameters()` on a simplified system carries dummy-derivative symbols with
+no default, and the problem must be built positionally the way `run_population` builds it
+because a `Dict` throws on the states `storage = false` eliminates.
+
+#### What the searches cost, because it is a pattern now
+
+**Directive 1.7 disqualified almost the entire literature in three of four searches.**
+The CO2 response slope returns remifentanil, alfentanil, midazolam, propofol, clonidine,
+diphenhydramine and buprenorphine — in every one the response is the *instrument* for
+measuring a drug's respiratory depression. Measured P50 and Hill exponents return
+chronic obstructive lung disease, sickle cell disease, sleep apnoea and congenital heart
+disease, several existing to characterise a pulse oximeter. Resting metabolic rate
+returns children, kidney disease and **calorimeter validation studies**.
+
+**And the binding constraint is now ACCESS, not existence.** Six of the sources these
+three records need were identified precisely and could not be opened. **One article,
+Crapo 1999, would discharge three `assumed` rows across two subsystems**; one more,
+Benhadi 2010, would unblock an entire axis. That is the highest-value work available and
+it is not something more searching will fix.
+
+---
+
+### 3.25 THE THYROID AXIS IS BUILT. IT WAS BLOCKED ON A LOGARITHM AND THE BLOCK WAS WRONG
+
+**Date: 2026-09-05.** §3.24 ended with the thyroid axis at branch T3 — *"the feedback
+slope cannot be sourced"* — because Benhadi 2010's abstract gives
+`log TSH = 1.50 - 0.059 x FT4` and never says what base the logarithm is. Choosing by
+which reading puts the euthyroid point in range is setting a parameter from the target,
+which `thyroid_prereg.md` §6 forbids in terms, so the axis was not built. **That stop was
+correct on the evidence then in hand and it was resolvable without the paper.**
+
+#### The base is fixed by a second measurement of the same quantity
+
+**Jostel A, Ryder WDJ, Shalet SM.** *Clin Endocrinol (Oxf)* 2009;71(4):529–34, PMID
+19226261, 9519 thyroid function tests in 4064 patients, abstract only: *"Feedback
+inhibition was estimated to cause a 0.1345 decrease in log TSH (mU/l) for 1 pmol/l
+increase in fT4."* **Its abstract says "log" too.** What settles it is that the index it
+defines is in wide clinical use and the downstream literature writes the base out —
+`PMC8129566`, n = 4378, open access, read in full: *"TSHI = ln TSH (mIU/L) + 0.1345 *
+FT4 (pmol/L)"* — **and that paper's own Table 1 checks the arithmetic**: `ln(1.64) +
+0.1345×13.33 = 2.29` against a reported TSH index of 2.25, where the base-10 reading
+gives 2.01.
+
+**The two studies then agree to 1%, and under exactly one pairing.**
+
+| reading | Benhadi | Jostel | ratio |
+|---|---|---|---|
+| Benhadi log10, Jostel ln | 0.13585 | 0.1345 | **1.010** |
+| Benhadi ln, Jostel ln | 0.0590 | 0.1345 | 0.44 |
+
+A 2.3-fold disagreement between two competent measurements of the same gain, in cohorts
+of comparable free-thyroxine range, is not credible. **Benhadi's logarithm is base 10.**
+
+**AND THE ENTERED SLOPE IS THEIR MEAN, 0.1352, NOT EITHER ONE.** This row first entered
+Benhadi's alone and called Jostel's "corroboration, not the value", on the grounds that
+`pooling.md` bars pooling across assays. **They agree to 1%.** That rule exists to stop a
+real method difference being averaged away, not to force a choice between measurements
+agreeing to a fifth of anyone's error bar — and making that choice looks like rigour
+while being arbitrary. Directive 1.9 and §3.23 both already said so, and every thyroid
+row was cut to the significant figures its source supports at the same time.
+
+**AND THE RESOLUTION MADE THE MODEL LOOK WORSE, WHICH IS THE EVIDENCE IT WAS NOT
+REVERSE-ENGINEERED.** The reading it selects is the one §3.24's extract noted puts the
+euthyroid point further from mid-range. The test got harder and the model then failed it.
+
+#### What was sourced, and from where
+
+| row | value | source | opened |
+|---|---|---|---|
+| `THY.TSH.FT4_SLOPE` | 0.1352 /pmol/L, ln units — **mean of two** | Benhadi 2010 and Jostel 2009, agreeing to 1% | abstracts |
+| `THY.TSH.INTERCEPT` | 3.454 ln(mIU/L) | Benhadi 2010 — **one source, and it carries the whole error** | abstract |
+| `THY.FT4.EUTHYROID` | 16.60 pmol/L | **Braverman 1973**, equilibrium dialysis, n = 11 euthyroid | **full text** |
+| `THY.FT4.TAU` | 10.31 d | Braverman 1973, fractional turnover 9.7 %/day, n = 5 | **full text** |
+| `THY.METABOLIC_GAIN` | 0.211 — **mean of two** | **Maushart 2022**, paired hyperthyroid → euthyroid, n = 18 | **full text** |
+| `THY.FT4.GAIN` | 4.952 | derived — the only derived number in the loop | — |
+
+**Braverman 1973 is `10.1172/JCI107265` and the JCI archive serves every article free.**
+It was reachable the whole time. So was Maushart 2022 in PMC. §3.24's claim that the
+binding constraint is access was true of the two named articles and **not true of the
+subsystem**: the axis needed three more numbers than the blocked paper had, and all
+three were open.
+
+#### The euthyroid thyrotropin is a real prediction and the model gets it wrong by 2.4×
+
+Free thyroxine comes from equilibrium dialysis in normal subjects. The pituitary line
+comes from a thyroxine-loading experiment in different subjects. **Neither is a
+thyrotropin reference value**, so where they cross is a prediction that can be wrong.
+
+    predicted euthyroid TSH   3.35 mIU/L
+    NHANES III reference population, n = 13,344, geometric mean   1.40 mIU/L
+
+It is inside the conventional 0.4–4.0 interval, which is the letter of ADR 0019's
+falsifiable test 2 — and 0.4–4.0 is exactly the kind of round number directive 1.12 says
+not to trust. **Treated as a failure. Reported, not tuned.** Branch T2.
+
+**The decomposition is the useful part, and it is unambiguous.** Of three sourced inputs,
+two have independent corroboration and one does not:
+
+| input | second source | agreement |
+|---|---|---|
+| slope | Jostel 2009 | 1% |
+| euthyroid FT4 | Maushart 2022, immunoassay, 49 years later | 16.6 against 16.6 |
+| **intercept** | **none** | — |
+
+Reconstructing the intercept from independent euthyroid pairs at the agreed slope gives
+**2.58–2.80 against the entered 3.45** — a factor of 1.9–2.4 in thyrotropin, which is the
+whole discrepancy.
+
+**AND "THE SLOPE IS NOT THE PROBLEM" IS ARITHMETIC, NOT RHETORIC.** Sweeping the slope
+across its entire two-source spread moves the prediction from 3.32 to 3.39 mIU/L — **2%,
+against a discrepancy of 2.4×.** No plausible slope error reaches that. The intercept can,
+because slope and intercept in a regression over a narrow range are strongly
+anti-correlated and the intercept is the extrapolated one — **and Benhadi's abstract
+reports no standard error for it, so its variance cannot be propagated at all.** The
+honest statement is that this coefficient is not determined to better than roughly a
+factor of two by the study that reports it, and the model inherits that.
+
+**AND IT IS THE SAME FAILURE MODE FOR THE THIRD TIME. An intercept is a line
+extrapolated to FT4 = 0 from data that never went near zero.** ADR 0017's amendment came
+from a chemoreflex line extrapolated below its measured range, putting ventilation at
+19.3 L/min against a real 6.2. §3.22's censoring bound came from the same move on GFR.
+**Three instances is not a coincidence; it is a rule, and it is now in §5.** Benhadi's
+cohort is also mean age 60, and NHANES III reports thyrotropin rising with age.
+
+**The intercept is not replaced**, because every reconstruction above is built from a
+measured euthyroid thyrotropin — the quantity the test judges. That is §3.15's error
+committed deliberately instead of by accident.
+
+#### What the loop gets right, and nothing was fitted to it
+
+The open-loop gain falls out as `b·FT4 = 2.24`, so
+
+    d ln FT4 / d ln(thyroid secretory capacity) = 1/(1 + b·FT4) = 0.31
+
+**The human axis absorbs about 70% of a change in thyroid secretory capacity.** Nothing
+in this repository was fitted to that and nothing is validated against it. It is the
+claim most worth trying to falsify next.
+
+#### One state, and it is the only one this model ever chose to add
+
+ADR 0019 planned two. Thyrotropin turns over in **minutes** against a thyroxine time
+constant of **10.3 days** and a horizon of 400, so the pituitary limb is algebraic — the
+fallback `thyroid_prereg.md` §4 wrote down before any source was opened, taken by
+inspection rather than after measuring a slowdown. **Nine states, and thyroxine is the
+first one added because the slowness is the physiology rather than avoided because it
+was not.**
+
+#### The metabolic arm reaches PaCO2 — and CANNOT reach ventilation or the water balance
+
+`RESP.CO2.PRODUCTION` was `assumed` at a round teaching number. It is now a reference
+production times a thyroid multiplier that is **exactly 1.0** unless the arm is switched
+on — ADR 0019 decision 4, written before any of this was known. So every existing result
+is unchanged, and the suite asserts `th_mod == 1.0` with `==` rather than `isapprox`.
+
+**SWITCHING IT ON DOES LESS THAN THIS SECTION FIRST CLAIMED, AND FINDING THAT OUT IS
+WHAT THE TEST WAS FOR.** The first version asserted that thyrotoxicosis raises
+ventilation and therefore the respiratory water flux. **It fails.** Ventilation does not
+move at all, because §3.24's central finding bites a second time: **at rest the model
+sits on the FLAT limb of the chemoreflex**, the ventilatory recruitment threshold is
+45.28 mmHg and resting PaCO2 is 40, so a higher CO2 load raises PaCO2 and nothing else.
+
+**And essentially no thyroid state crosses the threshold.** At twice normal secretory
+capacity PaCO2 reaches 41.9; at **six times** it reaches 45.0 against a threshold of
+45.28, so the crossing is only approached at a secretory capacity where the sourced
+pituitary line has already stopped being usable (below). So:
+
+    thyroid -> respiratory  moves PaCO2, and stops there
+    thyroid -> respiratory -> blood  moves alveolar PO2 and arterial saturation
+    thyroid -> ventilation -> water balance  DOES NOT EXIST at any thyroid state
+
+That last line is a fact about two independently sourced components meeting, not a
+modelling choice, and both directions are asserted in the suite — `PaCO2` strictly up,
+`V_E` and `H2O_resp` exactly equal. **It also gives this model its first TWO-HOP
+coupling**: thyroid → respiratory → blood.
+
+**One reason to hesitate before switching it on.** The gain comes from hyperthyroid
+patients, a preparation `thyroid_prereg.md` §2 excludes. The exclusion is unsatisfiable —
+a healthy person cannot ethically be made thyrotoxic, which is `SOURCES.md`'s own
+argument for animal preparations applied to a disease preparation — so §8.3 relaxes it
+**for that one row** and records the relaxation.
+
+**And one limitation the same test exposed.** At six times secretory capacity the sourced
+pituitary line still puts thyrotropin at **0.89 mIU/L**, where real thyrotoxicosis is
+below 0.01. The log-linear relation is fitted across the euthyroid range and does not
+suppress far outside it, so `thyroid_secretion` expresses the DIRECTION of thyroid
+disease and not its magnitude. Do not read a thyrotoxic thyrotropin off this model.
+
+#### Four amendments to a pre-registration, and why that is not cheating
+
+`thyroid_prereg.md` §8 records each one against the text it changes. **The test of an
+amendment is not whether it was convenient but whether it could have flattered the
+result**, and §8.1 is checked against that explicitly: the log-base resolution selected
+the reading that made the prediction worse, and the model then failed the test. §8.2 was
+pre-registered as a fallback. §8.3 changes no default. §8.4 upholds §6 rather than
+bending it.
+
+---
+
+### 3.26 THE THYROID DISCREPANCY WAS A UNIT ERROR, AND NHANES SETTLED IT IN PUBLIC DATA
+
+**Date: 2026-09-05.** §3.25 reported the thyroid loop as making a genuine prediction and
+failing it by 2.4×, and decomposed the failure onto the one unreplicated coefficient.
+**That decomposition was wrong.** The coefficient was not the problem.
+
+#### A slope and a concentration have to share a scale
+
+The ledger composed a pituitary line measured on one free-thyroxine **immunoassay**
+(Benhadi 2010) with a free-thyroxine concentration measured by **equilibrium dialysis**
+(Braverman 1973). A slope in `1/(pmol/L)` composes with a concentration in `pmol/L` only
+when both are on the same scale. **Free-thyroxine assays do not share one.**
+
+`thyroid_prereg.md` §2 prohibited *pooling* across free-thyroxine assays. Nothing
+prohibited *composing* across them, which is the stronger error and the less obvious one.
+
+#### NHANES measured the gap instead of leaving it arguable
+
+Owner's instruction: get it from public data. NHANES 2007-2012 measured thyrotropin, free
+thyroxine, **total** thyroxine and both antibodies in a probability sample; the microdata
+are public. Pre-registered in `validation/nhanes_hpt_prereg.md` before any relationship
+was computed, extracted in `validation/nhanes_hpt_extract.py`.
+
+**Reference population n = 6814** — adults 20+, not pregnant, no thyroid history, no
+thyroid-active prescription, both antibodies negative. **No exclusion on the thyrotropin
+value**, deliberately: Hollowell's reference population removes biochemical dysfunction,
+which is right for a reference interval and wrong for a regression.
+
+|  | NHANES immunoassay | Braverman dialysis |
+|---|---|---|
+| total thyroxine | 7.75 µg/dL | 7.30 µg/dL |
+| **free fraction** | **0.0104 %** | **0.0180 %** |
+| free thyroxine | 10.16 pmol/L | 16.61 pmol/L |
+
+**The total hormone agrees to 6% and the free fraction differs 1.73-fold.** Two methods
+that agree on the total and disagree nearly two-fold on the free fraction are not two
+measurements of one quantity. **That is the whole of the 2.2× discrepancy**, and it is
+measured here rather than argued.
+
+#### What NHANES gives, and it is more than the fix
+
+    reference population        n = 6814
+    thyrotropin, geometric mean 1.512 mIU/L   2.5-97.5%  0.460 - 4.484
+    free thyroxine, mean        10.16 pmol/L  SD 1.77    2.5-97.5%  7.70 - 14.10
+
+**The conventional 0.4–4.5 thyrotropin interval is now measured rather than quoted** —
+directive 1.12's round teaching number, replaced by its own data. And it replicates
+across two surveys and two decades: Hollowell's NHANES III (1988-94, n = 13,344) gives a
+geometric mean of 1.40 against this 1.512, on a different assay in a different sample.
+
+**A sex pair is not needed, and that is now a finding rather than an absence.** Free
+thyroxine differs by **0.5%** between men and women in 6814 adults, thyrotropin by 3%.
+ADR 0014's "where only one value is supported, use it for both" was previously invoked
+because no pair could be found; it is now invoked because a large sample says there is
+nothing to find.
+
+#### The structure that follows, and the one number that transfers
+
+**The open-loop gain `b·FT4*` is DIMENSIONLESS and therefore scale-invariant, which is
+exactly what the measured slopes are not.** So it is the sourced row and everything else
+is derived from it:
+
+| row | value | basis |
+|---|---|---|
+| `THY.LOOP_GAIN` | **2.277** (range 1.79–2.76) | derived, scale-invariant, from two independent estimates |
+| `THY.FT4.EUTHYROID` | 10.16 pmol/L | reported, NHANES n = 6814 |
+| `THY.TSH.EUTHYROID` | 1.512 mIU/L | reported, NHANES n = 6814 |
+| `THY.TSH.FT4_SLOPE` | 0.2241 /pmol/L | derived = G / FT4* |
+| `THY.TSH.INTERCEPT` | 2.690 | derived = ln(TSH*) + G |
+| `THY.FT4.GAIN` | 6.720 | derived = FT4* / TSH* |
+
+The two gain estimates: Benhadi's line is self-consistent on its own assay whatever that
+assay reads, giving 2.76 at an assumed cohort thyrotropin of 2.0 mIU/L (2.54–3.05 across
+1.5–2.5, so the assumption is worth ~10%); Jostel's slope with the free-thyroxine mean of
+the cohort that applies it gives 1.79. **Averaged, per the owner's rule.**
+
+#### The test that was failed was ill-posed, and saying so is the finding
+
+**ADR 0019's falsifiable test 2 is VOID.** Not failed — ill-posed. A crossing point can
+only be a prediction if the line and the concentration share a scale. The dependency is
+therefore inverted exactly as ADR 0017 inverted it for arterial PCO2: **the operating
+point is sourced and the RESPONSE is what the model claims.**
+
+**What survives is the part worth having.** Tests 1, 3 and 4 are untouched, and the loop
+gain is unfitted: the axis absorbs **about 70%** of a change in thyroid secretory
+capacity, closed-loop relaxation 3.1 days. **And the model barely moved** — closed-loop
+response 0.305 against 0.308 before. What changed is that the numbers are now composable.
+
+#### The general lesson, and it is now a rule
+
+`validation/pooling.md`: **whenever two ledger rows are multiplied, divided or added they
+must share a measurement scale, not merely a unit symbol.** Where they cannot, find the
+dimensionless combination that is scale-invariant and source that instead. Not pooling
+two assays is necessary and **not sufficient**.
+
+---
+
+### 3.27 ADR 0018 DEFERRED THE FICK RELATION FOR A ROW THAT ALREADY EXISTED
+
+**Date: 2026-09-05.** ADR 0018's "What is NOT decided" led with *"Venous oxygen content,
+the Fick relation and extraction ratio. They need tissue oxygen consumption, which is a
+metabolic row this model does not have."*
+
+**It had one.** `RESP.CO2.PRODUCTION` is the metabolic load, and `RESP.EXCHANGE_RATIO` is
+by definition the ratio that converts CO2 production to oxygen consumption. Both rows were
+already in the ledger, both are used elsewhere, and **neither moved.** The deferral was
+not about a missing measurement — it was about a quantity the record did not recognise
+under the name it already had.
+
+**That is the finding, and it is worth more than the arm.** A deferral in an ADR reads as
+evidence that something cannot yet be done, and this one was read that way. §5 gains an
+entry.
+
+#### What it produces, from rows that were already there
+
+    oxygen consumption            250 mL/min
+    arteriovenous difference      4.20 mL/dL
+    mixed venous content          16.7 mL/dL
+    mixed venous saturation       78.4 %   (male)     70.4 %  (female)
+    extraction ratio              20.1 %   (male)     28.4 %  (female)
+
+**The sex difference in extraction is emergent and was not put there.** Oxygen demand is
+not sexed in this model; haemoglobin and cardiac output are. Women therefore extract a
+larger fraction of a smaller delivery to meet the same demand — which is the correct
+direction and the correct reason.
+
+**Anaemia is now legible**, and that is the property worth having. Haemoglobin falls,
+content and delivery fall with it, consumption does not, so extraction rises and mixed
+venous saturation falls **while arterial saturation and tension do not move at all**.
+That is what distinguishes content from tension, and it is now asserted rather than
+described.
+
+**And the model has its only three-hop coupling**: thyroid → respiratory → blood → venous
+oxygen, because the thyroid metabolic arm scales the CO2 load that consumption is derived
+from.
+
+#### What is NOT claimed, and one of these is an ethical ceiling
+
+**No human target is asserted against mixed venous saturation or the extraction ratio.**
+Not for want of searching — the measurement needs a pulmonary artery catheter, which is
+not placed in healthy people, so the literature is critical care and cardiac disease and
+directive 1.7 disqualifies almost all of it. **This is the same ethical ceiling ADR 0006's
+amendment records for `RN.AUTOREG.UPPER`'s rat provenance**, and it is the fourth
+subsystem in which directive 1.7 has disqualified most of a literature.
+
+**The arteriovenous difference IS comparable**, because it follows from oxygen uptake and
+cardiac output, both measured non-invasively in every indirect-calorimetry study, and 4.2
+mL/dL is where it should be.
+
+**Both parent rows are still `assumed` at round teaching numbers.** 0.20 L/min of CO2 and
+an exchange ratio of 0.80 are exactly what directive 1.12 warns about, and oxygen
+consumption inherits their weakness. **Sourcing resting oxygen consumption directly by
+indirect calorimetry would replace both with one measurement** — and it is now more
+valuable than it was, because a second subsystem depends on it.
+
+#### A correction to ADR 0018's own text
+
+The note on the alveolar gas equation said `RESP.EXCHANGE_RATIO` *"should become derived
+the moment a metabolic oxygen consumption exists."* **It must not.** Oxygen consumption is
+derived *through* the exchange ratio; deriving the ratio back from it is circular. It stays
+a primitive and is now load-bearing in two places.
+
+---
+
+### 3.28 THE METABOLIC RATE IS SOURCED, AND THE FICK RELATION NOW ACCUSES CARDIAC OUTPUT
+
+**Date: 2026-09-05.** `RESP.CO2.PRODUCTION` was `assumed` at **0.20 L/min**, a round
+teaching number, and its own ledger note recorded a failed search: *"resting metabolic
+rate / indirect calorimetry / reference values returns prepubertal children, chronic
+disease..."*.
+
+**That search missed a weighted meta-analysis of 197 studies whose subject is exactly this
+row.** McMurray RG et al., *Med Sci Sports Exerc* 2014;46(7):1352-8, PMC4535334, read in
+full: 397 publication estimates, inverse-variance weighted, and its stated purpose is to
+test the 1.0 kcal·kg⁻¹·h⁻¹ metabolic-equivalent convention — **directive 1.12's subject
+written as a paper title.** Its conclusion is that the convention overestimates resting
+metabolic rate by about 10% in men and almost 15% in women.
+
+**A recorded failed search is evidence about the searcher, not about the literature**, and
+the reader of that note would reasonably have stopped looking. §5 gains an entry.
+
+#### What was entered, and the choice that dominates the uncertainty
+
+| stratum | kcal·kg⁻¹·h⁻¹ | VO₂ mL/min |
+|---|---|---|
+| men, normal weight | 0.960 | 232 |
+| women, normal weight | 0.926 | 224 |
+| **mean, normal weight — ENTERED** | **0.943** | **228** |
+| mean, all BMI — alternative | 0.865 | 209 |
+| the MET convention | 1.000 | 242 |
+
+**Normal weight**, because the reference individual is a healthy 70 kg adult and the
+all-BMI means pool in subgroups whose metabolic rate per kilogram is lower for a reason
+this model cannot represent — it has no body composition. **Fixed in the pre-registration
+before any consequence was computed.**
+
+**The two strata differ by 8%, about ten times either one's confidence interval**, so the
+ledger's uncertainty range is the *stratum choice* and not a CI. Saying which is which is
+the whole of directive 1.9 here.
+
+**A sexed pair is supported and deliberately not taken.** This row drives basal
+ventilation, which drives the respiratory water flux, whose residual closes against
+`BF.H2O.INSENSIBLE_LOSS` — assumed, 0.8 L/day, **unsexed**. Sexing one half against an
+unsexed total either invents a sexed total or dumps the whole difference into the
+cutaneous residual.
+
+**The exchange ratio stays assumed and does not block it.** Weir's denominator runs 4.771
+at R = 0.75 to 4.881 at R = 0.85 — **±1.1%**, eight times smaller than the stratum choice.
+
+#### What moved, and what did not
+
+    RESP.CO2.PRODUCTION      0.2000 -> 0.1824 L/min     assumed -> derived
+    RESP.VENTILATION.BASAL   6.1636 -> 5.6206 L/min
+    respiratory water        0.3120 -> 0.2845 L/day
+    BF.H2O.CUTANEOUS_LOSS    0.4880 -> 0.5155 L/day
+
+**Arterial PCO2 does not move** — it is a sourced input under ADR 0017's amendment and
+ventilation is derived from it, so a change would mean the derivation had run backwards.
+**The water balance does not move either**: the two halves re-split and their sum is
+unchanged, so extracellular volume, plasma sodium and arterial pressure are bit-identical.
+
+Ventilation at 5.62 L/min is inside the 4–8 the pre-registration fixed in advance, at the
+low end — **and that is what a sourced metabolic rate and an assumed dead-space fraction
+of 0.30 imply together.** Branch M2 forbade moving the dead space to make it come out.
+That row is the next one to source.
+
+#### THE FINDING: a better-sourced number made a discrepancy WORSE, and located it
+
+|  | VO₂ | a-vO₂ | extraction | SvO₂ |
+|---|---|---|---|---|
+| before | 250 mL/min | 4.20 mL/dL | 20.1% | 78.4% |
+| **sourced** | **228 mL/min** | **3.83 mL/dL** | **18.3%** | **80.1%** |
+| implied by a measured SvO₂ near 75% | — | ~4.8 | ~23% | 75% |
+
+**Branch M3 fired, and the pre-registration required it be reported rather than rescued.**
+
+**The arithmetic locates it without ambiguity.** Extraction is consumption over cardiac
+output times arterial content. Consumption is now the best-sourced of the three; arterial
+content follows from haemoglobin and a sourced dissociation curve. What is left is
+cardiac output:
+
+    Fick-consistent cardiac output at 23% extraction   4.75 L/min
+    the model's CV.CO.NOMINAL                          5.95 L/min
+
+**And the likely reason is methodological, which makes it the same class of error as the
+thyroid one.** `CV.CO.NOMINAL` is derived from a stroke volume measured by **cardiac
+magnetic resonance** (UK Biobank), while every mixed venous saturation in the literature
+comes from populations whose cardiac output was measured by **thermodilution or Fick**.
+Composing one method's cardiac output with another method's venous saturation is the same
+move as composing an immunoassay's free thyroxine with a dialysis concentration — §3.26,
+and §5 item 18. **CMR is known to read stroke volume higher than Fick.**
+
+**It is not closed here.** Re-sourcing the stroke volume is its own pre-registered pass,
+and doing it inside this one would be adjusting a second parameter to rescue the first.
+**This is now the sharpest quantified discrepancy in the cardiovascular limb**, and unlike
+the salt-sensitivity numbers nothing in it was fitted to anything.
 
 ---
 
 ## 4. NEXT, IN ORDER
 
-**Rewritten 2026-09-03. Every numbered item of the previous list is DONE** — the ANP
-input coupling, renal haemodynamics, venous return, the renin gain, and the ADR 0013
-versus ADR 0015 decision. They are §3.12 through §3.21. What follows is what is left.
+**Rewritten 2026-09-03, and item 1 was discharged the same day.** The previous list's
+every numbered item was already done — the ANP input coupling, renal haemodynamics,
+venous return, the renin gain, and the ADR 0013 versus ADR 0015 decision, which are
+§3.12 through §3.21. **Wiring `RN.GFR.VOLUME_SENSITIVITY` was item 1 of the rewritten
+list and is §3.22.** It has been removed rather than left marked done, and everything
+below is renumbered. What follows is what is left.
 
 **Finish the cardiovascular system, then the other systems. Populations are far off — a
 population of an incomplete model is a wider set of wrong answers.**
+
+**AND THE BINDING CONSTRAINT HAS CHANGED. IT IS NOW ACCESS, NOT SEARCHING.** Six sources
+needed by §3.24's three records were identified precisely and could not be opened. Two of
+them are worth naming as work items in their own right because each unblocks more than a
+row:
+
+0. **GET ONE PAPER, NOT TWO — AND READ §3.25 BEFORE BELIEVING THIS ITEM.**
+   `Crapo RO et al. Am J Respir Crit Care Med 1999;160(5 Pt 1):1525-31` (PMID
+   10556115) discharges **three `assumed` rows across two subsystems** — resting
+   arterial PCO2, the alveolar-arterial difference, and the arterial PO2 that follows.
+   That one still stands.
+
+   **The second, `Benhadi 2010`, no longer blocks anything.** It was named here as
+   unblocking the entire thyroid axis; the axis was built without it (§3.25) by
+   resolving its logarithm against an independent measurement, and the three numbers
+   the axis needed beyond that paper were in open-access articles the whole time.
+   **This item was itself an instance of the failure it warned about**: "the binding
+   constraint is access" was true of two articles and false of the subsystem, and the
+   check that would have caught it is asking what the record actually needs rather
+   than what the blocked paper would have supplied.
 
 **Two things to read before starting anything.** §3.21's two caveats, because the model
 now matches human salt sensitivity and two of the three parameters that make it do so
 were solved against that very target. And §5, which is how work goes wrong here.
 
-1. **WIRE `RN.GFR.VOLUME_SENSITIVITY`. It is entered, sourced, and NOTHING READS IT.**
-   Directive 1.11, and it is item 1 for that reason. It was deliberately sequenced behind
-   the venous return work (§3.12(d)) because it multiplies the model's volume excursion,
-   which was then 1.5–2.1× too large. **`G_vr` is now sourced, so that blocker is gone.**
-   Expect it to change the salt-step numbers, so it is a change that must be re-pinned and
-   re-run against `validation/challenges.jl`, not a free addition.
+1. **THE THYROID AXIS IS BUILT (§3.25) AND ITS EUTHYROID THYROTROPIN IS 2.4× TOO
+   HIGH. THAT IS THE OPEN QUESTION, NOT WHETHER TO BUILD IT.** The whole discrepancy
+   sits in `THY.TSH.INTERCEPT`, the one number of three with no second source, and it
+   is an extrapolation to zero free thyroxine from data that never went near zero.
+
+   **Do not fix it by fitting to a measured euthyroid thyrotropin** — that is the
+   quantity ADR 0019's falsifiable test 2 judges, and spending it is §3.15's error
+   committed on purpose. **What would fix it honestly is a second perturbation study**:
+   a within-subject thyroxine-loading experiment in healthy euthyroid adults reporting
+   the regression with its units stated. Benhadi 2010 is the only one found and it is
+   n = 21, mean age 60, abstract only.
+
+   **Two things that are now cheap, and read §3.25 for what each actually buys.**
+   Switching the metabolic arm on — sourced, built and tested, and off only because of
+   the preparation its gain comes from (amendment 8.3). It moves PaCO2 and arterial
+   saturation and **cannot** move ventilation or the water balance at any thyroid state,
+   because the chemoreflex is on its flat limb. And thyroid DISEASE, which is one
+   parameter: `thyroid_secretion` below 1 is hypothyroidism, above 1 thyrotoxicosis.
+   **This model can now express its first disease state — but only its direction.** The
+   sourced pituitary line does not suppress thyrotropin outside the euthyroid range.
+
+   **Do NOT substitute a different axis to keep moving.** Cortisol, insulin and glucose
+   still connect to nothing, and an endocrine component built for completeness rather
+   than connection is exactly what ADR 0006 records Circadian being. Directive 1.11 is
+   the guard. The honest next target is the **control layer**: the baroreflex has one
+   effector while heart rate exists, and renin is pressure-only when §7 already records
+   that no gain reproduces the human salt-renin response because macula densa delivery
+   and renal sympathetic traffic are absent. Both are E1, both are inside components
+   that already exist, and neither needs a paper nobody can open.
 
 2. **THE ACUTE NATRIURESIS IS A THIRD LOW, AND IT IS THE ONLY OUT-OF-SAMPLE NUMBER.**
-   The model predicts +82.5% fractional sodium excretion on 23 mL/kg of isotonic saline
-   against Jensen 2013's +123%. **Jensen was deliberately held out of the estimation**, so
+   The model predicts **+79.3%** fractional sodium excretion on 23 mL/kg of isotonic
+   saline against Jensen 2013's +123%. **It was +82.5% before the GFR volume response
+   was wired on 2026-09-03, so that change moved the one held-out number slightly the
+   WRONG way** while moving both Lobo endpoints closer — §3.22, where the arithmetic is
+   written down. The discrepancy is now the sharpest in the repo on either reading. **Jensen was deliberately held out of the estimation**, so
    this is the one place the parameterisation is tested rather than fitted, and it is the
    sharpest discrepancy left in the sodium limb. Do not close it by refitting `G_anp` to
    Jensen — that would spend the only out-of-sample datum this line has.
@@ -1281,7 +2213,7 @@ were solved against that very target. And §5, which is how work goes wrong here
    own, understating the expansion by 9%. One clean pass; it touches a document the renal
    haemodynamics change made no claim about.
 
-7. **The model now PREDICTS sex-dependent salt sensitivity, women 11% higher, and nothing
+7. **The model now PREDICTS sex-dependent salt sensitivity, women 17.7% higher, and nothing
    here has sourced it.** A pressure-only kidney had salt sensitivity `1/G_pn`, which
    carries no sex information; the volume path is keyed to a sexed volume, so it does. It
    is asserted in the suite as a prediction. **Source it or falsify it.**
@@ -1324,6 +2256,15 @@ were solved against that very target. And §5, which is how work goes wrong here
 3. **A passing test suite is not evidence about a parameter it does not assert on.**
    Nothing asserted on either autoregulation breakpoint while both were wrong.
 4. **`Diagnostics` cannot fail.** It is a report. Read the numbers.
+4b. **THE SUITE'S RUNTIME IS COMPILE LATENCY, NOT WORK — MEASURED 2026-09-05, so nobody
+    chases the wrong lever.** It has gone 1m37 → ~4m20 as components were added, and the
+    obvious suspect is the 21 `build_model` calls in the test file. It is not them:
+    warm, a build is **21 ms** and a 400-day solve is **42 ms**, so every build and solve
+    in the suite together is a few seconds. The rest is Julia specialising a larger
+    model. Deleting builds will not buy anything; the levers are fewer distinct code
+    paths or a persistent session, and neither is worth it yet. Directive 1.10 still
+    holds — do not add builds carelessly — but do not "optimise" the suite by deleting
+    coverage on the strength of a guess.
 5. **Derived values drifting apart.** Run `check_closure.py` after any ledger change.
 6. **Silent string replacements.** Assert on every replacement.
 7. **A gate cannot check a label you supplied.**
@@ -1361,6 +2302,60 @@ were solved against that very target. And §5, which is how work goes wrong here
 15. **Dead code hides unledgered constants and stale API assumptions.** `reconstruct.jl`
     and `ensemble.jl` each carried a hardcoded number. Connecting the ensemble surfaced
     three live SciMLBase API breakages that nothing could have caught while it was dead.
+20. **A RECORDED FAILED SEARCH READ AS EVIDENCE ABOUT THE LITERATURE.** §3.28.
+    `RESP.CO2.PRODUCTION` carried a careful note listing what a search for resting
+    metabolic rate returned and why each hit was inadmissible. It missed a weighted
+    meta-analysis of 197 studies whose title is the subject of the row. **The note made
+    the row look closed** — the next reader has no reason to repeat a search someone
+    documented failing. Recording a failed search is right; treating one as settled is
+    not. Re-run any search whose row still says `assumed` before believing it, and
+    search on the CONCLUSION you expect ("the MET convention overestimates") as well as
+    on the quantity.
+19. **A DEFERRAL THAT NAMED A MISSING ROW THE MODEL ALREADY HAD.** §3.27. ADR 0018
+    deferred the Fick relation because it "needs tissue oxygen consumption, which is a
+    metabolic row this model does not have"; the model had one under another name, and
+    building the arm required no new source and moved no existing number. **A deferral in
+    an ADR reads as evidence that something cannot be done**, and it is trusted for as
+    long as nobody rechecks it. Before accepting one, list what the deferred thing
+    actually needs and grep the ledger for each item — the name it is filed under is not
+    necessarily the name the deferral used.
+18. **TWO ROWS MULTIPLIED WITHOUT SHARING A MEASUREMENT SCALE.** §3.26. A slope in
+    `1/(pmol/L)` from one free-thyroxine assay times a concentration in `pmol/L` from
+    another method is a **unit error**, and it produced a hormone level 2.2× wrong that
+    was reported for a day as a failed prediction with a confident decomposition attached.
+    `pooling.md` already barred POOLING across incompatible methods; **barring pooling is
+    necessary and not sufficient.** Before multiplying, dividing or adding two rows, ask
+    whether they share a scale or only a unit symbol. Where they cannot, source the
+    DIMENSIONLESS combination instead — `THY.LOOP_GAIN` exists for that.
+17. **A CONFIDENT DECOMPOSITION OF THE WRONG QUANTITY.** The same episode. §3.25 swept the
+    slope across its full spread, showed it moved the output 2% against a 2.4× error, and
+    concluded the intercept carried all of it. **The arithmetic was right and the
+    conclusion was wrong**, because the space of explanations searched was "which of these
+    three numbers is imprecise" and the answer was "none of them; two of them are not
+    composable". Sensitivity analysis inside a wrong model is confident and useless. Ask
+    what would have to be true for EVERY input to be right and the output still wrong.
+16. **A FITTED LINE EVALUATED OUTSIDE THE RANGE IT WAS FITTED IN. THREE TIMES NOW, AND
+    IT IS THE MOST EXPENSIVE RECURRING ERROR IN THIS REPOSITORY.** ADR 0017's original
+    decision died of it — a chemoreflex line extrapolated below its measured range put
+    resting ventilation at 19.3 L/min against a real 6.2. §3.22's censoring bound exists
+    because of it. And §3.25's thyroid intercept is an extrapolation to zero free
+    thyroxine from data that never went near zero, which is why the model's euthyroid
+    thyrotropin is 2.4x too high while its slope is right to 1%.
+    **The pattern is always the same: the SLOPE is measured and the INTERCEPT is not.**
+    A regression reported over a narrow physiological range constrains the derivative
+    there and says nothing about where the line hits an axis. Before using a published
+    intercept, ask what range the data covered and how far the model will evaluate
+    outside it; if the answer is "far", the intercept is a free parameter wearing a
+    citation. Censoring the relation to its measured range is the fix that worked twice.
+17. **"BLOCKED ON A PAPER" IS A CLAIM THAT NEEDS CHECKING, NOT A CONCLUSION.** §3.24
+    named two articles as the binding constraint and put "get two papers" at the top of
+    §4. One of those blocks was real; the other was not. The thyroid axis needed three
+    more numbers than the blocked paper would have supplied, **all three were in
+    open-access articles**, and the blocked paper's own ambiguity was resolvable against
+    an independent measurement. Before recording a subsystem as access-blocked, list
+    every quantity it needs and check each one — the blocked paper is the most visible
+    obstacle, not necessarily the operative one. Also: **the JCI archive is free**, and
+    a publisher origin returning a Cloudflare 525 is a broken server, not a paywall.
 
 ---
 
@@ -1392,7 +2387,9 @@ were solved against that very target. And §5, which is how work goes wrong here
 - **`CV.SV.NOMINAL` is NOT normalised to the 70 kg reference mass.** Petersen reports
   cohort weight by age group and not by sex, so the sexed pair still carries a body-size
   component — and in the ensemble, where mass is sampled by sex, that component is
-  counted twice. §4 item 6.
+  counted twice. **§4 item 10**, the body surface area row — which is what unlocks it,
+  and the number this pointed at before was the de-indexing item, which is a different
+  correction to a different document.
 - **`ADH.URINE.OSM_MAX` carries no dispersion and no age.** Tryding reports age-related
   reference intervals; the record read gives means by age, not an SD at one age. Maximal
   concentrating ability falls 16% from 20 to 80 years and this model has no age
@@ -1419,7 +2416,8 @@ were solved against that very target. And §5, which is how work goes wrong here
 - ~~Six rows still claim a source that does not exist.~~ **DONE 2026-08-31**, §3.5.
 - ~~**`RAAS.RENIN.PRESSURE_GAIN` was calibrated against a baseline that no longer
   exists.**~~ **DONE 2026-09-02, §3.13.** 19.0 → 4.35, `derived` from van Ochten's own
-  slope. It resized ADR 0015 from 50.7% to 21.5% and unblocked §4 item 5.
+  slope. It resized ADR 0015 from 50.7% to 21.5% and unblocked the ADR 0013 versus
+  ADR 0015 decision, which was run as §3.14.
 - **THE RENIN CONTROL IS PRESSURE-ONLY AND HUMANS ARE NOT.** The rectified form caps the
   PRA ratio it can produce between two pressures at the ratio of their drives, whatever
   the gain. Between MAP 88 and 86 that ceiling is **1.40**; van den Bosch measures **2.73**
@@ -1437,7 +2435,10 @@ were solved against that very target. And §5, which is how work goes wrong here
   under-sized for urea + K salts because the parent 600 is an unsourced conventional
   figure. The sodium half responds; protein still moves nothing.
 - **No population SD for body mass**; the sampled population is uniform over P05–P95.
-- **`CV.VENOUS_RETURN.SENSITIVITY` is `calibrated`** and is what §4 item 2 replaces.
+- ~~**`CV.VENOUS_RETURN.SENSITIVITY` is `calibrated`.**~~ **DONE 2026-09-03, §3.19.**
+  It is `derived`, 1400, sourced in healthy humans. This bullet had already been
+  superseded by the struck entry above and is left visible for one revision because
+  duplicated state is how this file drifts.
 - **`ADH.URINE.OSM_MIN` is assumed**; it sets the maximal diuresis.
 - **Zerbe's AVP sensitivity spans 0.12–1.66 pg/ml per mOsm/kg** — fourteen-fold,
   reproducible within subject, heritable. Recorded and unused because the model carries no
@@ -1458,7 +2459,8 @@ were solved against that very target. And §5, which is how work goes wrong here
   systemic filling pressure, or resistance to venous return.** Everything currently held
   is post-cardiac-surgery ICU (Maas 2012), compiled from critically ill patients (Magder
   2025), or anaesthetised, ganglion-blocked, splenectomised animals
-  (`venous_compliance_extract.py`). **That is the real obstacle on §4 item 2**, not the
+  (`venous_compliance_extract.py`). **That was the real obstacle**, and §3.19 went round
+  it by sourcing the composite `dCO/dV_blood` directly rather than composing it — not the
   arithmetic. Recorded in `renal_hemodynamics_salt_sources.md` §5.
 - **Renal haemodynamics across salt intake has been sourced in men only, AND THE ONE CLEAN
   WOMEN'S STUDY DISAGREES.** Krikken, van den Bosch, Visser, Barba, Textor, Kirkendall and
@@ -1469,19 +2471,20 @@ were solved against that very target. And §5, which is how work goes wrong here
   number applied to women** — the `CV.HEMATOCRIT.NOMINAL` failure exactly. What would
   settle it is GFR and extracellular volume in the same healthy women across salt intake,
   and nothing found reports both. §3.12.
-- **`RN.GFR.VOLUME_SENSITIVITY` IS ENTERED AND NOTHING CALLS IT.** Directive 1.11 says a
-  parameter nobody calls is not evidence about anything, so this is declared rather than
-  left to be discovered. Branch G3 of its pre-registration says enter the row and write no
-  structural ADR; implementation is sequenced behind `CV.VENOUS_RETURN.SENSITIVITY`,
-  because the model's volume excursion is the input this term multiplies and it is 1.5–2.1×
-  too large. **Named consumer, named unblocking condition, §4 item 2.**
+- ~~**`RN.GFR.VOLUME_SENSITIVITY` IS ENTERED AND NOTHING CALLS IT.**~~ **DONE
+  2026-09-03, §3.22.** Wired as `Renal.gfr_vol_mod`, clamped to the new
+  `RN.GFR.VOLUME_RANGE`, connected as `rn.V_ecf ~ bf.V_ecf`. Branch G3 was followed
+  exactly: the row is entered, no structural ADR was written, and the term defaults ON
+  because ADR 0006 defaults an E1 phenomenon on — which the pre-registration fixed in
+  advance so it could not be decided conveniently afterwards. **The named unblocking
+  condition was `CV.VENOUS_RETURN.SENSITIVITY`, and it was discharged the day before.**
 - **`ecf_salt_response_extract.py` de-indexes van den Bosch with one body surface area
   where each arm has its own.** 0.9 × 2.04/1.73 = 1.061 L against the correct
   (17.4×2.04 − 16.5×2.03)/1.73 = **1.157 L**, because BSA itself rose with the retained
   fluid. It makes §3.7's within-subject ratio 1.73 rather than 1.885 mmHg/L and the
   failure 5.7× rather than 5.2×. **Deliberately not fixed inside the renal haemodynamics
   change** — it touches a document that change made no claim about, and two changes at
-  once leaves neither testable. One clean pass, with §4 item 2.
+  once leaves neither testable. One clean pass — **§4 item 6**.
 - **Krikken 2007's filtration-fraction sentence is still unread.** Struck under branch K2,
   not reinterpreted. Subscription-only, absent from PubMed Central, 403 on ScienceDirect.
   Anyone with institutional access should record which way the value pairs run — the
@@ -1497,14 +2500,70 @@ were solved against that very target. And §5, which is how work goes wrong here
   value.
 - **`CV.ANP.NATRIURETIC_GAIN` AND `RN.ANP.TAU` WERE SOLVED AGAINST TARGETS THE HARNESS
   REPORTS.** Two of the three parameters that make the model match human salt sensitivity
-  are fits, not validations. **The validations are the four Lobo endpoints, the resting
-  state, the 400-day steady state, and Jensen.** Do not quote the chronic agreement as a
-  validation.
+  are fits, not validations. **The validations are the resting state, the 400-day steady
+  state, and Jensen — NOT the four Lobo endpoints**, which fixed `RN.ANP.TAU` and are
+  therefore an estimation set. Corrected 2026-09-04; see §3.15. Do not quote the chronic
+  agreement as a validation either.
+- **NO ACUTE COMPARISON IN THIS REPO HAS A DERIVED TOLERANCE, AND ONE OF THEM NEVER
+  CAN FROM PUBLISHED TEXT.** §3.23. Lobo's dispersion is unobtainable — paywalled, no
+  PMC, bare means in the abstract — and Jensen's ratio needs a within-subject correlation
+  it does not report. Both bands are now labelled `assumed` rather than presented as
+  though someone had checked. **What would fix Lobo specifically: institutional access to
+  Clin Sci 2001;101(2):173-9, or an author request.** Until then the acute agreement is
+  unbounded in both directions and must not be quoted tightly.
+- **BAND M IS THE TEST THAT MATTERS AND IT CANNOT BE RUN YET.** The harness gates on
+  mean ± 2 SD, which asks only whether the model is a plausible INDIVIDUAL. The stronger
+  question — does it predict the population CENTRAL value — needs the model to carry an
+  error bar, and **parameter uncertainty is not propagated** here. That is the same open
+  item as the ensemble sampling only body mass, seen from the validation side, and §3.23
+  records that the two are one problem.
+- **RESP.CO2.PRODUCTION AND RESP.DEADSPACE.FRACTION ARE ASSUMED AND NOT SEPARATELY
+  IDENTIFIABLE.** They enter only through `VCO2/(1 - Vd/Vt)`, so resting data can never
+  distinguish them — recorded on both rows so a future sourcing pass on either knows it.
+  Both are round teaching numbers and no admissible source could be opened; the searches
+  return children, kidney disease and calorimeter validation studies. §3.24.
+- **BLOOD.O2.BINDING_CAPACITY IS KNOWN TO BE ABOUT 4% HIGH AND IS USED ANYWAY.** 1.391 is
+  derived from two physical constants; empirical whole-blood values cluster near 1.34
+  because of inactive haemoglobin species ADR 0018 omits. **The physiological argument
+  favours 1.34 and it could not be sourced.** A traceable number that is 4% high beats an
+  untraceable one that is right — the error is declared, one-directional, and affects
+  content and delivery only, not saturation.
+- **THE SEVERINGHAUS COEFFICIENTS ARE NOT SEPARATELY MEASURABLE AND MUST MOVE TOGETHER.**
+  Branch B3: the Hill decomposition into a sourced P50 and exponent was preferred and
+  failed, because every measured pair found was in a diseased preparation. The cost is
+  that neither coefficient means anything alone.
+- **ARTERIAL SATURATION IS A REAL PREDICTION BUT A WEAK TEST OF THE CURVE.** It lands at
+  96.9% against a human 95–99 with nothing set to put it there, and it stays inside that
+  window across a fivefold sweep of the assumed A-a difference. **The sigmoid's upper limb
+  is flat, so that robustness and that weakness are the same fact.** Testing the curve
+  needs the steep part, which means hypoxia, which ADR 0017 forbids by omitting the
+  hypoxic drive.
+- **THE MODEL IS SEA LEVEL ONLY, IN THREE PLACES NOW.** ADR 0017 omits the hypoxic drive;
+  `RESP.ALVEOLAR.K`'s derivation assumes sea-level barometric pressure; `Blood.jl` reuses
+  that same constant for inspired PO2. **The haemoglobin row's own source shows why it
+  matters** — the same cohort reads 16.7 g/dL above 2000 m against 15.3 at sea level.
+- **THE ACUTE LIMB RESTS ON ONE PROTOCOL CLASS AND THAT IS ITS REAL WEAKNESS.** Both
+  acute challenges — Lobo and Jensen — are intravenous isotonic saline boluses into
+  healthy volunteers. Different dose, different reported endpoints, **same manoeuvre**.
+  Three consequences, and none of them is that the studies are bad. **(1)** Jensen is
+  out-of-sample only in the fitting sense, not in the mechanism sense. **(2)** The regime
+  is one healthy people never enter unless a researcher puts them there, so it exercises
+  the model far from where its chronic claim lives. **(3)** It leans on the two weakest
+  constants in the repo and pushes `RN.GFR.VOLUME_SENSITIVITY` about three times past its
+  evidenced range, so those numbers sit at a clamp rather than on a measured line
+  (§3.22). **What would fix it is an acute protocol that is not a saline infusion** —
+  an oral water or salt load, or a deprivation study with the deficit reported. §4 item
+  11 already wants the second of those for a different reason. **Directive 1.7 is not
+  violated by perturbing people**; it is the thinness of what a single dose traces that
+  is the problem.
 - **`BF.ICF_ECF.OSMOTIC_TAU` is `assumed`, load-bearing on acute protocols, and searched
   for without success.** §4 item 3. **No acute osmotic MAGNITUDE may be reported until it
   is sourced.**
-- **THE MODEL PREDICTS SEX-DEPENDENT SALT SENSITIVITY, WOMEN 11% HIGHER, AND NOTHING HERE
-  HAS SOURCED IT.** New with the volume path, which is keyed to a sexed volume. Asserted in
+- **THE MODEL PREDICTS SEX-DEPENDENT SALT SENSITIVITY, WOMEN 17.7% HIGHER, AND NOTHING
+  HERE HAS SOURCED IT.** It was 11% when ADR 0010's path landed and the GFR volume
+  response widened it (§3.22); **the prediction has now moved twice without anyone
+  measuring it**, which is the reason it is asserted as a direction AND a magnitude
+  separately in the suite. New with the volume path, which is keyed to a sexed volume. Asserted in
   the suite as a prediction rather than a validation. §4 item 7.
 - **SYSTEMIC VENOUS COMPLIANCE IN mL/mmHg IS STILL UNSOURCED IN HEALTHY HUMANS**, along
   with mean systemic filling pressure and resistance to venous return. The one human
@@ -1512,8 +2571,15 @@ were solved against that very target. And §5, which is how work goes wrong here
   NEEDED any more** — §3.19 sourced the composite directly — but the gap is real and the
   earlier withdrawn pass (§3.9) is what happens when it is filled from the wrong
   preparations.
-- **`RN.GFR.VOLUME_SENSITIVITY` is entered, sourced, and nothing reads it.** Its blocker
-  was `G_vr`, which is now sourced, so it is unblocked. **§4 item 1.**
+- **THE GFR VOLUME RESPONSE IS CENSORED, AND THE TIMESCALE IS NOT.** `RN.GFR.VOLUME_RANGE`
+  clamps the fractional volume deviation to ±0.029, the half-span van den Bosch actually
+  measured, so the term saturates rather than extrapolating — inert on the chronic salt
+  step, binding on every acute challenge. **What is NOT bounded is the timescale.** The
+  source is chronic, 7 days per level, and the term is algebraic and therefore
+  instantaneous. Conlin 1993 puts the renal response to volume expansion per se at 3–7
+  hours, so instantaneous is fast rather than backwards, but nothing sources a time
+  constant. A lag was deliberately not added: its tau would be identified by nothing,
+  which is the debt `RN.ANP.TAU` already carries. §3.22.
 - **Eight relations carry no `form_citation`**, grandfathered as tracked debt.
 - **`pooling.md` requires columns `ledger/parameters.csv` does not have** — recorded in
   prose instead, by precedent.

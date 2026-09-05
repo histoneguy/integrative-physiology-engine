@@ -158,7 +158,6 @@ function member_remake(prob, sys, member; sex::Symbol = :male)
              sys.bf.Osm_solute_icf => BF_OSM_PLASMA_SETPOINT * bm * BF_ICF_MASS_FRACTION,
              sys.bf.Na_intake      => sz * BF_NA_INTAKE_NOMINAL,
              sys.bf.H2O_intake     => sz * BF_H2O_INTAKE_NOMINAL,
-             sys.bf.H2O_insens     => sz * BF_H2O_INSENSIBLE_LOSS,
              sys.rn.GFR0           => sz * RN_GFR_NOMINAL,
              sys.rn.G_pn           => sz * RN_PRESSURE_NATRIURESIS_SLOPE,
              sys.rn.Osm_ref        => sz * RN_URINE_SOLUTE_LOAD,
@@ -174,13 +173,67 @@ function member_remake(prob, sys, member; sex::Symbol = :male)
              # note in Renal.jl. Only the REFERENCE volume scales here.
              sys.rn.G_anp          => CV_ANP_NATRIURETIC_GAIN,
              sys.rn.V_blood_ref    => sz * LedgerParams.param(:CV_BLOOD_VOLUME_NOMINAL, sex),
+             # RN.GFR.VOLUME_SENSITIVITY's reference volume, added 2026-09-03.
+             # S_gfr_v and dV_gfr_max are both INTENSIVE - a fractional GFR change
+             # per fractional volume change, and a fractional bound - so neither
+             # appears here. Only the reference volume scales, exactly as
+             # V_blood_ref does above, and omitting it would make every heavy
+             # member read as volume-expanded in the same way omitting V_blood_ref
+             # did. That failure is recorded above; this list is where it happens.
+             sys.rn.V_ecf_ref      => sz * BF_ECF_MASS_FRACTION * BF_BODY_MASS_REFERENCE,
              sys.cv.CO0            => sz * LedgerParams.param(:CV_CO_NOMINAL, sex),
              sys.cv.BV0            => sz * LedgerParams.param(:CV_BLOOD_VOLUME_NOMINAL, sex),
              sys.cv.VC0            => sz * LedgerParams.param(:CV_CENTRAL_VOLUME_NOMINAL, sex),
              sys.cv.SV0            => sz * LedgerParams.param(:CV_SV_NOMINAL, sex),
              # RECIPROCAL. MAP = CO*TPR and CO scales, so resistance must fall or
              # larger people come out hypertensive. See src/scaling.jl.
-             sys.cv.TPR0           => LedgerParams.param(:CV_TPR_NOMINAL, sex) / sz],
+             sys.cv.TPR0           => LedgerParams.param(:CV_TPR_NOMINAL, sex) / sz,
+             # ADR 0017's respiratory component, added 2026-09-04. THREE extensive
+             # parameters and they must all appear or the loop stops being size
+             # invariant: VCO2 sets the metabolic load, S_co2 is a ventilation per
+             # mmHg, and V_basal is a ventilation. f_dead, K_alv, VRT and w_gas are
+             # INTENSIVE - a fraction, a pressure constant, a partial pressure and
+             # a content per litre of gas - so none of them belongs here.
+             #
+             # PaCO2 stays invariant because C and V_basal both scale, and their
+             # ratio is what sets it. The body-size testset asserts that.
+             sys.rs.VCO2           => sz * RESP_CO2_PRODUCTION,
+             sys.rs.S_co2          => sz * RESP_CHEMO_CO2_SLOPE,
+             sys.rs.V_basal        => sz * RESP_VENTILATION_BASAL,
+             sys.bf.H2O_cutan      => sz * BF_H2O_CUTANEOUS_LOSS,
+             # ADR 0018's haemoglobin, added 2026-09-04. IT IS INTENSIVE AND IT IS
+             # STILL HERE, which looks inconsistent with this list's own heading and
+             # is not: the list resets every parameter that depends on mass OR ON
+             # SEX, because a member is remade from a problem built for one sex.
+             # Omitting it would pair female cardiovascular parameters with male
+             # haemoglobin, silently, in every population run.
+             #
+             # THIS IS THE THIRD DEFECT OF THIS EXACT CLASS. V_blood_ref was omitted
+             # when ADR 0010 landed and made every heavy member read as
+             # volume-expanded; H2O_insens was left here after the water split
+             # removed it and errored. A hand-maintained list that must mirror
+             # another file is the failure mode, so the testset below no longer
+             # checks one parameter - it compares a remade member against a natively
+             # built one across EVERY parameter, which catches the class rather than
+             # the instance.
+             sys.bl.Hb             => LedgerParams.param(:BLOOD_HB_CONCENTRATION, sex),
+             # THREE MORE SEXED PARAMETERS, ALL OMITTED SINCE THE DAY THEY BECAME
+             # SEXED, AND ALL FOUND AT ONCE BY THE TESTSET BELOW. None of them scales
+             # with mass - a haematocrit, a plasma fraction and a heart rate are all
+             # INTENSIVE - which is exactly why they were missed: this list was read
+             # as "the extensive ones" when what it actually has to be is "everything
+             # that depends on mass OR ON SEX", because a member is remade from a
+             # problem built for one sex.
+             #
+             # cv.f_pv IS THE CONSEQUENTIAL ONE. HANDOVER section 3.8 establishes that
+             # dV_blood/dV_ecf IS f_pv once red cell volume is held fixed, and that
+             # the sourced haematocrit pair moves the male/female ECF excursion ratio
+             # to 1.182. A re-sexed ensemble member was carrying the MALE value, so
+             # the ensemble could not have reproduced that finding - the one result
+             # section 3.8 reports as evidence that haematocrit is identifiable at all.
+             sys.cv.Hct            => LedgerParams.param(:CV_HEMATOCRIT_NOMINAL, sex),
+             sys.cv.f_pv           => LedgerParams.param(:CV_PLASMA_ECF_FRACTION, sex),
+             sys.cv.HR0            => LedgerParams.param(:CV_HR_NOMINAL, sex)],
         u0 = [sys.bf.V_icf  => bm * BF_ICF_MASS_FRACTION,
               sys.bf.V_ecf  => bm * BF_ECF_MASS_FRACTION,
               sys.bf.Na_ecf => bm * BF_ECF_MASS_FRACTION * BF_NA_PLASMA_SETPOINT])

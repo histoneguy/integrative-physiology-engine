@@ -89,15 +89,37 @@ drift < 1e-9 || push!(FAILURES, "long-run drift")
 println("  A model whose pressure is an OUTPUT could have drifted anywhere. It does not.")
 println()
 
-REF = "Reference ranges for a healthy 70 kg adult male; sourced ledger rows where they exist."
-check("resting MAP", final(slong, "MAP"), 80.0, 95.0, "mmHg", REF)
-check("resting ECF volume", final(slong, "V_ecf"), 13.0, 17.0, "L", REF)
-check("resting plasma sodium", final(slong, "bf₊C_Na"), 135.0, 145.0, "mEq/L", REF)
-check("resting plasma osmolality", final(slong, "bf₊Osm_ecf"), 280.0, 295.0, "mOsm/kg", REF)
-check("resting urine volume", final(slong, "rn₊H2O_excr"), 0.8, 2.5, "L/day", REF)
-check("resting urine osmolality", final(slong, "ad₊u_osm"), 300.0, 900.0, "mOsm/kg", REF)
-check("resting GFR", final(slong, "rn₊GFR"), 130.0, 180.0, "L/day", REF)
-check("sodium balance closes", final(slong, "rn₊Na_excr"), 204.9, 205.1, "mEq/day", REF)
+# BANDS DERIVED 2026-09-04. Pre-registered in validation/challenge_bands_prereg.md,
+# derived by validation/challenge_bands_extract.py. Every band below now says where
+# it came from. Before this they shared one string conceding that only some were
+# sourced without saying which.
+#
+# A resting check compares against a clinical REFERENCE INTERVAL, which is already a
+# population interval, so it is CITED from the ledger rather than recomputed (prereg
+# section 6). Band I = mean +/- 2 SD where the row carries an SD.
+#
+# THREE OF THESE WIDENED. MAP, ECF and GFR were being judged MORE STRICTLY than their
+# own sourced dispersion supports - the opposite of what this pass went looking for.
+# The conventional range each used to carry is kept in the note, unasserted, so the
+# tightening is recoverable if anyone wants to argue for it on other grounds.
+check("resting MAP", final(slong, "MAP"), 71.0, 103.0, "mmHg",
+      "CV.MAP.SETPOINT 87 +/- 2 SD 8.0, central. Was a conventional 80-95.")
+check("resting ECF volume", final(slong, "V_ecf"), 11.34, 17.78, "L",
+      "BF.ECF.MASS_FRACTION 0.208 +/- 2 SD 0.023 at 70 kg. Was a conventional 13-17.")
+check("resting plasma sodium", final(slong, "bf₊C_Na"), 135.0, 145.0, "mEq/L",
+      "BF.NA.PLASMA_SETPOINT reference interval 135-145. Unchanged - it already agreed.")
+check("resting plasma osmolality", final(slong, "bf₊Osm_ecf"), 275.0, 295.0, "mOsm/kg",
+      "BF.OSM.PLASMA_SETPOINT reference interval 275-295. WAS 280-295: the harness had " *
+      "invented a tighter floor than the ledger row it tests against. No gate saw it.")
+check("resting urine volume", final(slong, "rn₊H2O_excr"), 0.8, 2.5, "L/day",
+      "ASSUMED. No ledger row, no citation, conventional figures - directive 1.12.")
+check("resting urine osmolality", final(slong, "ad₊u_osm"), 300.0, 900.0, "mOsm/kg",
+      "ASSUMED. No ledger row, no citation, conventional figures - directive 1.12.")
+check("resting GFR", final(slong, "rn₊GFR"), 100.8, 204.4, "L/day",
+      "RN.GFR.NOMINAL 152.6 +/- 2 SD 25.9 (Soares 2013). Was a conventional 130-180.")
+check("sodium balance closes", final(slong, "rn₊Na_excr"), 204.9, 205.1, "mEq/day",
+      "NOT A LITERATURE BAND. Model excretion against the model's own intake - an " *
+      "internal conservation identity, so it stays tight. Exempt by prereg section 6.")
 
 println()
 println(repeat("=", 100))
@@ -122,11 +144,35 @@ urine6 = integrate(post, "rn₊H2O_excr") * 1000.0
 na6    = integrate(post, "rn₊Na_excr")
 uosm6  = na6 > 0 ? integrate(post, "rn₊Osm_load") / (urine6 / 1000.0) : NaN
 
-check("urine volume, 6 h after infusion", urine6, 380.0, 750.0, "mL", "Lobo 563 mL, +/- 33%")
-check("urinary sodium, 6 h after infusion", na6, 63.0, 127.0, "mmol", "Lobo 95 mmol, +/- 33%")
-check("urine osmolality, 6 h mean", uosm6, 420.0, 840.0, "mOsm/kg", "Lobo 630, +/- 33%")
+# THE +/- 33% IS ASSUMED AND CANNOT BE DERIVED. Searched 2026-09-04 under
+# validation/challenge_bands_prereg.md, branch N. Lobo's PubMed abstract reports these
+# endpoints as BARE MEANS with no dispersion of any kind; the full text is not
+# obtainable - elink pubmed_pmc returns no PMC record and Europe PMC reports
+# isOpenAccess=N, inEPMC=N, hasPDF=N, every full-text link "Subscription required".
+# Reading dispersion off a figure is prohibited by that pre-registration.
+#
+# So these four bands are UNDERIVED, they are left exactly where they were rather than
+# moved without evidence, and they are labelled. n = 10.
+#
+# AND RN.ANP.TAU WAS FITTED TO THESE SAME NUMBERS TO ABOUT 0.5%. A fit residual quoted
+# to four figures against a target whose dispersion is unobtainable is the precision
+# that does not exist - directive 1.9. Do not quote the Lobo agreement tightly.
+check("urine volume, 6 h after infusion", urine6, 380.0, 750.0, "mL",
+      "Lobo mean 563 mL, n=10. BAND ASSUMED +/- 33%, no dispersion published.")
+check("urinary sodium, 6 h after infusion", na6, 63.0, 127.0, "mmol",
+      "Lobo mean 95 mmol, n=10. BAND ASSUMED +/- 33%, no dispersion published.")
+# NON-INDEPENDENT (prereg section 5). Computed from the integrated solute load over the
+# same urine volume, and the load tracks Na_excr, so this is a function of the two
+# checks above plus a constant. Kept because it can still bite through u_osm; labelled
+# so three green lines are not read as three facts.
+check("urine osmolality, 6 h mean", uosm6, 420.0, 840.0, "mOsm/kg",
+      "Lobo mean 630, n=10. BAND ASSUMED +/- 33%. NON-INDEPENDENT of the two above.")
+# NON-INDEPENDENT AND IT CANNOT FAIL ALONE. This is na6/308: a pure rescaling of the
+# sodium check. Its band 20-45% strictly CONTAINS the 20.45-41.23% that the sodium
+# band maps onto, so it only fails after that one already has. Kept only as the
+# comparison against Lobo's own words; prereg section 5 says label, do not re-band.
 check("fraction of the sodium load excreted by 6 h", na6/308.0*100, 20.0, 45.0, "%",
-      "Lobo: one third by 6 h")
+      "Lobo: one third by 6 h. RESTATEMENT of the sodium check - cannot fail alone.")
 
 println()
 println(repeat("=", 100))
@@ -148,14 +194,34 @@ fena_base = 205.0 / (final(slong, "rn₊GFR") * final(slong, "bf₊C_Na"))
 jp = je[2]
 fena_peak = maximum(val(jp, "rn₊Na_excr", i) /
                     (val(jp, "rn₊GFR", i) * val(jp, "bf₊C_Na", i)) for i in 1:length(jp.t))
+# BAND ASSUMED - branch N, and NOT for want of looking. Jensen is open access and was
+# read in full: Table 3 gives FE Na 1.26 (SD 0.53) at baseline and 2.80 (SD 0.75) after,
+# n = 23, ratio 2.222 = +122%, which reproduces the abstract's 123%. But baseline and
+# peak are measured IN THE SAME SUBJECTS, so the ratio's variance needs their
+# correlation and the paper reports neither paired differences nor a covariance. That
+# is the identical obstacle recorded on RN.GFR.VOLUME_SENSITIVITY, whose own
+# pre-registration forbade fabricating an interval by propagating per-arm SDs as if
+# independent. Honoured here rather than re-argued.
+#
+# AND THE BOUND INVERTS THE WORRY THAT STARTED THIS PASS. Assuming zero correlation
+# OVERSTATES the spread, and even that upper bound is -18% to +502% against this band's
+# +60% to +250%. The Jensen band was never too generous. It is TIGHTER than the
+# reported statistics can justify, and it is left alone because moving an undocumented
+# band is worse than leaving it.
 check("peak rise in fractional sodium excretion", (fena_peak/fena_base - 1)*100,
-      60.0, 250.0, "%", "Jensen +123%, wide band because peak vs mean differ")
+      60.0, 250.0, "%",
+      "Jensen +123%, n=23. BAND ASSUMED: the ratio's dispersion needs a correlation " *
+      "the paper does not report. Even the rho=0 upper bound is far wider than this.")
 
 pra_base = final(slong, "ra₊pra")
 pra_min  = minimum(val(jp, "ra₊pra", i) for i in 1:length(jp.t))
+# A DIRECTION CHECK, NOT A MAGNITUDE COMPARISON, and now labelled as one. Jensen
+# reports plasma renin falling after isotonic saline; the magnitude is shown only in a
+# figure as mean +/- SEM, and reading it off the figure is prohibited. 0.5-100% asserts
+# "it falls at all", which is the whole claim being made.
 check("renin falls on volume expansion (fall, positive = correct)",
       (pra_base - pra_min)/pra_base*100, 0.5, 100.0, "%",
-      "Jensen: renin, angiotensin II and aldosterone all fell")
+      "Jensen: renin, angiotensin II and aldosterone all fell. DIRECTION ONLY.")
 
 println()
 println(repeat("=", 100))
@@ -166,8 +232,13 @@ println("  Cutler 1997 (32 trials, n=2635) 1.70; He/Li/MacGregor 2013 (34, n=323
 println("  He & MacGregor 2002 (11, n=2220) 2.30 mmHg per 100 mmol/day. HANDOVER 3.3.")
 println()
 let r = IPE.check_pressure_natriuresis(IPE.salt_step())
+    # 1.70-2.30 IS A SPREAD ACROSS THREE POINT ESTIMATES, NOT A CONFIDENCE INTERVAL,
+    # and the two are different objects. Left alone deliberately: pooling three
+    # meta-analyses that share primary trials is the silent re-pooling pooling.md
+    # prohibits, and taking their min and max as an interval is range-midpoint's
+    # sibling. Only the label is corrected.
     check("chronic salt sensitivity", r.map_shift_mmHg / 102 * 100, 1.70, 2.30,
-          "mmHg/100mmol", "meta-analytic 1.70-2.30, k = 3")
+          "mmHg/100mmol", "SPREAD of 3 meta-analytic estimates (1.70/1.96/2.30), not a CI")
 end
 
 println()
@@ -302,7 +373,8 @@ println("     it last. So this model still double-counts the path, and the chron
 println("     agreement above is partly that double count.")
 println()
 println("  AND A NEW PREDICTION THE MODEL COULD NOT MAKE BEFORE: salt sensitivity is now")
-println("  SEX-DEPENDENT, women 11% higher, because the path is keyed to a sexed volume.")
+println("  SEX-DEPENDENT, women 17.7% higher, because the path is keyed to a sexed")
+println("  volume - 11% when ADR 0010 landed, widened by the GFR volume response.")
 println("  A pressure-only kidney had salt sensitivity 1/G_pn, which carries no sex")
 println("  information. Nothing here has sourced it. It is debt, and it is falsifiable.")
 

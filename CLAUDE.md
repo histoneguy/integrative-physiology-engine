@@ -22,6 +22,12 @@ claim the model exists to demonstrate rather than assert.
 ~40 s warm on this machine. **That is the loop.** CI is the receipt. Do not send
 untested code and do not wait on GitHub Actions to find out whether something works.
 
+Rebuild the GUI after any ledger or model change — it ships the numbers AND the
+citations, so a stale one misquotes both:
+
+    julia --project=. tools/export_gui_data.jl
+    python tools/build_gui.py
+
 Run all five provenance gates before committing:
 
     python tools/ledger_to_julia.py --check
@@ -67,7 +73,9 @@ it. The file has not been rewritten yet.
 | Path | What |
 |---|---|
 | `HANDOVER.md` | the brief — read it |
-| `src/components/` | the model — all seven components wired, including RAAS, ADH and the clock |
+| `OPEN-QUESTIONS.md` | everything awaiting the owner's decision, with what would resolve each |
+| `gui/` | the GUI: `index.html` is self-contained and opens by double-clicking |
+| `src/components/` | the model — all **ten** components wired, including RAAS, ADH, the clock, **Respiratory and Blood** (ADR 0017, ADR 0018) and the **Thyroid** axis (ADR 0019) |
 | `ledger/` | parameters and relations, with provenance |
 | `docs/adr/` | **A**rchitecture **D**ecision **R**ecords - structural decisions, each with an evidence tier and a falsifiable test; ADR 0006 defines the tiers |
 | `validation/` | targets, averaging and pooling policy, pre-registrations |

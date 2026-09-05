@@ -98,6 +98,19 @@ and its own falsifiable test still blocks it (§3.7).
 **3. Nothing is enabled and no parameter changes.** ADR 0013 stays Proposed, ADR 0015
 stays Proposed and default OFF, `RN.GFR.VOLUME_SENSITIVITY` stays unconsumed.
 
+> **AMENDED 2026-09-03: the last clause is no longer true.**
+> `RN.GFR.VOLUME_SENSITIVITY` **is consumed.** It was wired into `Renal.jl` as the
+> relation `Renal.gfr_vol_mod`, clamped to `RN.GFR.VOLUME_RANGE`, under HANDOVER
+> §4 item 1 and branch G3 of `validation/renal_hemodynamics_prereg.md` — which
+> fixed in advance that an E1 phenomenon defaults **ON** and is therefore not a
+> flag. ADR 0013 and ADR 0015 are untouched by that change and both still stand
+> Proposed. **This amendment corrects one clause and nothing else.** The rest of
+> this record was computed at `G_pn` = 20, `G_vr` = 2880 and no volume-keyed
+> natriuretic path, and its whole arithmetic is stale for that reason — the
+> ESTIMATION ORDER it establishes was followed and survives, the numbers do not.
+> Reconciling all three records with HANDOVER §3.21 is §4 item 4 and is
+> deliberately not done here; two changes at once leaves neither testable.
+
 ## Consequences
 
 - **`G_pn` = 51 will not be entered even if ADR 0013 is accepted.** Its value becomes an
