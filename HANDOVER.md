@@ -1853,6 +1853,103 @@ bending it.
 
 ---
 
+### 3.26 THE THYROID DISCREPANCY WAS A UNIT ERROR, AND NHANES SETTLED IT IN PUBLIC DATA
+
+**Date: 2026-09-05.** §3.25 reported the thyroid loop as making a genuine prediction and
+failing it by 2.4×, and decomposed the failure onto the one unreplicated coefficient.
+**That decomposition was wrong.** The coefficient was not the problem.
+
+#### A slope and a concentration have to share a scale
+
+The ledger composed a pituitary line measured on one free-thyroxine **immunoassay**
+(Benhadi 2010) with a free-thyroxine concentration measured by **equilibrium dialysis**
+(Braverman 1973). A slope in `1/(pmol/L)` composes with a concentration in `pmol/L` only
+when both are on the same scale. **Free-thyroxine assays do not share one.**
+
+`thyroid_prereg.md` §2 prohibited *pooling* across free-thyroxine assays. Nothing
+prohibited *composing* across them, which is the stronger error and the less obvious one.
+
+#### NHANES measured the gap instead of leaving it arguable
+
+Owner's instruction: get it from public data. NHANES 2007-2012 measured thyrotropin, free
+thyroxine, **total** thyroxine and both antibodies in a probability sample; the microdata
+are public. Pre-registered in `validation/nhanes_hpt_prereg.md` before any relationship
+was computed, extracted in `validation/nhanes_hpt_extract.py`.
+
+**Reference population n = 6814** — adults 20+, not pregnant, no thyroid history, no
+thyroid-active prescription, both antibodies negative. **No exclusion on the thyrotropin
+value**, deliberately: Hollowell's reference population removes biochemical dysfunction,
+which is right for a reference interval and wrong for a regression.
+
+|  | NHANES immunoassay | Braverman dialysis |
+|---|---|---|
+| total thyroxine | 7.75 µg/dL | 7.30 µg/dL |
+| **free fraction** | **0.0104 %** | **0.0180 %** |
+| free thyroxine | 10.16 pmol/L | 16.61 pmol/L |
+
+**The total hormone agrees to 6% and the free fraction differs 1.73-fold.** Two methods
+that agree on the total and disagree nearly two-fold on the free fraction are not two
+measurements of one quantity. **That is the whole of the 2.2× discrepancy**, and it is
+measured here rather than argued.
+
+#### What NHANES gives, and it is more than the fix
+
+    reference population        n = 6814
+    thyrotropin, geometric mean 1.512 mIU/L   2.5-97.5%  0.460 - 4.484
+    free thyroxine, mean        10.16 pmol/L  SD 1.77    2.5-97.5%  7.70 - 14.10
+
+**The conventional 0.4–4.5 thyrotropin interval is now measured rather than quoted** —
+directive 1.12's round teaching number, replaced by its own data. And it replicates
+across two surveys and two decades: Hollowell's NHANES III (1988-94, n = 13,344) gives a
+geometric mean of 1.40 against this 1.512, on a different assay in a different sample.
+
+**A sex pair is not needed, and that is now a finding rather than an absence.** Free
+thyroxine differs by **0.5%** between men and women in 6814 adults, thyrotropin by 3%.
+ADR 0014's "where only one value is supported, use it for both" was previously invoked
+because no pair could be found; it is now invoked because a large sample says there is
+nothing to find.
+
+#### The structure that follows, and the one number that transfers
+
+**The open-loop gain `b·FT4*` is DIMENSIONLESS and therefore scale-invariant, which is
+exactly what the measured slopes are not.** So it is the sourced row and everything else
+is derived from it:
+
+| row | value | basis |
+|---|---|---|
+| `THY.LOOP_GAIN` | **2.277** (range 1.79–2.76) | derived, scale-invariant, from two independent estimates |
+| `THY.FT4.EUTHYROID` | 10.16 pmol/L | reported, NHANES n = 6814 |
+| `THY.TSH.EUTHYROID` | 1.512 mIU/L | reported, NHANES n = 6814 |
+| `THY.TSH.FT4_SLOPE` | 0.2241 /pmol/L | derived = G / FT4* |
+| `THY.TSH.INTERCEPT` | 2.690 | derived = ln(TSH*) + G |
+| `THY.FT4.GAIN` | 6.720 | derived = FT4* / TSH* |
+
+The two gain estimates: Benhadi's line is self-consistent on its own assay whatever that
+assay reads, giving 2.76 at an assumed cohort thyrotropin of 2.0 mIU/L (2.54–3.05 across
+1.5–2.5, so the assumption is worth ~10%); Jostel's slope with the free-thyroxine mean of
+the cohort that applies it gives 1.79. **Averaged, per the owner's rule.**
+
+#### The test that was failed was ill-posed, and saying so is the finding
+
+**ADR 0019's falsifiable test 2 is VOID.** Not failed — ill-posed. A crossing point can
+only be a prediction if the line and the concentration share a scale. The dependency is
+therefore inverted exactly as ADR 0017 inverted it for arterial PCO2: **the operating
+point is sourced and the RESPONSE is what the model claims.**
+
+**What survives is the part worth having.** Tests 1, 3 and 4 are untouched, and the loop
+gain is unfitted: the axis absorbs **about 70%** of a change in thyroid secretory
+capacity, closed-loop relaxation 3.1 days. **And the model barely moved** — closed-loop
+response 0.305 against 0.308 before. What changed is that the numbers are now composable.
+
+#### The general lesson, and it is now a rule
+
+`validation/pooling.md`: **whenever two ledger rows are multiplied, divided or added they
+must share a measurement scale, not merely a unit symbol.** Where they cannot, find the
+dimensionless combination that is scale-invariant and source that instead. Not pooling
+two assays is necessary and **not sufficient**.
+
+---
+
 ## 4. NEXT, IN ORDER
 
 **Rewritten 2026-09-03, and item 1 was discharged the same day.** The previous list's
@@ -2034,6 +2131,21 @@ were solved against that very target. And §5, which is how work goes wrong here
 15. **Dead code hides unledgered constants and stale API assumptions.** `reconstruct.jl`
     and `ensemble.jl` each carried a hardcoded number. Connecting the ensemble surfaced
     three live SciMLBase API breakages that nothing could have caught while it was dead.
+18. **TWO ROWS MULTIPLIED WITHOUT SHARING A MEASUREMENT SCALE.** §3.26. A slope in
+    `1/(pmol/L)` from one free-thyroxine assay times a concentration in `pmol/L` from
+    another method is a **unit error**, and it produced a hormone level 2.2× wrong that
+    was reported for a day as a failed prediction with a confident decomposition attached.
+    `pooling.md` already barred POOLING across incompatible methods; **barring pooling is
+    necessary and not sufficient.** Before multiplying, dividing or adding two rows, ask
+    whether they share a scale or only a unit symbol. Where they cannot, source the
+    DIMENSIONLESS combination instead — `THY.LOOP_GAIN` exists for that.
+17. **A CONFIDENT DECOMPOSITION OF THE WRONG QUANTITY.** The same episode. §3.25 swept the
+    slope across its full spread, showed it moved the output 2% against a 2.4× error, and
+    concluded the intercept carried all of it. **The arithmetic was right and the
+    conclusion was wrong**, because the space of explanations searched was "which of these
+    three numbers is imprecise" and the answer was "none of them; two of them are not
+    composable". Sensitivity analysis inside a wrong model is confident and useless. Ask
+    what would have to be true for EVERY input to be right and the output still wrong.
 16. **A FITTED LINE EVALUATED OUTSIDE THE RANGE IT WAS FITTED IN. THREE TIMES NOW, AND
     IT IS THE MOST EXPENSIVE RECURRING ERROR IN THIS REPOSITORY.** ADR 0017's original
     decision died of it — a chemoreflex line extrapolated below its measured range put
