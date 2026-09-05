@@ -235,3 +235,24 @@ notes carry the arithmetic.
 hand it can be swept, and doing so moves the model's euthyroid thyrotropin by 2%
 against a discrepancy of 2.4×. **§8.5's decomposition is now arithmetic rather
 than an argument from counting sources.**
+
+### 8.7 §6's real prohibition was the one it did not write down
+
+§6: *"It may not use either reference interval to set a parameter."* Upheld
+throughout — and it turned out not to be the binding constraint.
+
+**The binding constraint was that a slope and a concentration must share a
+scale.** §2 prohibits *pooling* across free-thyroxine assays; nothing prohibited
+*composing* across them, which is what the ledger did, and it produced a
+euthyroid thyrotropin 2.2× high that was reported for a day as a failed
+prediction. It was a unit error.
+
+`validation/nhanes_hpt_prereg.md` and its extract settle it in public data:
+total thyroxine agrees to 6% between an immunoassay population and Braverman's
+dialysis subjects, while the free fractions differ 1.73-fold.
+
+**Consequences, recorded here because §6 required them in these words:**
+`THY.FT4.EUTHYROID` and `THY.TSH.EUTHYROID` now come from one population on one
+assay, `THY.LOOP_GAIN` carries the only scale-invariant quantity in the axis, the
+slope and intercept are derived from those, and **ADR 0019's falsifiable test 2 is
+void.** The euthyroid point is an input; the response is the claim.

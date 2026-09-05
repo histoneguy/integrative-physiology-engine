@@ -74,6 +74,16 @@ them breaks the closure checks that recompute them. Directive 1.9.
   whatever the methods were. If yes, the method difference is real and this
   prohibition applies. Say which test was applied and why on the row.
 
+  **AND THERE IS A STRONGER PROHIBITION THIS ONE DOES NOT IMPLY: DO NOT COMPOSE
+  ACROSS INCOMPATIBLE METHODS EITHER.** Not pooling two free-thyroxine assays into
+  one number is necessary and was not sufficient — the ledger kept them separate
+  and then multiplied a slope measured in `1/(pmol/L)` on one assay by a
+  concentration in `pmol/L` from another, which is a unit error and produced a
+  hormone level 2.2× wrong. **Whenever two rows are multiplied, divided or added,
+  they must share a measurement scale, not merely a unit symbol.** Where they
+  cannot, find the DIMENSIONLESS combination that is scale-invariant and source
+  that instead: `THY.LOOP_GAIN` exists for exactly this reason.
+
   **The spread is the point, not a formality.** Having both ends of
   `THY.TSH.FT4_SLOPE` made it possible to sweep the slope through the model and
   show it moves the disputed output by 2% against a discrepancy of 2.4× —
