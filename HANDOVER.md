@@ -2017,6 +2017,101 @@ a primitive and is now load-bearing in two places.
 
 ---
 
+### 3.28 THE METABOLIC RATE IS SOURCED, AND THE FICK RELATION NOW ACCUSES CARDIAC OUTPUT
+
+**Date: 2026-09-05.** `RESP.CO2.PRODUCTION` was `assumed` at **0.20 L/min**, a round
+teaching number, and its own ledger note recorded a failed search: *"resting metabolic
+rate / indirect calorimetry / reference values returns prepubertal children, chronic
+disease..."*.
+
+**That search missed a weighted meta-analysis of 197 studies whose subject is exactly this
+row.** McMurray RG et al., *Med Sci Sports Exerc* 2014;46(7):1352-8, PMC4535334, read in
+full: 397 publication estimates, inverse-variance weighted, and its stated purpose is to
+test the 1.0 kcal·kg⁻¹·h⁻¹ metabolic-equivalent convention — **directive 1.12's subject
+written as a paper title.** Its conclusion is that the convention overestimates resting
+metabolic rate by about 10% in men and almost 15% in women.
+
+**A recorded failed search is evidence about the searcher, not about the literature**, and
+the reader of that note would reasonably have stopped looking. §5 gains an entry.
+
+#### What was entered, and the choice that dominates the uncertainty
+
+| stratum | kcal·kg⁻¹·h⁻¹ | VO₂ mL/min |
+|---|---|---|
+| men, normal weight | 0.960 | 232 |
+| women, normal weight | 0.926 | 224 |
+| **mean, normal weight — ENTERED** | **0.943** | **228** |
+| mean, all BMI — alternative | 0.865 | 209 |
+| the MET convention | 1.000 | 242 |
+
+**Normal weight**, because the reference individual is a healthy 70 kg adult and the
+all-BMI means pool in subgroups whose metabolic rate per kilogram is lower for a reason
+this model cannot represent — it has no body composition. **Fixed in the pre-registration
+before any consequence was computed.**
+
+**The two strata differ by 8%, about ten times either one's confidence interval**, so the
+ledger's uncertainty range is the *stratum choice* and not a CI. Saying which is which is
+the whole of directive 1.9 here.
+
+**A sexed pair is supported and deliberately not taken.** This row drives basal
+ventilation, which drives the respiratory water flux, whose residual closes against
+`BF.H2O.INSENSIBLE_LOSS` — assumed, 0.8 L/day, **unsexed**. Sexing one half against an
+unsexed total either invents a sexed total or dumps the whole difference into the
+cutaneous residual.
+
+**The exchange ratio stays assumed and does not block it.** Weir's denominator runs 4.771
+at R = 0.75 to 4.881 at R = 0.85 — **±1.1%**, eight times smaller than the stratum choice.
+
+#### What moved, and what did not
+
+    RESP.CO2.PRODUCTION      0.2000 -> 0.1824 L/min     assumed -> derived
+    RESP.VENTILATION.BASAL   6.1636 -> 5.6206 L/min
+    respiratory water        0.3120 -> 0.2845 L/day
+    BF.H2O.CUTANEOUS_LOSS    0.4880 -> 0.5155 L/day
+
+**Arterial PCO2 does not move** — it is a sourced input under ADR 0017's amendment and
+ventilation is derived from it, so a change would mean the derivation had run backwards.
+**The water balance does not move either**: the two halves re-split and their sum is
+unchanged, so extracellular volume, plasma sodium and arterial pressure are bit-identical.
+
+Ventilation at 5.62 L/min is inside the 4–8 the pre-registration fixed in advance, at the
+low end — **and that is what a sourced metabolic rate and an assumed dead-space fraction
+of 0.30 imply together.** Branch M2 forbade moving the dead space to make it come out.
+That row is the next one to source.
+
+#### THE FINDING: a better-sourced number made a discrepancy WORSE, and located it
+
+|  | VO₂ | a-vO₂ | extraction | SvO₂ |
+|---|---|---|---|---|
+| before | 250 mL/min | 4.20 mL/dL | 20.1% | 78.4% |
+| **sourced** | **228 mL/min** | **3.83 mL/dL** | **18.3%** | **80.1%** |
+| implied by a measured SvO₂ near 75% | — | ~4.8 | ~23% | 75% |
+
+**Branch M3 fired, and the pre-registration required it be reported rather than rescued.**
+
+**The arithmetic locates it without ambiguity.** Extraction is consumption over cardiac
+output times arterial content. Consumption is now the best-sourced of the three; arterial
+content follows from haemoglobin and a sourced dissociation curve. What is left is
+cardiac output:
+
+    Fick-consistent cardiac output at 23% extraction   4.75 L/min
+    the model's CV.CO.NOMINAL                          5.95 L/min
+
+**And the likely reason is methodological, which makes it the same class of error as the
+thyroid one.** `CV.CO.NOMINAL` is derived from a stroke volume measured by **cardiac
+magnetic resonance** (UK Biobank), while every mixed venous saturation in the literature
+comes from populations whose cardiac output was measured by **thermodilution or Fick**.
+Composing one method's cardiac output with another method's venous saturation is the same
+move as composing an immunoassay's free thyroxine with a dialysis concentration — §3.26,
+and §5 item 18. **CMR is known to read stroke volume higher than Fick.**
+
+**It is not closed here.** Re-sourcing the stroke volume is its own pre-registered pass,
+and doing it inside this one would be adjusting a second parameter to rescue the first.
+**This is now the sharpest quantified discrepancy in the cardiovascular limb**, and unlike
+the salt-sensitivity numbers nothing in it was fitted to anything.
+
+---
+
 ## 4. NEXT, IN ORDER
 
 **Rewritten 2026-09-03, and item 1 was discharged the same day.** The previous list's
@@ -2198,6 +2293,15 @@ were solved against that very target. And §5, which is how work goes wrong here
 15. **Dead code hides unledgered constants and stale API assumptions.** `reconstruct.jl`
     and `ensemble.jl` each carried a hardcoded number. Connecting the ensemble surfaced
     three live SciMLBase API breakages that nothing could have caught while it was dead.
+20. **A RECORDED FAILED SEARCH READ AS EVIDENCE ABOUT THE LITERATURE.** §3.28.
+    `RESP.CO2.PRODUCTION` carried a careful note listing what a search for resting
+    metabolic rate returned and why each hit was inadmissible. It missed a weighted
+    meta-analysis of 197 studies whose title is the subject of the row. **The note made
+    the row look closed** — the next reader has no reason to repeat a search someone
+    documented failing. Recording a failed search is right; treating one as settled is
+    not. Re-run any search whose row still says `assumed` before believing it, and
+    search on the CONCLUSION you expect ("the MET convention overestimates") as well as
+    on the quantity.
 19. **A DEFERRAL THAT NAMED A MISSING ROW THE MODEL ALREADY HAD.** §3.27. ADR 0018
     deferred the Fick relation because it "needs tissue oxygen consumption, which is a
     metabolic row this model does not have"; the model had one under another name, and

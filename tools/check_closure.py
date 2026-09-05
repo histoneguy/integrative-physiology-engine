@@ -367,14 +367,26 @@ def _check_one(p: dict[str, float]) -> int:
     # property of the ROWS - if either moves, the model's oxygen consumption
     # silently moves with it, and 250 mL/min at rest is the number a reader
     # checks first.
-    vo2 = p["RESP.CO2.PRODUCTION"] / p["RESP.EXCHANGE_RATIO"] * 1000.0
-    if not (180.0 <= vo2 <= 320.0):
-        errors.append("Resting oxygen consumption %.0f mL/min is outside 180-320; "
-                      "RESP.CO2.PRODUCTION or RESP.EXCHANGE_RATIO has moved and "
-                      "both are `assumed` rows" % vo2)
-    else:
-        print("  ok   resting oxygen consumption      %.0f mL/min  "
-              "(VCO2/RER, both assumed rows)" % vo2)
+    # SOURCED 2026-09-05 rather than assumed. Oxygen consumption now comes from a
+    # weighted meta-analysis of 197 indirect-calorimetry studies through Weir's
+    # equation, and CO2 production is derived BACK from it - the dependency runs
+    # the way the measurement does, which is HANDOVER section 3.6's rule.
+    check("oxygen consumption from resting metabolic rate",
+          p["RESP.O2.CONSUMPTION"],
+          p["RESP.METABOLIC_RATE"] * p["BF.BODY_MASS.REFERENCE"] / 60.0
+          / (3.941 + 1.106 * p["RESP.EXCHANGE_RATIO"]),
+          "VO2 = RMR*m/60 / (3.941 + 1.106*R), Weir 1949 without urinary "
+          "nitrogen. If this drifts the model's whole metabolic scale has moved "
+          "and CO2 production, basal ventilation, the respiratory water flux and "
+          "the oxygen extraction ratio move with it.",
+          errors)
+
+    check("CO2 production from oxygen consumption",
+          p["RESP.CO2.PRODUCTION"],
+          p["RESP.EXCHANGE_RATIO"] * p["RESP.O2.CONSUMPTION"],
+          "VCO2 = R*VO2, the definition of the exchange ratio. This row was "
+          "`assumed` at a round 0.20 until the metabolic rate was sourced.",
+          errors)
 
     # ------------------------------------------------------------------ thyroid
     #
