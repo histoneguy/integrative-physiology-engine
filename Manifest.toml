@@ -2,7 +2,7 @@
 
 julia_version = "1.12.6"
 manifest_format = "2.0"
-project_hash = "a9447de5dd41b89ce94a3738e653f1311d352100"
+project_hash = "da4e31e90a1b91bbc5aa6b8cef60eee5a39a5273"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "9b38b82a9fe131f3d331a53b7203d9d1a2a4602c"
@@ -689,7 +689,7 @@ uuid = "34004b35-14d8-5ef3-9330-4cdb6864b03a"
 version = "0.3.30"
 
 [[deps.IPE]]
-deps = ["CSV", "DataFrames", "DiffEqCallbacks", "Distributions", "ModelingToolkit", "OrdinaryDiffEq", "QuasiMonteCarlo", "SciMLBase", "Sundials", "Symbolics"]
+deps = ["ADTypes", "CSV", "DataFrames", "Dates", "DiffEqCallbacks", "Distributions", "LinearAlgebra", "ModelingToolkit", "OrdinaryDiffEq", "Printf", "QuasiMonteCarlo", "SciMLBase", "Sundials", "Symbolics"]
 path = "."
 uuid = "0126f89b-7ef0-4c89-b352-8fc383fedcbb"
 version = "0.0.1"
