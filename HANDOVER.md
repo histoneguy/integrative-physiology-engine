@@ -2256,6 +2256,15 @@ were solved against that very target. And §5, which is how work goes wrong here
 3. **A passing test suite is not evidence about a parameter it does not assert on.**
    Nothing asserted on either autoregulation breakpoint while both were wrong.
 4. **`Diagnostics` cannot fail.** It is a report. Read the numbers.
+4b. **THE SUITE'S RUNTIME IS COMPILE LATENCY, NOT WORK — MEASURED 2026-09-05, so nobody
+    chases the wrong lever.** It has gone 1m37 → ~4m20 as components were added, and the
+    obvious suspect is the 21 `build_model` calls in the test file. It is not them:
+    warm, a build is **21 ms** and a 400-day solve is **42 ms**, so every build and solve
+    in the suite together is a few seconds. The rest is Julia specialising a larger
+    model. Deleting builds will not buy anything; the levers are fewer distinct code
+    paths or a persistent session, and neither is worth it yet. Directive 1.10 still
+    holds — do not add builds carelessly — but do not "optimise" the suite by deleting
+    coverage on the strength of a guess.
 5. **Derived values drifting apart.** Run `check_closure.py` after any ledger change.
 6. **Silent string replacements.** Assert on every replacement.
 7. **A gate cannot check a label you supplied.**
