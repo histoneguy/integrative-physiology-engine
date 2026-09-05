@@ -55,6 +55,7 @@ include("components/Raas.jl")
 include("components/Adh.jl")
 include("components/Respiratory.jl")
 include("components/Blood.jl")
+include("components/Thyroid.jl")
 include("assemble.jl")
 include("ensemble.jl")
 

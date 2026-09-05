@@ -31,6 +31,7 @@ closure relationship must have that relationship expressed here.
 from __future__ import annotations
 
 import csv
+import math
 import sys
 from pathlib import Path
 
@@ -359,6 +360,38 @@ def _check_one(p: dict[str, float]) -> int:
           "Composed end to end: osmolality -> antidiuretic activity -> urine "
           "osmolality -> volume must return intake minus insensible loss.",
           errors)
+
+    # ------------------------------------------------------------------ thyroid
+    #
+    # ADR 0019. THY.FT4.GAIN is the one derived number in the thyroid loop, and
+    # it is derived so that the loop rests at the SOURCED free thyroxine rather
+    # than wherever two independent gains happen to cross. Recomputed here, not
+    # read back - the same discipline as the respiratory water split.
+    tsh_ref = math.exp(p["THY.TSH.INTERCEPT"] -
+                       p["THY.TSH.FT4_SLOPE"] * p["THY.FT4.EUTHYROID"])
+    check("thyroid loop rests at the sourced free thyroxine",
+          p["THY.FT4.GAIN"] * tsh_ref, p["THY.FT4.EUTHYROID"],
+          "G_T * exp(a - b*FT4_ref) = FT4_ref. If this drifts the model starts "
+          "with thyroxine off its equilibrium and every run opens with a "
+          "spurious ten-day transient - and the metabolic multiplier is no "
+          "longer 1.0 at rest, which is what keeps the respiratory CO2 load "
+          "unchanged when the arm is off.",
+          errors)
+
+    # AND THE NUMBER THE MODEL THEN PREDICTS, ASSERTED AS THE DISCREPANCY IT IS.
+    # Nothing was set to produce this: free thyroxine comes from equilibrium
+    # dialysis in normal subjects, the pituitary line from a T4-loading
+    # experiment in different subjects. It lands inside the conventional 0.4-4.0
+    # interval and at 2.4x the NHANES III reference-population geometric mean of
+    # 1.40 mIU/L, and validation/thyroid_extract.py section 3 decomposes why.
+    # Pinned so that a change to any of the three inputs surfaces here.
+    if not (3.0 <= tsh_ref <= 3.6):
+        errors.append("Predicted euthyroid TSH %.3f mIU/L has moved out of "
+                      "3.0-3.6; the sourced inputs changed and the branch-T2 "
+                      "discrepancy in thyroid_extract.py needs rewriting" % tsh_ref)
+    else:
+        print("  ok   predicted euthyroid thyrotropin  %.2f mIU/L  "
+              "(2.4x the NHANES III geometric mean - REPORTED, NOT TUNED)" % tsh_ref)
 
     print()
     if errors:
