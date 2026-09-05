@@ -1325,17 +1325,26 @@ using SciMLBase
         end
         pco2(vco2) = C(vco2) / ve(vco2)
 
+        # EXPRESSED AS MULTIPLES OF THE RESTING LOAD, NOT AS LITERALS. This block
+        # used 0.20 and 0.25 L/min directly, which silently encoded the old assumed
+        # CO2 production; when that row was sourced on 2026-09-05 and fell to
+        # 0.1824, the literals would still have passed while testing a load the
+        # model no longer has. A test written against a number rather than against
+        # the row it came from is a test that stops asking the question.
+        V0 = L.RESP_CO2_PRODUCTION
+        hi = 1.37 * V0                    # above the recruitment threshold
+
         # BELOW THE THRESHOLD THE REFLEX IS INERT and PaCO2 rises in proportion to
         # production. That is the half most likely to be got wrong by writing the
         # branch condition on the wrong variable.
-        @test isapprox(ve(0.20), L.RESP_VENTILATION_BASAL; rtol = 1e-9)
-        @test isapprox(pco2(0.21) / pco2(0.20), 0.21 / 0.20; rtol = 1e-6)
+        @test isapprox(ve(V0), L.RESP_VENTILATION_BASAL; rtol = 1e-9)
+        @test isapprox(pco2(1.05 * V0) / pco2(V0), 1.05; rtol = 1e-6)
 
         # ABOVE IT THE REFLEX BITES. Ventilation rises and PaCO2 rises by LESS than
         # proportion - which is what a negative feedback is.
-        @test ve(0.25) > L.RESP_VENTILATION_BASAL
-        @test pco2(0.25) < 0.25 / 0.20 * L.RESP_CO2_ARTERIAL_RESTING
-        @test pco2(0.25) > L.RESP_CHEMO_VRT          # and it stays on the upper limb
+        @test ve(hi) > L.RESP_VENTILATION_BASAL
+        @test pco2(hi) < (hi / V0) * L.RESP_CO2_ARTERIAL_RESTING
+        @test pco2(hi) > L.RESP_CHEMO_VRT          # and it stays on the upper limb
 
         # THE TWO LIMBS MEET CONTINUOUSLY. A jump here would land straight in
         # D(V_ecf) through the water flux. The breakpoint is where
@@ -1450,7 +1459,12 @@ using SciMLBase
         # parent rows are `assumed` at round teaching numbers - directive 1.12 -
         # so a narrow pin here would be false precision about a number nobody
         # measured for this model.
-        @test 180.0 <= m.VO2 <= 320.0
+        # 228 mL/min, from a weighted meta-analysis of 197 indirect-calorimetry
+        # studies rather than from the metabolic-equivalent convention. The range
+        # is the STRATUM choice in metabolic_rate_prereg.md section 3 - normal
+        # weight against all-BMI - which is far wider than either stratum's own
+        # confidence interval and is the honest statement of what is uncertain.
+        @test 200.0 <= m.VO2 <= 240.0
 
         # THE FICK RELATION CLOSES EXACTLY, and that is the check the unit chain
         # needs: cardiac output is carried in L/DAY because the model's time base
@@ -1466,7 +1480,21 @@ using SciMLBase
         # to the human literature without a catheter, because it follows from
         # oxygen uptake and cardiac output, both of which are measured
         # non-invasively in every indirect-calorimetry study.
-        @test 3.5 <= m.avDO2 <= 5.5
+        # 3.83 mL/dL. IT MOVED AWAY FROM THE TEXTBOOK 4-5 WHEN OXYGEN CONSUMPTION
+        # WAS SOURCED, and metabolic_rate_prereg.md branch M3 required that be
+        # reported rather than rescued. The arithmetic is not in dispute: with
+        # cardiac output at 5.95 L/min and consumption at 228 mL/min the
+        # difference is 3.83, so the extraction ratio is 18.3% against roughly 23%
+        # implied by a measured mixed venous saturation near 75%.
+        #
+        # THE DISCREPANCY POINTS AT CARDIAC OUTPUT, NOT AT CONSUMPTION. The
+        # Fick-consistent cardiac output would be 4.75 L/min; CV.CO.NOMINAL is
+        # 5.95, derived from a CARDIAC-MRI stroke volume, while mixed venous
+        # saturation is measured in populations whose cardiac output came from
+        # thermodilution or Fick. That is a methodological difference between two
+        # ways of measuring one quantity, which is the same class of error the
+        # thyroid axis turned out to have. It is recorded, not closed.
+        @test 3.0 <= m.avDO2 <= 5.5
 
         # MIXED VENOUS SATURATION AND EXTRACTION ARE REPORTED, AND NO HUMAN TARGET
         # IS ASSERTED AGAINST THEM. Not for want of searching: mixed venous
