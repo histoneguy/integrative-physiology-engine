@@ -38,6 +38,13 @@ fixed rule beats a well-chosen variable one.**
 5. **`pooled-unweighted`** — individual estimates, no n, no dispersion.
 6. **`single-source`** — one study. Say so; do not dress it as consensus.
 
+**AND PRECISION IS PART OF THE RULE, NOT A TIDINESS CONCERN.** A pooled or
+converted value carries the significant figures of the measurements behind it
+and no more. Converting a unit does not create a digit: 1.29 ng/100 mL is three
+figures in pmol/L too. **`derived` rows are the exception** — they are
+arithmetic on other rows rather than claims about a measurement, and truncating
+them breaks the closure checks that recompute them. Directive 1.9.
+
 ### Prohibited
 
 - **`range-midpoint` is prohibited for new entries.** Taking the midpoint of a
@@ -52,6 +59,25 @@ fixed rule beats a well-chosen variable one.**
 - **Pooling across incompatible measurement methods.** `extraction_method`
   already exists to separate these; a bioimpedance body-water fraction and an
   isotope-dilution one are not two measurements of the same thing.
+
+  **AND THAT RULE HAS A LIMIT, ADDED 2026-09-05 AFTER IT WAS MISAPPLIED.** It
+  exists to stop a *real* method difference being averaged into a number that
+  describes neither method. It is **not** a licence to choose one of two
+  estimates that agree. `THY.TSH.FT4_SLOPE` was entered as one study's 0.13585
+  with a second study's 0.1345 demoted to "corroboration, not the value", on the
+  strength of this bullet — **a 1% difference**, a fifth of any plausible error
+  on either. Choosing there is a coin toss with a justification attached, and it
+  throws away the one thing two estimates give you for free: a spread.
+
+  **The test: would the two numbers be distinguishable given their own
+  uncertainty?** If not, pool them and record the spread as the uncertainty,
+  whatever the methods were. If yes, the method difference is real and this
+  prohibition applies. Say which test was applied and why on the row.
+
+  **The spread is the point, not a formality.** Having both ends of
+  `THY.TSH.FT4_SLOPE` made it possible to sweep the slope through the model and
+  show it moves the disputed output by 2% against a discrepancy of 2.4× —
+  turning "the slope is not the problem" from an argument into arithmetic.
 - **Silent re-pooling of a meta-analytic estimate** with additional primary
   studies already inside it. Double-counting.
 

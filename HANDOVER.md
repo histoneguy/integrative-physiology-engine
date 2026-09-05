@@ -39,6 +39,12 @@ findings had been prepended for days and the file read 3.14, 3.21, 3.19, 3.20, 3
 asserting the multiset of lines was unchanged. **§4 was rewritten from scratch**, because
 every numbered item on the old list had been completed.
 
+**`OPEN-QUESTIONS.md` is new on 2026-09-05** and is the short list: every unresolved
+item, sorted by whether it needs a decision, a paper, or more work, each with what would
+resolve it. **`gui/index.html` is also new** — the model's resting state, its response
+curves and the full cited ledger in one self-contained page that opens without Julia.
+Rebuild it after any change with `tools/export_gui_data.jl` then `tools/build_gui.py`.
+
 ---
 
 ## 0. HOW THIS WORKS
