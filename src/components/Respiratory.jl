@@ -111,6 +111,7 @@ function Respiratory(; name, body_mass = BF_BODY_MASS_REFERENCE,
         PaCO2(t)        # mmHg     arterial CO2 tension
         H2O_resp(t)     # L/day    OUTPUT to body fluids
         th_mod(t)       # -        INPUT from thyroid, 1.0 at euthyroid
+        VCO2_eff(t)     # L/min    OUTPUT to blood - the load AFTER the thyroid arm
     end
 
     # THE METABOLIC HYPERBOLA'S NUMERATOR. PaCO2 = C / V_E, with C carrying the
@@ -169,6 +170,13 @@ function Respiratory(; name, body_mass = BF_BODY_MASS_REFERENCE,
         # pending primary source"; this computes 39% of it and leaves the rest as
         # a named cutaneous residual.
         H2O_resp ~ V_E * 1440.0 * w_gas / 1.0e6,
+
+        # THE CO2 LOAD AFTER THE THYROID ARM, EXPOSED SO BLOOD CAN DIVIDE IT BY THE
+        # EXCHANGE RATIO AND GET OXYGEN CONSUMPTION. It is the same quantity C is
+        # built from, published rather than recomputed downstream, so there is one
+        # statement of the metabolic load in the model instead of two that can
+        # drift. Identical to VCO2 whenever the thyroid metabolic arm is off.
+        VCO2_eff ~ VCO2 * th_mod,
     ]
 
     return MTKSystem(eqs, t, vars, pars; name)

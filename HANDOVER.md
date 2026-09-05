@@ -1950,6 +1950,73 @@ two assays is necessary and **not sufficient**.
 
 ---
 
+### 3.27 ADR 0018 DEFERRED THE FICK RELATION FOR A ROW THAT ALREADY EXISTED
+
+**Date: 2026-09-05.** ADR 0018's "What is NOT decided" led with *"Venous oxygen content,
+the Fick relation and extraction ratio. They need tissue oxygen consumption, which is a
+metabolic row this model does not have."*
+
+**It had one.** `RESP.CO2.PRODUCTION` is the metabolic load, and `RESP.EXCHANGE_RATIO` is
+by definition the ratio that converts CO2 production to oxygen consumption. Both rows were
+already in the ledger, both are used elsewhere, and **neither moved.** The deferral was
+not about a missing measurement — it was about a quantity the record did not recognise
+under the name it already had.
+
+**That is the finding, and it is worth more than the arm.** A deferral in an ADR reads as
+evidence that something cannot yet be done, and this one was read that way. §5 gains an
+entry.
+
+#### What it produces, from rows that were already there
+
+    oxygen consumption            250 mL/min
+    arteriovenous difference      4.20 mL/dL
+    mixed venous content          16.7 mL/dL
+    mixed venous saturation       78.4 %   (male)     70.4 %  (female)
+    extraction ratio              20.1 %   (male)     28.4 %  (female)
+
+**The sex difference in extraction is emergent and was not put there.** Oxygen demand is
+not sexed in this model; haemoglobin and cardiac output are. Women therefore extract a
+larger fraction of a smaller delivery to meet the same demand — which is the correct
+direction and the correct reason.
+
+**Anaemia is now legible**, and that is the property worth having. Haemoglobin falls,
+content and delivery fall with it, consumption does not, so extraction rises and mixed
+venous saturation falls **while arterial saturation and tension do not move at all**.
+That is what distinguishes content from tension, and it is now asserted rather than
+described.
+
+**And the model has its only three-hop coupling**: thyroid → respiratory → blood → venous
+oxygen, because the thyroid metabolic arm scales the CO2 load that consumption is derived
+from.
+
+#### What is NOT claimed, and one of these is an ethical ceiling
+
+**No human target is asserted against mixed venous saturation or the extraction ratio.**
+Not for want of searching — the measurement needs a pulmonary artery catheter, which is
+not placed in healthy people, so the literature is critical care and cardiac disease and
+directive 1.7 disqualifies almost all of it. **This is the same ethical ceiling ADR 0006's
+amendment records for `RN.AUTOREG.UPPER`'s rat provenance**, and it is the fourth
+subsystem in which directive 1.7 has disqualified most of a literature.
+
+**The arteriovenous difference IS comparable**, because it follows from oxygen uptake and
+cardiac output, both measured non-invasively in every indirect-calorimetry study, and 4.2
+mL/dL is where it should be.
+
+**Both parent rows are still `assumed` at round teaching numbers.** 0.20 L/min of CO2 and
+an exchange ratio of 0.80 are exactly what directive 1.12 warns about, and oxygen
+consumption inherits their weakness. **Sourcing resting oxygen consumption directly by
+indirect calorimetry would replace both with one measurement** — and it is now more
+valuable than it was, because a second subsystem depends on it.
+
+#### A correction to ADR 0018's own text
+
+The note on the alveolar gas equation said `RESP.EXCHANGE_RATIO` *"should become derived
+the moment a metabolic oxygen consumption exists."* **It must not.** Oxygen consumption is
+derived *through* the exchange ratio; deriving the ratio back from it is circular. It stays
+a primitive and is now load-bearing in two places.
+
+---
+
 ## 4. NEXT, IN ORDER
 
 **Rewritten 2026-09-03, and item 1 was discharged the same day.** The previous list's
@@ -2131,6 +2198,14 @@ were solved against that very target. And §5, which is how work goes wrong here
 15. **Dead code hides unledgered constants and stale API assumptions.** `reconstruct.jl`
     and `ensemble.jl` each carried a hardcoded number. Connecting the ensemble surfaced
     three live SciMLBase API breakages that nothing could have caught while it was dead.
+19. **A DEFERRAL THAT NAMED A MISSING ROW THE MODEL ALREADY HAD.** §3.27. ADR 0018
+    deferred the Fick relation because it "needs tissue oxygen consumption, which is a
+    metabolic row this model does not have"; the model had one under another name, and
+    building the arm required no new source and moved no existing number. **A deferral in
+    an ADR reads as evidence that something cannot be done**, and it is trusted for as
+    long as nobody rechecks it. Before accepting one, list what the deferred thing
+    actually needs and grep the ledger for each item — the name it is filed under is not
+    necessarily the name the deferral used.
 18. **TWO ROWS MULTIPLIED WITHOUT SHARING A MEASUREMENT SCALE.** §3.26. A slope in
     `1/(pmol/L)` from one free-thyroxine assay times a concentration in `pmol/L` from
     another method is a **unit error**, and it produced a hormone level 2.2× wrong that

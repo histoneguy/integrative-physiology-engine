@@ -1,6 +1,6 @@
 # ADR 0018: Blood oxygen transport, and the first quantity that needs two subsystems
 
-**Status:** Proposed
+**Status:** Accepted, **amended 2026-09-05**
 **Date:** 2026-09-04
 **Evidence tier:** E1 for the alveolar gas equation, oxygen carriage by haemoglobin,
 the sigmoid dissociation relation and the convective delivery identity; E2 for the
@@ -116,10 +116,52 @@ anaemia as a haemoglobin change at fixed curve position, and convective oxygen d
 4. **Haemoglobin and haematocrit must agree** through a mean corpuscular haemoglobin
    concentration inside the human range. Sourced independently, so this can fail.
 
+## Amendment, 2026-09-05: the deferred metabolic row already existed
+
+**"What is NOT decided" led with venous oxygen content, the Fick relation and the
+extraction ratio, deferred because "they need tissue oxygen consumption, which is a
+metabolic row this model does not have."** That was wrong when it was written. The
+model had one: `RESP.CO2.PRODUCTION`, and `RESP.EXCHANGE_RATIO` is by definition the
+ratio that converts it. **Both rows were already in the ledger and neither moved.**
+
+So the deferral was not about a missing measurement — it was about a quantity the record
+did not recognise under the name it already had. **That is worth more than the arm
+itself**, because a deferral in an ADR is read as evidence that something cannot yet be
+done, and this one was read that way for a day.
+
+**What it buys.** Oxygen consumption 250 mL/min, an arteriovenous difference of 4.2
+mL/dL, mixed venous content and saturation, and the extraction ratio. **Anaemia becomes
+legible**: haemoglobin falls, content and delivery fall, consumption does not, so
+extraction rises and mixed venous saturation falls while arterial saturation does not
+move at all. That last property is what distinguishes content from tension and it is now
+asserted rather than described.
+
+**And it gives the model its only three-hop coupling** — thyroid → respiratory → blood →
+venous oxygen — because the thyroid metabolic arm scales the CO2 load that oxygen
+consumption is derived from.
+
+**A correction to this record's own decision 3.** The note on the alveolar gas equation
+said `RESP.EXCHANGE_RATIO` "should become derived the moment a metabolic oxygen
+consumption exists." **It must not.** Oxygen consumption is derived *through* the
+exchange ratio, so deriving the ratio back from it is circular. It stays a primitive,
+and it is now load-bearing in two places rather than one.
+
+**No human target is asserted against mixed venous saturation, and that is an ethical
+ceiling rather than a gap in the search.** The measurement needs a pulmonary artery
+catheter, which is not placed in healthy people, so the literature is critical care and
+cardiac disease — directive 1.7 disqualifies it, the same argument ADR 0006's amendment
+makes for `RN.AUTOREG.UPPER`'s rat provenance. The arteriovenous difference IS comparable,
+because it follows from oxygen uptake and cardiac output, both measured non-invasively.
+
+**Still not decided:** any oxygen feedback, the cardiac output response to anaemia and
+hypoxia, and regional venous differences — this is one systemic compartment, so the value
+represents no particular vein and comparing it against anything but the pulmonary artery
+is a category error.
+
 ## What is NOT decided
 
-- **Venous oxygen content, the Fick relation and extraction ratio.** They need tissue
-  oxygen consumption, which is a metabolic row this model does not have.
+- ~~**Venous oxygen content, the Fick relation and extraction ratio.**~~ **BUILT
+  2026-09-05** — see the amendment above. The metabolic row existed under another name.
 - **The Bohr effect, temperature and 2,3-DPG.**
 - **Carbon dioxide carriage**, which is bicarbonate, carbamino and dissolved — and again
   needs the renal acid-base limb.
