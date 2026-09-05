@@ -8,8 +8,13 @@ STRUCTURE SOURCES
     2010;162(2):323-9. PMID 19926783. ABSTRACT ONLY. 21 healthy volunteers,
     randomised T4 and T3 loading - an intervention, not a cross-section.
     and Jostel A, Ryder WDJ, Shalet SM. Clin Endocrinol (Oxf) 2009;71(4):529-34.
-    PMID 19226261, 9519 tests in 4064 patients. THE ENTERED SLOPE IS THE MEAN OF
-    THE TWO, which agree to 1%.
+    PMID 19226261, 9519 tests in 4064 patients. NEITHER SLOPE IS USED DIRECTLY -
+    both are assay-specific. What is taken from them is the DIMENSIONLESS loop
+    gain, which is not.
+  The operating point, and the assay-scale comparison that forced this structure:
+    NHANES 2007-2012 public microdata, reference population n = 6814. Extracted in
+    validation/nhanes_hpt_extract.py, pre-registered before any relationship was
+    computed.
   Thyroxine turnover, and the euthyroid free thyroxine that sets the scale:
     Braverman LE, Vagenakis A, Downs P, Foster AE, Sterling K, Ingbar SH.
     J Clin Invest 1973;52(5):1010-7. PMC302354. OPEN ACCESS, read in full.
@@ -44,25 +49,34 @@ IS the physiology here - an axis that takes weeks to re-equilibrate cannot be an
 algebraic relation - and directive 1.10 says the state is paid on every run, so
 only the half that earns it gets one.
 
-THE EUTHYROID THYROTROPIN IS A PREDICTION, AND THE MODEL GETS IT WRONG BY 2.4x
+THE EUTHYROID POINT IS AN INPUT, NOT A PREDICTION, AND THE REASON IS A UNIT
 
-Free thyroxine is sourced from equilibrium dialysis in normal subjects; the
-pituitary line is sourced from a T4-loading experiment in different subjects.
-Neither is a thyrotropin reference value, so the crossing point is a genuine
-prediction - and it lands at 3.35 mIU/L against a NHANES III reference-population
-geometric mean of 1.40.
+For one day this component reported the euthyroid thyrotropin as a prediction the
+model failed by 2.4x. IT WAS NOT A FAILING PREDICTION. It was a unit error: a
+pituitary line measured on one free-thyroxine IMMUNOASSAY composed with a
+concentration measured by EQUILIBRIUM DIALYSIS, and a slope in 1/(pmol/L) only
+composes with a concentration in pmol/L when the two are on the same scale.
 
-IT IS REPORTED AND NOT TUNED, which is branch T2 of the pre-registration. The
-decomposition is arithmetic: sweeping the slope across its whole two-source spread
-moves the prediction by 2% against a discrepancy of 2.4x, the free thyroxine has
-two estimates agreeing within a standard deviation, and the INTERCEPT has one
-source that reports no standard error for it. An intercept is a line extrapolated to FT4 = 0 from data that
-never went near zero - the third time this repository has been bitten by exactly
-that, after the ADR 0017 chemoreflex amendment and HANDOVER section 3.22's
-censoring bound.
+NHANES 2007-2012 measured the gap rather than leaving it arguable. In 6814
+reference-population adults the TOTAL thyroxine is 7.75 ug/dL against Braverman's
+7.30 - agreeing to 6% - while the free fraction is 0.0104% by immunoassay against
+0.0180% by dialysis, a ratio of 1.73. Two methods that agree on the total hormone
+and disagree nearly two-fold on the free fraction are not measuring one quantity.
 
-Nothing downstream consumes thyrotropin. What reaches the rest of the model is
-free thyroxine, through the metabolic arm, and that quantity is corroborated.
+So the axis is on ONE scale throughout, and the dependency is inverted the way ADR
+0017 inverted it for arterial PCO2: the operating point is sourced and the RESPONSE
+is what the model claims. ADR 0019's falsifiable test 2 is VOID - and it was never
+a real test, because a crossing point can only be a prediction if the line and the
+concentration share a scale.
+
+WHAT SURVIVES IS THE PART THAT MATTERS. The open-loop gain b*FT4* is DIMENSIONLESS
+and therefore scale-invariant, which is exactly what the measured slopes are not.
+It is 2.28 from two independent estimates, nothing here was fitted to it, and it is
+almost the whole of the model's dynamic behaviour: the axis absorbs about 70% of a
+change in thyroid secretory capacity, with a closed-loop relaxation of 3.1 days.
+
+Nothing downstream consumes thyrotropin. What reaches the rest of the model is free
+thyroxine, through the metabolic arm.
 
 WHAT THIS DELIBERATELY OMITS
   Triiodothyronine, deiodination and protein binding - free thyroxine only, so
@@ -78,8 +92,8 @@ using ModelingToolkit: t_nounits as t, D_nounits as D
 
 using ..LedgerParams
 using ..LedgerParams:
-    THY_TSH_FT4_SLOPE, THY_TSH_INTERCEPT, THY_FT4_EUTHYROID,
-    THY_FT4_TAU, THY_FT4_GAIN, THY_METABOLIC_GAIN
+    THY_TSH_FT4_SLOPE, THY_TSH_INTERCEPT, THY_FT4_EUTHYROID, THY_TSH_EUTHYROID,
+    THY_FT4_TAU, THY_FT4_GAIN, THY_LOOP_GAIN, THY_METABOLIC_GAIN
 
 """
     Thyroid(; name, feedback = true, metabolic = false, sec_cap = 1.0)
@@ -111,6 +125,10 @@ function Thyroid(; name, feedback::Bool = true, metabolic::Bool = false,
         # respiratory and cardiovascular parameters none is scaled by body size -
         # a bigger thyroid serves a bigger body and the hormone concentration it
         # defends is the same.
+        # a_tsh AND b_tsh ARE BOTH DERIVED from the loop gain and the operating
+        # point, and both are specific to the NHANES free-thyroxine assay. Only
+        # the dimensionless product b_tsh*FT4_ref transfers between assays, and
+        # check_closure.py asserts it equals THY.LOOP_GAIN.
         a_tsh   = THY_TSH_INTERCEPT
         b_tsh   = THY_TSH_FT4_SLOPE
         tau_t4  = THY_FT4_TAU
@@ -126,9 +144,9 @@ function Thyroid(; name, feedback::Bool = true, metabolic::Bool = false,
         th_mod(t)                    # -        OUTPUT to respiratory CO2 load
     end
 
-    # THE EUTHYROID THYROTROPIN, computed once at construction from the sourced
-    # line and the sourced free thyroxine. It is what `feedback = false` holds
-    # thyrotropin at, and it is the number ADR 0019 falsifiable test 2 judges.
+    # THE EUTHYROID THYROTROPIN. Equal to THY.TSH.EUTHYROID by construction, the
+    # intercept being derived from it, and computed from the line here rather than
+    # read back so check_closure.py's assertion has something to fail on.
     TSH_ref = exp(THY_TSH_INTERCEPT - THY_TSH_FT4_SLOPE * THY_FT4_EUTHYROID)
 
     eqs = [

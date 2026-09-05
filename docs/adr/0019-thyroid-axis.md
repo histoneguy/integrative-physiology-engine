@@ -1,7 +1,7 @@
 # ADR 0019: The hypothalamic-pituitary-thyroid axis, and metabolic rate as an output
 
 **Status:** Accepted
-**Date:** 2026-09-04, **amended and accepted 2026-09-05**
+**Date:** 2026-09-04, **amended twice on 2026-09-05 — read A5 before A2**
 **Evidence tier:** E1 for negative feedback of thyroid hormone on thyrotropin and for
 the log-linear form of that feedback; E1 for thyroid hormone setting resting metabolic
 rate; E2 for the quantitative slope, which is measured in humans but varies severalfold
@@ -179,6 +179,42 @@ capacity) = 0.31`: **the human axis absorbs about 70% of a change in thyroid
 secretory capacity.** Nothing in this repository was fitted to that number and
 nothing is validated against it. It is what the two sourced gains imply, and it
 is the claim most worth trying to falsify next.
+
+### A5. Amended again 2026-09-05: falsifiable test 2 was ILL-POSED, not failed
+
+**A2 above says the model fails falsifiable test 2 by 2.4×. That was wrong, and
+the correction is worth more than the original finding.**
+
+The test asks whether the loop's crossing point lands inside human reference
+intervals with neither hormone entered as a target. **A crossing point is a line
+meeting a concentration** — and a slope in 1/(pmol/L) composes with a
+concentration in pmol/L only when both are on the same free-thyroxine scale. The
+record composed a line measured on an immunoassay with a concentration measured
+by equilibrium dialysis.
+
+**NHANES 2007–2012 measured the discrepancy instead of leaving it arguable.** In
+6814 reference-population adults, total thyroxine is 7.75 µg/dL against
+Braverman's 7.30 — agreeing to 6% — while the free fraction is **0.0104% by
+immunoassay against 0.0180% by dialysis, a ratio of 1.73.** Two methods agreeing
+on the total hormone and disagreeing nearly two-fold on the free fraction are not
+two measurements of one quantity.
+
+`thyroid_prereg.md` §2 prohibited *pooling* across free-thyroxine assays. **It
+should have prohibited *composing* across them**, which is the stronger and less
+obvious error, and that is now in `validation/pooling.md`.
+
+**So test 2 is VOID.** Not failed — ill-posed. The operating point is now an
+input, sourced from NHANES, and the dependency inversion is the same one this
+record's sibling ADR 0017 made for arterial PCO2.
+
+**What survives is the response, and it is the part that was worth having.**
+Tests 1, 3 and 4 are untouched. The open-loop gain `b·FT4*` is **dimensionless
+and therefore scale-invariant** — exactly what the measured slopes are not — and
+at 2.28 from two independent estimates it is the whole of the axis's dynamic
+behaviour. Nothing here was fitted to it.
+
+**And the model barely moved.** The closed-loop response is 0.305 against 0.308
+before. What changed is that the numbers are now composable.
 
 ## What is NOT decided
 

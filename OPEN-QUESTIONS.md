@@ -13,35 +13,32 @@ item states what I would do and why, so a "yes, do that" is enough.
 
 ## A. Decisions only the owner can make
 
-### A1. The thyroid axis predicts a euthyroid thyrotropin 2.4× too high. Leave it?
+### A1. ~~The thyroid axis predicts a euthyroid thyrotropin 2.4× too high~~ — RESOLVED 2026-09-05
 
-**The situation.** Free thyroxine is sourced from equilibrium dialysis in normal
-subjects (Braverman 1973, read in full). The pituitary line is sourced from a
-thyroxine-loading experiment in different subjects (Benhadi 2010, abstract only). Where
-they cross is therefore a genuine prediction — and it crosses at **3.35 mIU/L against a
-NHANES III reference-population geometric mean of 1.40** (n = 13,344).
+**It was a unit error, not a bad coefficient, and it is fixed.** Kept here rather than
+deleted because the wrong diagnosis was confident and detailed, and that is the part
+worth remembering.
 
-**It is not the slope.** Sweeping the feedback slope across the entire spread of its two
-independent sources moves the prediction 2%. The intercept carries all of it, and the
-intercept has one source which reports no standard error for it. Reconstructing it from
-independent euthyroid pairs gives **2.58–2.80 against the entered 3.454** — the model is
-inheriting a coefficient that is an extrapolation to zero free thyroxine from data that
-never went near zero.
+The ledger composed a pituitary line measured on one free-thyroxine **immunoassay** with
+a concentration measured by **equilibrium dialysis**. A slope in `1/(pmol/L)` composes
+with a concentration in `pmol/L` only when both are on the same scale, and free-thyroxine
+assays do not share one.
 
-**Three options, and they are genuinely different commitments.**
+**NHANES 2007–2012 settled it in public data** (n = 6814 reference population,
+pre-registered before any relationship was computed): total thyroxine agrees to 6%
+between the two methods while the **free fraction differs 1.73-fold**. That is the whole
+of the 2.2× discrepancy.
 
-| | what it does | what it costs |
-|---|---|---|
-| **1. Leave it** *(current)* | The euthyroid point stays a real prediction that the model fails. | The model reports a thyrotropin nobody would believe. Nothing downstream consumes it. |
-| **2. Enter the intercept from a population TSH index** | Euthyroid point lands correctly; the axis becomes clinically usable. | **Destroys ADR 0019 falsifiable test 2.** The intercept would then come from measured euthyroid thyrotropin, so reproducing it is a restatement. Would have to be relabelled an *estimation* set, exactly as §3.15 relabelled the Lobo endpoints. |
-| **3. Find a second perturbation study** | Fixes it honestly. | I could not find one. Benhadi is the only within-subject thyroxine-loading regression in healthy euthyroid adults I could locate, n = 21, mean age 60. |
+The axis is now on one scale throughout — operating point 10.16 pmol/L and 1.512 mIU/L
+from NHANES, everything else derived from those and from the **dimensionless** loop gain,
+which is the only quantity in the axis that transfers between assays. **ADR 0019's
+falsifiable test 2 is void — ill-posed, not failed.** The model's dynamics barely moved:
+closed-loop response 0.305 against 0.308. §3.26 and `validation/nhanes_hpt_extract.py`.
 
-**My recommendation: 2, done openly.** The prediction has already been made and reported;
-it cannot be un-made by later fitting, and the finding is on the record either way. A
-model whose thyrotropin is wrong by 2.4× is not usable for anything, and the honest
-bookkeeping — this row is now an estimation input, this test is now void — is the thing
-this repository is actually good at. **But it spends a falsifiable test, so it is your
-call and not mine.**
+**Two things fell out that were not asked for.** The conventional 0.4–4.5 thyrotropin
+reference interval is now measured (0.460–4.484) rather than quoted as a round number.
+And free thyroxine differs by **0.5%** between the sexes in 6814 adults, so ADR 0014
+needs no pair here — an absence turned into a finding.
 
 ### A2. Switch the thyroid metabolic arm on?
 
@@ -64,33 +61,17 @@ threshold of 45.28.
 **My recommendation: on.** It is the only preparation the measurement exists in, the
 relaxation is recorded, and it changes no existing result.
 
-### A3. Two articles I cannot open, and one of them is worth real money
+### A3. One article worth having, and one that no longer matters
 
-| article | what it unblocks | why I cannot get it |
-|---|---|---|
-| **Crapo RO et al.** *Am J Respir Crit Care Med* 1999;160(5 Pt 1):1525-31, PMID 10556115 | **Three `assumed` rows across two subsystems**: resting arterial PCO2, the alveolar–arterial oxygen difference, and the arterial PO2 that follows. | Not open access. |
-| **Benhadi N et al.** *Eur J Endocrinol* 2010;162(2):323-9, PMID 19926783 | The **standard error on the intercept** in A1, and independent confirmation of the log base. | The publisher origin (`eje.bioscientifica.com`) returns a Cloudflare 525 — a broken server, not a paywall. The OUP mirror sits behind a bot check I will not attempt to defeat. The Erasmus repository record Unpaywall points at holds metadata and no file. |
+**Crapo RO et al.** *Am J Respir Crit Care Med* 1999;160(5 Pt 1):1525-31, PMID 10556115 —
+discharges **three `assumed` rows across two subsystems**: resting arterial PCO2, the
+alveolar–arterial oxygen difference, and the arterial PO2 that follows. Not open access.
+**Deprioritised at the owner's instruction 2026-09-05**; recorded so it is not searched
+for a fourth time.
 
-Institutional access or an author request. **Crapo is the higher-value one** — three rows
-against one coefficient — and note that it is *not* the one I previously flagged as the
-priority.
-
-### A4. The averaging and precision rules are now written down. Confirm them?
-
-Your correction on 2026-09-05 is recorded in `validation/pooling.md`:
-
-- **Two estimates that are not distinguishable given their own uncertainty get pooled**,
-  whatever the methods were, and the spread becomes the uncertainty. The
-  incompatible-methods prohibition applies only when the difference is real. The test is
-  stated on the row.
-- **A pooled or converted value carries the significant figures of the measurements
-  behind it and no more.** Converting a unit does not create a digit. `derived` rows are
-  exempt — they are arithmetic, not measurement claims, and truncating them breaks the
-  closure checks.
-
-**I audited the rest of the ledger for the same error.** Four rows carry six or more
-significant figures and all four are `derived`, so the exemption covers them. The thyroid
-rows were the only offenders and are corrected.
+**Benhadi 2010 has fallen a long way** and is no longer worth chasing. It once blocked the
+whole axis, then supplied a slope, and now would only tighten one dimensionless number by
+about 10% by reporting its cohort's mean thyrotropin.
 
 ---
 
@@ -159,11 +140,12 @@ clean pass.
 
 ---
 
-## C. Physiology the model does not have, and knows it
+## C. Physiology the model does not have — a WORK LIST, not open questions
 
-Each of these is E1, uncontroversial, and inside a component that already exists. None
-needs a paper nobody can open. **These are the next real work, and they are bigger than
-anything in section A.**
+**Corrected 2026-09-05 at the owner's instruction: all of this is published, so none of
+it belongs in a file about things that cannot be resolved.** Listing undone work as an
+open question is a way of not doing it. It stays here only until each item is built, in
+this order.
 
 1. **The baroreflex has one effector while heart rate exists.** ADR 0009 gives it
    resistance only. Deliberately deferred because the reflex resets and therefore nulls

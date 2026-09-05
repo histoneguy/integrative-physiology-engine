@@ -369,6 +369,27 @@ def _check_one(p: dict[str, float]) -> int:
     # read back - the same discipline as the respiratory water split.
     tsh_ref = math.exp(p["THY.TSH.INTERCEPT"] -
                        p["THY.TSH.FT4_SLOPE"] * p["THY.FT4.EUTHYROID"])
+    # THE WHOLE THYROID AXIS NOW HANGS OFF ONE DIMENSIONLESS NUMBER, and these
+    # three checks are what keep the scale-dependent rows consistent with it.
+    # A slope in 1/(pmol/L) and an intercept in ln(mIU/L) are both specific to a
+    # free-thyroxine assay; the loop gain is not, which is why it is the sourced
+    # row and they are derived from it.
+    check("feedback slope is the loop gain over the operating free thyroxine",
+          p["THY.TSH.FT4_SLOPE"] * p["THY.FT4.EUTHYROID"], p["THY.LOOP_GAIN"],
+          "b*FT4* = G. If these drift apart the model is running a different "
+          "loop gain from the one that was sourced, and the loop gain is the "
+          "only thing about this axis that transfers between assays.",
+          errors)
+
+    check("intercept is the operating point plus the loop gain",
+          p["THY.TSH.INTERCEPT"],
+          math.log(p["THY.TSH.EUTHYROID"]) + p["THY.LOOP_GAIN"],
+          "a = ln(TSH*) + G. The intercept is DERIVED from the operating point "
+          "and not the other way round - the dependency inversion ADR 0017 made "
+          "for arterial PCO2, made again here for the reason recorded on "
+          "THY.TSH.EUTHYROID.",
+          errors)
+
     check("thyroid loop rests at the sourced free thyroxine",
           p["THY.FT4.GAIN"] * tsh_ref, p["THY.FT4.EUTHYROID"],
           "G_T * exp(a - b*FT4_ref) = FT4_ref. If this drifts the model starts "
@@ -378,20 +399,19 @@ def _check_one(p: dict[str, float]) -> int:
           "unchanged when the arm is off.",
           errors)
 
-    # AND THE NUMBER THE MODEL THEN PREDICTS, ASSERTED AS THE DISCREPANCY IT IS.
-    # Nothing was set to produce this: free thyroxine comes from equilibrium
-    # dialysis in normal subjects, the pituitary line from a T4-loading
-    # experiment in different subjects. It lands inside the conventional 0.4-4.0
-    # interval and at 2.4x the NHANES III reference-population geometric mean of
-    # 1.40 mIU/L, and validation/thyroid_extract.py section 3 decomposes why.
-    # Pinned so that a change to any of the three inputs surfaces here.
-    if not (3.0 <= tsh_ref <= 3.6):
-        errors.append("Predicted euthyroid TSH %.3f mIU/L has moved out of "
-                      "3.0-3.6; the sourced inputs changed and the branch-T2 "
-                      "discrepancy in thyroid_extract.py needs rewriting" % tsh_ref)
-    else:
-        print("  ok   predicted euthyroid thyrotropin  %.2f mIU/L  "
-              "(2.4x the NHANES III geometric mean - REPORTED, NOT TUNED)" % tsh_ref)
+    # AND THE OPERATING POINT COMES BACK, WHICH IS A CLOSURE CHECK AND NOT A
+    # PREDICTION - said plainly because for one day this repository reported it as
+    # a prediction that failed by 2.4x. It was not a failing prediction; it was a
+    # unit error, composing a pituitary line measured on one free-thyroxine assay
+    # with a concentration measured by equilibrium dialysis. NHANES measured the
+    # gap: at total thyroxine agreeing to 6%, the free fractions differ 1.73-fold.
+    # See validation/nhanes_hpt_extract.py section 3.
+    check("thyroid operating point returns the sourced thyrotropin",
+          tsh_ref, p["THY.TSH.EUTHYROID"],
+          "exp(a - b*FT4*) = TSH*, which is true by construction now that a is "
+          "derived from TSH*. It is here because every OTHER thyroid row feeds "
+          "it, so it is the cheapest single tripwire for the whole subsystem.",
+          errors)
 
     print()
     if errors:

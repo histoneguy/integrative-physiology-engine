@@ -1439,7 +1439,7 @@ using SciMLBase
         @info "blood gas" SaO2=m.SaO2 PaO2=m.PaO2 CaO2=m.CaO2 DO2=m.DO2
     end
 
-    @testset "ADR 0019: the thyroid axis, and a PREDICTION that comes out 2.4x high" begin
+    @testset "ADR 0019: the thyroid axis, on ONE free-thyroxine scale" begin
         L = IPE.LedgerParams
         sys = build_model()
         sol = IPE.solve_individual(sys; tspan_days = 60.0)
@@ -1462,23 +1462,28 @@ using SciMLBase
         # same identity on the ledger; this asserts it on the SOLVED model.
         @test isapprox(fin(sys, sol, "ty₊FT4"), L.THY_FT4_EUTHYROID; rtol = 1e-4)
 
-        # THE EUTHYROID THYROTROPIN IS A GENUINE PREDICTION AND THE MODEL GETS IT
-        # WRONG BY A FACTOR OF 2.4. Free thyroxine comes from equilibrium dialysis
-        # in normal subjects (Braverman 1973), the pituitary line from a T4-loading
-        # experiment in different subjects (Benhadi 2010). Neither is a thyrotropin
-        # reference value, so the crossing point can be - and is - wrong.
+        # THE EUTHYROID THYROTROPIN IS AN INPUT, NOT A PREDICTION, AND SAYING SO IS
+        # THE POINT OF THIS BLOCK. For one day this suite asserted it as a
+        # prediction the model failed by 2.4x. It was not a failing prediction: it
+        # was a unit error, a pituitary line measured on one free-thyroxine
+        # immunoassay composed with a concentration measured by equilibrium
+        # dialysis. NHANES measured the gap - total thyroxine agreeing to 6% while
+        # the free fractions differ 1.73-fold (validation/nhanes_hpt_extract.py).
         #
-        # ASSERTED AS THE DISCREPANCY, NOT AS AN AGREEMENT. NHANES III reports a
-        # reference-population (n = 13,344) geometric mean TSH of 1.40 mIU/L. This
-        # test would FAIL if someone quietly moved the intercept to fix it, which
-        # is the point: thyroid_prereg.md section 6 forbids that, and
-        # validation/thyroid_extract.py section 3 shows the whole discrepancy sits
-        # in the one number of the three that has no second source.
+        # So this is a CLOSURE CHECK on a sourced operating point, exactly as the
+        # respiratory testset's PaCO2 assertion is, and for the same reason: ADR
+        # 0017's dependency inversion, made a second time. ADR 0019's falsifiable
+        # test 2 is VOID and the ledger says so on THY.TSH.EUTHYROID.
         tsh = fin(sys, sol, "ty₊TSH")
-        @test isapprox(tsh, exp(L.THY_TSH_INTERCEPT -
-                                L.THY_TSH_FT4_SLOPE * L.THY_FT4_EUTHYROID);
-                       rtol = 1e-4)
-        @test 2.2 < tsh / 1.40 < 2.5
+        @test isapprox(tsh, L.THY_TSH_EUTHYROID; rtol = 1e-3)
+
+        # AND THE ONE NUMBER THAT IS SCALE-INVARIANT, WHICH IS WHAT THE MODEL
+        # ACTUALLY RUNS ON. b*FT4* is dimensionless, so unlike either measured
+        # slope it transfers between assays. It came from two independent
+        # estimates and nothing here was fitted to it.
+        @test isapprox(L.THY_TSH_FT4_SLOPE * L.THY_FT4_EUTHYROID, L.THY_LOOP_GAIN;
+                       rtol = 1e-3)
+        @test 1.7 < L.THY_LOOP_GAIN < 2.9
 
         # THE METABOLIC ARM IS OFF AND IT IS OFF EXACTLY. ADR 0019 decision 4 and
         # thyroid_prereg.md section 6 require bit-identity, not closeness, so this
@@ -1508,10 +1513,13 @@ using SciMLBase
         end
         tsh_star(S) = exp(a - b * ft4_star(S))
 
-        # rtol 1e-5 and not tighter: THY.FT4.GAIN is carried to five significant
-        # figures in the ledger, so the equilibrium sits 3e-6 off the free thyroxine
-        # it is derived from. That is the rounding and nothing else.
-        @test isapprox(ft4_star(1.0), L.THY_FT4_EUTHYROID; rtol = 1e-5)
+        # rtol 1e-4 and not tighter: every thyroid row is carried at four
+        # significant figures, which is what its sources support, so the
+        # equilibrium sits 7e-5 off the free thyroxine it is derived from. That is
+        # the rounding and nothing else - and the rounding is deliberate, because
+        # entering more digits than a measurement carries is the error the owner
+        # corrected on 2026-09-05 and pooling.md now records.
+        @test isapprox(ft4_star(1.0), L.THY_FT4_EUTHYROID; rtol = 1e-4)
 
         # ADR 0019 FALSIFIABLE TEST 1. Raise thyroid secretory capacity: thyrotropin
         # must FALL, free thyroxine must RISE, and it must rise by LESS than with
@@ -1579,12 +1587,13 @@ using SciMLBase
         # THE METABOLIC ARM CANNOT MOVE THE WATER BALANCE OF THIS MODEL, and that is
         # a fact about two sourced components meeting rather than a modelling choice.
         #
-        # ASSERTED AT 2x AND NOT AT 6x DELIBERATELY. At six times capacity PaCO2
-        # reaches 45.0 against 45.28 - it would still pass, by 0.3 mmHg, and an
-        # assertion that thin is a tripwire for parameter drift dressed up as a
-        # physiological claim. It is also a state the sourced pituitary line cannot
-        # represent: it puts thyrotropin at 0.89 mIU/L where real thyrotoxicosis is
-        # below 0.01. Assert where the model is valid; report the edge in the note.
+        # ASSERTED AT 2x AND NOT HIGHER DELIBERATELY. The margin narrows as
+        # capacity rises, and an assertion that thin is a tripwire for parameter
+        # drift dressed up as a physiological claim. Beyond about 2x the sourced
+        # pituitary line has also stopped being usable: it cannot suppress
+        # thyrotropin anywhere near the sub-0.01 mIU/L of real thyrotoxicosis,
+        # because it is fitted across the euthyroid range. Assert where the model
+        # is valid; report the edge in the note.
         thmod(S) = 1.0 + L.THY_METABOLIC_GAIN *
                          (ft4_star(S) / L.THY_FT4_EUTHYROID - 1.0)
         @test thmod(2.0) * L.RESP_CO2_ARTERIAL_RESTING < L.RESP_CHEMO_VRT
