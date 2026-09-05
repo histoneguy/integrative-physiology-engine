@@ -122,3 +122,116 @@ respiratory loop balances, and which is currently `assumed` at a round number.
 Directive 1.11 says a parameter nobody calls is not evidence about anything, and ADR
 0006 records Circadian sitting unconnected because it was built ahead of its dependency.
 **An endocrine axis chosen for completeness rather than connection would repeat that.**
+
+---
+
+## 8. AMENDMENTS, 2026-09-05
+
+**Written after the sources were opened and before the component was built.** Each
+one names the pre-registered text it changes and why. Amending a pre-registration
+after seeing data is the thing pre-registration exists to prevent, so the test is
+not whether an amendment is convenient but whether it could have flattered the
+result — and each of these is checked against that below. Same discipline as the
+ADR 0017 amendment.
+
+### 8.1 The log base is resolved by a second measurement, not by the target
+
+§4 fixed the form `ln(TSH) = a - b*FT4` and named `b` as the quantity to source.
+The first extraction pass reached branch T3 because Benhadi 2010's abstract does
+not state the base of its logarithm.
+
+**Resolved in `thyroid_extract.py` §1** by Jostel 2009's independent estimate of
+the same slope, whose base is fixed unambiguously by the downstream literature's
+explicit `ln` and confirmed arithmetically against a 4,378-person cohort's own
+published TSH, FT4 and TSH-index means. The two slopes agree to 1% under exactly
+one pairing.
+
+**Could this have flattered the result? No, and it demonstrably did not.** The
+reading it selects is the one the earlier extraction noted puts the euthyroid
+point further from mid-range, and the loop's predicted TSH came out 2.4× the
+NHANES III geometric mean. **The amendment made the test harder and the model
+then failed it on the conservative reading.** That is the evidence it was not
+reverse-engineered.
+
+### 8.2 The thyrotropin limb is algebraic — the §4 fallback, taken up front
+
+§4: *"If the fast state makes the system stiff enough to slow the suite
+materially, the thyrotropin limb is made algebraic and the reason recorded."*
+
+Taken. Thyrotropin turns over in minutes; thyroxine's time constant is 10.3 days
+and the model's horizon is 400. **The condition is met by inspection**, and it is
+taken before paying the cost rather than after measuring it, because a state
+relaxing four orders of magnitude faster than anything the model integrates
+cannot repay directive 1.10. **ADR 0019 decision 3's two-state loop becomes one
+state**, which is strictly cheaper than the record allowed for.
+
+`THY.TSH.TAU` is therefore not sourced and not entered. §1's table lists it; it
+is struck.
+
+### 8.3 §2's exclusion of thyroid disease is relaxed for the METABOLIC ARM ONLY
+
+§2 excludes thyroid disease of any kind. That exclusion is right for the axis
+parameters and it is **unsatisfiable for the tissue gain**: the fractional change
+in resting metabolic rate per fractional change in free thyroxine cannot be
+measured in healthy people, because making a healthy person thyrotoxic is not an
+experiment anyone may perform. This is the same argument `SOURCES.md` already
+makes for animal preparations — the human experiment cannot ethically be done —
+applied to a disease preparation instead of a species.
+
+**Scope of the relaxation, stated narrowly:** it applies to
+`THY.METABOLIC_GAIN` and to nothing else. Every parameter of the feedback loop
+itself is sourced inside the original admissibility rules.
+
+**And the arm it feeds defaults OFF**, which ADR 0019 decision 4 already required
+before any of this was known. So the relaxation changes no default behaviour; it
+puts a sourced number behind a switch instead of leaving the switch pointing at
+nothing.
+
+### 8.4 The euthyroid FT4 is a measured concentration, not a reference interval
+
+§6: *"It may not use either reference interval to set a parameter."* Upheld.
+`THY.FT4.EUTHYROID` is Braverman 1973's equilibrium-dialysis measurement in 11
+normal subjects — a concentration measured by the method §2 says to prefer, not a
+percentile of a laboratory population. §1's `THY.FT4.REFERENCE` — the *interval*
+— is still a target and is still untouched.
+
+**This is the weakest joint in the record and it is named here rather than
+buried.** It supplies the absolute FT4 scale that Benhadi's per-pmol/L slope
+needs, across a 49-year gap and two unrelated methods. The corroboration is
+empirical: Maushart 2022's euthyroid immunoassay visits give 15.0 and 16.6
+pmol/L against Braverman's 16.6.
+
+### 8.5 The outcome is branch T2, and §5's instruction is followed
+
+The loop's euthyroid TSH lands inside the conventional 0.4–4.0 interval but at
+2.4× the NHANES III reference-population geometric mean. **Reported, not tuned,
+and decomposed**: slope corroborated, FT4 level corroborated, intercept
+unreplicated and carrying the whole discrepancy.
+
+### 8.6 Two estimates that agree are AVERAGED, not chosen between
+
+§2 says values from different assays are not pooled. Applied literally to the two
+slope estimates it produced a bad outcome: the ledger entered Benhadi's 0.13585
+and demoted Jostel's 0.1345 to "corroboration", **when the two agree to 1%**.
+
+**That rule exists to stop a real method difference being averaged away.** It is
+not a licence to pick one of two measurements that agree to a fifth of anyone's
+plausible error, which is a coin toss with a justification attached. The entered
+slope is the unweighted mean, 0.1352, and the spread is the uncertainty.
+Unweighted because neither source reports a standard error and no weighting moves
+a 1% interval anywhere that matters.
+
+**`THY.METABOLIC_GAIN` was corrected the same way** — two estimates of one
+quantity from one cohort, 0.192 and 0.230, of which the *lower* had been entered.
+Preferring the conservative-looking number is a bias, not a caution. The mean,
+0.211, is entered.
+
+**And every thyroid row was cut to the significant figures its source supports.**
+Six and seven figures had been entered on numbers reported to three. Directive
+1.9 and HANDOVER §3.23 already covered this and it was broken anyway; the ledger
+notes carry the arithmetic.
+
+**The useful consequence, not a bookkeeping one:** with the slope's real spread in
+hand it can be swept, and doing so moves the model's euthyroid thyrotropin by 2%
+against a discrepancy of 2.4×. **§8.5's decomposition is now arithmetic rather
+than an argument from counting sources.**

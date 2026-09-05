@@ -1,7 +1,7 @@
 # ADR 0019: The hypothalamic-pituitary-thyroid axis, and metabolic rate as an output
 
-**Status:** Proposed
-**Date:** 2026-09-04
+**Status:** Accepted
+**Date:** 2026-09-04, **amended and accepted 2026-09-05**
 **Evidence tier:** E1 for negative feedback of thyroid hormone on thyrotropin and for
 the log-linear form of that feedback; E1 for thyroid hormone setting resting metabolic
 rate; E2 for the quantitative slope, which is measured in humans but varies severalfold
@@ -35,7 +35,9 @@ contact with the data is the question ADR 0017's did not.
 | Thyroid hormone sets resting energy expenditure | E1 | Multiply replicated; hypothyroidism lowers it and thyrotoxicosis raises it | human |
 | Each person has an individual setpoint, and between-person variation is much wider than within-person | E2 | Measured in healthy volunteers | human |
 
-**Numbers deferred to `validation/thyroid_prereg.md`.** None opened yet.
+**Numbers are now in the ledger.** `validation/thyroid_extract.py` is the record
+of how they were obtained and `validation/thyroid_prereg.md` §8 records the four
+amendments the sourcing forced.
 
 **Same constraint as ADR 0018:** primary experimental literature and published
 mathematical relationships only. Other whole-body simulation models are not sources.
@@ -110,6 +112,74 @@ energy expenditure against thyroid status.
    been entered in the wrong units and decision 3's justification evaporates.
 4. **With the metabolic arm off, every existing result must be bit-identical.**
 
+## Amendment, 2026-09-05: three decisions changed by contact with the sources
+
+**This ADR was written before any source was opened and was implemented a day
+later. Three of its four decisions survived; one did not, and one falsifiable
+test was failed on the conservative reading.** All of it is here rather than
+rewritten into the record above, for the reason ADR 0017's amendment gives: a
+decision record that quietly becomes correct is not a record.
+
+### A1. Decision 3 is wrong about the cost, in the cheap direction — ONE state
+
+*"It is a two-state loop and that is a real cost."* It is a one-state loop.
+Thyrotropin turns over in minutes against a thyroxine time constant of 10.3 days
+and a horizon of 400, so the pituitary limb is algebraic — the fallback
+`thyroid_prereg.md` §4 wrote down in advance, taken by inspection rather than
+after measuring a slowdown, because a state relaxing four orders of magnitude
+faster than anything integrated here cannot repay directive 1.10.
+
+**The justification decision 3 gives is unchanged and now applies to exactly one
+state:** the slowness is the physiology, and ten days cannot be an algebraic
+relation on a model that runs four hundred. That is the only state this model has
+ever gained by choosing to.
+
+### A2. Decision 1 stands, and THE MODEL FAILS FALSIFIABLE TEST 2 ON THE
+CONSERVATIVE READING
+
+Thyrotropin *is* an output — nothing sets it, and it lands where the sourced
+pituitary line meets the sourced thyroxine level. **It lands at 3.35 mIU/L.**
+
+That is inside the conventional 0.4–4.0 interval, which is the letter of test 2.
+It is also **2.4× the NHANES III reference-population geometric mean of 1.40
+mIU/L** (n = 13,344), and 0.4–4.0 is itself the kind of round number directive
+1.12 says not to trust. **Treated as a failure, reported, and not tuned** —
+branch T2 of the pre-registration.
+
+**The decomposition is unambiguous and is the useful part.** Of the three sourced
+inputs, the slope has two independent estimates agreeing to 1%, the euthyroid
+free thyroxine has two agreeing within a standard deviation, and the intercept
+has one. Reconstructing the intercept from independent euthyroid pairs at the
+agreed slope gives 2.58–2.80 against the entered 3.45, and sweeping the slope
+across its whole two-source spread moves the prediction by only 2%. **The
+intercept carries the whole discrepancy, arithmetically and not rhetorically, and
+it is an extrapolation to FT4 = 0 from data that never went near zero — the third
+time this repository has been bitten by that exact move.**
+
+**It is not replaced.** Every reconstruction is built from a measured euthyroid
+thyrotropin, which is the quantity this test judges.
+
+### A3. Decision 2 is built but stays OFF, and decision 4 is why
+
+`RESP.CO2.PRODUCTION` is now a reference production times a modelled multiplier,
+and **the multiplier is exactly 1.0 unless the arm is switched on**, which
+decision 4 already required. So the transition decision 2 describes has been made
+structurally and has changed no result.
+
+The gain behind it comes from a preparation `thyroid_prereg.md` §2 excludes —
+hyperthyroid patients — because the exclusion is unsatisfiable for this quantity:
+a healthy person cannot ethically be made thyrotoxic. §8.3 relaxes it for that
+one row and records the relaxation. **Decision 4, written before any of this,
+is what makes that safe**: the arm the relaxed row feeds is off by default.
+
+### A4. What the loop got RIGHT, and it was not fitted
+
+The open-loop gain falls out at `b·FT4 = 2.24`, so `d ln FT4 / d ln(secretory
+capacity) = 0.31`: **the human axis absorbs about 70% of a change in thyroid
+secretory capacity.** Nothing in this repository was fitted to that number and
+nothing is validated against it. It is what the two sourced gains imply, and it
+is the claim most worth trying to falsify next.
+
 ## What is NOT decided
 
 - **Triiodothyronine, deiodination, and protein binding.** Free thyroxine only.
@@ -118,4 +188,10 @@ energy expenditure against thyroid status.
 - **Circadian variation in thyrotropin**, which is real and substantial, and which the
   existing clock could drive once this exists.
 - **Any disease state.**
-- **Every numeric value.**
+- **Every numeric value.** — superseded 2026-09-05; the values are in the ledger
+  under `THY.*` and `validation/thyroid_extract.py` is how they were obtained.
+- **The thyroid's saturating response to thyrotropin.** `Thyroid.D(FT4)` makes
+  secretion linear in thyrotropin, which is a lumping and is labelled as one. The
+  only human preparation that measures the real curve uses recombinant
+  thyrotropin at roughly a hundred times the physiological range, and
+  extrapolating that down is the error amendment A2 records.

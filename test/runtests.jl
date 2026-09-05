@@ -746,7 +746,13 @@ using SciMLBase
         # outbound edge from blood ever appears, an oxygen feedback has been built
         # and ADR 0018 says that needs its own record - so this count is the cheapest
         # tripwire for exactly that.
-        @test r.n_couplings == 16
+        #
+        # 16 -> 17 on 2026-09-05, ADR 0019: thyroid -> respiratory. ONE OUTBOUND
+        # EDGE AND NO INBOUND ONE, which is the mirror image of blood - the axis
+        # drives a metabolic load and nothing in this model feeds back onto it.
+        # An inbound edge appearing means something has been wired into thyroid
+        # secretion, which ADR 0019 does not decide.
+        @test r.n_couplings == 17
 
         cs = model_couplings()
         # ADR 0003: instantaneous couplings are not partitionable. If this ever
@@ -779,8 +785,14 @@ using SciMLBase
         # effector) to 302.4 s (renin) is a ~100x gap. That is a statement about
         # PHYSIOLOGY rather than about the Jacobian spectrum, and it is the other
         # half of the ADR 0003 argument, which is deferred on state count.
+        #
+        # 4 -> 5 on 2026-09-05, ADR 0019: thyroxine turnover, 10.3 DAYS. It is by two
+        # orders of magnitude the slowest declared coupling in this model, and it
+        # widens the largest adjacent gap rather than narrowing it - so the ADR 0003
+        # argument is strengthened, not threatened, by the one state this model has
+        # ever chosen to add.
         b = suggest_boundary(cs)
-        @test length(b.taus) == 4
+        @test length(b.taus) == 5
         @test b.gap !== nothing
         @test b.gap[1] > 10.0
         @info "declared coupling timescales" taus=b.taus gap_ratio=b.gap[1] boundary_s=b.suggested_boundary_seconds
@@ -1258,7 +1270,13 @@ using SciMLBase
         # here is six hours - so the chemoreflex and the alveolar equation are solved
         # together in CLOSED FORM. A state would be paid for on every future run
         # (directive 1.10). Eight states before respiration, eight after.
-        @test length(IPE.mtk_unknowns(sys)) == 8
+        #
+        # 8 -> 9 on 2026-09-05, and the one added state is thyroxine (ADR 0019).
+        # It is the only state in this model that was added rather than avoided,
+        # and the reason is written on THY.FT4.TAU: ten days cannot be represented
+        # algebraically on a model that runs four hundred. Thyrotropin, which
+        # equilibrates in minutes, got no state - same argument as this one.
+        @test length(IPE.mtk_unknowns(sys)) == 9
 
         # RESTING PaCO2 RETURNS THE SOURCED INPUT, AND THIS IS NOT A PREDICTION.
         # ADR 0017's ORIGINAL decision 1 made PaCO2 an output of the chemoreflex, as
@@ -1414,10 +1432,177 @@ using SciMLBase
         # NO FEEDBACK. ADR 0018 decision 1 says this component closes no loop, so
         # removing it must leave every other result untouched. Asserted by the
         # STATE COUNT rather than by re-solving: an oxygen feedback would have to
-        # enter through a differential equation somewhere, and there are still eight.
-        @test length(IPE.mtk_unknowns(build_model())) == 8
+        # enter through a differential equation somewhere, and there are still nine
+        # - eight plus thyroxine, and none of them is an oxygen state.
+        @test length(IPE.mtk_unknowns(build_model())) == 9
 
         @info "blood gas" SaO2=m.SaO2 PaO2=m.PaO2 CaO2=m.CaO2 DO2=m.DO2
+    end
+
+    @testset "ADR 0019: the thyroid axis, and a PREDICTION that comes out 2.4x high" begin
+        L = IPE.LedgerParams
+        sys = build_model()
+        sol = IPE.solve_individual(sys; tspan_days = 60.0)
+        fin(s, so, n) = begin
+            v = NaN
+            for u in IPE.mtk_unknowns(s)
+                occursin(n, String(Symbol(u))) && (v = so[u][end])
+            end
+            if isnan(v)
+                for o in observed(s)
+                    occursin(n, String(Symbol(o.lhs))) && (v = so[o.lhs][end])
+                end
+            end
+            v
+        end
+
+        # THE LOOP RESTS WHERE IT IS SOURCED TO REST. THY.FT4.GAIN is derived so
+        # that G_T*TSH_ref = FT4_ref, so the model opens at equilibrium and no run
+        # begins with a spurious ten-day transient. check_closure.py asserts the
+        # same identity on the ledger; this asserts it on the SOLVED model.
+        @test isapprox(fin(sys, sol, "ty₊FT4"), L.THY_FT4_EUTHYROID; rtol = 1e-4)
+
+        # THE EUTHYROID THYROTROPIN IS A GENUINE PREDICTION AND THE MODEL GETS IT
+        # WRONG BY A FACTOR OF 2.4. Free thyroxine comes from equilibrium dialysis
+        # in normal subjects (Braverman 1973), the pituitary line from a T4-loading
+        # experiment in different subjects (Benhadi 2010). Neither is a thyrotropin
+        # reference value, so the crossing point can be - and is - wrong.
+        #
+        # ASSERTED AS THE DISCREPANCY, NOT AS AN AGREEMENT. NHANES III reports a
+        # reference-population (n = 13,344) geometric mean TSH of 1.40 mIU/L. This
+        # test would FAIL if someone quietly moved the intercept to fix it, which
+        # is the point: thyroid_prereg.md section 6 forbids that, and
+        # validation/thyroid_extract.py section 3 shows the whole discrepancy sits
+        # in the one number of the three that has no second source.
+        tsh = fin(sys, sol, "ty₊TSH")
+        @test isapprox(tsh, exp(L.THY_TSH_INTERCEPT -
+                                L.THY_TSH_FT4_SLOPE * L.THY_FT4_EUTHYROID);
+                       rtol = 1e-4)
+        @test 2.2 < tsh / 1.40 < 2.5
+
+        # THE METABOLIC ARM IS OFF AND IT IS OFF EXACTLY. ADR 0019 decision 4 and
+        # thyroid_prereg.md section 6 require bit-identity, not closeness, so this
+        # is == and not isapprox. Every pinned pressure, PaCO2 and water number
+        # elsewhere in this file is the rest of that assertion.
+        @test fin(sys, sol, "ty₊th_mod") == 1.0
+
+        # THE RESPONSE, DONE ALGEBRAICALLY. The loop is a scalar fixed point,
+        # FT4 = G_T*S*exp(a - b*FT4), so its equilibrium and its gain can be
+        # exercised directly instead of by four more full-model solves. Directive
+        # 1.10: assert more per unit of compute. The wiring is what needs a solve,
+        # and it got one above.
+        a, b = L.THY_TSH_INTERCEPT, L.THY_TSH_FT4_SLOPE
+        G_T, tau = L.THY_FT4_GAIN, L.THY_FT4_TAU
+        # BISECTION, NOT FIXED-POINT ITERATION. G_T*S*exp(a - b*FT4) is decreasing in
+        # FT4 and the identity is increasing, so the root is unique and bracketed.
+        # A damped fixed point looks simpler and DIVERGES above about FT4 = 22,
+        # which is inside the range a thyrotoxic capacity reaches - a quiet wrong
+        # answer rather than a failure.
+        function ft4_star(S)
+            lo, hi = 1e-6, 500.0
+            for _ in 1:200
+                m = 0.5 * (lo + hi)
+                m - G_T * S * exp(a - b * m) < 0.0 ? (lo = m) : (hi = m)
+            end
+            0.5 * (lo + hi)
+        end
+        tsh_star(S) = exp(a - b * ft4_star(S))
+
+        # rtol 1e-5 and not tighter: THY.FT4.GAIN is carried to five significant
+        # figures in the ledger, so the equilibrium sits 3e-6 off the free thyroxine
+        # it is derived from. That is the rounding and nothing else.
+        @test isapprox(ft4_star(1.0), L.THY_FT4_EUTHYROID; rtol = 1e-5)
+
+        # ADR 0019 FALSIFIABLE TEST 1. Raise thyroid secretory capacity: thyrotropin
+        # must FALL, free thyroxine must RISE, and it must rise by LESS than with
+        # the loop open. Open-loop is thyrotropin held at its euthyroid value, which
+        # is exactly what build_model(thyroid = false) does, and there FT4 is
+        # proportional to capacity.
+        @test tsh_star(1.3) < tsh_star(1.0)
+        @test ft4_star(1.3) > ft4_star(1.0)
+        @test ft4_star(1.3) / ft4_star(1.0) < 1.3          # closed loop absorbs it
+        @test ft4_star(0.7) / ft4_star(1.0) > 0.7          # in both directions
+
+        # AND THE AMOUNT IT ABSORBS IS A RESULT, not a tuned number. The open-loop
+        # gain is b*FT4 = 2.26, so d ln FT4 / d ln S = 1/(1 + b*FT4) = 0.31: the
+        # human axis holds about 70% of a change in secretory capacity. Nothing in
+        # this repository was fitted to produce that.
+        dlnS = log(1.02)
+        dlnF = log(ft4_star(1.02) / ft4_star(1.0))
+        @test isapprox(dlnF / dlnS,
+                       1.0 / (1.0 + b * L.THY_FT4_EUTHYROID); rtol = 5e-3)
+
+        # ADR 0019 FALSIFIABLE TEST 3. THE SLOW STATE MUST ACTUALLY BE SLOW. If the
+        # time constant were entered in hours, or in the wrong direction, the axis
+        # would settle within a day and decision 3's whole justification for paying
+        # a state would evaporate. Closed-loop relaxation is tau/(1 + b*FT4) = 3.2
+        # days, so one day gets nowhere near and thirty is essentially done.
+        tau_eff = tau / (1.0 + b * L.THY_FT4_EUTHYROID)
+        @test 2.0 < tau_eff < 5.0
+        @test 1.0 - exp(-1.0 / tau_eff) < 0.40             # one day: far from done
+        @test 1.0 - exp(-30.0 / tau_eff) > 0.99            # thirty: done
+
+        # AND THE ARM ACTUALLY REACHES ANOTHER COMPONENT WHEN IT IS SWITCHED ON,
+        # which is the whole reason thyroid was built before cortisol or glucose
+        # (directive 1.11, and ADR 0006's record of Circadian sitting unconnected).
+        # ONE extra solve, and it is the one that proves the component is not an
+        # island.
+        #
+        # BUT IT REACHES PaCO2 AND STOPS THERE, AND THAT IS ADR 0017'S FINDING
+        # BITING A SECOND TIME. Raising CO2 production raises arterial PCO2, and
+        # ventilation does NOT respond, because at rest the model sits on the FLAT
+        # limb of the chemoreflex - the ventilatory recruitment threshold is 45.28
+        # mmHg and resting PaCO2 is 40. So the respiratory water flux is untouched.
+        # Asserted in BOTH directions below, because "the arm connects" and "the arm
+        # moves the water balance" are different claims and only the first is true.
+        hyper = build_model(thyroid_metabolic = true, thyroid_secretion = 1.5)
+        shy = IPE.solve_individual(hyper; tspan_days = 60.0)
+        @test fin(hyper, shy, "ty₊FT4")    > L.THY_FT4_EUTHYROID
+        @test fin(hyper, shy, "ty₊TSH")    < tsh
+        @test fin(hyper, shy, "ty₊th_mod") > 1.0
+        @test fin(hyper, shy, "PaCO2")     > fin(sys, sol, "PaCO2")
+
+        # AND IT REACHES BLOOD GAS THROUGH PaCO2, WHICH IS THE ONLY TWO-HOP COUPLING
+        # in this model: thyroid -> respiratory -> blood. The alveolar gas equation
+        # trades CO2 against O2 through the exchange ratio, so a higher PaCO2 is a
+        # lower alveolar and arterial PO2 and a lower saturation.
+        @test fin(hyper, shy, "bl₊SaO2")   < fin(sys, sol, "bl₊SaO2")
+
+        # THE FLAT LIMB, ASSERTED. Ventilation and the water flux are EXACTLY what
+        # they were - not close, identical - because nothing about V_E depends on
+        # the CO2 load below the threshold.
+        @test fin(hyper, shy, "rs₊V_E")    == fin(sys, sol, "rs₊V_E")
+        @test fin(hyper, shy, "H2O_resp")  == fin(sys, sol, "H2O_resp")
+
+        # AND NO ATTAINABLE THYROID STATE CROSSES IT, done algebraically. At twice
+        # normal secretory capacity PaCO2 reaches 41.9 against a threshold of 45.28.
+        # THE METABOLIC ARM CANNOT MOVE THE WATER BALANCE OF THIS MODEL, and that is
+        # a fact about two sourced components meeting rather than a modelling choice.
+        #
+        # ASSERTED AT 2x AND NOT AT 6x DELIBERATELY. At six times capacity PaCO2
+        # reaches 45.0 against 45.28 - it would still pass, by 0.3 mmHg, and an
+        # assertion that thin is a tripwire for parameter drift dressed up as a
+        # physiological claim. It is also a state the sourced pituitary line cannot
+        # represent: it puts thyrotropin at 0.89 mIU/L where real thyrotoxicosis is
+        # below 0.01. Assert where the model is valid; report the edge in the note.
+        thmod(S) = 1.0 + L.THY_METABOLIC_GAIN *
+                         (ft4_star(S) / L.THY_FT4_EUTHYROID - 1.0)
+        @test thmod(2.0) * L.RESP_CO2_ARTERIAL_RESTING < L.RESP_CHEMO_VRT
+        @test thmod(2.0) > 1.0
+
+        # THE TRANSIENT IS SLOW IN THE SOLVED MODEL TOO, not only in the
+        # linearisation above. Read from the SAME solve rather than a new one.
+        ft4_1 = NaN
+        for u in IPE.mtk_unknowns(hyper)
+            if occursin("ty₊FT4", String(Symbol(u)))
+                ft4_1 = shy(1.0; idxs = u)
+            end
+        end
+        frac = (ft4_1 - L.THY_FT4_EUTHYROID) /
+               (fin(hyper, shy, "ty₊FT4") - L.THY_FT4_EUTHYROID)
+        @test 0.0 < frac < 0.40
+
+        @info "thyroid" FT4=fin(sys, sol, "ty₊FT4") TSH=tsh th_mod=fin(sys, sol, "ty₊th_mod") tau_eff=tau_eff
     end
 
     @testset "modulators are off by default" begin
