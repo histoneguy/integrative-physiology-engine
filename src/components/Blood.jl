@@ -63,8 +63,10 @@ using ..LedgerParams:
 
 Arterial oxygen tension, saturation, content and convective delivery.
 
-Inputs   PaCO2 (mmHg) from respiratory, CO (L/day) from cardiovascular
-Outputs  PaO2, SaO2, CaO2, DO2 - all observables, nothing feeds back
+Inputs   PaCO2 (mmHg) and VCO2_eff (L/min) from respiratory, CO (L/day) from
+         cardiovascular
+Outputs  PaO2, SaO2, CaO2, DO2, VO2, avDO2, CvO2, SvO2, ER - all observables,
+         nothing feeds back
 
 `sex` selects the haemoglobin pair. ADR 0014 makes `:both` an error rather than
 an average, and haemoglobin is one of the largest sexed differences in human
@@ -106,6 +108,12 @@ function Blood(; name, sex::Symbol = :male)
         SaO2(t)         # fraction arterial saturation
         CaO2(t)         # mL/dL    arterial oxygen content
         DO2(t)          # mL/min   convective oxygen delivery
+        VCO2_eff(t)     # L/min    INPUT from respiratory
+        VO2(t)          # mL/min   whole-body oxygen consumption
+        avDO2(t)        # mL/dL    arteriovenous oxygen difference
+        CvO2(t)         # mL/dL    mixed venous oxygen content
+        SvO2(t)         # fraction mixed venous saturation
+        ER(t)           # fraction oxygen extraction ratio
     end
 
     P_dry = K_alv / 1.21030
@@ -153,6 +161,43 @@ function Blood(; name, sex::Symbol = :male)
         # magnitude and still look like a plausible number in some other unit,
         # which is exactly the class of error a closure check exists for.
         DO2 ~ CO * (1000.0 / 1440.0) * CaO2 / 100.0,
+
+        # OXYGEN CONSUMPTION, AND IT NEEDED NO NEW SOURCE. ADR 0018 deferred the
+        # Fick relation because "they need tissue oxygen consumption, which is a
+        # metabolic row this model does not have". It does: the respiratory
+        # component's CO2 production, divided by the exchange ratio that already
+        # links the two sides of the alveolus. Both rows were already in the
+        # ledger and neither moves.
+        #
+        # SO RER CANNOT LATER BECOME DERIVED FROM VO2 AND VCO2. The comment on the
+        # alveolar gas equation above says it should the moment an oxygen
+        # consumption exists; that is now wrong and is corrected here, because VO2
+        # is derived THROUGH RER. It stays a primitive.
+        VO2 ~ VCO2_eff * 1000.0 / RER,
+
+        # THE FICK RELATION, REARRANGED. Fick measures cardiac output from oxygen
+        # uptake and the arteriovenous difference; here cardiac output and content
+        # are already determined by the pressure loop, so the same identity gives
+        # the difference. It is a conservation law either way.
+        #
+        #   VO2 [mL/min] / (CO [mL/min]) -> mL O2 per mL blood, x100 -> per dL
+        avDO2 ~ VO2 / (CO * (1000.0 / 1440.0)) * 100.0,
+
+        CvO2 ~ CaO2 - avDO2,
+
+        # MIXED VENOUS SATURATION, ATTRIBUTING ALL VENOUS OXYGEN TO HAEMOGLOBIN.
+        # The dissolved term is omitted here where the arterial content includes
+        # it, which OVERSTATES SvO2 by about 0.6 percentage points at rest -
+        # smaller than the alveolar-arterial difference's own uncertainty and far
+        # smaller than any measurement of SvO2. Including it would need the
+        # inverse dissociation curve, which is four more coefficients taken whole
+        # for a correction below the noise.
+        SvO2 ~ CvO2 / (k_hb * Hb),
+
+        # EXTRACTION RATIO. Identically avDO2/CaO2, which is VO2/DO2 with the unit
+        # chains cancelled - written the short way so there is nothing to get
+        # wrong twice.
+        ER ~ avDO2 / CaO2,
     ]
 
     return MTKSystem(eqs, t, vars, pars; name)

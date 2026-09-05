@@ -361,6 +361,21 @@ def _check_one(p: dict[str, float]) -> int:
           "osmolality -> volume must return intake minus insensible loss.",
           errors)
 
+    # ADR 0018's DEFERRED FICK ARM, discharged 2026-09-05 with no new source.
+    # Oxygen consumption is CO2 production over the exchange ratio, both already
+    # in the ledger. Asserted here rather than only in the suite because it is a
+    # property of the ROWS - if either moves, the model's oxygen consumption
+    # silently moves with it, and 250 mL/min at rest is the number a reader
+    # checks first.
+    vo2 = p["RESP.CO2.PRODUCTION"] / p["RESP.EXCHANGE_RATIO"] * 1000.0
+    if not (180.0 <= vo2 <= 320.0):
+        errors.append("Resting oxygen consumption %.0f mL/min is outside 180-320; "
+                      "RESP.CO2.PRODUCTION or RESP.EXCHANGE_RATIO has moved and "
+                      "both are `assumed` rows" % vo2)
+    else:
+        print("  ok   resting oxygen consumption      %.0f mL/min  "
+              "(VCO2/RER, both assumed rows)" % vo2)
+
     # ------------------------------------------------------------------ thyroid
     #
     # ADR 0019. THY.FT4.GAIN is the one derived number in the thyroid loop, and

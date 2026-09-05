@@ -1373,7 +1373,9 @@ using SciMLBase
                 v
             end
             (SaO2 = g("SaO2"), PaO2 = g("bl₊PaO2"), PAO2 = g("PAO2"),
-             CaO2 = g("CaO2"), DO2 = g("DO2"))
+             CaO2 = g("CaO2"), DO2 = g("DO2"), VO2 = g("bl₊VO2"),
+             avDO2 = g("avDO2"), CvO2 = g("CvO2"), SvO2 = g("SvO2"),
+             ER = g("bl₊ER"), CO = g("cv₊CO"))
         end
         m = arterial()
 
@@ -1436,7 +1438,64 @@ using SciMLBase
         # - eight plus thyroxine, and none of them is an oxygen state.
         @test length(IPE.mtk_unknowns(build_model())) == 9
 
-        @info "blood gas" SaO2=m.SaO2 PaO2=m.PaO2 CaO2=m.CaO2 DO2=m.DO2
+        # ------------------------------------------------------------------
+        # THE FICK ARM, ADDED 2026-09-05. ADR 0018 deferred venous content, the
+        # Fick relation and the extraction ratio because "they need tissue oxygen
+        # consumption, which is a metabolic row this model does not have". IT DID
+        # HAVE ONE, under another name: CO2 production over the exchange ratio.
+        # Both rows were already in the ledger and neither moved.
+
+        # OXYGEN CONSUMPTION. 250 mL/min at rest, which is what 0.20 L/min of CO2
+        # at an exchange ratio of 0.80 means. Asserted as a range because both
+        # parent rows are `assumed` at round teaching numbers - directive 1.12 -
+        # so a narrow pin here would be false precision about a number nobody
+        # measured for this model.
+        @test 180.0 <= m.VO2 <= 320.0
+
+        # THE FICK RELATION CLOSES EXACTLY, and that is the check the unit chain
+        # needs: cardiac output is carried in L/DAY because the model's time base
+        # is days, while consumption is per minute and content is per dL. A
+        # missing 1440 would be three orders of magnitude and would still look
+        # like a plausible number in some other unit.
+        @test isapprox(m.CO * (1000.0 / 1440.0) * m.avDO2 / 100.0, m.VO2;
+                       rtol = 1e-9)
+        @test isapprox(m.CvO2, m.CaO2 - m.avDO2; rtol = 1e-12)
+        @test isapprox(m.ER, m.avDO2 / m.CaO2; rtol = 1e-12)
+
+        # THE ARTERIOVENOUS DIFFERENCE lands at 4.2 mL/dL. This one IS comparable
+        # to the human literature without a catheter, because it follows from
+        # oxygen uptake and cardiac output, both of which are measured
+        # non-invasively in every indirect-calorimetry study.
+        @test 3.5 <= m.avDO2 <= 5.5
+
+        # MIXED VENOUS SATURATION AND EXTRACTION ARE REPORTED, AND NO HUMAN TARGET
+        # IS ASSERTED AGAINST THEM. Not for want of searching: mixed venous
+        # saturation needs a pulmonary artery catheter, which is not placed in
+        # healthy people, so the literature is critical care and cardiac disease
+        # and directive 1.7 disqualifies it. The same ethical ceiling ADR 0006's
+        # amendment records for RN.AUTOREG.UPPER. These bounds are a sanity
+        # bracket on the ARITHMETIC - saturation between arterial and zero,
+        # extraction a fraction - not a comparison with a measurement.
+        @test 0.0 < m.SvO2 < m.SaO2
+        @test 0.0 < m.ER < 1.0
+
+        # ANAEMIA IS THE PROPERTY THAT MAKES THIS ARM WORTH HAVING. Haemoglobin
+        # falls, arterial content and delivery fall with it, consumption does not,
+        # so EXTRACTION RISES and mixed venous saturation falls - while arterial
+        # saturation and tension do not move at all, because they are properties
+        # of the curve and not of the carrying capacity.
+        @test isapprox(f.SaO2, m.SaO2; rtol = 1e-9)      # restated deliberately
+        @test f.ER > m.ER
+        @test f.SvO2 < m.SvO2
+        @test isapprox(f.VO2, m.VO2; rtol = 1e-9)        # demand is not sexed
+
+        # THE THYROID ARM'S REACH INTO OXYGEN CONSUMPTION IS ASSERTED IN THE ADR
+        # 0019 TESTSET, not here, because that testset already builds the model
+        # with the metabolic arm on. Directive 1.10: a second build of the same
+        # system to assert a related fact is the kind of cost that is paid on
+        # every future run forever.
+
+        @info "blood gas" SaO2=m.SaO2 CaO2=m.CaO2 DO2=m.DO2 VO2=m.VO2 avDO2=m.avDO2 SvO2=m.SvO2 ER=m.ER
     end
 
     @testset "ADR 0019: the thyroid axis, on ONE free-thyroxine scale" begin
@@ -1569,6 +1628,16 @@ using SciMLBase
         @test fin(hyper, shy, "ty₊TSH")    < tsh
         @test fin(hyper, shy, "ty₊th_mod") > 1.0
         @test fin(hyper, shy, "PaCO2")     > fin(sys, sol, "PaCO2")
+
+        # AND IT REACHES OXYGEN CONSUMPTION, WHICH MAKES THIS THE MODEL'S ONLY
+        # THREE-HOP COUPLING: thyroid -> respiratory -> blood -> venous oxygen.
+        # Consumption is CO2 production over the exchange ratio, so scaling the
+        # metabolic load scales it; delivery does not move, so extraction rises
+        # and mixed venous saturation falls. Asserted here rather than in the ADR
+        # 0018 testset because this model is already built.
+        @test fin(hyper, shy, "bl₊VO2")   > fin(sys, sol, "bl₊VO2")
+        @test fin(hyper, shy, "SvO2")     < fin(sys, sol, "SvO2")
+        @test fin(hyper, shy, "bl₊ER")    > fin(sys, sol, "bl₊ER")
 
         # AND IT REACHES BLOOD GAS THROUGH PaCO2, WHICH IS THE ONLY TWO-HOP COUPLING
         # in this model: thyroid -> respiratory -> blood. The alveolar gas equation

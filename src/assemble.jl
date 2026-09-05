@@ -132,6 +132,12 @@ function build_raw_model(; body_mass = 70.0, storage::Bool = false,
         # their product. Every earlier coupling passed a signal or a flux.
         bl.PaCO2        ~ rs.PaCO2,
         bl.CO           ~ cv.CO,
+        # ADDED 2026-09-05. The metabolic load reaches blood so that oxygen
+        # CONSUMPTION exists and the Fick relation can be closed - the deferral ADR
+        # 0018 recorded, discharged with no new source because VCO2 and the
+        # exchange ratio were both already in the ledger. Same edge as PaCO2, so the
+        # coupling graph is unchanged.
+        bl.VCO2_eff     ~ rs.VCO2_eff,
         # thyroid -> respiratory. ADDED 2026-09-05, ADR 0019. Thyroid hormone sets
         # resting metabolic rate and therefore CO2 production, which is the load the
         # respiratory loop balances. WITH THE METABOLIC ARM OFF THIS CARRIES THE
