@@ -124,6 +124,28 @@ mIU/L; real thyrotoxicosis is below 0.01. The log-linear relation is fitted acro
 euthyroid range and does not suppress outside it. **`thyroid_secretion` expresses which
 way the disease goes, not how far.**
 
+### B8. Cardiac output is 25% higher than the Fick relation allows — NEW, 2026-09-05
+
+**The sharpest quantified discrepancy in the cardiovascular limb, and nothing in it was
+fitted to anything.** With oxygen consumption now sourced from a 197-study meta-analysis
+(§3.28) and arterial content following from a sourced dissociation curve, the oxygen
+extraction ratio comes out at **18.3% against roughly 23%** implied by a measured mixed
+venous saturation near 75%. The Fick-consistent cardiac output is **4.75 L/min against
+the model's 5.95**.
+
+**The likely cause is methodological and is the same class of error as the thyroid one.**
+`CV.CO.NOMINAL` descends from a stroke volume measured by **cardiac magnetic resonance**
+(UK Biobank, 96 mL male); every mixed venous saturation in the literature comes from
+populations whose cardiac output was measured by **thermodilution or Fick**. CMR is known
+to read stroke volume higher. Composing one method's cardiac output with another's venous
+saturation is exactly §5 item 18.
+
+**What would settle it:** a stroke volume or cardiac output measured by the same family of
+methods as the venous saturations — or, better, a healthy-cohort study reporting cardiac
+output and oxygen consumption in the same subjects, which makes the extraction ratio
+internal rather than composed. **Its own pre-registered pass**; re-sourcing it inside the
+metabolic pass would have been adjusting a second parameter to rescue the first.
+
 ### B6. Body size scaling is linear where physiology is sub-linear
 
 Glomerular filtration and cardiac output scale linearly in mass here, so the population
@@ -156,9 +178,11 @@ this order.
 3. **No acid–base limb.** No bicarbonate, so the oxyhaemoglobin curve is fixed at normal
    pH and temperature and nothing whose perturbed variable is the *position* of that
    curve exists: Bohr shift, fever, 2,3-DPG, altitude, exercising muscle.
-4. **No metabolic substrate.** Tissue oxygen consumption is absent, so venous oxygen
-   content, the Fick relation and extraction ratio cannot be computed. Oxygen is a
-   forward computation with no feedback of any kind.
+4. ~~**No metabolic substrate.**~~ **BUILT 2026-09-05** (§3.27, §3.28). Oxygen
+   consumption, the Fick relation, mixed venous content and saturation, and the
+   extraction ratio. It needed no new component and, initially, no new source — the
+   metabolic row ADR 0018 said was missing existed under another name. Oxygen is still a
+   forward computation with no feedback, which ADR 0018 decides deliberately.
 5. **No age dimension.** The alveolar–arterial difference widens with age and carries a
    young-adult value; so does maximal urine concentrating ability.
 6. **Sea level, awake, resting, adult, non-pregnant, healthy.** No hypoxic ventilatory
