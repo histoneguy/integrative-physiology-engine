@@ -57,6 +57,9 @@ function build_raw_model(; body_mass = 70.0, storage::Bool = false,
                          circadian::Bool = false, baroreflex::Bool = true,
                          raas::Bool = true, adh::Bool = true,
                          respiration::Bool = true,
+                         thyroid::Bool = true,
+                         thyroid_metabolic::Bool = false,
+                         thyroid_secretion = 1.0,
                          sex::Symbol = :male,
                          anp_gain = IPE.LedgerParams.CV_ANP_NATRIURETIC_GAIN)
     @named bf = BodyFluids(; body_mass, storage)
@@ -78,6 +81,13 @@ function build_raw_model(; body_mass = 70.0, storage::Bool = false,
     @named rs = Respiratory(; body_mass, enabled = respiration)
     # ADR 0018. A forward computation - two inbound edges, no feedback.
     @named bl = Blood(; sex)
+    # ADR 0019. One state - thyroxine - and an algebraic pituitary limb. The
+    # METABOLIC ARM DEFAULTS OFF (decision 4), so th_mod is the literal 1.0 and
+    # the respiratory CO2 load is exactly what it was before this component
+    # existed. `thyroid = false` opens the loop by holding thyrotropin at its
+    # euthyroid value, which is the control arm falsifiable test 1 needs.
+    @named ty = Thyroid(; feedback = thyroid, metabolic = thyroid_metabolic,
+                        sec_cap = thyroid_secretion)
 
     connections = [
         # body fluids -> cardiovascular
@@ -122,9 +132,16 @@ function build_raw_model(; body_mass = 70.0, storage::Bool = false,
         # their product. Every earlier coupling passed a signal or a flux.
         bl.PaCO2        ~ rs.PaCO2,
         bl.CO           ~ cv.CO,
+        # thyroid -> respiratory. ADDED 2026-09-05, ADR 0019. Thyroid hormone sets
+        # resting metabolic rate and therefore CO2 production, which is the load the
+        # respiratory loop balances. WITH THE METABOLIC ARM OFF THIS CARRIES THE
+        # CONSTANT 1.0 - the edge exists so that the declaration and the model agree
+        # in both configurations, which is the discipline `model_couplings` records
+        # four defects for lacking.
+        rs.th_mod       ~ ty.th_mod,
     ]
 
-    systems = [bf, cv, rn, br, ra, ad, rs, bl]
+    systems = [bf, cv, rn, br, ra, ad, rs, bl, ty]
 
     # CONNECTED 2026-08-25. ADR 0006 build order item 6: the clock modulates
     # renal tubular sodium handling and the reflex pressure setpoint, both of
@@ -171,7 +188,8 @@ for `assert_couplings_match_model` to reject.
 function model_couplings()
     all = vcat(bodyfluids_couplings(), cardiovascular_couplings(), renal_couplings(),
                baroreflex_couplings(), raas_couplings(), adh_couplings(),
-               circadian_couplings(), respiratory_couplings(), blood_couplings())
+               circadian_couplings(), respiratory_couplings(), blood_couplings(),
+               thyroid_couplings())
     seen = Set{Tuple{Symbol,Symbol,CouplingKind}}()
     out = Coupling[]
     for c in all
@@ -202,6 +220,7 @@ model_edges() = Set([
     (:renal, :bodyfluids),            # bf.Na_excr_rate, bf.H2O_excr_rate
     (:respiratory, :bodyfluids),      # bf.H2O_resp_rate ~ rs.H2O_resp - ADR 0017
     (:respiratory, :blood),           # bl.PaCO2 ~ rs.PaCO2 - ADR 0018
+    (:thyroid, :respiratory),         # rs.th_mod ~ ty.th_mod - ADR 0019
     (:cardiovascular, :blood),        # bl.CO ~ cv.CO - ADR 0018
     (:cardiovascular, :bodyfluids),   # bf.MAP ~ cv.MAP - INERT, ADR 0010 hook
     (:cardiovascular, :baroreflex),   # br.MAP ~ cv.MAP
@@ -232,7 +251,8 @@ function assert_couplings_match_model()
     phantom    = setdiff(declared, actual)
 
     subsystems = Set([:bodyfluids, :cardiovascular, :renal, :baroreflex,
-                      :raas, :adh, :circadian, :respiratory, :blood])
+                      :raas, :adh, :circadian, :respiratory, :blood,
+                      :thyroid])
     unknown = [c for c in cs if !(c.from in subsystems) || !(c.to in subsystems)]
 
     dangling = Symbol[]

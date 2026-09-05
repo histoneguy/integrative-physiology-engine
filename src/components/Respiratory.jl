@@ -76,7 +76,8 @@ using ..LedgerParams:
 
 Ventilation, alveolar CO2, and the respiratory water flux.
 
-Inputs   none - the load is a parameter, not a connection
+Inputs   th_mod - the thyroid metabolic multiplier, ADR 0019. Exactly 1.0 unless
+         the thyroid metabolic arm is switched on, which it is not by default.
 Outputs  V_E (L/min), PaCO2 (mmHg), H2O_resp (L/day)
 
 `enabled = false` FREEZES VENTILATION AT BASAL, which makes the chemoreflex inert
@@ -109,12 +110,20 @@ function Respiratory(; name, body_mass = BF_BODY_MASS_REFERENCE,
         V_A(t)          # L/min    alveolar ventilation
         PaCO2(t)        # mmHg     arterial CO2 tension
         H2O_resp(t)     # L/day    OUTPUT to body fluids
+        th_mod(t)       # -        INPUT from thyroid, 1.0 at euthyroid
     end
 
     # THE METABOLIC HYPERBOLA'S NUMERATOR. PaCO2 = C / V_E, with C carrying the
     # dead space so the whole loop can be written in terms of TOTAL ventilation,
     # which is what the chemoreflex sources report and what the water flux needs.
-    C = K_alv * VCO2 / (1.0 - f_dead)
+    # th_mod IS THE THYROID METABOLIC ARM AND IT IS 1.0 UNLESS SWITCHED ON.
+    # RESP.CO2.PRODUCTION was a primitive - assumed, at a round teaching number -
+    # until ADR 0019; it is now a reference production times a modelled multiplier,
+    # the same transition CV.CO.NOMINAL and RN.H2O.OBLIGATORY_LOSS already made.
+    # With the arm off Thyroid.jl emits the literal constant 1.0 and this reduces
+    # to the bare parameter, which thyroid_prereg.md section 6 requires exactly
+    # rather than approximately.
+    C = K_alv * VCO2 * th_mod / (1.0 - f_dead)
 
     # SOLVED IN CLOSED FORM, NO STATE, per ADR 0017 decision 2. The chemoreflex
     # and the alveolar equation are two equations in two unknowns:

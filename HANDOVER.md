@@ -1,6 +1,6 @@
 # HANDOVER — Integrative Physiology Engine
 
-**Date:** 2026-09-03
+**Date:** 2026-09-05
 **Repo:** https://github.com/histoneguy/integrative-physiology-engine (public)
 **Owner:** Eric George (`histoneguy`)
 **State:** **531/531**, all five gates exit 0, and **`validation/challenges.jl` EXITS 0** —
@@ -1671,6 +1671,182 @@ it is not something more searching will fix.
 
 ---
 
+### 3.25 THE THYROID AXIS IS BUILT. IT WAS BLOCKED ON A LOGARITHM AND THE BLOCK WAS WRONG
+
+**Date: 2026-09-05.** §3.24 ended with the thyroid axis at branch T3 — *"the feedback
+slope cannot be sourced"* — because Benhadi 2010's abstract gives
+`log TSH = 1.50 - 0.059 x FT4` and never says what base the logarithm is. Choosing by
+which reading puts the euthyroid point in range is setting a parameter from the target,
+which `thyroid_prereg.md` §6 forbids in terms, so the axis was not built. **That stop was
+correct on the evidence then in hand and it was resolvable without the paper.**
+
+#### The base is fixed by a second measurement of the same quantity
+
+**Jostel A, Ryder WDJ, Shalet SM.** *Clin Endocrinol (Oxf)* 2009;71(4):529–34, PMID
+19226261, 9519 thyroid function tests in 4064 patients, abstract only: *"Feedback
+inhibition was estimated to cause a 0.1345 decrease in log TSH (mU/l) for 1 pmol/l
+increase in fT4."* **Its abstract says "log" too.** What settles it is that the index it
+defines is in wide clinical use and the downstream literature writes the base out —
+`PMC8129566`, n = 4378, open access, read in full: *"TSHI = ln TSH (mIU/L) + 0.1345 *
+FT4 (pmol/L)"* — **and that paper's own Table 1 checks the arithmetic**: `ln(1.64) +
+0.1345×13.33 = 2.29` against a reported TSH index of 2.25, where the base-10 reading
+gives 2.01.
+
+**The two studies then agree to 1%, and under exactly one pairing.**
+
+| reading | Benhadi | Jostel | ratio |
+|---|---|---|---|
+| Benhadi log10, Jostel ln | 0.13585 | 0.1345 | **1.010** |
+| Benhadi ln, Jostel ln | 0.0590 | 0.1345 | 0.44 |
+
+A 2.3-fold disagreement between two competent measurements of the same gain, in cohorts
+of comparable free-thyroxine range, is not credible. **Benhadi's logarithm is base 10.**
+
+**AND THE ENTERED SLOPE IS THEIR MEAN, 0.1352, NOT EITHER ONE.** This row first entered
+Benhadi's alone and called Jostel's "corroboration, not the value", on the grounds that
+`pooling.md` bars pooling across assays. **They agree to 1%.** That rule exists to stop a
+real method difference being averaged away, not to force a choice between measurements
+agreeing to a fifth of anyone's error bar — and making that choice looks like rigour
+while being arbitrary. Directive 1.9 and §3.23 both already said so, and every thyroid
+row was cut to the significant figures its source supports at the same time.
+
+**AND THE RESOLUTION MADE THE MODEL LOOK WORSE, WHICH IS THE EVIDENCE IT WAS NOT
+REVERSE-ENGINEERED.** The reading it selects is the one §3.24's extract noted puts the
+euthyroid point further from mid-range. The test got harder and the model then failed it.
+
+#### What was sourced, and from where
+
+| row | value | source | opened |
+|---|---|---|---|
+| `THY.TSH.FT4_SLOPE` | 0.1352 /pmol/L, ln units — **mean of two** | Benhadi 2010 and Jostel 2009, agreeing to 1% | abstracts |
+| `THY.TSH.INTERCEPT` | 3.454 ln(mIU/L) | Benhadi 2010 — **one source, and it carries the whole error** | abstract |
+| `THY.FT4.EUTHYROID` | 16.60 pmol/L | **Braverman 1973**, equilibrium dialysis, n = 11 euthyroid | **full text** |
+| `THY.FT4.TAU` | 10.31 d | Braverman 1973, fractional turnover 9.7 %/day, n = 5 | **full text** |
+| `THY.METABOLIC_GAIN` | 0.211 — **mean of two** | **Maushart 2022**, paired hyperthyroid → euthyroid, n = 18 | **full text** |
+| `THY.FT4.GAIN` | 4.952 | derived — the only derived number in the loop | — |
+
+**Braverman 1973 is `10.1172/JCI107265` and the JCI archive serves every article free.**
+It was reachable the whole time. So was Maushart 2022 in PMC. §3.24's claim that the
+binding constraint is access was true of the two named articles and **not true of the
+subsystem**: the axis needed three more numbers than the blocked paper had, and all
+three were open.
+
+#### The euthyroid thyrotropin is a real prediction and the model gets it wrong by 2.4×
+
+Free thyroxine comes from equilibrium dialysis in normal subjects. The pituitary line
+comes from a thyroxine-loading experiment in different subjects. **Neither is a
+thyrotropin reference value**, so where they cross is a prediction that can be wrong.
+
+    predicted euthyroid TSH   3.35 mIU/L
+    NHANES III reference population, n = 13,344, geometric mean   1.40 mIU/L
+
+It is inside the conventional 0.4–4.0 interval, which is the letter of ADR 0019's
+falsifiable test 2 — and 0.4–4.0 is exactly the kind of round number directive 1.12 says
+not to trust. **Treated as a failure. Reported, not tuned.** Branch T2.
+
+**The decomposition is the useful part, and it is unambiguous.** Of three sourced inputs,
+two have independent corroboration and one does not:
+
+| input | second source | agreement |
+|---|---|---|
+| slope | Jostel 2009 | 1% |
+| euthyroid FT4 | Maushart 2022, immunoassay, 49 years later | 16.6 against 16.6 |
+| **intercept** | **none** | — |
+
+Reconstructing the intercept from independent euthyroid pairs at the agreed slope gives
+**2.58–2.80 against the entered 3.45** — a factor of 1.9–2.4 in thyrotropin, which is the
+whole discrepancy.
+
+**AND "THE SLOPE IS NOT THE PROBLEM" IS ARITHMETIC, NOT RHETORIC.** Sweeping the slope
+across its entire two-source spread moves the prediction from 3.32 to 3.39 mIU/L — **2%,
+against a discrepancy of 2.4×.** No plausible slope error reaches that. The intercept can,
+because slope and intercept in a regression over a narrow range are strongly
+anti-correlated and the intercept is the extrapolated one — **and Benhadi's abstract
+reports no standard error for it, so its variance cannot be propagated at all.** The
+honest statement is that this coefficient is not determined to better than roughly a
+factor of two by the study that reports it, and the model inherits that.
+
+**AND IT IS THE SAME FAILURE MODE FOR THE THIRD TIME. An intercept is a line
+extrapolated to FT4 = 0 from data that never went near zero.** ADR 0017's amendment came
+from a chemoreflex line extrapolated below its measured range, putting ventilation at
+19.3 L/min against a real 6.2. §3.22's censoring bound came from the same move on GFR.
+**Three instances is not a coincidence; it is a rule, and it is now in §5.** Benhadi's
+cohort is also mean age 60, and NHANES III reports thyrotropin rising with age.
+
+**The intercept is not replaced**, because every reconstruction above is built from a
+measured euthyroid thyrotropin — the quantity the test judges. That is §3.15's error
+committed deliberately instead of by accident.
+
+#### What the loop gets right, and nothing was fitted to it
+
+The open-loop gain falls out as `b·FT4 = 2.24`, so
+
+    d ln FT4 / d ln(thyroid secretory capacity) = 1/(1 + b·FT4) = 0.31
+
+**The human axis absorbs about 70% of a change in thyroid secretory capacity.** Nothing
+in this repository was fitted to that and nothing is validated against it. It is the
+claim most worth trying to falsify next.
+
+#### One state, and it is the only one this model ever chose to add
+
+ADR 0019 planned two. Thyrotropin turns over in **minutes** against a thyroxine time
+constant of **10.3 days** and a horizon of 400, so the pituitary limb is algebraic — the
+fallback `thyroid_prereg.md` §4 wrote down before any source was opened, taken by
+inspection rather than after measuring a slowdown. **Nine states, and thyroxine is the
+first one added because the slowness is the physiology rather than avoided because it
+was not.**
+
+#### The metabolic arm reaches PaCO2 — and CANNOT reach ventilation or the water balance
+
+`RESP.CO2.PRODUCTION` was `assumed` at a round teaching number. It is now a reference
+production times a thyroid multiplier that is **exactly 1.0** unless the arm is switched
+on — ADR 0019 decision 4, written before any of this was known. So every existing result
+is unchanged, and the suite asserts `th_mod == 1.0` with `==` rather than `isapprox`.
+
+**SWITCHING IT ON DOES LESS THAN THIS SECTION FIRST CLAIMED, AND FINDING THAT OUT IS
+WHAT THE TEST WAS FOR.** The first version asserted that thyrotoxicosis raises
+ventilation and therefore the respiratory water flux. **It fails.** Ventilation does not
+move at all, because §3.24's central finding bites a second time: **at rest the model
+sits on the FLAT limb of the chemoreflex**, the ventilatory recruitment threshold is
+45.28 mmHg and resting PaCO2 is 40, so a higher CO2 load raises PaCO2 and nothing else.
+
+**And essentially no thyroid state crosses the threshold.** At twice normal secretory
+capacity PaCO2 reaches 41.9; at **six times** it reaches 45.0 against a threshold of
+45.28, so the crossing is only approached at a secretory capacity where the sourced
+pituitary line has already stopped being usable (below). So:
+
+    thyroid -> respiratory  moves PaCO2, and stops there
+    thyroid -> respiratory -> blood  moves alveolar PO2 and arterial saturation
+    thyroid -> ventilation -> water balance  DOES NOT EXIST at any thyroid state
+
+That last line is a fact about two independently sourced components meeting, not a
+modelling choice, and both directions are asserted in the suite — `PaCO2` strictly up,
+`V_E` and `H2O_resp` exactly equal. **It also gives this model its first TWO-HOP
+coupling**: thyroid → respiratory → blood.
+
+**One reason to hesitate before switching it on.** The gain comes from hyperthyroid
+patients, a preparation `thyroid_prereg.md` §2 excludes. The exclusion is unsatisfiable —
+a healthy person cannot ethically be made thyrotoxic, which is `SOURCES.md`'s own
+argument for animal preparations applied to a disease preparation — so §8.3 relaxes it
+**for that one row** and records the relaxation.
+
+**And one limitation the same test exposed.** At six times secretory capacity the sourced
+pituitary line still puts thyrotropin at **0.89 mIU/L**, where real thyrotoxicosis is
+below 0.01. The log-linear relation is fitted across the euthyroid range and does not
+suppress far outside it, so `thyroid_secretion` expresses the DIRECTION of thyroid
+disease and not its magnitude. Do not read a thyrotoxic thyrotropin off this model.
+
+#### Four amendments to a pre-registration, and why that is not cheating
+
+`thyroid_prereg.md` §8 records each one against the text it changes. **The test of an
+amendment is not whether it was convenient but whether it could have flattered the
+result**, and §8.1 is checked against that explicitly: the log-base resolution selected
+the reading that made the prediction worse, and the model then failed the test. §8.2 was
+pre-registered as a fallback. §8.3 changes no default. §8.4 upholds §6 rather than
+bending it.
+
+---
+
 ## 4. NEXT, IN ORDER
 
 **Rewritten 2026-09-03, and item 1 was discharged the same day.** The previous list's
@@ -1688,35 +1864,54 @@ needed by §3.24's three records were identified precisely and could not be open
 them are worth naming as work items in their own right because each unblocks more than a
 row:
 
-0. **GET TWO PAPERS.** `Crapo RO et al. Am J Respir Crit Care Med 1999;160(5 Pt
-   1):1525-31` (PMID 10556115) discharges **three `assumed` rows across two
-   subsystems** — resting arterial PCO2, the alveolar-arterial difference, and the
-   arterial PO2 that follows. `Benhadi N et al. Eur J Endocrinol 2010;162(2):323-9`
-   (PMID 19926783) states the base of one logarithm and **unblocks the entire thyroid
-   axis** (§3.24). Institutional access or an author request. **No amount of further
-   searching substitutes**, and both were found by searching correctly.
+0. **GET ONE PAPER, NOT TWO — AND READ §3.25 BEFORE BELIEVING THIS ITEM.**
+   `Crapo RO et al. Am J Respir Crit Care Med 1999;160(5 Pt 1):1525-31` (PMID
+   10556115) discharges **three `assumed` rows across two subsystems** — resting
+   arterial PCO2, the alveolar-arterial difference, and the arterial PO2 that follows.
+   That one still stands.
+
+   **The second, `Benhadi 2010`, no longer blocks anything.** It was named here as
+   unblocking the entire thyroid axis; the axis was built without it (§3.25) by
+   resolving its logarithm against an independent measurement, and the three numbers
+   the axis needed beyond that paper were in open-access articles the whole time.
+   **This item was itself an instance of the failure it warned about**: "the binding
+   constraint is access" was true of two articles and false of the subsystem, and the
+   check that would have caught it is asking what the record actually needs rather
+   than what the blocked paper would have supplied.
 
 **Two things to read before starting anything.** §3.21's two caveats, because the model
 now matches human salt sensitivity and two of the three parameters that make it do so
 were solved against that very target. And §5, which is how work goes wrong here.
 
-1. **THE ENDOCRINE AXIS IS BLOCKED ON ONE PAPER, AND THE ALTERNATIVES ARE WORSE.**
-   Thyroid was chosen over cortisol, glucose and growth hormone for one reason: it is
-   the only endocrine axis that drives a quantity another component already consumes —
-   resting metabolic rate sets `RESP.CO2.PRODUCTION`, which respiration balances and
-   which is `assumed` at a round number. It reached branch T3 (§3.24).
+1. **THE THYROID AXIS IS BUILT (§3.25) AND ITS EUTHYROID THYROTROPIN IS 2.4× TOO
+   HIGH. THAT IS THE OPEN QUESTION, NOT WHETHER TO BUILD IT.** The whole discrepancy
+   sits in `THY.TSH.INTERCEPT`, the one number of three with no second source, and it
+   is an extrapolation to zero free thyroxine from data that never went near zero.
+
+   **Do not fix it by fitting to a measured euthyroid thyrotropin** — that is the
+   quantity ADR 0019's falsifiable test 2 judges, and spending it is §3.15's error
+   committed on purpose. **What would fix it honestly is a second perturbation study**:
+   a within-subject thyroxine-loading experiment in healthy euthyroid adults reporting
+   the regression with its units stated. Benhadi 2010 is the only one found and it is
+   n = 21, mean age 60, abstract only.
+
+   **Two things that are now cheap, and read §3.25 for what each actually buys.**
+   Switching the metabolic arm on — sourced, built and tested, and off only because of
+   the preparation its gain comes from (amendment 8.3). It moves PaCO2 and arterial
+   saturation and **cannot** move ventilation or the water balance at any thyroid state,
+   because the chemoreflex is on its flat limb. And thyroid DISEASE, which is one
+   parameter: `thyroid_secretion` below 1 is hypothyroidism, above 1 thyrotoxicosis.
+   **This model can now express its first disease state — but only its direction.** The
+   sourced pituitary line does not suppress thyrotropin outside the euthyroid range.
 
    **Do NOT substitute a different axis to keep moving.** Cortisol, insulin and glucose
-   connect to nothing currently in this model, and an endocrine component built for
-   completeness rather than connection is exactly what ADR 0006 records Circadian being
-   — built ahead of its dependency and sitting unwired. Directive 1.11 is the guard.
-
-   **What unblocks it is item 0's second paper.** Failing that, the honest alternative is
-   NOT another hormone but the **control layer**: the baroreflex has one effector while
-   heart rate exists, and renin is pressure-only when §7 already records that no gain
-   reproduces the human salt-renin response because macula densa delivery and renal
-   sympathetic traffic are absent. Both are E1, both are inside components that already
-   exist, and neither needs a paper nobody can open.
+   still connect to nothing, and an endocrine component built for completeness rather
+   than connection is exactly what ADR 0006 records Circadian being. Directive 1.11 is
+   the guard. The honest next target is the **control layer**: the baroreflex has one
+   effector while heart rate exists, and renin is pressure-only when §7 already records
+   that no gain reproduces the human salt-renin response because macula densa delivery
+   and renal sympathetic traffic are absent. Both are E1, both are inside components
+   that already exist, and neither needs a paper nobody can open.
 
 2. **THE ACUTE NATRIURESIS IS A THIRD LOW, AND IT IS THE ONLY OUT-OF-SAMPLE NUMBER.**
    The model predicts **+79.3%** fractional sodium excretion on 23 mL/kg of isotonic
@@ -1833,6 +2028,28 @@ were solved against that very target. And §5, which is how work goes wrong here
 15. **Dead code hides unledgered constants and stale API assumptions.** `reconstruct.jl`
     and `ensemble.jl` each carried a hardcoded number. Connecting the ensemble surfaced
     three live SciMLBase API breakages that nothing could have caught while it was dead.
+16. **A FITTED LINE EVALUATED OUTSIDE THE RANGE IT WAS FITTED IN. THREE TIMES NOW, AND
+    IT IS THE MOST EXPENSIVE RECURRING ERROR IN THIS REPOSITORY.** ADR 0017's original
+    decision died of it — a chemoreflex line extrapolated below its measured range put
+    resting ventilation at 19.3 L/min against a real 6.2. §3.22's censoring bound exists
+    because of it. And §3.25's thyroid intercept is an extrapolation to zero free
+    thyroxine from data that never went near zero, which is why the model's euthyroid
+    thyrotropin is 2.4x too high while its slope is right to 1%.
+    **The pattern is always the same: the SLOPE is measured and the INTERCEPT is not.**
+    A regression reported over a narrow physiological range constrains the derivative
+    there and says nothing about where the line hits an axis. Before using a published
+    intercept, ask what range the data covered and how far the model will evaluate
+    outside it; if the answer is "far", the intercept is a free parameter wearing a
+    citation. Censoring the relation to its measured range is the fix that worked twice.
+17. **"BLOCKED ON A PAPER" IS A CLAIM THAT NEEDS CHECKING, NOT A CONCLUSION.** §3.24
+    named two articles as the binding constraint and put "get two papers" at the top of
+    §4. One of those blocks was real; the other was not. The thyroid axis needed three
+    more numbers than the blocked paper would have supplied, **all three were in
+    open-access articles**, and the blocked paper's own ambiguity was resolvable against
+    an independent measurement. Before recording a subsystem as access-blocked, list
+    every quantity it needs and check each one — the blocked paper is the most visible
+    obstacle, not necessarily the operative one. Also: **the JCI archive is free**, and
+    a publisher origin returning a Cloudflare 525 is a broken server, not a paywall.
 
 ---
 
