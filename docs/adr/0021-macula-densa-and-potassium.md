@@ -173,9 +173,13 @@ segmental handling, because nothing about segments was added.
 
 ### A2. Decision 3's potassium state is PLASMA concentration, and the resting value is an INPUT
 
-Renal potassium clearance in healthy adults could not be sourced — directive 1.7
-disqualifying a **sixth** literature, which the pre-registration predicted. The outflow's
-*shape* is sourced and its *level* is not, a case branch P4 did not anticipate.
+The outflow's *shape* is sourced and its *level* is not, a case branch P4 did not
+anticipate.
+
+**This amendment originally said renal potassium clearance in healthy adults could not be
+sourced. THAT WAS FALSE and it is retracted** — see amendment A7. What is true is
+narrower: no admissible study reports this model's own composite (intake, plasma potassium
+and glomerular filtration in the same healthy subjects), so the level is derived.
 
 **So the dependency is inverted for the fourth time in this model** — after arterial PCO2,
 the thyroid operating point and plasma bicarbonate — and **falsifiable test 2 is VOID.**
@@ -285,6 +289,53 @@ sensitivity, sodium balance and 676 unit tests were bit-identical with the doubl
 place, because aldosterone escape zeroes the tubular effect at rest. Only the six-hour limb
 moved. **A model whose steady states are all correct can still be wrong about every
 transient**, and nothing but a challenge would have said so — directive 1.11 again.
+
+## Amendment A7, 2026-09-05: a false claim about the literature, and what replaced it
+
+**A2 said renal potassium clearance in healthy adults could not be sourced. It could.**
+The claim was a generalisation from a handful of queries that returned ketoacidosis,
+chronic kidney disease, diuretics and Gitelman syndrome — recorded as a search failure and
+then written up as a fact about the literature. **HANDOVER §5 item 20 is that exact failure
+mode**, named in this repository after `RESP.CO2.PRODUCTION` missed a 197-study
+meta-analysis behind a careful note saying the search had failed. Second occurrence.
+
+**The search term was wrong.** "Fractional excretion of potassium" is a bedside phrase for
+separating renal from extrarenal hypokalaemia, so it returns disease by construction. The
+physiology is under *potassium balance*, *potassium loading* and *adaptation in normal
+man*, and it is the Utrecht group — Koomans, Dorhout Mees, Hené, Boer, Rabelink:
+
+| study | preparation | measured |
+|---|---|---|
+| Hené 1986, PMID 3523191 | 6 healthy males, 18 d, 80 → 300 mEq/day | urinary K 50 ± 12 → 233 ± 45 mEq/day |
+| Hené 1988, PMID 3199680 | 6 healthy males, fixed Na/K | "a steep positive relation between plasma K and urine K" |
+| Rabelink 1990, PMID 2266680 | 6 healthy humans, 400 mmol/day, 20 d | urinary K ≈ 80% of intake; renin and aldosterone **back to baseline by day 20** |
+
+**All three are abstract-level only** — none is open access and no full text was obtained.
+They therefore change **no value**: re-pooling a full-text extraction against three
+abstracts is a decision that needs its own pre-registration. What they buy is an
+independent comparison, and it produces two disagreements the model did not have before.
+
+**D1. The urinary fraction is a constant here and is not one in humans.**
+`K.RENAL_FRACTION` is 0.884 at every intake. Hené measured 0.63 at 80 mEq/day rising to
+0.78 at 300; Rabelink ≈ 0.80 at 400. The direction is consistent across both, the fraction
+**rises with intake**, and every Utrecht value sits **below** the 0.884 taken from
+Brunner's six studies. Two good groups disagree and it is recorded rather than split.
+
+**D2. There is no potassium adaptation in this model, and adaptation is what these papers
+are about.** Rabelink's title is *early and late adjustment*: by day 20 of a 400 mmol/day
+load, renin and aldosterone had returned to baseline while kaliuresis was maintained. This
+model holds aldosterone at **2.80× baseline for ever**, because its excretion relation is
+fixed and its only adaptive machinery — aldosterone escape — acts on the sodium side.
+**So the model gets the direction and rough size of a chronic potassium load and gets the
+time course of the hormones wrong.** That is the bounded claim to quote.
+
+### A7.1 And falsifiable test 2 is weak for a different reason than A2 gave
+
+A2 blamed the sourcing. **Measured, the sourcing barely matters:** sweeping FE_K from 0.04
+to 0.16 moves steady-state plasma potassium only from 4.18 to 3.87 mmol/L, every value
+inside the human reference range, because `K.EXCRETION_EXPONENT` = 17.71 pins the
+concentration. **Test 2 would be a weak test with FE_K perfectly sourced**, and saying so
+is worth more than the void.
 
 ## What is NOT decided
 

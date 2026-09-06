@@ -2356,17 +2356,19 @@ independently measured too.
 
 `K.INTAKE.NOMINAL` 69.06 mmol/day from 8893 NHANES dietary recalls; the renal fraction
 0.884 from **Brunner 1970** — 10 normal subjects, constant diet, potassium loaded and
-depleted with sodium fixed, read in full, and almost the only controlled-diet balance
-study in healthy volunteers this literature contains.
+depleted with sodium fixed, read in full.
 
-**Renal potassium clearance in healthy adults could not be sourced.** Directive 1.7
-disqualifying a **sixth** literature, predicted in the pre-registration. So the fractional
-excretion is derived to close the balance, **plasma potassium is an INPUT, and ADR 0021's
-falsifiable test 2 is void.** Fourth inversion after arterial PCO2, the thyroid operating
-point and plasma bicarbonate, and the pattern is now the rule:
+~~**Renal potassium clearance in healthy adults could not be sourced.**~~ **RETRACTED THE
+SAME DAY — that was false, and so was the sentence above it calling Brunner "almost the
+only controlled-diet balance study in healthy volunteers this literature contains."**
+§3.33 has the retraction and what replaced it. The fractional excretion is still derived
+and plasma potassium is still an input, for a narrower reason: no admissible study reports
+this model's own composite — intake, plasma potassium and glomerular filtration in the
+same healthy subjects. Fourth inversion after arterial PCO2, the thyroid operating point
+and plasma bicarbonate, and the rule, corrected:
 
-> **Where a concentration is measured in thousands of people and its clearance is measured
-> in nobody healthy, the concentration is the input.**
+> **Where a concentration is measured in thousands of people and its clearance only in
+> sixes, the concentration is the input — and the sixes are then a comparison.**
 
 #### THE SUITE REFUTED A FORM BEFORE IT WAS EVER COMMITTED
 
@@ -2405,6 +2407,72 @@ because the coupling graph suggests the opposite.
 densa reference delivery. The class-level test found all three in one run at `worst =
 0.26`, which is exactly what it was rebuilt to do after naming individual parameters
 failed six times (§3.24). **Three missed in one change, all found by one assertion.**
+
+---
+
+### 3.33 I RECORDED A FAILED SEARCH AS A FACT ABOUT THE LITERATURE, FOR THE SECOND TIME
+
+**§3.31 said renal potassium clearance in healthy adults could not be sourced. It could.**
+The claim came from a handful of queries returning ketoacidosis, chronic kidney disease,
+diuretics and Gitelman syndrome — a search result, written up as a property of the
+literature and then repeated into the ADR, the pre-registration, the component docstring
+and the ledger. **§5 item 20 is this exact failure mode**, named here after
+`RESP.CO2.PRODUCTION` missed a 197-study meta-analysis behind a careful note saying the
+search had failed. **The owner caught it in one sentence.**
+
+#### The search term was wrong, and the pre-registration had already named the right one
+
+"Fractional excretion of potassium" is a **bedside diagnostic** phrase — it separates renal
+from extrarenal hypokalaemia — so it returns disease by construction. The physiology is
+under *potassium balance*, *potassium loading*, *adaptation in normal man*, and it is the
+Utrecht group: Koomans, Dorhout Mees, Hené, Boer, Rabelink.
+
+| study | preparation | measured |
+|---|---|---|
+| Hené 1986, PMID 3523191 | 6 healthy males, 18 d, 80 → 300 mEq/day | urinary K 50 ± 12 → 233 ± 45 mEq/day |
+| Hené 1988, PMID 3199680 | 6 healthy males, fixed Na/K intake | "a steep positive relation between plasma K and urine K" |
+| Rabelink 1990, PMID 2266680 | 6 healthy humans, 400 mmol/day, 20 d | urinary K ≈ 80% of intake; **renin and aldosterone back to baseline by day 20** |
+
+**§2 of the pre-registration said in advance to prefer balance studies and controlled-diet
+protocols in healthy volunteers, "which is where this physiology was established."** It was
+right, it named the preparation, and I searched on the wrong term anyway. **A
+pre-registration that names the right preparation is worthless if the search is run on the
+diagnostic phrase.** The check that generalises: *before recording a search as failed, ask
+whether the term is the one the people who did the work would have used.*
+
+#### What the comparison bought — two disagreements, no value changed
+
+All three are **abstract-level only**; none is open access. They therefore change nothing
+in the ledger, because pooling three abstracts against a full-text extraction is a decision
+that needs its own pre-registration. Run against the model out of sample:
+
+| protocol | measured | model |
+|---|---|---|
+| Hené 1986, 80 mEq/day | 50 ± 12 mEq/day | 70.7 |
+| Hené 1986, 300 mEq/day | 233 ± 45 mEq/day | 265.2 |
+| Rabelink 1990, 400 mmol/day | ≈ 80% of intake | 88.4% |
+
+**D1 — the urinary fraction is a constant here and is not one in humans.**
+`K.RENAL_FRACTION` is 0.884 at every intake. Hené measured 0.63 at 80 mEq/day rising to
+0.78 at 300, Rabelink ≈ 0.80 at 400: it **rises with intake**, and every Utrecht value sits
+below Brunner's 0.884. Two good groups disagree. Recorded, not split.
+
+**D2 — there is no potassium adaptation in this model, and adaptation is what these papers
+are about.** Rabelink's title is *early and late adjustment*: renin and aldosterone were
+back at baseline by day 20 of a 400 mmol/day load with kaliuresis maintained. This model
+holds aldosterone at **2.80× baseline for ever**, because its excretion relation is fixed
+and its only adaptive machinery — aldosterone escape — acts on the sodium side. **The model
+gets the direction and rough size of a chronic potassium load and gets the hormone time
+course wrong.** That is the bounded claim.
+
+#### And test 2 is weak for a different reason than the one I gave
+
+I blamed the sourcing. **Measured, the sourcing barely matters:** sweeping `FE_K` from 0.04
+to 0.16 moves steady-state plasma potassium only from **4.18 to 3.87 mmol/L**, every value
+inside the human reference range, because `K.EXCRETION_EXPONENT` = 17.71 pins it. **Test 2
+would be weak with FE_K perfectly sourced.** Blaming an absent source for a weakness that
+is actually structural is a more comfortable story than the true one, and it was wrong in
+both halves.
 
 ---
 
@@ -2693,7 +2761,15 @@ were solved against that very target. And §5, which is how work goes wrong here
     times, and diffing every shared parameter gave zero mismatches before the literal was
     visible. **Call the function.** A number in a test that could have been computed is a
     second implementation of the thing under test.
-20. **A RECORDED FAILED SEARCH READ AS EVIDENCE ABOUT THE LITERATURE.** §3.28.
+20. **A RECORDED FAILED SEARCH READ AS EVIDENCE ABOUT THE LITERATURE — AND IT
+    RECURRED ON 2026-09-05, §3.33.** The second instance was potassium: "renal potassium
+    clearance in healthy adults could not be sourced" was a description of what four
+    queries returned, propagated into an ADR, a pre-registration, a docstring and the
+    ledger before the owner caught it in one sentence. **The term searched was the
+    bedside diagnostic phrase, not the one the physiologists used** — and the
+    pre-registration had already named the right preparation in advance. Before
+    recording a search as failed, ask whether the term is the one the people who did the
+    work would have used. The first instance follows. §3.28.
     `RESP.CO2.PRODUCTION` carried a careful note listing what a search for resting
     metabolic rate returned and why each hit was inadmissible. It missed a weighted
     meta-analysis of 197 studies whose title is the subject of the row. **The note made
