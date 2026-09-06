@@ -162,3 +162,56 @@ every laboratory, and the extracellular volume is the model's own.
 
 **So the model can be wrong about plasma potassium**, and being able to be wrong is the
 difference between a prediction and a restatement.
+
+---
+
+## 9. AMENDMENT, 2026-09-05: THE BRANCH §6 DID NOT HAVE
+
+**Branch P4 said: if the potassium secretion relation cannot be sourced, potassium is not
+built.** The case that actually arose was one this document did not anticipate: **the
+relation's SHAPE is sourced and its LEVEL is not.**
+
+Excretion rising with filtration and with plasma concentration is E1. What could not be
+sourced is the fractional excretion that fixes where the balance rests — searches return
+ketoacidosis, chronic kidney disease, diuretics, transplantation and Gitelman syndrome,
+directive 1.7 disqualifying a sixth literature exactly as §2 predicted.
+
+**Branch taken: build it, derive the level against the measured plasma potassium, and
+void falsifiable test 2 in the record.** §1's prohibition on using `K.PLASMA.REFERENCE` to
+set a parameter is therefore BROKEN, deliberately and in the open, which is the only
+honest way to enter that row. What remains a prediction is the RESPONSE.
+
+**And §5's form was refuted by the suite before the first commit.** Written linear in
+plasma potassium, the model predicted 7.6 mmol/L from a doubled ordinary diet. §5 said the
+functional form was deliberately not fixed here because choosing a shape and then finding
+a citation is the error ADR 0017's amendment records — and the shape that was chosen
+turned out to be wrong in a way only a run could show. The exponent that replaced it is
+fitted to Brunner's measured intake–concentration response, and it lumps aldosterone,
+distal flow and plasma potassium because no human study separates them.
+
+**Branch P3 fired in the direction not expected.** It anticipated the potassium →
+aldosterone gain failing; that one sourced. What failed was the return arm, aldosterone →
+excretion, and it is now inside the exponent rather than absent.
+
+---
+
+## 10. AMENDMENT, 2026-09-05: §7's FIRST CLAUSE HELD AND ITS SECOND ONE BIT
+
+§7 said the split must be exactly neutral with both arms disabled, and it is — the split
+is observational, so neutrality is guaranteed rather than checked.
+
+**§7 also said the answer may not re-estimate `CV.ANP.NATRIURETIC_GAIN` or
+`RN.PRESSURE_NATRIURESIS.SLOPE`, and the first implementation broke that clause without
+changing either number.** It put both terms into distal sodium delivery, which gave each
+gain a second route to sodium excretion through renin and aldosterone. A parameter whose
+effect has doubled has been re-estimated in every sense that matters, whatever its value
+still says.
+
+**The acute saline challenge is what found it**, at 877 mL against Lobo's 563. Both terms
+are removed; distal delivery is the filtered load less proximal reabsorption, which still
+carries 41% of the chronic signal because GFR rises with volume; `RN.MD.RENIN_GAIN`
+re-solved against the same estimation set to 5.396.
+
+**Two Lobo endpoints still fail by 2.8% and 1.7%, and they are reported, not tuned** —
+branch P2's rule applied to a quantity P2 was not written about. ADR 0021 amendment A6
+carries the sweep that turns the failure into a bound on the arm.

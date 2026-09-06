@@ -1,6 +1,6 @@
 # ADR 0021: Distal sodium delivery, macula densa control of renin, and potassium
 
-**Status:** Proposed
+**Status:** Accepted, **amended the same day — read the amendment before the decisions**
 **Date:** 2026-09-05
 **Evidence tier:** E1 for macula densa inhibition of renin by distal NaCl delivery, for
 potassium stimulation of aldosterone, and for aldosterone-driven distal potassium
@@ -158,6 +158,134 @@ the response to a potassium load.
    disabled, every existing result must be **bit-identical** — not close. That is the
    assertion that decision 1 did what it claims.
 
+## Amendment, 2026-09-05: three decisions changed, and one falsifiable test did its job
+
+**Written and implemented the same day. Decisions 1, 3 and 5 all moved, and the suite
+refuted a form before it was ever committed.**
+
+### A1. Decision 1's split is OBSERVATIONAL, which is stronger than it promised
+
+It said the split would be neutral by construction. **It is neutral by not existing.**
+Distal delivery is DEFINED as a new variable and the sodium equation is untouched, so
+bit-identity is guaranteed rather than checked. The consequence the disqualification
+section already stated stands and is sharper: the model contains **no** information about
+segmental handling, because nothing about segments was added.
+
+### A2. Decision 3's potassium state is PLASMA concentration, and the resting value is an INPUT
+
+Renal potassium clearance in healthy adults could not be sourced — directive 1.7
+disqualifying a **sixth** literature, which the pre-registration predicted. The outflow's
+*shape* is sourced and its *level* is not, a case branch P4 did not anticipate.
+
+**So the dependency is inverted for the fourth time in this model** — after arterial PCO2,
+the thyroid operating point and plasma bicarbonate — and **falsifiable test 2 is VOID.**
+The pattern is now the rule: *where a concentration is measured in thousands of people and
+its clearance is measured in nobody healthy, the concentration is the input.*
+
+### A3. DECISION 5 IS AMENDED AND THE SUITE IS WHY
+
+It required excretion to rise with aldosterone, with distal flow and with plasma
+potassium. **Every human study found moves all three together**, so no gain separates from
+the others — and the first implementation therefore made excretion LINEAR in plasma
+potassium alone.
+
+**Falsifiable test 3 killed that on its first run.** Linear excretion makes the
+steady-state concentration *proportional* to intake: doubling an ordinary diet gave
+**7.6 mmol/L**, a lethal hyperkalaemia from a dietary variation.
+
+The fix is one exponent, `K.EXCRETION_EXPONENT` = 17.7, fitted to Brunner's measured
+plasma-potassium response to intake across a fortyfold range. **It LUMPS all three
+mechanisms**, which means aldosterone's effect on potassium is *inside* that number rather
+than absent from the model — and that the model cannot tell a spironolactone from a
+potassium load, which the disqualification section now says.
+
+**This is the clearest case in the repository of a falsifiable test earning its keep.** It
+was written before the implementation, it named the property most easily got wrong, and it
+caught the wrong form before a single commit.
+
+### A4. What test 1 turned out to be worth
+
+The macula densa gain is estimated against the salt–renin data, as declared. **What the
+run shows is the structural claim, not the fit:** with the arm off, the renin ratio between
+38 and 230 mmol/day of sodium is **1.14**; with it on, **2.73**. §7's ceiling is confirmed
+by measurement rather than by argument, and exceeded.
+
+### A5. The join is real and chronically MUTE
+
+Potassium reaches aldosterone; aldosterone reaches distal sodium reabsorption. **And ADR
+0010's escape drives that effect to zero at every steady state** — doubling dietary
+potassium moves arterial pressure by less than one part in 10^12. Asserted, because the
+coupling graph would suggest the opposite. **Aldosterone in this model is chronically a
+reporter, not an effector**, and that is a fact about the escape structure rather than
+about potassium.
+
+## Amendment A6, 2026-09-05: the acute saline challenge refuted the first form and now bounds the second
+
+**Written after the challenge harness was run, which is the only reason any of it is
+known.** The suite passed 676 tests with the wrong form in place.
+
+### A6.1 The pressure and natriuretic-peptide terms were a double count
+
+Decision 1 assigned pressure natriuresis and the natriuretic peptide to the proximal
+segment, so the first implementation put both into distal delivery. Run against Lobo's
+two-litre saline challenge that gave **877 mL and 148 mmol over six hours against 563 and
+95**, with modelled renin driven onto its zero floor by an ordinary clinical infusion.
+
+**The argument against it is a priori and the run is only how it was noticed.**
+`RN.PRESSURE_NATRIURESIS.SLOPE` and `CV.ANP.NATRIURETIC_GAIN` are calibrated *against
+sodium excretion* — the chronic salt step and Lobo's own six-hour time course. The macula
+densa arm returns to sodium excretion through renin, aldosterone and `fr_mod`. Putting
+either gain into the signal counts the same measurement twice, and **decision 1 forbids
+changing what those two rows mean.** The pressure term double-counts twice over: MAP
+already reaches renin through the rectified arm decision 2 promised to leave untouched and
+to add to *alongside*, and a term in MAP is not alongside.
+
+Distal delivery is now the filtered load less proximal reabsorption and nothing else. That
+carries **41% of the chronic signal on its own** — 2046 to 2171 mEq/day between 38 and 230
+mmol/day of sodium — because GFR rises with volume. That path is admissible where the
+other two are not: `RN.GFR.VOLUME_SENSITIVITY` was calibrated against GFR, not against
+sodium excretion, so the loop does not re-use its own fit. **`RN.MD.RENIN_GAIN` therefore
+moved 2.480 → 5.396 against the same estimation set**, because the signal it reads is
+smaller.
+
+### A6.2 Two endpoints still fail, and the failure is a measurement
+
+| g_md | Lobo urine, 6 h | Lobo Na, 6 h | chronic PRA ratio |
+|---|---|---|---|
+| 0.000 | 580 mL | 97.7 mmol | 1.142 — the pressure-only ceiling |
+| 4.500 | 727 mL | 122.1 mmol | 2.382 |
+| 5.000 | 750 mL | 125.8 mmol | 2.572 — Lobo's urine band ends here |
+| **5.396** | **771 mL** | **129.1 mmol** | **2.733** — van den Bosch, and the ledger |
+
+Bands 380–750 mL and 63–127 mmol, both **assumed ±33%** because Lobo publishes no
+dispersion at all. The model is 2.8% and 1.7% outside them.
+
+**The acute challenge bounds the arm.** The macula densa can carry a chronic salt–renin
+ratio of about **2.57** before the acute limb leaves its band; the measurement is **2.73**.
+**Decision 7 said in advance that this gain absorbs the renal sympathetic traffic the model
+does not have**, and this is the first place that appears as a number: the last 6% of the
+chronic ratio is where the missing arm lives.
+
+**THE GAIN IS NOT TUNED TO MAKE THESE PASS.** Lobo is itself the estimation set for
+`RN.ANP.TAU`, and fitting one parameter to two datasets to make a third thing green is how
+a model stops being able to be wrong.
+
+### A6.3 The prediction
+
+**Building renal sympathetic traffic must LOWER `RN.MD.RENIN_GAIN` and bring both Lobo
+endpoints back inside their bands.** If it does not, the acute overshoot is something else
+— the missing candidate being tubuloglomerular feedback on the afferent arteriole, which
+this record explicitly does not build and which would blunt the delivery excursion that
+drives the overshoot.
+
+### A6.4 What this says about the suite
+
+**Every steady state was right while the form was wrong.** Resting values, the chronic salt
+sensitivity, sodium balance and 676 unit tests were bit-identical with the double count in
+place, because aldosterone escape zeroes the tubular effect at rest. Only the six-hour limb
+moved. **A model whose steady states are all correct can still be wrong about every
+transient**, and nothing but a challenge would have said so — directive 1.11 again.
+
 ## What is NOT decided
 
 - **Renal sympathetic traffic.**
@@ -167,4 +295,8 @@ the response to a potassium load.
 - **Tubuloglomerular feedback on the AFFERENT ARTERIOLE** — this record connects the
   macula densa to renin only, not to glomerular filtration.
 - **Diuretics, and any disease state.**
-- **Every numeric value.**
+- ~~**Every numeric value.**~~ Nine are in the ledger under `RN.*` and `K.*`.
+- **Aldosterone, distal flow and plasma potassium as SEPARATE influences on potassium
+  excretion.** They are lumped into one exponent because no human study separates them,
+  so spironolactone, primary aldosteronism and a pure flow change are all outside this
+  model — it cannot tell them from a change in plasma potassium.

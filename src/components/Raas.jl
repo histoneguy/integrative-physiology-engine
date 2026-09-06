@@ -138,7 +138,7 @@ using ModelingToolkit: t_nounits as t, D_nounits as D
 using ..LedgerParams:
     CV_MAP_SETPOINT, RAAS_RENIN_PRESSURE_THRESHOLD, RAAS_RENIN_PRESSURE_GAIN,
     RAAS_ALDO_PRA_LOG_SLOPE, RAAS_ALDO_REABSORPTION_GAIN, RAAS_PRA_TAU,
-    RAAS_ALDO_ESCAPE_TAU
+    RAAS_ALDO_ESCAPE_TAU, RN_MD_RENIN_GAIN, RAAS_ALDO_K_GAIN, K_PLASMA_REFERENCE
 
 """
     Raas(; name, enabled = true)
@@ -155,6 +155,13 @@ function Raas(; name, enabled::Bool = true)
         k_aldo  = RAAS_ALDO_REABSORPTION_GAIN        # unitless CALIBRATED
         tau_pra = RAAS_PRA_TAU                       # day
         tau_esc = RAAS_ALDO_ESCAPE_TAU               # day
+        # ADR 0021. Both INTENSIVE: the macula densa gain multiplies a
+        # dimensionless fractional deviation, and the potassium gain a
+        # concentration difference. Neither inherits a body-size scaling, which
+        # is deliberate - see the note on md_drive in Renal.jl.
+        g_md    = RN_MD_RENIN_GAIN                   # unitless CALIBRATED
+        g_aldo_K = RAAS_ALDO_K_GAIN                  # 1/(mmol/L)
+        K_p_ref = K_PLASMA_REFERENCE                 # mmol/L
     end
 
     vars = @variables begin
@@ -165,6 +172,8 @@ function Raas(; name, enabled::Bool = true)
         fr_raw(t)                  # unitless unescaped tubular effect
         esc(t) = 0.0               # unitless escape state
         fr_mod(t)                  # unitless OUTPUT to renal
+        md_drive(t)                # unitless INPUT from renal - macula densa
+        K_p(t)                     # mmol/L   INPUT from potassium
     end
 
     eqs = if enabled
@@ -173,16 +182,55 @@ function Raas(; name, enabled::Bool = true)
             # pressure falls BELOW threshold and is already at its floor above
             # it, so this term is one-sided by construction. Normalised by
             # MAP_ref so g_renin is a fractional-per-fractional gain.
-            renin_drive ~ ifelse(MAP < P_thr, (P_thr - MAP) / MAP_ref, 0.0),
+            # TWO DRIVES SINCE ADR 0021, AND THE SECOND IS WHAT LIFTS THE
+            # CEILING. The pressure arm is UNCHANGED - rectified, van Ochten's
+            # threshold, van Ochten's slope. HANDOVER section 7 records that a
+            # pressure-only form caps the achievable renin ratio between two
+            # pressures at the ratio of their drives, 1.40 between MAP 88 and 86,
+            # WHATEVER the gain, against a measured 2.73. A second input that
+            # moves with salt intake is the only thing that can exceed that, and
+            # a ceiling either is or is not exceeded.
+            #
+            # THE MACULA DENSA GAIN IS ESTIMATED AGAINST THOSE SALT-RENIN DATA and
+            # ADR 0021's falsifiable test 1 declared it so before the fact. Those
+            # data are an ESTIMATION SET and must never be reported as agreement -
+            # section 3.15 records what happened the last time that was forgotten.
+            renin_drive ~ ifelse(MAP < P_thr, (P_thr - MAP) / MAP_ref, 0.0) +
+                          g_md * md_drive,
 
             # First-order approach to the renin target. Written out here; the
             # parked version called a helper that does not exist.
-            D(pra) ~ ((1.0 + g_renin * renin_drive) - pra) / tau_pra,
+            # THE TARGET IS FLOORED AT ZERO, ADDED 2026-09-05 WITH THE MACULA
+            # DENSA ARM. Renin secretion cannot be negative, and the new arm is
+            # SIGNED where the pressure arm is rectified, so a large enough distal
+            # delivery drives the target below zero and plasma renin activity with
+            # it. The floor is INERT at every sourced parameter value - the target
+            # is 1.05 at the highest salt intake in the estimation set - and it is
+            # here because an unphysical negative would otherwise appear only in a
+            # regime nobody had looked at.
+            D(pra) ~ (max(1.0 + g_renin * renin_drive, 0.0) - pra) / tau_pra,
 
             # Compressive adrenal response: a power law with exponent < 1 IS a
             # log-log slope of that exponent. max() guards the fractional power
             # against a non-positive base during transients.
-            aldo ~ max(pra, 1e-6)^g_aldo,
+            # ALDOSTERONE HAS TWO INPUTS NOW, AND THAT IS THE JOIN ADR 0021
+            # EXISTS FOR. The renin power law is unchanged - Walker 1976's
+            # compressive log-log 0.537 - and plasma potassium enters
+            # multiplicatively and exponentially, which is the form Brunner's
+            # within-subject log ratios measure.
+            #
+            # THE RETURN ARM IS NOT BUILT: aldosterone does not act on potassium
+            # excretion here, because every human study found moves potassium
+            # intake and aldosterone together and neither gain separates from the
+            # other. Recorded on RAAS.ALDO.K_GAIN rather than filled with a
+            # plausible number.
+            #
+            # AND ESCAPE MUTES THIS CHRONICALLY. fr_mod goes to zero at steady
+            # state, so potassium's route into sodium handling is open in the
+            # transient and closed in the long run. That is a fact about ADR
+            # 0010's escape structure, not about potassium, and it is why this
+            # join changes what the model REPORTS more than what it DOES.
+            aldo ~ max(pra, 1e-6)^g_aldo * exp(g_aldo_K * (K_p - K_p_ref)),
 
             # Tubular effect before escape.
             fr_raw ~ k_aldo * (aldo - 1),

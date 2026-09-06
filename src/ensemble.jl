@@ -197,6 +197,24 @@ function member_remake(prob, sys, member; sex::Symbol = :male)
              # RECIPROCAL. MAP = CO*TPR and CO scales, so resistance must fall or
              # larger people come out hypertensive. See src/scaling.jl.
              sys.cv.TPR0           => LedgerParams.param(:CV_TPR_NOMINAL, sex) / sz,
+             # ADR 0021's potassium parameters, added 2026-09-05 - and this was
+             # the SEVENTH time this list has been short of a component's build-
+             # time scaling. The class-level test below caught it on the first run
+             # with worst = 0.263, which is what it was rebuilt to do after naming
+             # individual parameters failed six times. Intake is SURFACE-like,
+             # tracking metabolic rate; the distribution volume is MASS-like,
+             # because it is a volume. Everything else in Potassium.jl is a
+             # fraction, a concentration or an exponent, and none of them scales.
+             # ADR 0021's macula densa reference delivery. SURFACE-like, because
+             # it is a filtered flux - and the class-level test caught its absence
+             # too, in the same run as the potassium pair. That is three
+             # parameters missed in one change and all three found by one
+             # assertion, which is the argument for checking the CLASS rather than
+             # naming members.
+             sys.rn.Na_distal_ref  => sz * RN_GFR_NOMINAL * BF_NA_PLASMA_SETPOINT *
+                                      (1.0 - RN_NA_PROXIMAL_FRACTION),
+             sys.kp.K_intake       => sz * K_INTAKE_NOMINAL,
+             sys.kp.V_K            => mz * K_DISTRIBUTION_VOLUME,
              # ADR 0017's respiratory component, added 2026-09-04. THREE extensive
              # parameters and they must all appear or the loop stops being size
              # invariant: VCO2 sets the metabolic load, S_co2 is a ventilation per
