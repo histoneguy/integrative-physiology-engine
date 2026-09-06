@@ -143,3 +143,44 @@ able to be wrong is the whole difference between a prediction and a restatement.
 **The one place a scale error could still hide** is between an acid production measured
 as urinary net acid excretion and a bicarbonate space measured by isotope dilution. The
 extract must state the method behind each.
+
+---
+
+## 8. AMENDMENT, 2026-09-05: BRANCHES A3 AND A4 BOTH FIRED
+
+**Written after the sources were opened.** §5's rules were followed as stated and both
+failure branches fired, so the component that ADR 0020 designed was not built.
+
+**A3 — the renal response could not be sourced.** No published form with a gain in
+healthy humans. The quantitative acid–base literature is disorder-driven, which §2
+predicted in advance as directive 1.7's fifth subsystem.
+
+**A4 — net endogenous acid production spans threefold.** 22 mEq/day in ~90 healthy
+omnivorous adults by 24-hour urine (Mansouri 2024, open access, read in full) against a
+conventional 70, with 39 ± 38 mEq/day in 17 subjects fed *designed* acid and base diets
+(Parmenter 2020, open access, read in full) — a range of −9 to 95, and not an ordinary
+diet. **§5 A4 says the component is not built on that**, and it was not.
+
+### What was built, and why it is not a violation of §6
+
+§6 forbids using either reference range in §1 to set a parameter, and that is upheld:
+`AB.PH.ARTERIAL` is untouched and remains the target. **`AB.HCO3.PLASMA` was in §1's list
+as a target and is now an input**, which is the change that needs justifying.
+
+**The justification is that it is a MEASUREMENT, not a reference interval.** NHANES
+measured serum bicarbonate in 8809 adults on a clinical chemistry analyser; the row
+carries the mean and the SD of that measurement, not a percentile chosen to bracket
+health. The distinction is the same one `THY.FT4.EUTHYROID` turns on, and it is the
+reason the remaining test is still a test: **pH is composed from four independent
+measurements and none of them is a pH.**
+
+### The scale caveat, stated before it bit
+
+§7 named the one place a scale error could still hide. **It was somewhere else**: the
+NHANES value is a *venous serum total CO2*, not an arterial bicarbonate. The offset is
+1–2 mmol/L and it is **not corrected**, because correcting it would set the parameter
+from arterial pH. The model reports **7.420** and the arithmetic of the residual is on
+the row.
+
+**Third instance in this model, first one caught in advance.** §3.26 and §3.28 were both
+found after the number had been believed.

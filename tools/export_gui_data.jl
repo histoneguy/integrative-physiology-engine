@@ -114,6 +114,7 @@ const REPORT = [
     ("blood",          "bl₊CvO2",     "Mixed venous oxygen content", "mL/dL"),
     ("blood",          "bl₊SvO2",     "Mixed venous oxygen saturation", "fraction"),
     ("blood",          "bl₊ER",       "Oxygen extraction ratio", "fraction"),
+    ("blood",          "bl₊pH",       "Arterial pH", "-"),
     ("thyroid",        "ty₊FT4",      "Free thyroxine", "pmol/L"),
     ("thyroid",        "ty₊TSH",      "Thyrotropin", "mIU/L"),
     ("thyroid",        "ty₊th_mod",   "Thyroid metabolic multiplier", "multiplier"),
