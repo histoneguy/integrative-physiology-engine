@@ -61,7 +61,11 @@ what this minimal model exists to demonstrate.
 function Cardiovascular(; name, sex::Symbol = :male,
                         body_mass = BF_BODY_MASS_REFERENCE)
 
+    # SURFACE-like for the flows, MASS-like for the volumes - see src/scaling.jl.
+    # Cardiac output and stroke volume are conventionally indexed to body surface
+    # area; blood volume is entered in this ledger as mL/kg.
     sz = size_factor(body_mass)
+    mz = mass_factor(body_mass)
 
     pars = @parameters begin
         # EXTENSIVE: a flow and two volumes.
@@ -74,7 +78,7 @@ function Cardiovascular(; name, sex::Symbol = :male,
         # SEXED as of 2026-08-27 (Oberholzer 2024, CO rebreathing): 80.3 mL/kg in
         # men, 70.3 in women. f_pv and VC0 are DERIVED from it and are sexed with
         # it, so all three go through the ADR 0014 accessor.
-        BV0    = sz * LedgerParams.param(:CV_BLOOD_VOLUME_NOMINAL, sex)
+        BV0    = mz * LedgerParams.param(:CV_BLOOD_VOLUME_NOMINAL, sex)
         # TPR CARRIES THE RECIPROCAL, and this is the line that keeps arterial
         # pressure intensive. MAP = CO*TPR, CO ~ s, so TPR ~ 1/s or big people
         # would be hypertensive. Physically that is right: resistance falls as
@@ -89,7 +93,7 @@ function Cardiovascular(; name, sex::Symbol = :male,
         f_pv   = LedgerParams.param(:CV_PLASMA_ECF_FRACTION, sex)   # DERIVED from BV0
         G_vr   = CV_VENOUS_RETURN_SENSITIVITY      # CALIBRATED - see ledger
         f_c    = CV_CENTRAL_FRACTION               # PLACEHOLDER - cancels, see below
-        VC0    = sz * LedgerParams.param(:CV_CENTRAL_VOLUME_NOMINAL, sex)  # = f_c*BV0
+        VC0    = mz * LedgerParams.param(:CV_CENTRAL_VOLUME_NOMINAL, sex)  # = f_c*BV0
         # G_vc is dCO/dV_central. Both numerator and denominator are extensive,
         # so the SENSITIVITY is intensive and must NOT scale.
         G_vc   = CV_CENTRAL_CO_SENSITIVITY         # DERIVED = G_vr / f_c
