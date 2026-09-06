@@ -146,6 +146,32 @@ output and oxygen consumption in the same subjects, which makes the extraction r
 internal rather than composed. **Its own pre-registered pass**; re-sourcing it inside the
 metabolic pass would have been adjusting a second parameter to rescue the first.
 
+### B9. Two acute saline endpoints now fail, and the failure is a bound rather than a bug — NEW, 2026-09-05
+
+**`validation/challenges.jl` exits nonzero on this branch and it is meant to.** The macula
+densa arm (ADR 0021) gives distal sodium delivery a route to renin and renin a route back
+to sodium excretion. Every steady state is untouched — aldosterone escape zeroes the
+tubular effect at rest — and Lobo's six-hour saline limb is not: **771 mL and 129 mmol
+against bands of 380–750 and 63–127**, which are 2.8% and 1.7% over and are themselves
+assumed ±33% because Lobo publishes no dispersion.
+
+| `g_md` | urine, 6 h | Na, 6 h | chronic PRA ratio |
+|---|---|---|---|
+| 0.000 | 580 mL | 97.7 | 1.142 — the pressure-only ceiling |
+| 5.000 | 750 mL | 125.8 | 2.572 — the acute band ends here |
+| **5.396** | **771 mL** | **129.1** | **2.733** — van den Bosch, and the ledger |
+
+**So the acute data bound the arm: the macula densa can carry a chronic salt–renin ratio
+of about 2.57, and the measurement is 2.73.** ADR 0021 decision 7 said this gain would
+absorb the renal sympathetic traffic the model lacks; this is the first number that shows
+it. **My recommendation: leave it.** The prediction — that building the sympathetic arm
+lowers `g_md` and brings both endpoints back inside — is worth more than two green lines
+bought by fitting `g_md` to the dataset that already fixes `RN.ANP.TAU`.
+
+**The decision is whether you want the harness green instead.** It would take capping the
+gain near 5.0 and reporting the chronic ratio as 2.57, which is honest but spends the
+prediction. §3.32 and ADR 0021 amendment A6.
+
 ### B6. ~~Body size scaling is linear where physiology is sub-linear~~ — DONE 2026-09-05
 
 Fixed in §3.30. Height and body surface area are in the ledger from 9300 measured NHANES
@@ -180,9 +206,14 @@ this order.
 1. **The baroreflex has one effector while heart rate exists.** ADR 0009 gives it
    resistance only. Deliberately deferred because the reflex resets and therefore nulls
    at every steady state, so the cardiac gain needs its own sourcing pass.
-2. **Renin is pressure-only.** §7 already records that no gain reproduces the human
-   salt–renin response, because **macula densa sodium delivery and renal sympathetic
-   traffic are both absent**. This is the largest structural gap in the model.
+2. ~~**Renin is pressure-only.**~~ **HALF BUILT 2026-09-05** (§3.31, §3.32, ADR 0021).
+   The macula densa arm exists, and the ceiling §7 recorded against the model — a renin
+   ratio capped at 1.14 across the human salt range, against a measured 2.73 — is
+   exceeded. **Potassium arrived with it**, because aldosterone is one node and renin is
+   only half its input; the model reports plasma potassium for the first time.
+   **RENAL SYMPATHETIC TRAFFIC IS STILL ABSENT**, the macula densa gain absorbs whatever
+   it would have contributed, and B9 is where that shows up as a number. That arm is the
+   remaining half and it is the next renal item.
 3. **Acid–base: pH is BUILT, compensation is NOT** (§3.29, 2026-09-05). Arterial pH
    composes from a sourced pK, solubility, bicarbonate and PCO2 — 7.42 against a human
    7.40, with the 0.02 residual named as an unapplied venous-to-arterial offset. **What

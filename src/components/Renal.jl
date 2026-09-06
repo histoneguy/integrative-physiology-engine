@@ -63,7 +63,8 @@ using ..LedgerParams:
     RN_AUTOREG_LOWER, RN_AUTOREG_UPPER, ADH_URINE_OSM_MAX, RN_URINE_SOLUTE_LOAD,
     CV_MAP_SETPOINT, BF_H2O_INTAKE_NOMINAL, BF_H2O_INSENSIBLE_LOSS,
     BF_BODY_MASS_REFERENCE, BF_ECF_MASS_FRACTION, CV_ANP_NATRIURETIC_GAIN, RN_ANP_TAU,
-    RN_GFR_VOLUME_SENSITIVITY, RN_GFR_VOLUME_RANGE
+    RN_GFR_VOLUME_SENSITIVITY, RN_GFR_VOLUME_RANGE, RN_NA_PROXIMAL_FRACTION,
+    BF_NA_PLASMA_SETPOINT
 
 """
     Renal(; name)
@@ -101,6 +102,14 @@ function Renal(; name, solute_tracking::Bool = true,
         GFR0     = sz * RN_GFR_NOMINAL
         FR_Na    = RN_NA_FRACTIONAL_REABSORPTION     # INTENSIVE - a fraction
         G_pn     = sz * RN_PRESSURE_NATRIURESIS_SLOPE  # CALIBRATED - see ledger
+        # ADR 0021. INTENSIVE - a fraction. It sets the SCALE of distal delivery
+        # and is NOT separately identifiable from the macula densa gain that
+        # multiplies the fractional deviation; see its ledger note.
+        FR_prox  = RN_NA_PROXIMAL_FRACTION
+        # EXTENSIVE and SURFACE-like, exactly as GFR0 is: it is a filtered flux.
+        # The ratio in md_drive is therefore size-free.
+        Na_distal_ref = sz * RN_GFR_NOMINAL * BF_NA_PLASMA_SETPOINT *
+                        (1.0 - RN_NA_PROXIMAL_FRACTION)
         MAP_lo   = RN_AUTOREG_LOWER
         MAP_hi   = RN_AUTOREG_UPPER
         MAP_ref  = CV_MAP_SETPOINT
@@ -234,6 +243,8 @@ function Renal(; name, solute_tracking::Bool = true,
         gfr_vol_mod(t)      # unitless GFR multiplier from ECF volume
         Na_filtered(t)      # mEq/day
         Na_reabsorbed(t)    # mEq/day
+        Na_distal(t)        # mEq/day  distal sodium delivery, ADR 0021
+        md_drive(t)         # unitless OUTPUT to raas - the macula densa signal
         Na_excr(t)          # mEq/day  OUTPUT
         H2O_excr(t)         # L/day    OUTPUT
         FR_effective(t)     # unitless
@@ -327,6 +338,53 @@ function Renal(; name, solute_tracking::Bool = true,
                              G_pn * (MAP - MAP_ref) / Na_filtered -
                              anp_sig / Na_filtered, 0.0, 1.0),
 
+        # DISTAL SODIUM DELIVERY, ADR 0021. THE SODIUM EQUATION ABOVE IS UNTOUCHED
+        # AND THAT IS THE POINT: this defines a VARIABLE, it does not restructure
+        # anything, so the split is neutral in the strongest possible sense and
+        # every existing result is bit-identical by construction rather than by
+        # arithmetic that has to be checked.
+        #
+        # Delivery to the macula densa is the filtered load less what the proximal
+        # tubule and loop reabsorb.
+        #
+        # THE PRESSURE AND NATRIURETIC-PEPTIDE TERMS ARE DELIBERATELY ABSENT, AND
+        # THAT IS A CORRECTION - they were here for one afternoon and the acute
+        # saline challenge refuted them the first time it was run. ADR 0021
+        # amendment A6 and HANDOVER section 3.32 record it in full.
+        #
+        # The argument is a priori and the run is only how it was noticed. G_pn and
+        # G_anp are CALIBRATED AGAINST SODIUM EXCRETION - the chronic salt step and
+        # Lobo's six-hour time course. The macula densa arm returns to sodium
+        # excretion through renin, aldosterone and fr_mod. Feeding a gain that was
+        # fitted to an excretion into a loop that produces that same excretion
+        # counts the measurement twice, and ADR 0021 decision 1 forbids changing
+        # what those two rows mean. The pressure term double-counts twice over:
+        # MAP already reaches renin through the rectified arm this record promised
+        # to leave untouched and to add to ALONGSIDE, and a term in MAP is not
+        # alongside.
+        #
+        # WHAT IS LEFT IS THE FILTERED LOAD, and it carries 41% of the chronic
+        # signal on its own - 2046 to 2171 mEq/day between 38 and 230 mmol/day of
+        # sodium - because GFR rises with volume. That path is admissible where the
+        # other two are not: RN.GFR.VOLUME_SENSITIVITY was calibrated against GFR,
+        # not against sodium excretion, so the loop does not re-use its own fit.
+        #
+        # IT CONTAINS NO NEW INFORMATION ABOUT SEGMENTAL HANDLING and ADR 0021's
+        # disqualification section says so. FR_prox is assumed and is not
+        # separately identifiable from the gain that reads this signal.
+        Na_distal ~ Na_filtered * (1.0 - FR_prox) * renal_mod,
+
+        # THE MACULA DENSA SIGNAL, as a FRACTIONAL deficit of delivery below its
+        # reference. Fractional on purpose: a dimensionless drive cannot inherit a
+        # body-size scaling, which is the mistake section 3.30 records making with
+        # G_anp and which is avoided here by construction rather than by care.
+        #
+        # SIGNED, NOT RECTIFIED, unlike the pressure arm. The pressure relation is
+        # rectified because renin plateaus above a measured threshold; nothing
+        # found says the macula densa arm does, and inventing a threshold to match
+        # the other arm's shape would be a functional form chosen here.
+        md_drive ~ (Na_distal_ref - Na_distal) / Na_distal_ref,
+
         # First-order approach to the volume-keyed natriuretic target.
         D(anp_sig) ~ (G_anp * (V_blood - V_blood_ref) - anp_sig) / tau_anp,
 
@@ -405,6 +463,17 @@ function renal_couplings()
                  note = "MAP drives filtration and pressure natriuresis; hydraulic"),
         Coupling(:renal, :bodyfluids, Conservation,
                  note = "Na and water excretion are mass fluxes out of ECF"),
+        # DECLARED 2026-09-05, ADR 0021. THE MACULA DENSA ARM, and it is the
+        # second of the two renin inputs HANDOVER section 7 names as missing.
+        # Mechanical rather than Neurohumoral because the signal is sensed at the
+        # juxtaglomerular apparatus with no lag in this model - the same reading
+        # as bodyfluids -> adh. The renin STATE downstream carries the lag.
+        #
+        # RENAL SYMPATHETIC TRAFFIC IS STILL ABSENT and would be a third edge into
+        # raas from a component that does not exist.
+        Coupling(:renal, :raas, Mechanical,
+                 gain_param = :RN_MD_RENIN_GAIN,
+                 note = "distal sodium delivery inhibits renin at the macula densa"),
         # DECLARED 2026-09-03. bodyfluids -> renal already existed for C_Na and is
         # declared in BodyFluids.jl; V_ecf now drives filtration through
         # gfr_vol_mod as well, and the note there already said it did.

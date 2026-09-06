@@ -118,6 +118,9 @@ const REPORT = [
     ("thyroid",        "ty₊FT4",      "Free thyroxine", "pmol/L"),
     ("thyroid",        "ty₊TSH",      "Thyrotropin", "mIU/L"),
     ("thyroid",        "ty₊th_mod",   "Thyroid metabolic multiplier", "multiplier"),
+    ("potassium",      "kp₊K_p",      "Plasma potassium", "mmol/L"),
+    ("potassium",      "kp₊K_excr",   "Renal potassium excretion", "mmol/day"),
+    ("renal",          "rn₊Na_distal","Distal sodium delivery", "mEq/day"),
 ]
 
 snapshot(sys, sol) = [final(sys, sol, n) for (_, n, _, _) in REPORT]

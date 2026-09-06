@@ -752,7 +752,14 @@ using SciMLBase
         # drives a metabolic load and nothing in this model feeds back onto it.
         # An inbound edge appearing means something has been wired into thyroid
         # secretion, which ADR 0019 does not decide.
-        @test r.n_couplings == 17
+        #
+        # 17 -> 20 on 2026-09-05, ADR 0021: renal -> raas (the macula densa arm),
+        # renal -> potassium, potassium -> raas. THE MISSING FOURTH IS THE RETURN
+        # ARM, raas -> potassium, and its absence is the point: aldosterone does
+        # not act on potassium excretion in this model because no human study
+        # separates that gain from the potassium load that drives it. If it ever
+        # appears here, that gain has been invented.
+        @test r.n_couplings == 20
 
         cs = model_couplings()
         # ADR 0003: instantaneous couplings are not partitionable. If this ever
@@ -1287,7 +1294,11 @@ using SciMLBase
         # and the reason is written on THY.FT4.TAU: ten days cannot be represented
         # algebraically on a model that runs four hundred. Thyrotropin, which
         # equilibrates in minutes, got no state - same argument as this one.
-        @test length(IPE.mtk_unknowns(sys)) == 9
+        #
+        # 9 -> 10 the same day, ADR 0021: plasma potassium. Acid-base got NO state
+        # in between, because both halves of its balance failed to source; the
+        # count is a record of which balances could be closed.
+        @test length(IPE.mtk_unknowns(sys)) == 10
 
         # RESTING PaCO2 RETURNS THE SOURCED INPUT, AND THIS IS NOT A PREDICTION.
         # ADR 0017's ORIGINAL decision 1 made PaCO2 an output of the chemoreflex, as
@@ -1455,9 +1466,10 @@ using SciMLBase
         # NO FEEDBACK. ADR 0018 decision 1 says this component closes no loop, so
         # removing it must leave every other result untouched. Asserted by the
         # STATE COUNT rather than by re-solving: an oxygen feedback would have to
-        # enter through a differential equation somewhere, and there are still nine
-        # - eight plus thyroxine, and none of them is an oxygen state.
-        @test length(IPE.mtk_unknowns(build_model())) == 9
+        # enter through a differential equation somewhere, and there are still ten
+        # - eight plus thyroxine plus potassium, and none of them is an oxygen
+        # state.
+        @test length(IPE.mtk_unknowns(build_model())) == 10
 
         # ------------------------------------------------------------------
         # THE FICK ARM, ADDED 2026-09-05. ADR 0018 deferred venous content, the
@@ -1760,6 +1772,172 @@ using SciMLBase
         @test 0.0 < frac < 0.40
 
         @info "thyroid" FT4=fin(sys, sol, "ty₊FT4") TSH=tsh th_mod=fin(sys, sol, "ty₊th_mod") tau_eff=tau_eff
+    end
+
+    @testset "ADR 0021: macula densa renin, potassium, and the join at aldosterone" begin
+        L = IPE.LedgerParams
+        sys = build_model()
+        sol = IPE.solve_individual(sys; tspan_days = 400.0)
+        fin(s, so, n) = begin
+            v = NaN
+            for u in IPE.mtk_unknowns(s)
+                String(Symbol(u)) == n * "(t)" && (v = so[u][end])
+            end
+            if isnan(v)
+                for o in observed(s)
+                    String(Symbol(o.lhs)) == n * "(t)" && (v = so[o.lhs][end])
+                end
+            end
+            v
+        end
+
+        pget(s, n) = (for p in parameters(s)
+                          occursin(n, String(Symbol(p))) && return p
+                      end; error("no parameter $n"))
+
+        # THE SPLIT IS OBSERVATIONAL AND THEREFORE EXACTLY NEUTRAL. ADR 0021
+        # decision 1 promised a split that changes nothing, and the way it keeps
+        # that promise is by DEFINING a variable rather than restructuring the
+        # sodium equation - which is untouched. Every pinned number elsewhere in
+        # this file is the rest of the assertion; here it is enough that sodium
+        # excretion still equals intake exactly.
+        @test isapprox(fin(sys, sol, "rn₊Na_excr"), L.BF_NA_INTAKE_NOMINAL; rtol = 1e-6)
+
+        # DISTAL DELIVERY IS AN ORDER OF MAGNITUDE ABOVE EXCRETION, which is what
+        # a distal segment is for: about 2140 mEq/day reaches it and 205 leaves in
+        # the urine, so the distal nephron reabsorbs about 90% of what it is given.
+        nd = fin(sys, sol, "rn₊Na_distal")
+        @test 1500.0 < nd < 3000.0
+        @test nd > 5.0 * fin(sys, sol, "rn₊Na_excr")
+
+        # AND THE SIGNAL IS ZERO AT THE OPERATING POINT. A drive that was not near
+        # zero at rest would mean the reference delivery had been computed
+        # inconsistently with the delivery itself.
+        @test abs(fin(sys, sol, "rn₊md_drive")) < 0.01
+
+        # NOTHING CALIBRATED AGAINST SODIUM EXCRETION MAY ENTER THIS SIGNAL, AND
+        # THIS IS THE GUARD. Distal delivery must be the filtered load less
+        # proximal reabsorption and NOTHING ELSE - asserted as an exact identity so
+        # that adding any term at all breaks it.
+        #
+        # The first implementation of ADR 0021 put the pressure-natriuresis and
+        # natriuretic-peptide terms in here, on the reasoning that both act
+        # proximally. Both are CALIBRATED AGAINST SODIUM EXCRETION, and this signal
+        # returns to sodium excretion through renin, aldosterone and fr_mod, so it
+        # counted the same measurement twice. Every steady state stayed
+        # bit-identical - aldosterone escape sees to that - and Lobo's six-hour
+        # saline limb went to 877 mL against 563. HANDOVER section 3.32, section 5
+        # item 22, ADR 0021 amendment A6.
+        #
+        # A CALIBRATED PARAMETER IS RE-ESTIMATED BY BEING GIVEN A SECOND PATH, not
+        # only by editing its value, and no gate in this repository can see that.
+        # This assertion is what stands in for one.
+        let prob = ODEProblem(sys, Pair[], (0.0, 400.0), Pair[]),
+            fp = prob.ps[pget(sys, "rn₊FR_prox")]
+            @test isapprox(nd,
+                           fin(sys, sol, "rn₊Na_filtered") * (1.0 - fp) *
+                           fin(sys, sol, "rn₊renal_mod"); rtol = 1e-12)
+        end
+
+        # ADR 0021 FALSIFIABLE TEST 1 - AND IT IS A FIT, DECLARED ONE BEFORE THE
+        # FACT. The macula densa gain was solved against van den Bosch's renin
+        # ratio, so reproducing that ratio is arithmetic and MUST NOT be reported
+        # as agreement. What is asserted here is the part that is NOT arithmetic:
+        # that the FORM can exceed the pressure-only ceiling at all.
+        #
+        # HANDOVER section 7: a pressure-only rectified relation caps the renin
+        # ratio between two pressures at the ratio of their drives, whatever the
+        # gain. Measured with g_md = 0 that ceiling is 1.14 here; van den Bosch
+        # measures 2.73. A ceiling either is or is not exceeded.
+        function pra_at(na, gmd)
+            prob = ODEProblem(sys, Pair[pget(sys, "bf₊Na_intake") => na,
+                                        pget(sys, "ra₊g_md") => gmd],
+                              (0.0, 400.0), Pair[])
+            s = solve(prob, Rodas5P(); abstol = 1e-10, reltol = 1e-10, saveat = 400.0)
+            v = NaN
+            for u in IPE.mtk_unknowns(sys)
+                String(Symbol(u)) == "ra₊pra(t)" && (v = s[u][end])
+            end
+            v
+        end
+        # van den Bosch's two verified intakes, 24 h urinary sodium 38 and 230.
+        ratio_off = pra_at(38.0, 0.0) / pra_at(230.0, 0.0)
+        ratio_on  = pra_at(38.0, L.RN_MD_RENIN_GAIN) / pra_at(230.0, L.RN_MD_RENIN_GAIN)
+        @test ratio_off < 1.5              # the pressure-only ceiling, unaided
+        @test ratio_on > 2.5               # the form can exceed it
+        @test isapprox(ratio_on, 5.74 / 2.10; rtol = 1e-3)   # ARITHMETIC, not agreement
+
+        # RENIN MUST STAY POSITIVE. The macula densa arm is signed where the
+        # pressure arm is rectified, so a large enough delivery drives the target
+        # negative; the target is floored at zero. Asserted at four times the
+        # highest intake in the estimation set, which is well outside anything
+        # this model is valid for and exactly where an unphysical negative would
+        # otherwise hide.
+        @test pra_at(900.0, L.RN_MD_RENIN_GAIN) >= 0.0
+
+        # POTASSIUM. The balance closes: what the kidney excretes is what the diet
+        # delivers, less the stool fraction. This is a CLOSURE CHECK and not a
+        # prediction - K.FRACTIONAL_EXCRETION is derived to make it true, which is
+        # why ADR 0021's falsifiable test 2 is VOID and the ledger says so.
+        @test isapprox(fin(sys, sol, "kp₊K_excr"),
+                       L.K_RENAL_FRACTION * L.K_INTAKE_NOMINAL; rtol = 1e-4)
+        @test isapprox(fin(sys, sol, "kp₊K_p"), L.K_PLASMA_REFERENCE; rtol = 1e-3)
+
+        # WHAT IS NOT A RESTATEMENT IS THE RESPONSE. Doubling dietary potassium
+        # must raise plasma potassium - and by MUCH less than twofold, because
+        # excretion rises with the concentration. That is the property which makes
+        # the extracellular pool survivable and the one a one-compartment model is
+        # most likely to get wrong.
+        function kp_at(ki)
+            prob = ODEProblem(sys, Pair[pget(sys, "kp₊K_intake") => ki],
+                              (0.0, 400.0), Pair[])
+            s = solve(prob, Rodas5P(); abstol = 1e-10, reltol = 1e-10, saveat = 400.0)
+            v = NaN
+            for u in IPE.mtk_unknowns(sys)
+                String(Symbol(u)) == "kp₊K_p(t)" && (v = s[u][end])
+            end
+            v
+        end
+        k_lo = kp_at(0.5 * L.K_INTAKE_NOMINAL)
+        k_hi = kp_at(2.0 * L.K_INTAKE_NOMINAL)
+        @test k_hi > fin(sys, sol, "kp₊K_p") > k_lo
+        @test k_hi / k_lo < 4.0
+
+        # THE JOIN. Plasma potassium reaches aldosterone, which is the whole
+        # reason ADR 0021 is one record and not two. A potassium load must raise
+        # aldosterone.
+        function aldo_at(ki)
+            prob = ODEProblem(sys, Pair[pget(sys, "kp₊K_intake") => ki],
+                              (0.0, 400.0), Pair[])
+            s = solve(prob, Rodas5P(); abstol = 1e-10, reltol = 1e-10, saveat = 400.0)
+            v = NaN
+            for o in observed(sys)
+                String(Symbol(o.lhs)) == "ra₊aldo(t)" && (v = s[o.lhs][end])
+            end
+            v
+        end
+        @test aldo_at(2.0 * L.K_INTAKE_NOMINAL) > aldo_at(0.5 * L.K_INTAKE_NOMINAL)
+
+        # AND THE JOIN IS CHRONICALLY MUTE, WHICH IS A FINDING RATHER THAN A BUG.
+        # Aldosterone's tubular effect is fr_mod, and ADR 0010's escape drives
+        # fr_mod to zero at every steady state. So potassium reaches aldosterone,
+        # aldosterone reaches sodium, and the long-run sodium handling does not
+        # move. Asserted because a reader would otherwise reasonably assume the
+        # opposite from the coupling graph.
+        function map_at(ki)
+            prob = ODEProblem(sys, Pair[pget(sys, "kp₊K_intake") => ki],
+                              (0.0, 400.0), Pair[])
+            s = solve(prob, Rodas5P(); abstol = 1e-10, reltol = 1e-10, saveat = 400.0)
+            v = NaN
+            for o in observed(sys)
+                String(Symbol(o.lhs)) == "cv₊MAP(t)" && (v = s[o.lhs][end])
+            end
+            v
+        end
+        @test isapprox(map_at(2.0 * L.K_INTAKE_NOMINAL),
+                       map_at(0.5 * L.K_INTAKE_NOMINAL); rtol = 1e-6)
+
+        @info "macula densa and potassium" Na_distal=nd md_drive=fin(sys, sol, "rn₊md_drive") ratio_off=ratio_off ratio_on=ratio_on K_p=fin(sys, sol, "kp₊K_p") K_excr=fin(sys, sol, "kp₊K_excr")
     end
 
     @testset "modulators are off by default" begin
