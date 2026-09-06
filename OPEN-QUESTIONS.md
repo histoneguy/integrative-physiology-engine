@@ -172,6 +172,36 @@ bought by fitting `g_md` to the dataset that already fixes `RN.ANP.TAU`.
 gain near 5.0 and reporting the chronic ratio as 2.57, which is honest but spends the
 prediction. §3.32 and ADR 0021 amendment A6.
 
+### B10. The potassium fraction is a constant and humans are not, and two good groups disagree — NEW, 2026-09-05
+
+**Found by the owner catching a false claim, not by any check here.** `K.RENAL_FRACTION`
+is 0.884 at every intake. The Utrecht balance studies put it lower and *rising with
+intake*: Hené 1986 measured 0.63 at 80 mEq/day and 0.78 at 300; Rabelink 1990 about 0.80
+at 400 mmol/day. Brunner 1970's six studies — the ones actually in the ledger, read in
+full — give 0.884.
+
+**Not averaged, and that is the decision I want checked.** All three Utrecht values are
+abstract-level; none of those papers is open access. Pooling abstracts against a full-text
+extraction is exactly the kind of after-the-fact choice `validation/pooling.md` exists to
+prevent, so it is recorded instead. **If you want it pooled, say so and it becomes a
+pre-registered pass** — and the honest version of that pass makes the fraction a function
+of intake rather than a constant, which is a structural change and not a re-average.
+
+### B11. There is no potassium adaptation, and adaptation is what the literature is about — NEW, 2026-09-05
+
+Rabelink 1990's title is *early and late adjustment to potassium loading*: by day 20 of a
+400 mmol/day load, **renin and aldosterone had returned to baseline** while kaliuresis was
+maintained. This model holds aldosterone at **2.80× baseline for ever** — its excretion
+relation is fixed and its only adaptive machinery, aldosterone escape, acts on the sodium
+side.
+
+**So the model gets the direction and rough size of a chronic potassium load right and the
+hormone time course wrong**, and that is the bounded claim to quote from it. Hené 1986
+concluded the adaptation is a shift of sodium reabsorption to a distal, aldosterone-sensitive
+site — a *segmental* claim, which ADR 0021's disqualification section says this model may
+make no statement about, so building it means building segments for real rather than
+observationally.
+
 ### B6. ~~Body size scaling is linear where physiology is sub-linear~~ — DONE 2026-09-05
 
 Fixed in §3.30. Height and body surface area are in the ledger from 9300 measured NHANES

@@ -30,11 +30,26 @@ EVIDENCE (ADR 0006)
 WHY PLASMA POTASSIUM IS AN INPUT, WHICH VOIDS ADR 0021's FALSIFIABLE TEST 2
 
 The pre-registration named plasma potassium a TARGET and forbade using it to set
-a parameter. Renal potassium clearance in healthy adults could not be sourced -
-searches for fractional potassium excretion, potassium clearance and renal
-potassium handling return ketoacidosis, chronic kidney disease, diuretics,
-transplantation and Gitelman syndrome. Directive 1.7, disqualifying a SIXTH
-literature, which the pre-registration predicted in advance.
+a parameter.
+
+A RETRACTION FIRST. This docstring said renal potassium clearance in healthy
+adults could not be sourced, and that was FALSE. It generalised what a handful of
+queries returned - ketoacidosis, chronic kidney disease, diuretics, Gitelman - into
+a claim about the literature, which is HANDOVER section 5 item 20, the failure mode
+this repository named after RESP.CO2.PRODUCTION.
+
+THE SEARCH TERM WAS WRONG, NOT THE LITERATURE. `Fractional excretion of potassium`
+is a bedside phrase for separating renal from extrarenal hypokalaemia, so it
+returns disease. The physiology is under potassium balance, potassium loading and
+adaptation in normal man, and it is the Utrecht group - Hene 1986 (PMID 3523191),
+Hene 1988 (PMID 3199680), Rabelink 1990 (PMID 2266680), each six healthy
+volunteers on controlled intake. All three are read at ABSTRACT level only and
+none is open access; they are used as a COMPARISON in
+validation/macula_densa_potassium_extract.py section 4b, and they set nothing here.
+
+WHAT REMAINS TRUE is that no admissible study gives this model's own composite -
+dietary intake, plasma potassium and glomerular filtration in the same healthy
+subjects - so FE_K is still DERIVED rather than reported.
 
 Branch P4 said not to build a balance whose outflow is invented. The outflow's
 SHAPE is sourced - excretion is proportional to filtered load and to plasma
@@ -49,6 +64,21 @@ ITS CLEARANCE IS MEASURED IN NOBODY HEALTHY, THE CONCENTRATION IS THE INPUT.
 WHAT REMAINS A PREDICTION is the RESPONSE - how plasma potassium moves when
 intake or filtration changes - because that follows from the sourced shape and
 not from the derived level.
+
+AND FE_K IS THE WRONG THING TO ARGUE ABOUT, WHICH IS MEASURABLE. Sweeping it from
+0.04 to 0.16 moves steady-state plasma potassium only from 4.18 to 3.87 mmol/L,
+every value inside the human range, because the exponent below pins it. So ADR
+0021's falsifiable test 2 would be a WEAK test even with FE_K perfectly sourced,
+and that - not the sourcing - is the honest reason plasma potassium is not a
+strong prediction of this structure.
+
+TWO MEASURED DISAGREEMENTS, both recorded in the extract's section 4b. The urinary
+fraction is a CONSTANT here and is not one in humans: Hene measured 0.63 at 80
+mEq/day rising to 0.78 at 300, Rabelink about 0.80 at 400, all below the 0.884
+this model uses at every intake. And there is NO POTASSIUM ADAPTATION here at all
+- Rabelink found renin and aldosterone back at baseline by day 20 of a 400 mmol/day
+load with kaliuresis maintained, where this model holds aldosterone at 2.80 times
+baseline for ever.
 
 WHAT THIS DELIBERATELY OMITS
   Every transcellular shift: insulin, beta-agonists, acid-base, exercise, cell
