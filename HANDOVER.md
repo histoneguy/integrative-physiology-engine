@@ -2112,6 +2112,100 @@ the salt-sensitivity numbers nothing in it was fitted to anything.
 
 ---
 
+### 3.29 THE ACID–BASE LIMB WAS DESIGNED AS A STATE AND BUILT AS A COMPOSITION
+
+**Date: 2026-09-05.** ADR 0020 was written in the morning and implemented in the
+afternoon. **Its central decision did not survive the sourcing, and both pre-registered
+failure branches fired.**
+
+#### What was designed, and why it was not built
+
+A bicarbonate STATE, with renal net acid excretion balancing endogenous acid production.
+Both halves failed:
+
+- **Branch A3 — the renal response to plasma bicarbonate.** No published form with a gain
+  in healthy humans. The quantitative acid–base literature is disorder-driven almost
+  without exception. **`acid_base_prereg.md` §2 predicted this in advance** as directive
+  1.7's **fifth** subsystem, which is why what follows reports a search rather than an
+  absence.
+- **Branch A4 — net endogenous acid production spans threefold.**
+
+| source | n | preparation | NAE |
+|---|---|---|---|
+| Mansouri 2024, read in full | 90 | healthy omnivores, habitual diet, 24 h urine | **22 mEq/day** |
+| Parmenter 2020, read in full | 17 | fed *designed* acid and base diets | 39 ± 38, range −9 to 95 |
+| convention | — | 1 mEq/kg/day | ~70 |
+
+**The owner's averaging rule applies and does not rescue it.** Average two good papers
+when they are close; report the spread when they are not. These are not close, **and they
+do not measure the same thing** — one is a habitual diet, one is a designed pair of
+extremes — so averaging would produce a number describing neither.
+
+**A balance whose input flux is uncertain threefold and whose renal gain is unsourced is a
+balance in which the set-point does all the work.** Test 1 would have been void for
+exactly the reason ADR 0019's test 2 was.
+
+#### What was built: the third dependency inversion
+
+**Plasma bicarbonate is an INPUT and arterial pH is the OUTPUT.** NHANES 2007–2012
+standard biochemistry profile, **n = 8809** adults: 25.04 ± 2.24 mmol/L.
+
+**No state. No eleventh component.** Three constants and one equation in `Blood.jl`,
+which already receives arterial PCO2.
+
+Third inversion after arterial PCO2 (ADR 0017's amendment) and the thyroid operating
+point (§3.26), and the same reason each time: **source the quantity that is actually
+measured.** Bicarbonate is on every basic metabolic panel; renal net acid excretion is
+measured in nobody healthy.
+
+#### The test that survives is a real one, and the model is 0.02 high
+
+**Four independent measurements compose into a fifth and none of them is a pH:**
+
+    pK          6.10       by titration      Bellelli 2025, citing Ellison 1958
+    solubility  0.030      by tonometry      Bellelli 2025
+    HCO3        25.04      8809 adults       NHANES
+    PaCO2       40.0       ADR 0017 input
+    ---------------------------------------------------------------
+    pH          7.419      against a human arterial 7.40 (7.35-7.45)
+
+**They compose — a millimole is a millimole — which is exactly what the free-thyroxine
+assays of §3.26 were not.** So this can be wrong, and it is, by 0.02.
+
+**THE RESIDUAL IS NAMED AND NOT CLOSED.** `AB.HCO3.PLASMA` is a **venous serum total
+CO2** — what a chemistry panel measures — where Henderson–Hasselbalch wants **arterial
+bicarbonate**. Total CO2 includes dissolved gas and carbamino compounds; venous blood
+carries more of all three. The conventional offset is 1–2 mmol/L, and **subtracting 1
+gives 7.402.**
+
+Applying that correction would set the parameter from the quantity under test. So it is
+reported.
+
+**THIRD MEASUREMENT-SCALE MISMATCH IN THIS MODEL, AND THE FIRST CAUGHT BEFORE THE NUMBER
+WAS BELIEVED.** §3.26 and §3.28 were both found afterwards. This one was written into the
+pre-registration's admissibility section — *"arterial, arterialised-capillary and venous
+blood are not interchangeable"* — before any source was opened, and the row carries the
+arithmetic instead of the correction.
+
+#### What the model can and cannot now do
+
+**It can** report arterial pH and move it with any respiratory disturbance. At twice
+thyroid secretory capacity with the metabolic arm on, PCO2 rises to 41.8 and pH falls to
+7.400 — a **four-hop chain**, thyroid → respiratory → arterial CO2 → pH, the longest in
+the model.
+
+**It cannot compensate.** Bicarbonate is constant, so ADR 0020's falsifiable tests 2 and 3
+are void and recorded as such; and pH does not feed back onto ventilation, so a metabolic
+acidosis produces no respiratory compensation. **Test 4 was inverted into an assertion
+that the omission is real** — a respiratory disturbance must move pH and a metabolic one
+cannot — which puts the omission in the output rather than only in the record.
+
+**What would discharge the deferral:** renal net acid excretion measured against plasma
+bicarbonate in healthy adults, and a second habitual-diet measurement of net endogenous
+acid production to arbitrate 22 against 70.
+
+---
+
 ## 4. NEXT, IN ORDER
 
 **Rewritten 2026-09-03, and item 1 was discharged the same day.** The previous list's

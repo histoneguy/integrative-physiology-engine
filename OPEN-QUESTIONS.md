@@ -175,9 +175,14 @@ this order.
 2. **Renin is pressure-only.** §7 already records that no gain reproduces the human
    salt–renin response, because **macula densa sodium delivery and renal sympathetic
    traffic are both absent**. This is the largest structural gap in the model.
-3. **No acid–base limb.** No bicarbonate, so the oxyhaemoglobin curve is fixed at normal
-   pH and temperature and nothing whose perturbed variable is the *position* of that
-   curve exists: Bohr shift, fever, 2,3-DPG, altitude, exercising muscle.
+3. **Acid–base: pH is BUILT, compensation is NOT** (§3.29, 2026-09-05). Arterial pH
+   composes from a sourced pK, solubility, bicarbonate and PCO2 — 7.42 against a human
+   7.40, with the 0.02 residual named as an unapplied venous-to-arterial offset. **What
+   is still missing is the bicarbonate STATE**: both halves of the balance failed to
+   source (renal gain not measured in health; endogenous acid production spans threefold,
+   22 against 70 mEq/day). So there is **no renal compensation for a respiratory
+   disturbance**, and by ADR 0020 decision 3 **no respiratory compensation for a metabolic
+   one**. The oxyhaemoglobin curve still ignores pH, so no Bohr shift.
 4. ~~**No metabolic substrate.**~~ **BUILT 2026-09-05** (§3.27, §3.28). Oxygen
    consumption, the Fick relation, mixed venous content and saturation, and the
    extraction ratio. It needed no new component and, initially, no new source — the

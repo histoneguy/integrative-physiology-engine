@@ -1384,7 +1384,8 @@ using SciMLBase
             (SaO2 = g("SaO2"), PaO2 = g("bl₊PaO2"), PAO2 = g("PAO2"),
              CaO2 = g("CaO2"), DO2 = g("DO2"), VO2 = g("bl₊VO2"),
              avDO2 = g("avDO2"), CvO2 = g("CvO2"), SvO2 = g("SvO2"),
-             ER = g("bl₊ER"), CO = g("cv₊CO"))
+             ER = g("bl₊ER"), CO = g("cv₊CO"), pH = g("bl₊pH"),
+             PaCO2 = g("bl₊PaCO2"))
         end
         m = arterial()
 
@@ -1523,7 +1524,38 @@ using SciMLBase
         # system to assert a related fact is the kind of cost that is paid on
         # every future run forever.
 
-        @info "blood gas" SaO2=m.SaO2 CaO2=m.CaO2 DO2=m.DO2 VO2=m.VO2 avDO2=m.avDO2 SvO2=m.SvO2 ER=m.ER
+        # ------------------------------------------------------------------
+        # ADR 0020: ARTERIAL pH. Four independent measurements compose into a
+        # fifth and none of them is a pH - an apparent pK by titration, a
+        # solubility by tonometry, a bicarbonate in 8809 NHANES adults, and an
+        # arterial PCO2 sourced under ADR 0017. THEY ARE ON SCALES THAT COMPOSE, a
+        # millimole being a millimole, which is exactly what the free-thyroxine
+        # assays of the thyroid axis were not. So this can be wrong.
+        @test isapprox(m.pH, L.AB_PK_APPARENT +
+                             log10(L.AB_HCO3_PLASMA /
+                                   (L.AB_CO2_SOLUBILITY * m.PaCO2)); rtol = 1e-9)
+
+        # 7.42 AGAINST A HUMAN ARTERIAL 7.40, AND THE RESIDUAL IS NOT CLOSED. The
+        # entered bicarbonate is a VENOUS serum TOTAL CO2 - what a chemistry panel
+        # measures - where Henderson-Hasselbalch wants ARTERIAL BICARBONATE, an
+        # offset of 1-2 mmol/L. Subtracting 1 gives 7.402. Applying it would set
+        # the parameter from the quantity under test, which is how ADR 0019's
+        # falsifiable test 2 was voided, so it is reported instead.
+        @test 7.35 <= m.pH <= 7.45
+        @test m.pH > 7.40                    # and it is high, deliberately
+
+        # TWO DECIMAL PLACES AND NO MORE. pH is a logarithm: 0.01 is 2.3% in
+        # hydrogen ion concentration, and a third place would claim a resolution
+        # no blood gas analyser has. acid_base_prereg.md section 6.
+        @test round(m.pH; digits = 2) == 7.42
+
+        # pH IS NOT SEXED, because nothing in it is: the bicarbonate row is
+        # `both`, the constants are physical, and arterial PCO2 is intensive.
+        # Haemoglobin is the only sexed thing in this component and it does not
+        # enter the buffer equation. If pH ever comes out sexed, it has.
+        @test isapprox(f.pH, m.pH; rtol = 1e-12)
+
+        @info "blood gas" SaO2=m.SaO2 CaO2=m.CaO2 DO2=m.DO2 VO2=m.VO2 avDO2=m.avDO2 SvO2=m.SvO2 ER=m.ER pH=m.pH
     end
 
     @testset "ADR 0019: the thyroid axis, on ONE free-thyroxine scale" begin
@@ -1666,6 +1698,14 @@ using SciMLBase
         @test fin(hyper, shy, "bl₊VO2")   > fin(sys, sol, "bl₊VO2")
         @test fin(hyper, shy, "SvO2")     < fin(sys, sol, "SvO2")
         @test fin(hyper, shy, "bl₊ER")    > fin(sys, sol, "bl₊ER")
+
+        # AND ONE MORE HOP, WHICH MAKES IT FOUR: thyroid -> respiratory -> arterial
+        # CO2 -> pH. A higher metabolic load raises PCO2 on the flat limb of the
+        # chemoreflex, and pH falls because bicarbonate cannot move - ADR 0020's
+        # renal arm was not built, and its absence is asserted here rather than
+        # only recorded. THIS IS A RESPIRATORY ACIDOSIS WITH NO COMPENSATION, which
+        # is what this model is and is not.
+        @test fin(hyper, shy, "bl₊pH")    < fin(sys, sol, "bl₊pH")
 
         # AND IT REACHES BLOOD GAS THROUGH PaCO2, WHICH IS THE ONLY TWO-HOP COUPLING
         # in this model: thyroid -> respiratory -> blood. The alveolar gas equation
