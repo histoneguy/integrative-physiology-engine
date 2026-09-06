@@ -54,7 +54,12 @@ Interface (see src/coupling.jl):
 function BodyFluids(; name, body_mass = BF_BODY_MASS_REFERENCE,
                     storage::Bool = false)
 
+    # TWO FACTORS SINCE 2026-09-05. `sz` is SURFACE-like, (m/m_ref)^0.5083, for
+    # the metabolic and dietary quantities; `mz` is MASS-like for the fluid
+    # compartments. See src/scaling.jl for why the sodium and water balances
+    # require intake and clearance to share one exponent.
     sz = size_factor(body_mass)
+    mz = mass_factor(body_mass)
 
     pars = @parameters begin
         m_body      = body_mass

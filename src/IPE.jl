@@ -82,6 +82,6 @@ export CircadianClock, cycle_average
 export pulse_pressure, systolic_diastolic, reconstruct_pressures, RECONSTRUCTED
 export validate_partition, suggest_boundary, partitionable
 export LedgerParams, provenance, unledgered_check
-export size_factor
+export size_factor, mass_factor
 
 end # module

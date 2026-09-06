@@ -928,9 +928,16 @@ using SciMLBase
         # scaling when the model is built; member_remake reapplies it through
         # remake because an ensemble must not rebuild. Two encodings of one rule
         # is how they drift, so this asserts they have not.
+        # 2026-09-05: `205.0 * bm / 70.0` WAS THE SCALING RULE WRITTEN OUT A SECOND
+        # TIME, AS A LITERAL, IN THE TEST THAT EXISTS TO CATCH EXACTLY THAT. It was
+        # right while scaling was linear in mass and silently wrong the moment it
+        # became (m/m_ref)^0.5083, feeding the built model a bigger diet than the
+        # remade one and failing with a 0.5 mmHg pressure difference that looked
+        # like a member_remake defect. It is not: the two paths agree on every
+        # parameter. Call the function.
         bm = 90.0
         built = salt_step(body_mass = bm,
-                          levels_mEq_day = (205.0 * bm / 70.0,),
+                          levels_mEq_day = (205.0 * size_factor(bm),),
                           days_per_level = 25.0)
         remade = IPE.run_population(build_model(), [(body_mass = bm,)];
                                     tspan_days = 25.0)
@@ -972,7 +979,11 @@ using SciMLBase
         # does sit at a lower pressure, because they filter more.
         base = check_pressure_natriuresis(salt_step())
         for bm in (85.0,)
-            f = bm / IPE.LedgerParams.BF_BODY_MASS_REFERENCE
+            # size_factor, NOT bm/m_ref - see the note in the ensemble testset. An
+            # individual eating their own diet eats a SURFACE-scaled sodium load,
+            # because intake and clearance must share one exponent or a big person
+            # is in permanent sodium surplus (src/scaling.jl).
+            f = size_factor(bm)
             r = check_pressure_natriuresis(
                     salt_step(body_mass = bm,
                               levels_mEq_day = (205.0 * f, 154.0 * f, 103.0 * f)))
