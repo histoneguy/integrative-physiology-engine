@@ -2410,6 +2410,72 @@ failed six times (§3.24). **Three missed in one change, all found by one assert
 
 ---
 
+### 3.34 THE WEAKEST NUMBER IN THE POTASSIUM COMPONENT NOW HAS AN INTERVAL, AND THE VALUE DID NOT MOVE
+
+**Run after §3.33's retraction, on the owner's instruction to stop recording the gap and
+close it.** Pre-registered in `validation/potassium_doseresponse_prereg.md`, committed at
+`1698d2a` **before the search**.
+
+**The paper §3.33 should have found first.** Cappuccio FP et al., *BMJ Open*
+2016;6(8):e011716, PMID 27566636, PMC5013341, open access, read in full. Twenty potassium
+supplementation trials, **1216 participants**, 12 countries, ≥ 4 weeks, intake verified by
+24-hour urine. Its Table 1 gives urinary **and** plasma potassium in both arms of every
+trial — and at this model's steady state `1/n_K` is exactly `d ln(plasma K) / d ln(intake)`,
+so that table *is* the row, measured twenty times.
+
+| route | `n_K` |
+|---|---|
+| pre-registered admissible subset (3 trials) | **17.73** |
+| full pooled meta-analysis (20 trials) | 16.00, 95% CI **11.9–24.7** |
+| Brunner 1970, what the row rested on | 17.71, spread **3.45–41.68** |
+
+**17.71 → 17.73 is nothing, and the pass still succeeded**, because §8 of the
+pre-registration said in advance what success would be: not a new value but a dispersion
+narrow enough to exclude part of the old one. A twelvefold spread over ten people became an
+interval over 1216 that excludes both ends. **Brunner's median was right all along; what it
+could not carry was an interval.**
+
+#### Two methodological things worth keeping
+
+**Pool the elasticity, not the exponent.** Two trials report identical plasma potassium in
+both arms, so their `n_K` is infinite and no mean of exponents exists. One (Siani 1987) is
+*negative* — plasma potassium fell on a supplement — and it is kept, because discarding the
+inconvenient sign narrows a spread without evidence.
+
+**The admissibility rule cost 16 of 19 trials and was followed anyway.** §2 excludes
+hypertensive cohorts and diuretics; almost every trial in this literature is hypertensive.
+The value therefore comes from three trials and the *interval* from all twenty, which is
+stated on the row rather than blurred. **A rule relaxed the first time it is inconvenient
+is not a rule** — and the three-trial and twenty-trial answers agree to 11%, so the strict
+reading cost nothing.
+
+#### The renal fraction is now DECIDED, not open
+
+`OPEN-QUESTIONS` B10 asked whether to pool the disagreement §3.33 found. **The
+pre-registration decided it in advance and the answer is no.** §5 fixed the shape a rising
+fraction would take before looking; D5 would have taken it on two admissible studies. But
+the sources disagree on the **sign**: Hené and Rabelink have the fraction rising with intake
+(0.63 → 0.78 → ≈0.80) and this paper's *marginal* fraction is **0.734**, below the ledger's
+0.884, which would make the average fall. D4 applies — report, do not split. The marginal
+figure is the fate of a KCl tablet rather than of food, and tablet absorption, incomplete
+collections and compliance all bias it the same way.
+
+#### And a product that had never been checked, now is
+
+`K.RENAL_FRACTION × K.INTAKE.NOMINAL` = **61.05** mmol/day of urinary potassium — one row
+from Brunner 1970, one from 8893 NHANES recalls, neither ever compared with anything. The
+19 control arms of this meta-analysis average **61.17**, by 24-hour collection in 12
+countries. **0.2% is too good and should be distrusted**: a dietary recall understates
+intake and those cohorts are not American, so two quantities that should not agree this
+closely do. What it rules out is a gross error, and the model now asserts it in the suite
+against a band rather than against that number.
+
+**B11 STILL STANDS.** There is no potassium adaptation, §7 of the pre-registration forbade
+this pass from touching it, and Rabelink's renin and aldosterone returning to baseline by
+day 20 is still unrepresented.
+
+---
+
 ### 3.33 I RECORDED A FAILED SEARCH AS A FACT ABOUT THE LITERATURE, FOR THE SECOND TIME
 
 **§3.31 said renal potassium clearance in healthy adults could not be sourced. It could.**
