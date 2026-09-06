@@ -171,10 +171,15 @@ difference between a prediction and a restatement.
 built.** The case that actually arose was one this document did not anticipate: **the
 relation's SHAPE is sourced and its LEVEL is not.**
 
-Excretion rising with filtration and with plasma concentration is E1. What could not be
-sourced is the fractional excretion that fixes where the balance rests — searches return
-ketoacidosis, chronic kidney disease, diuretics, transplantation and Gitelman syndrome,
-directive 1.7 disqualifying a sixth literature exactly as §2 predicted.
+Excretion rising with filtration and with plasma concentration is E1. What is not
+sourced is the fractional excretion that fixes where the balance rests.
+
+**AMENDED AGAIN THE SAME DAY — this paragraph said searches returned only ketoacidosis,
+chronic kidney disease, diuretics and Gitelman syndrome, "directive 1.7 disqualifying a
+sixth literature". THAT WAS A FALSE CLAIM ABOUT THE LITERATURE** and §11 retracts it.
+Directive 1.7 did not bite here; the search term did. What is actually true is narrower:
+no admissible study reports this model's own composite — intake, plasma potassium and
+glomerular filtration in the same healthy subjects — so the level is derived.
 
 **Branch taken: build it, derive the level against the measured plasma potassium, and
 void falsifiable test 2 in the record.** §1's prohibition on using `K.PLASMA.REFERENCE` to
@@ -215,3 +220,28 @@ re-solved against the same estimation set to 5.396.
 **Two Lobo endpoints still fail by 2.8% and 1.7%, and they are reported, not tuned** —
 branch P2's rule applied to a quantity P2 was not written about. ADR 0021 amendment A6
 carries the sweep that turns the failure into a bound on the arm.
+
+---
+
+## 11. AMENDMENT, 2026-09-05: §2 PREDICTED DIRECTIVE 1.7 WOULD BITE, AND I MADE IT BITE
+
+§2 said in advance that renin and potassium are measured overwhelmingly in disease, and
+told me to **prefer balance studies and controlled-diet protocols in healthy volunteers,
+which is where this physiology was established.** That instruction was right and I did not
+follow it. I searched "fractional excretion of potassium" — a *bedside diagnostic* phrase —
+got disease, and recorded the disease as a property of the literature.
+
+**A pre-registration that names the right preparation in advance is worthless if the search
+is then run on the wrong term.** §2 named it. The Utrecht balance studies — Hené 1986 and
+1988, Rabelink 1990, each six healthy volunteers on controlled intake — are exactly what §2
+described, and they are one query away under *potassium balance* or *adaptation in normal
+man*.
+
+**They are abstract-level only and they change no value.** They are used as a comparison,
+and ADR 0021 amendment A7 carries the two disagreements that comparison produced: the
+urinary fraction rises with intake where this model holds it constant, and the model has no
+potassium adaptation at all.
+
+**The check that would have caught this** is the one §2 already implies: before recording a
+search as failed, ask whether the term searched is the term the people who did the work
+would have used.
