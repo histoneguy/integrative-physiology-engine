@@ -80,6 +80,26 @@ this model uses at every intake. And there is NO POTASSIUM ADAPTATION here at al
 load with kaliuresis maintained, where this model holds aldosterone at 2.80 times
 baseline for ever.
 
+THE EXPONENT WAS RE-SOURCED ON 2026-09-06 and the first disagreement was DECIDED
+rather than left open. validation/potassium_doseresponse_prereg.md, committed
+before the search. Cappuccio 2016 (BMJ Open, PMC5013341) reports urinary AND plasma
+potassium in both arms of twenty supplementation trials, 1216 participants, intake
+verified by 24-hour urine - which is this model's elasticity, measured twenty
+times. The exponent moved 17.71 -> 17.73, WHICH IS NOTHING, and its interval went
+from a twelvefold spread over ten people to 11.9-24.7 over 1216.
+
+AND THE RENAL FRACTION STAYS A CONSTANT BY DECISION D4, NOT BY DEFAULT: the same
+paper's MARGINAL fraction is 0.734, BELOW this row, which would make the average
+fall with intake where Hene and Rabelink have it rising. The sources disagree on
+the SIGN, so the pre-registered rising form is not taken and the disagreement is
+recorded. See K.RENAL_FRACTION.
+
+WHAT IS NOW CHECKED, AND NEVER WAS: f_renal * K_intake = 0.884 * 69.06 = 61.05
+mmol/day of urinary potassium, against 61.17 measured by 24-hour collection in the
+nineteen control arms of that meta-analysis. Treat 0.2% as too good - a dietary
+recall understates intake and those cohorts are not American - but it rules out a
+gross error in a product that had been compared with nothing at all.
+
 WHAT THIS DELIBERATELY OMITS
   Every transcellular shift: insulin, beta-agonists, acid-base, exercise, cell
   lysis. The intracellular pool is a BUFFER here and not a compartment, so the

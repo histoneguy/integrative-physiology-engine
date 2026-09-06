@@ -172,7 +172,7 @@ bought by fitting `g_md` to the dataset that already fixes `RN.ANP.TAU`.
 gain near 5.0 and reporting the chronic ratio as 2.57, which is honest but spends the
 prediction. §3.32 and ADR 0021 amendment A6.
 
-### B10. The potassium fraction is a constant and humans are not, and two good groups disagree — NEW, 2026-09-05
+### B10. ~~The potassium fraction is a constant and humans are not~~ — DECIDED 2026-09-06, and it stays a constant
 
 **Found by the owner catching a false claim, not by any check here.** `K.RENAL_FRACTION`
 is 0.884 at every intake. The Utrecht balance studies put it lower and *rising with
@@ -180,12 +180,19 @@ intake*: Hené 1986 measured 0.63 at 80 mEq/day and 0.78 at 300; Rabelink 1990 a
 at 400 mmol/day. Brunner 1970's six studies — the ones actually in the ledger, read in
 full — give 0.884.
 
-**Not averaged, and that is the decision I want checked.** All three Utrecht values are
-abstract-level; none of those papers is open access. Pooling abstracts against a full-text
-extraction is exactly the kind of after-the-fact choice `validation/pooling.md` exists to
-prevent, so it is recorded instead. **If you want it pooled, say so and it becomes a
-pre-registered pass** — and the honest version of that pass makes the fraction a function
-of intake rather than a constant, which is a structural change and not a re-average.
+**That pass was run on 2026-09-06 and the answer is that it stays a constant.**
+`validation/potassium_doseresponse_prereg.md` §5 fixed the shape a rising fraction would
+take *before* looking, and branch D5 would have taken it. It was not taken because **the
+sources disagree on the sign**: Cappuccio 2016's *marginal* fraction — the share of each
+supplement appearing in urine, across 19 trials — is **0.734**, below the ledger's 0.884,
+and a marginal below the average makes the average **fall** with intake where Hené and
+Rabelink have it rising. Branch D4: report, do not split.
+
+**Still worth your eye**, because the marginal figure is the fate of a KCl tablet rather
+than of food and every bias on it (tablet absorption, incomplete collections, compliance)
+points the same way. If you think that disqualifies it, the disagreement collapses and D5
+fires. **What did get settled is the exponent** — 17.71 → 17.73, but with an interval of
+11.9–24.7 from 1216 participants in place of a twelvefold spread over ten. §3.34.
 
 ### B11. There is no potassium adaptation, and adaptation is what the literature is about — NEW, 2026-09-05
 

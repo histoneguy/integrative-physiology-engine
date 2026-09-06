@@ -1883,6 +1883,20 @@ using SciMLBase
                        L.K_RENAL_FRACTION * L.K_INTAKE_NOMINAL; rtol = 1e-4)
         @test isapprox(fin(sys, sol, "kp₊K_p"), L.K_PLASMA_REFERENCE; rtol = 1e-3)
 
+        # THE URINARY POTASSIUM OUTPUT, AGAINST A MEASUREMENT RATHER THAN AGAINST
+        # ITSELF. K.RENAL_FRACTION and K.INTAKE.NOMINAL come from Brunner 1970 and
+        # from 8893 NHANES recalls, and until 2026-09-06 their product had been
+        # compared with nothing. The 19 control arms of Cappuccio 2016 (PMC5013341)
+        # average 61.17 mmol/day by 24-hour collection in 12 countries.
+        #
+        # THE BAND IS DELIBERATELY WIDE AND THE AGREEMENT IS DELIBERATELY NOT
+        # ASSERTED. The model sits 0.2% from that mean, which is far better than
+        # either input deserves - a dietary recall understates intake and those
+        # cohorts are not American. Asserting 0.2% would pin the suite to a
+        # coincidence. What this catches is a GROSS error, which is what the
+        # comparison is good for. HANDOVER section 3.34.
+        @test 45.0 < fin(sys, sol, "kp₊K_excr") < 85.0
+
         # WHAT IS NOT A RESTATEMENT IS THE RESPONSE. Doubling dietary potassium
         # must raise plasma potassium - and by MUCH less than twofold, because
         # excretion rises with the concentration. That is the property which makes

@@ -337,6 +337,48 @@ inside the human reference range, because `K.EXCRETION_EXPONENT` = 17.71 pins th
 concentration. **Test 2 would be a weak test with FE_K perfectly sourced**, and saying so
 is worth more than the void.
 
+## Amendment A8, 2026-09-06: the exponent is re-sourced, and the renal fraction is decided rather than left open
+
+**A3 fitted `K.EXCRETION_EXPONENT` to Brunner 1970 and A7 recorded that the urinary
+fraction disagreed between two good groups. Both are now settled under
+`validation/potassium_doseresponse_prereg.md`**, committed before the search was run.
+
+**The source.** Cappuccio FP, Buchanan LA, Ji C, Siani A, Miller MA. *BMJ Open*
+2016;6(8):e011716, PMID 27566636, PMC5013341, open access, read in full. Twenty
+supplementation trials, 1216 participants, 12 countries, ≥ 4 weeks, **intake verified by
+24-hour urine collection**. Its Table 1 reports urinary *and* plasma potassium in both arms
+of every trial — which is the elasticity `1/n_K` is defined as, measured twenty times.
+
+**The exponent barely moved and that is not the point.**
+
+| route | `n_K` | basis |
+|---|---|---|
+| pre-registered admissible subset | **17.73** | 3 non-hypertensive, drug-free trials |
+| full pooled meta-analysis | 16.00 (95% CI **11.9–24.7**) | 20 trials, 1216 participants |
+| Brunner 1970 (A3's source) | 17.71 | 6 studies, 10 subjects, spread **3.45–41.68** |
+
+Three independent routes agree to 11%. **What changed is the dispersion**: a twelvefold
+spread over ten people becomes an interval over 1216 that excludes both ends of it. The
+pre-registration's §8 fixed exactly that as the test of whether the pass was worth running.
+
+**And decision 5's renal fraction stays a constant by branch D4, not by inertia.** §5 of
+the pre-registration fixed the shape a rising fraction would take *before* looking, and D5
+would have taken it. **The sources disagree on the sign:** Hené and Rabelink have the
+fraction rising with intake (0.63 → 0.78 → ≈0.80), while this paper's *marginal* fraction —
+the share of each supplement appearing in urine — is **0.734**, below the ledger's 0.884,
+which would make the average fall. D4 says report the disagreement and do not split it.
+The marginal figure is also the fate of a KCl tablet rather than of food, and every bias on
+it points the same way.
+
+**One thing became a check that had never been one.** `K.RENAL_FRACTION × K.INTAKE.NOMINAL`
+= 61.05 mmol/day of urinary potassium; the 19 control arms average **61.17**, measured by
+24-hour collection in 12 countries. **0.2% is too good** — a dietary recall understates
+intake and those cohorts are not American — but it rules out a gross error in a product
+that had been compared with nothing.
+
+**What this does not fix: `OPEN-QUESTIONS` B11 stands.** There is still no potassium
+adaptation, and §7 of the pre-registration forbade this pass from touching it.
+
 ## What is NOT decided
 
 - **Renal sympathetic traffic.**
