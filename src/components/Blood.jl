@@ -56,7 +56,8 @@ using ..LedgerParams
 using ..LedgerParams:
     BLOOD_O2_BINDING_CAPACITY, BLOOD_O2_CURVE_A, BLOOD_O2_CURVE_B,
     BLOOD_O2_SOLUBILITY, BLOOD_O2_AA_GRADIENT,
-    RESP_O2_INSPIRED_FRACTION, RESP_EXCHANGE_RATIO, RESP_ALVEOLAR_K
+    RESP_O2_INSPIRED_FRACTION, RESP_EXCHANGE_RATIO, RESP_ALVEOLAR_K,
+    AB_PK_APPARENT, AB_CO2_SOLUBILITY, AB_HCO3_PLASMA
 
 """
     Blood(; name, sex = :male)
@@ -93,6 +94,12 @@ function Blood(; name, sex::Symbol = :male)
         AaDO2    = BLOOD_O2_AA_GRADIENT
         FiO2     = RESP_O2_INSPIRED_FRACTION
         RER      = RESP_EXCHANGE_RATIO
+        # ACID-BASE, ADR 0020. Bicarbonate is an INPUT and pH is the output - the
+        # dependency inversion that record was amended into, for the reason on
+        # AB.HCO3.PLASMA. All three are intensive, like everything else here.
+        pK_ab    = AB_PK_APPARENT
+        S_co2_pl = AB_CO2_SOLUBILITY
+        HCO3     = AB_HCO3_PLASMA
         # The dry barometric pressure, PB - PH2O. RESP.ALVEOLAR.K is exactly that
         # times the STPD-to-BTPS factor, so reusing it here keeps ONE statement of
         # sea level in the ledger instead of two that can drift apart. The factor
@@ -114,6 +121,7 @@ function Blood(; name, sex::Symbol = :male)
         CvO2(t)         # mL/dL    mixed venous oxygen content
         SvO2(t)         # fraction mixed venous saturation
         ER(t)           # fraction oxygen extraction ratio
+        pH(t)           # -        arterial pH, ADR 0020
     end
 
     P_dry = K_alv / 1.21030
@@ -198,6 +206,25 @@ function Blood(; name, sex::Symbol = :male)
         # chains cancelled - written the short way so there is nothing to get
         # wrong twice.
         ER ~ avDO2 / CaO2,
+
+        # ARTERIAL pH, HENDERSON-HASSELBALCH. ADR 0020, and it lives here rather
+        # than in an eleventh component because everything it needs is already in
+        # this one: arterial PCO2 arrives from respiratory, and the other three
+        # terms are constants.
+        #
+        # IT IS A COMPOSITION OF THREE INDEPENDENT MEASUREMENTS AND CAN THEREFORE
+        # BE WRONG, which is what makes it a test rather than a restatement: an
+        # apparent pK measured by titration, a solubility measured by
+        # tonometry, a bicarbonate measured in 8809 adults, and a PCO2 sourced
+        # under ADR 0017. All four are on scales that compose - a millimole is a
+        # millimole - unlike the free-thyroxine assays of HANDOVER section 3.26.
+        #
+        # IT COMES OUT AT 7.42 AGAINST A HUMAN ARTERIAL 7.40, and the residual is
+        # NOT closed. AB.HCO3.PLASMA is a VENOUS serum TOTAL CO2, which runs 1 to
+        # 2 mmol/L above arterial bicarbonate; subtracting 1 gives 7.402.
+        # Applying that correction would set the parameter from the quantity being
+        # tested, so it is reported instead. See that row.
+        pH ~ pK_ab + log10(HCO3 / (S_co2_pl * PaCO2)),
     ]
 
     return MTKSystem(eqs, t, vars, pars; name)

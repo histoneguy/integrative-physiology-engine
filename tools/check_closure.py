@@ -388,6 +388,21 @@ def _check_one(p: dict[str, float]) -> int:
           "`assumed` at a round 0.20 until the metabolic rate was sourced.",
           errors)
 
+    # ADR 0020's acid-base composition, checked on the ROWS. Four independent
+    # measurements produce a fifth, and none of them is a pH - which is what makes
+    # it a test rather than a restatement. The band is deliberately wide: the
+    # entered bicarbonate is a VENOUS serum total CO2 against an arterial
+    # requirement, an offset worth about 0.02 pH that is reported and NOT applied.
+    ph = p["AB.PK_APPARENT"] + math.log10(
+        p["AB.HCO3.PLASMA"] / (p["AB.CO2.SOLUBILITY"] * p["RESP.CO2.ARTERIAL_RESTING"]))
+    if not (7.35 <= ph <= 7.45):
+        errors.append("Composed arterial pH %.3f is outside the human 7.35-7.45; one "
+                      "of pK, solubility, bicarbonate or arterial PCO2 has moved and "
+                      "acid_base_extract.py section 3 needs rewriting" % ph)
+    else:
+        print("  ok   composed arterial pH             %.2f  "
+              "(human 7.35-7.45; 0.02 of it is the venous offset, REPORTED)" % ph)
+
     # ------------------------------------------------------------------ thyroid
     #
     # ADR 0019. THY.FT4.GAIN is the one derived number in the thyroid loop, and

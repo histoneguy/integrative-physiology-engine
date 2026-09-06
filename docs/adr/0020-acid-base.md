@@ -1,6 +1,6 @@
 # ADR 0020: The acid–base limb, and the first loop that is slow at one end and fast at the other
 
-**Status:** Proposed
+**Status:** Accepted, **amended the same day — read the amendment before the decisions**
 **Date:** 2026-09-05
 **Evidence tier:** E1 for the Henderson–Hasselbalch relation, for bicarbonate as the
 dominant extracellular buffer, and for renal net acid excretion balancing endogenous acid
@@ -133,6 +133,62 @@ consequence of a change in net acid intake.
    the omission honest rather than forgotten.
 5. **With the component disabled, every existing result must be bit-identical.**
 
+## Amendment, 2026-09-05: NO state, NO eleventh component, and the dependency inverted
+
+**This record was written in the morning and implemented in the afternoon, and decision
+1 did not survive the sourcing.** Both halves of the bicarbonate balance failed:
+
+- **The renal response to plasma bicarbonate could not be sourced** as a published form
+  with a gain in healthy humans. The quantitative acid–base literature is almost entirely
+  disorder-driven — directive 1.7's **fifth** subsystem — and the classic human titration
+  work is neither open nor in healthy preparations. `acid_base_prereg.md` **branch A3**.
+- **Net endogenous acid production spans threefold** across what could be opened: **22
+  mEq/day** measured by 24-hour urine in ~90 healthy omnivorous adults (Mansouri 2024)
+  against the conventional **70**, with a third source reporting 39 ± 38 on deliberately
+  designed acid and base diets. **Branch A4** says do not build on that.
+
+**A balance whose input flux is uncertain threefold and whose renal gain is unsourced is a
+balance in which the set-point does all the work.** Building it would have produced a
+bicarbonate that reproduced whatever set-point was entered, and falsifiable test 1 would
+have been void for the same reason ADR 0019's test 2 was.
+
+### What was built instead
+
+**Plasma bicarbonate is an INPUT and arterial pH is the OUTPUT.** Sourced from NHANES
+2007–2012, n = 8809 adults. **No state, no eleventh component** — the three constants and
+one equation live in `Blood.jl`, which already receives arterial PCO2.
+
+**This is the third dependency inversion in this model**, after arterial PCO2 (ADR 0017's
+amendment) and the thyroid operating point (§3.26), and for the same reason each time:
+source the quantity that is actually measured. Plasma bicarbonate is measured in every
+basic metabolic panel; renal net acid excretion is not measured in anyone healthy.
+
+### Falsifiable test 1 survives, and it is a real one
+
+pH composes **four independent measurements** — an apparent pK by titration, a solubility
+by tonometry, a bicarbonate in 8809 adults, and an arterial PCO2 sourced under ADR 0017 —
+**all on scales that compose.** A millimole is a millimole. It can be wrong.
+
+**It comes out at 7.420 against a human arterial 7.40, and the residual is not closed.**
+`AB.HCO3.PLASMA` is a **venous serum total CO2**, which runs 1–2 mmol/L above arterial
+bicarbonate; subtracting 1 gives 7.402. **Applying that correction would set the parameter
+from the quantity being tested**, so it is reported instead. This is the third time a
+measurement-scale mismatch has mattered here and **the first time it was caught before
+the number was believed** rather than after.
+
+### Tests 2 and 3 are void; test 4 is inverted and stronger
+
+Without a bicarbonate state there is no renal compensation, so **tests 2 and 3 cannot be
+run** and the deferral is recorded rather than quietly dropped. **Test 4 becomes the
+sharp one**: a respiratory disturbance must move pH and a metabolic one cannot, because
+bicarbonate is a constant — which makes decision 3's omission visible in the output
+instead of only in this document.
+
+**What the model does gain** is a live respiratory acid–base axis: at twice thyroid
+secretory capacity with the metabolic arm on, arterial PCO2 rises to 41.8 and pH falls to
+7.400. That is a **four-hop chain** — thyroid → respiratory → arterial CO2 → pH — and the
+longest in the model.
+
 ## What is NOT decided
 
 - **Chloride, the anion gap, and unmeasured anions.**
@@ -142,4 +198,11 @@ consequence of a change in net acid intake.
   disturbance.
 - **Potassium**, which acid–base status shifts and which the model does not have.
 - **Renal tubular acidosis, or any disease state.**
-- **Every numeric value.**
+- ~~**Every numeric value.**~~ Three are in the ledger under `AB.*`.
+- **The bicarbonate STATE, renal net acid excretion, and endogenous acid production** —
+  deferred by the amendment above, with the two sourcing failures named. What would
+  discharge it: a measurement of renal net acid excretion against plasma bicarbonate in
+  healthy adults, and a second habitual-diet measurement of net endogenous acid
+  production to arbitrate the threefold spread.
+- **The base excess**, which needs the Van Slyke relation and haemoglobin — one more
+  published form, not yet opened.
