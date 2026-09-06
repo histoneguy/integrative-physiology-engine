@@ -2313,6 +2313,173 @@ the pre-registration forbade claiming otherwise.
 
 ---
 
+### 3.31 THE MACULA DENSA ARM LIFTS A CEILING THE MODEL RECORDED AGAINST ITSELF, AND POTASSIUM ARRIVES WITH IT
+
+**Date: 2026-09-05.** Built together at the owner's instruction, and the physiology is why:
+**aldosterone is one node.** Renin sets it and so does plasma potassium; it drives distal
+sodium reabsorption and distal potassium secretion. Build either alone and aldosterone is
+driven by half its inputs while doing half its job.
+
+#### The ceiling was real, and it is now measured rather than argued
+
+§7 has said since it was written that the pressure-only renin relation **cannot** reach the
+human salt–renin response at any gain. Measured directly in the model:
+
+    macula densa arm OFF    renin ratio, 38 vs 230 mmol/day sodium    1.14
+    macula densa arm ON                                              2.73
+    van den Bosch 2021, n = 70 healthy men                           2.73
+
+**The first line is the finding.** A ceiling either is or is not exceeded, and no value of
+the old gain exceeds it. **The third line is arithmetic** — the gain was solved to produce
+it, and ADR 0021's falsifiable test 1 declared that before the number existed.
+
+**So van den Bosch's salt–renin data are now an ESTIMATION SET and may never be reported
+as agreement.** §3.15 records what happened the last time that was forgotten. And **renal
+sympathetic traffic is still absent**, so the estimate absorbs whatever that arm would
+have contributed — the same criticism this repository makes of the old pressure gain, made
+here against its own new row.
+
+#### The split that enables it does nothing, which is stronger than promised
+
+ADR 0021 planned a neutral proximal–distal split. **It is neutral by not existing**:
+distal delivery is DEFINED as a new variable and the sodium equation is untouched, so
+bit-identity is guaranteed rather than checked. Distal delivery is 2140 mEq/day against an
+excretion of 205 — the distal nephron reabsorbs about 90% of what it is given.
+
+**It carries no information about segmental handling**, and `RN.NA.PROXIMAL_FRACTION` is
+assumed at a round 0.90 for a reason that is worth stating: **it is not separately
+identifiable from the gain that reads the signal.** Halving one and doubling the other
+leaves every output identical, so sourcing it would buy nothing until the gain is
+independently measured too.
+
+#### Potassium, and the fourth dependency inversion
+
+`K.INTAKE.NOMINAL` 69.06 mmol/day from 8893 NHANES dietary recalls; the renal fraction
+0.884 from **Brunner 1970** — 10 normal subjects, constant diet, potassium loaded and
+depleted with sodium fixed, read in full, and almost the only controlled-diet balance
+study in healthy volunteers this literature contains.
+
+**Renal potassium clearance in healthy adults could not be sourced.** Directive 1.7
+disqualifying a **sixth** literature, predicted in the pre-registration. So the fractional
+excretion is derived to close the balance, **plasma potassium is an INPUT, and ADR 0021's
+falsifiable test 2 is void.** Fourth inversion after arterial PCO2, the thyroid operating
+point and plasma bicarbonate, and the pattern is now the rule:
+
+> **Where a concentration is measured in thousands of people and its clearance is measured
+> in nobody healthy, the concentration is the input.**
+
+#### THE SUITE REFUTED A FORM BEFORE IT WAS EVER COMMITTED
+
+Excretion was first written **linear** in plasma potassium — the obvious form. Linear
+excretion makes the steady-state concentration *proportional* to intake, and **doubling an
+ordinary diet gave 7.6 mmol/L**: a lethal hyperkalaemia from a dietary variation.
+
+**ADR 0021's falsifiable test 3 caught it on its first run**, having been written before
+the implementation and having named the property most easily got wrong — *"plasma
+potassium rising only slightly"*. This is the clearest case in the repository of a
+falsifiable test earning its keep.
+
+The fix is one exponent, **17.7**, fitted to Brunner's measured response across a
+fortyfold range of intake. It **lumps aldosterone, distal flow and plasma potassium**,
+because every human study moves all three together — so aldosterone's effect on potassium
+is *inside* that number rather than absent, and the model cannot tell a spironolactone
+from a potassium load.
+
+    dietary potassium  x0.5    plasma 3.82 mmol/L   aldosterone 0.82
+    reference                         3.97                     1.14
+                       x2.0           4.13                     1.62
+
+#### The join is real and CHRONICALLY MUTE
+
+Potassium reaches aldosterone; aldosterone reaches distal sodium reabsorption. **And ADR
+0010's escape drives that effect to zero at every steady state** — doubling dietary
+potassium moves arterial pressure by less than one part in 10¹².
+
+**Aldosterone in this model is chronically a reporter, not an effector.** That is a fact
+about the escape structure and not about potassium, and it is asserted in the suite
+because the coupling graph suggests the opposite.
+
+#### And the seventh instance of the oldest defect class, caught by the test built for it
+
+`member_remake` was short of **three** parameters — the two potassium ones and the macula
+densa reference delivery. The class-level test found all three in one run at `worst =
+0.26`, which is exactly what it was rebuilt to do after naming individual parameters
+failed six times (§3.24). **Three missed in one change, all found by one assertion.**
+
+---
+
+### 3.32 EVERY STEADY STATE WAS RIGHT WHILE THE FORM WAS WRONG, AND ONLY THE SIX-HOUR LIMB SAID SO
+
+**676 tests passed on a macula densa arm that doubled an acute saline natriuresis.** The
+challenge harness caught it on the first run after §3.31 was written, and the whole of
+this section is what that one run bought. ADR 0021 amendment A6 has the detail.
+
+#### The first form double-counted two calibrated gains
+
+ADR 0021 decision 1 assigned pressure natriuresis and the natriuretic peptide to the
+proximal segment, so both terms went into distal delivery. Against Lobo's two-litre
+saline challenge that gave **877 mL and 148 mmol over six hours, against 563 and 95**,
+with modelled plasma renin driven onto its **zero floor** by an ordinary clinical
+infusion.
+
+**The argument against it does not need the run.** `RN.PRESSURE_NATRIURESIS.SLOPE` and
+`CV.ANP.NATRIURETIC_GAIN` are calibrated *against sodium excretion* — the chronic salt
+step and Lobo's own six-hour time course. The macula densa arm returns to sodium excretion
+through renin, aldosterone and `fr_mod`. **Feeding a gain fitted to an excretion into a
+loop that produces that excretion uses the same measurement twice**, and decision 1
+forbids changing what those rows mean. The pressure term double-counts twice over: MAP
+already reaches renin through the rectified arm decision 2 promised to add to
+*alongside*, and a term in MAP is not alongside.
+
+**The pre-registration's §7 said not to re-estimate either gain, and this broke that rule
+without changing either number.** A parameter whose effect has doubled has been
+re-estimated in every sense that matters. That is the transferable form of this finding:
+**a calibrated row is re-estimated by giving it a second path, not only by editing its
+value** — and no gate in this repository can see that happen.
+
+#### What is left, and why it is admissible
+
+Distal delivery is now the filtered load less proximal reabsorption and nothing else. It
+carries **41% of the chronic signal on its own** — 2046 to 2171 mEq/day between 38 and 230
+mmol/day of dietary sodium — because GFR rises with volume. That path is admissible where
+the other two are not: **`RN.GFR.VOLUME_SENSITIVITY` was calibrated against GFR, not
+against sodium excretion**, so the loop does not re-use its own fit. `RN.MD.RENIN_GAIN`
+re-solved against the same estimation set, **2.480 → 5.396**, because the signal is
+smaller.
+
+#### The residual failure is a measurement of what is missing
+
+| `g_md` | Lobo urine, 6 h | Lobo Na, 6 h | chronic PRA ratio |
+|---|---|---|---|
+| 0.000 | 580 mL | 97.7 mmol | 1.142 — the pressure-only ceiling |
+| 5.000 | 750 mL | 125.8 mmol | 2.572 — Lobo's urine band ends here |
+| **5.396** | **771 mL** | **129.1 mmol** | **2.733** — van den Bosch, and the ledger |
+
+Two endpoints fail by **2.8% and 1.7%**, against bands that are themselves assumed ±33%
+because Lobo publishes no dispersion. **THE ACUTE CHALLENGE BOUNDS THE ARM:** the macula
+densa can carry a chronic salt–renin ratio of about **2.57** before the acute limb leaves
+its band, and the measurement is **2.73**. ADR 0021 decision 7 said in advance that this
+gain absorbs the renal sympathetic traffic the model does not have, and **this is the
+first place that appears as a number** — the last 6% of the ratio is where the missing arm
+lives.
+
+**The failure is reported, not tuned.** Lobo is the estimation set for `RN.ANP.TAU`;
+fitting `g_md` to it as well would make three things agree by construction and leave
+nothing able to be wrong. **The prediction is that building renal sympathetic traffic
+lowers `g_md` and brings both endpoints back inside their bands.** If it does not, the
+next candidate is tubuloglomerular feedback on the afferent arteriole — the brake that
+would blunt the delivery excursion, and the one ADR 0021 explicitly does not build.
+
+#### And this is the sharpest case yet for running the thing
+
+Resting values, chronic salt sensitivity, sodium balance and every unit test were
+**bit-identical** with the wrong form in place, because aldosterone escape zeroes the
+tubular effect at every steady state (§3.31). **A model whose steady states are all
+correct can still be wrong about every transient.** Directive 1.11, and the fifth
+consecutive defect found by connecting something rather than by any of the five gates.
+
+---
+
 ## 4. NEXT, IN ORDER
 
 **Rewritten 2026-09-03, and item 1 was discharged the same day.** The previous list's
@@ -2503,6 +2670,19 @@ were solved against that very target. And §5, which is how work goes wrong here
 15. **Dead code hides unledgered constants and stale API assumptions.** `reconstruct.jl`
     and `ensemble.jl` each carried a hardcoded number. Connecting the ensemble surfaced
     three live SciMLBase API breakages that nothing could have caught while it was dead.
+23. **A MODEL CAN BE RIGHT AT EVERY STEADY STATE AND WRONG ABOUT EVERY TRANSIENT.**
+    §3.32. Aldosterone escape zeroes the tubular effect at rest, so the whole of ADR
+    0021's sodium path is invisible to any resting assertion. `validation/challenges.jl`
+    is the only thing in this repository that looks at a time course, and it is not in
+    CI. Run it.
+22. **A CALIBRATED PARAMETER RE-ESTIMATED BY BEING GIVEN A SECOND PATH.** §3.32.
+    `CV.ANP.NATRIURETIC_GAIN` and `RN.PRESSURE_NATRIURESIS.SLOPE` are fitted to sodium
+    excretion; ADR 0021 put both into a signal that drives renin, which drives sodium
+    excretion. Neither value changed and both meanings did. **No gate can see this** —
+    the ledger is unchanged, the relations parse, the closure identities hold, and 676
+    tests pass. It was found by an acute challenge, 2.8% outside a band. Before adding a
+    term to any signal, ask what the terms in it were fitted against and where the signal
+    returns to.
 21. **A TEST THAT HARD-CODES THE RULE IT EXISTS TO CHECK.** §3.30. The ensemble
     testset asserted that the build-time and remake paths agree — and set up the
     comparison with `205.0 * bm / 70.0`, the scaling rule written out a second time as a

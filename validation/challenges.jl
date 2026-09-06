@@ -174,6 +174,48 @@ check("urine osmolality, 6 h mean", uosm6, 420.0, 840.0, "mOsm/kg",
 check("fraction of the sodium load excreted by 6 h", na6/308.0*100, 20.0, 45.0, "%",
       "Lobo: one third by 6 h. RESTATEMENT of the sodium check - cannot fail alone.")
 
+# THE TWO ENDPOINTS ABOVE FAIL, THEY FAIL BECAUSE OF ADR 0021, AND THE FAILURE IS THE
+# MOST INFORMATIVE THING IN THIS FILE. Read it with ADR 0021 amendment A6 and HANDOVER
+# section 3.32.
+#
+# The macula densa arm gives distal sodium delivery a route to renin, and renin a route
+# back to sodium excretion through aldosterone. Every steady state is untouched -
+# aldosterone escape zeroes the tubular effect at rest, so the resting values and the
+# chronic salt sensitivity are bit-identical - and the SIX-HOUR limb is not.
+#
+# The first form of the arm put the pressure-natriuresis and natriuretic-peptide terms
+# into distal delivery. That gave 877 mL and 148 mmol, and it was a double count: both
+# gains are calibrated AGAINST SODIUM EXCRETION, so feeding them into a loop that
+# produces sodium excretion uses the same measurement twice. They were removed on that
+# argument, which is a priori; this harness is only how it was noticed.
+#
+# WHAT REMAINS IS NOT A DOUBLE COUNT AND STILL OVERSHOOTS, and the size of the overshoot
+# is a measurement of what the model is missing. Sweeping the gain against these same two
+# endpoints and against the chronic renin ratio it was estimated from:
+#
+#     g_md    urine 6 h   Na 6 h    chronic PRA ratio
+#     0.000     580 mL    97.7        1.142   <- the pressure-only ceiling
+#     4.500     727 mL   122.1        2.382
+#     5.000     750 mL   125.8        2.572   <- Lobo's urine band ends here
+#     5.396     771 mL   129.1        2.733   <- van den Bosch, and the ledger value
+#
+# SO THE ACUTE CHALLENGE BOUNDS THE ARM. The macula densa can carry a chronic salt-renin
+# ratio of about 2.57 before the acute limb leaves its band; van den Bosch measures 2.73.
+# ADR 0021 decision 7 said in advance that this gain absorbs the renal sympathetic arm
+# the model does not have, and this is the first place that shows up as a number: the
+# last 6% of the chronic ratio is where the missing arm lives.
+#
+# THE GAIN IS NOT TUNED TO MAKE THESE PASS. It is solved against its declared estimation
+# set and left there. Lobo is itself the estimation set for RN.ANP.TAU, and fitting one
+# parameter to two datasets to make a third thing green is how a model stops being able
+# to be wrong. THE PREDICTION IS THAT BUILDING RENAL SYMPATHETIC TRAFFIC LOWERS g_md AND
+# BRINGS THESE TWO ENDPOINTS BACK INSIDE THEIR BANDS.
+println()
+println("  ^^ THESE TWO FAILURES ARE ADR 0021 AND THEY ARE NOT TUNED AWAY. The macula")
+println("     densa arm can carry a chronic renin ratio of about 2.57 before the acute")
+println("     limb leaves its band; the estimation set says 2.73. The gap is the renal")
+println("     sympathetic arm the model does not have. See ADR 0021 amendment A6.")
+
 println()
 println(repeat("=", 100))
 println("3. ACUTE INTRAVENOUS VOLUME EXPANSION, ISOTONIC SALINE 23 mL/kg")

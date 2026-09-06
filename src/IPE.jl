@@ -56,6 +56,7 @@ include("components/Adh.jl")
 include("components/Respiratory.jl")
 include("components/Blood.jl")
 include("components/Thyroid.jl")
+include("components/Potassium.jl")
 include("assemble.jl")
 include("ensemble.jl")
 

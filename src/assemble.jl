@@ -58,6 +58,7 @@ function build_raw_model(; body_mass = 70.0, storage::Bool = false,
                          raas::Bool = true, adh::Bool = true,
                          respiration::Bool = true,
                          thyroid::Bool = true,
+                         potassium::Bool = true,
                          thyroid_metabolic::Bool = false,
                          thyroid_secretion = 1.0,
                          sex::Symbol = :male,
@@ -88,6 +89,8 @@ function build_raw_model(; body_mass = 70.0, storage::Bool = false,
     # euthyroid value, which is the control arm falsifiable test 1 needs.
     @named ty = Thyroid(; feedback = thyroid, metabolic = thyroid_metabolic,
                         sec_cap = thyroid_secretion)
+    # ADR 0021. One state, and the ion that finally gives aldosterone a job.
+    @named kp = Potassium(; body_mass, enabled = potassium)
 
     connections = [
         # body fluids -> cardiovascular
@@ -145,9 +148,18 @@ function build_raw_model(; body_mass = 70.0, storage::Bool = false,
         # in both configurations, which is the discipline `model_couplings` records
         # four defects for lacking.
         rs.th_mod       ~ ty.th_mod,
+        # ADR 0021, ADDED 2026-09-05. THE MACULA DENSA ARM AND THE POTASSIUM JOIN.
+        # renal -> raas carries distal sodium delivery, which is the second renin
+        # input HANDOVER section 7 names as missing; renal -> potassium carries the
+        # filtered load; potassium -> raas carries plasma potassium to the adrenal.
+        # The RETURN arm, aldosterone acting on potassium excretion, is deliberately
+        # absent - see RAAS.ALDO.K_GAIN.
+        ra.md_drive     ~ rn.md_drive,
+        kp.GFR          ~ rn.GFR,
+        ra.K_p          ~ kp.K_p,
     ]
 
-    systems = [bf, cv, rn, br, ra, ad, rs, bl, ty]
+    systems = [bf, cv, rn, br, ra, ad, rs, bl, ty, kp]
 
     # CONNECTED 2026-08-25. ADR 0006 build order item 6: the clock modulates
     # renal tubular sodium handling and the reflex pressure setpoint, both of
@@ -195,7 +207,7 @@ function model_couplings()
     all = vcat(bodyfluids_couplings(), cardiovascular_couplings(), renal_couplings(),
                baroreflex_couplings(), raas_couplings(), adh_couplings(),
                circadian_couplings(), respiratory_couplings(), blood_couplings(),
-               thyroid_couplings())
+               thyroid_couplings(), potassium_couplings())
     seen = Set{Tuple{Symbol,Symbol,CouplingKind}}()
     out = Coupling[]
     for c in all
@@ -227,6 +239,9 @@ model_edges() = Set([
     (:respiratory, :bodyfluids),      # bf.H2O_resp_rate ~ rs.H2O_resp - ADR 0017
     (:respiratory, :blood),           # bl.PaCO2 ~ rs.PaCO2 - ADR 0018
     (:thyroid, :respiratory),         # rs.th_mod ~ ty.th_mod - ADR 0019
+    (:renal, :raas),                  # ra.md_drive ~ rn.md_drive - ADR 0021
+    (:renal, :potassium),             # kp.GFR ~ rn.GFR - ADR 0021
+    (:potassium, :raas),              # ra.K_p ~ kp.K_p - ADR 0021
     (:cardiovascular, :blood),        # bl.CO ~ cv.CO - ADR 0018
     (:cardiovascular, :bodyfluids),   # bf.MAP ~ cv.MAP - INERT, ADR 0010 hook
     (:cardiovascular, :baroreflex),   # br.MAP ~ cv.MAP
@@ -258,7 +273,7 @@ function assert_couplings_match_model()
 
     subsystems = Set([:bodyfluids, :cardiovascular, :renal, :baroreflex,
                       :raas, :adh, :circadian, :respiratory, :blood,
-                      :thyroid])
+                      :thyroid, :potassium])
     unknown = [c for c in cs if !(c.from in subsystems) || !(c.to in subsystems)]
 
     dangling = Symbol[]

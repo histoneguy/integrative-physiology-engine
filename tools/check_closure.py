@@ -403,6 +403,32 @@ def _check_one(p: dict[str, float]) -> int:
         print("  ok   composed arterial pH             %.2f  "
               "(human 7.35-7.45; 0.02 of it is the venous offset, REPORTED)" % ph)
 
+    # ADR 0021. The potassium balance is closed by a DERIVED fractional
+    # excretion, which is why plasma potassium is an input and falsifiable test 2
+    # is void. Recomputed here rather than read back, so that a change to intake,
+    # to the stool fraction or to filtration surfaces as a failure instead of as
+    # a quietly different plasma potassium.
+    check("potassium balance closes at the reference individual",
+          p["K.FRACTIONAL_EXCRETION"] * p["RN.GFR.NOMINAL"] * p["K.PLASMA.REFERENCE"],
+          p["K.RENAL_FRACTION"] * p["K.INTAKE.NOMINAL"],
+          "FE_K*GFR*K_p = f_renal*K_intake. Every one of those five rows except "
+          "FE_K is sourced; FE_K is what makes the identity true, and that is "
+          "the whole reason the resting concentration is an input.",
+          errors)
+
+    # AND THE FRACTIONAL EXCRETION LANDS WHERE THE TEXTBOOK PUTS IT, which is a
+    # coincidence worth stating rather than a confirmation - this row is derived
+    # from the plasma potassium it would otherwise predict.
+    fek = p["K.FRACTIONAL_EXCRETION"]
+    if not (0.05 <= fek <= 0.20):
+        errors.append("Fractional potassium excretion %.4f is outside 5-20%%; the "
+                      "intake, stool fraction, filtration or plasma potassium has "
+                      "moved" % fek)
+    else:
+        print("  ok   fractional potassium excretion   %.1f%%  "
+              "(human 10-15%%; TEN TIMES sodium's, because potassium is secreted)"
+              % (fek * 100))
+
     # ------------------------------------------------------------------ thyroid
     #
     # ADR 0019. THY.FT4.GAIN is the one derived number in the thyroid loop, and
