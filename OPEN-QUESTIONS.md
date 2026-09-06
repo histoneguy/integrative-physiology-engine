@@ -146,13 +146,21 @@ output and oxygen consumption in the same subjects, which makes the extraction r
 internal rather than composed. **Its own pre-registered pass**; re-sourcing it inside the
 metabolic pass would have been adjusting a second parameter to rescue the first.
 
-### B6. Body size scaling is linear where physiology is sub-linear
+### B6. ~~Body size scaling is linear where physiology is sub-linear~~ — DONE 2026-09-05
 
-Glomerular filtration and cardiac output scale linearly in mass here, so the population
-spread of both is overstated. Fixing it needs a height row and one sourced
-body-surface-area formula — which also unlocks Luu 2022 (n = 3,206) and Zhan 2024
-(n = 12,812), both rejected for reporting indexed volumes only, and removes a double
-count in the nominal stroke volume.
+Fixed in §3.30. Height and body surface area are in the ledger from 9300 measured NHANES
+adults, and the surface-like quantities now scale as `(m/m_ref)^0.5083` while the fluid
+compartments stay linear in mass. The reference individual is bit-identical.
+
+**What is left of it is the other half: VOLUMES are still linear in mass.** Extracellular
+volume is entered as a mass *fraction*, and fat carries less water than lean tissue, so
+the model overstates the fluid volumes of heavy people exactly as it used to overstate
+their filtration. That needs a body-composition row this model does not have.
+
+**And nothing has been validated by this.** Narrowing a spread is not the same as making
+it right; no measured population spread of filtration or cardiac output has been compared
+against. Luu 2022 and Zhan 2024 are now *usable* — a per-1.73-m² figure must be multiplied
+by 1.8545/1.73 to reach this reference individual — but they have not been used.
 
 ### B7. A de-indexing correction is owed
 

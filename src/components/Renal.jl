@@ -82,7 +82,11 @@ function Renal(; name, solute_tracking::Bool = true,
                sex::Symbol = :male,
                anp_gain = CV_ANP_NATRIURETIC_GAIN)
 
+    # SURFACE-like for filtration, the pressure-natriuresis slope and the solute
+    # load; MASS-like for the reference volumes. src/scaling.jl carries the
+    # closure argument, and G_anp below is the one parameter that needs both.
     sz = size_factor(body_mass)
+    mz = mass_factor(body_mass)
 
     pars = @parameters begin
         # EXTENSIVE. GFR is a flow and G_pn is an excretion per mmHg, so both
@@ -128,7 +132,7 @@ function Renal(; name, solute_tracking::Bool = true,
         # silently re-based. It is written in the sz form rather than as
         # body_mass*f_ecf so that it reads identically to the line in
         # ensemble.jl's member_remake, which must reapply it.
-        V_ecf_ref  = sz * BF_ECF_MASS_FRACTION * BF_BODY_MASS_REFERENCE
+        V_ecf_ref  = mz * BF_ECF_MASS_FRACTION * BF_BODY_MASS_REFERENCE
         # V_min (RN.H2O.OBLIGATORY_LOSS) IS DELIBERATELY NO LONGER A PARAMETER
         # HERE. It was a constant 0.5 L/day floor, which equalled
         # RN.URINE.SOLUTE_LOAD / ADH.URINE.OSM_MAX only while the solute load was
@@ -171,8 +175,28 @@ function Renal(; name, solute_tracking::Bool = true,
         # the salt-step shift stopped being mass-invariant, 2.30 against 2.06
         # across the population mass range. src/scaling.jl exists for exactly
         # this and the rule is per-quantity, not per-component.
+        # STILL INTENSIVE UNDER TWO-FACTOR SCALING, AND THE ARGUMENT FOR IT WAS
+        # GOT WRONG ONCE ON 2026-09-05 BEFORE THE SUITE CAUGHT IT.
+        #
+        # The tempting reasoning: G_anp turns a blood VOLUME excess into a sodium
+        # EXCRETION, volume is mass-like and excretion is surface-like, so the
+        # gain should carry sz/mz. That is wrong, and it is wrong because what
+        # this gain multiplies is not a volume but a DEVIATION.
+        #
+        # V_blood and V_blood_ref are both mass-like and cancel exactly at the
+        # operating point for any body size. What survives is the deviation
+        # produced by a sodium load, and that is SODIUM-DRIVEN: a salt step
+        # scaled to the individual moves the volume by an amount that scales as
+        # sz, not as mz. Divided by Na_filtered, which is also sz, the term is
+        # invariant only if the gain is intensive.
+        #
+        # THE OPERATING POINT HIDES THIS ENTIRELY, which is why it is worth the
+        # paragraph: with sz/mz the resting state of every body size is still
+        # exactly right and only the salt-step RESPONSE moves - 2.040 mmHg at 85 kg
+        # against 1.886 at the reference. The body-size testset's invariance
+        # assertion is the only thing in the repository that could have seen it.
         G_anp      = anp_gain
-        V_blood_ref = sz * LedgerParams.param(:CV_BLOOD_VOLUME_NOMINAL, sex)
+        V_blood_ref = mz * LedgerParams.param(:CV_BLOOD_VOLUME_NOMINAL, sex)
         # THE LAG, AND IT IS WHY THE ALGEBRAIC FORM WAS REFUTED. A single
         # instantaneous gain cannot carry both limbs: the ACUTE natriuretic
         # response to an isotonic load implies about 300 (mEq/day)/L while the

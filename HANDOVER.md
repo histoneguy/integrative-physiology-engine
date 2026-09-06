@@ -2206,6 +2206,113 @@ acid production to arbitrate 22 against 70.
 
 ---
 
+### 3.30 SCALING IS NO LONGER LINEAR IN MASS, AND THE TEST THAT CAUGHT IT HAD THE RULE WRITTEN OUT TWICE
+
+**Date: 2026-09-05.** `src/scaling.jl` recorded this defect against itself since the day
+it was written:
+
+> *GFR and cardiac output are conventionally normalised to BODY SURFACE AREA, which grows
+> sub-linearly with mass, so linear scaling OVERSTATES their spread across a population.
+> Correcting that needs height, which this model does not carry, and a BSA formula, which
+> would need its own extraction.*
+
+**Both are now in the ledger.** Height from NHANES 2007–2012, **measured** in 9300 adults:
+men 175.83 ± 7.60 cm, women 162.11 ± 7.08. The Du Bois formula, quoted from a source that
+prints it. And the exponent, regressed over those adults.
+
+#### Two factors where there was one
+
+    mass_factor(m)  =  m / m_ref              fluid compartments and their contents
+    size_factor(m)  = (m / m_ref) ^ 0.5083    the metabolic, renal and cardiac chain
+
+`size_factor` **kept its name and changed its meaning**, which is a thing to be careful
+about rather than proud of; the call sites that meant mass were switched by hand and are
+named in the components.
+
+| body mass | old factor | new factor |
+|---|---|---|
+| 45 kg | 0.643 | 0.799 |
+| 70 kg | 1.000 | 1.000 |
+| 95 kg | 1.357 | 1.168 |
+| 110 kg | 1.571 | 1.258 |
+
+**The reference individual does not move**, because the factor is exactly 1 at 70 kg for
+any exponent. Every pinned number in the suite is bit-identical and only the population
+spread changed — which is the pre-registration's branch S3, and it is why a change this
+invasive was safe to make in one pass.
+
+#### The exponent is 0.51, not 2/3, and the difference is the finding
+
+The geometric surface law gives 2/3 and Kleiber's metabolic law 3/4. **The population
+regression gives 0.508**, because in a real adult population mass varies more from
+**adiposity** than from frame size, and fat adds mass with little height and little
+surface.
+
+**That is the right exponent for the question the ensemble asks** — how does a heavier
+*person* differ from a lighter one — and the wrong one if `body_mass` is ever reread as
+frame size, where the two differ by 25% at 95 kg. Stated on the row.
+
+The spread across formulas is the uncertainty: Du Bois 0.508, Mosteller 0.557,
+Gehan–George 0.563, Haycock 0.583 over the same 9300 adults. **Du Bois is entered**
+because the rule was fixed before the search: where formulas are comparable, take the one
+the *indexed literature* used, since the point of having a BSA is to make that literature
+usable.
+
+**And the reference BSA is 1.85 m², not 1.73.** The renal indexing convention is a 1928
+figure for an average adult of that era. A per-1.73-m² quantity must be multiplied by
+1.8545/1.73 to reach this model's reference individual and **not taken as-is** — which is
+the practical point of these rows and unblocks Luu 2022 (n = 3,206) and Zhan 2024
+(n = 12,812), both rejected for reporting indexed volumes only.
+
+#### ONE PARAMETER LOOKED LIKE IT NEEDED BOTH FACTORS. IT DOES NOT, AND THAT WAS THE TRAP
+
+`G_anp` turns a blood volume excess into a sodium excretion. Volume is mass-like,
+excretion is surface-like, **so it should carry `s/m`** — and that argument is wrong.
+**What the gain multiplies is not a volume but a DEVIATION.** `V_blood` and
+`V_blood_ref` are both mass-like and cancel exactly at the operating point for any body
+size; what survives is the deviation a salt load produces, and that is sodium-driven and
+therefore surface-like, matching the `Na_filtered` underneath it. **It stays intensive.**
+
+**The operating point hid it completely**, which is why it is worth the paragraph. With
+`s/m` the resting state of every body size was still exactly right — every pinned number,
+every closure check, every challenge — and only the salt-step *response* moved, to 2.040
+mmHg at 85 kg against 1.886 at the reference. **The body-size testset's invariance
+assertion was the only thing in the repository that could see it**, and this is the second
+time in one change that a testset earned its keep by failing.
+
+#### THE THREE FAILURES WERE IN THE TEST, AND THE TEST WARNS ABOUT THE MISTAKE IT MADE
+
+The suite failed three assertions, all with the same cause and none of them in the model.
+
+    built = salt_step(body_mass = bm, levels_mEq_day = (205.0 * bm / 70.0,), ...)
+
+**`205.0 * bm / 70.0` is the scaling rule written out a second time, as a literal, inside
+the testset whose own comment says** *"Two encodings of one rule is how they drift, so
+this asserts they have not."* It was right while scaling was linear and silently wrong the
+moment it was not, feeding the built model a bigger diet than the remade one.
+
+**And it failed in a misleading way**: a 0.5 mmHg pressure difference between the
+build-time and remake paths, which is precisely the signature of a `member_remake` defect —
+the class of bug this repository has now found **six** times. It was not one. Diffing every
+shared parameter between a natively built 90 kg model and a remade one gave **zero
+mismatches**, and only then was the literal visible.
+
+**§5 gains an entry.** A test that hard-codes a rule it exists to check will pass for as
+long as the rule does not change, and then accuse the wrong component.
+
+#### What is now the weaker half
+
+**Volumes are still linear in mass**, because extracellular volume is entered as a mass
+*fraction*. Fat carries less water than lean tissue, so the model overstates the fluid
+volumes of heavy people exactly as it used to overstate their filtration. Not fixed here —
+one change at a time — and it needs a body-composition row this model does not have.
+
+**And narrowing a spread is not the same as making it right.** Nothing here compares the
+model's population spread of filtration or cardiac output against a measured spread, and
+the pre-registration forbade claiming otherwise.
+
+---
+
 ## 4. NEXT, IN ORDER
 
 **Rewritten 2026-09-03, and item 1 was discharged the same day.** The previous list's
@@ -2396,6 +2503,16 @@ were solved against that very target. And §5, which is how work goes wrong here
 15. **Dead code hides unledgered constants and stale API assumptions.** `reconstruct.jl`
     and `ensemble.jl` each carried a hardcoded number. Connecting the ensemble surfaced
     three live SciMLBase API breakages that nothing could have caught while it was dead.
+21. **A TEST THAT HARD-CODES THE RULE IT EXISTS TO CHECK.** §3.30. The ensemble
+    testset asserted that the build-time and remake paths agree — and set up the
+    comparison with `205.0 * bm / 70.0`, the scaling rule written out a second time as a
+    literal, in the testset whose own comment says two encodings of one rule is how they
+    drift. It passed for as long as the rule was linear. **When the rule changed it
+    accused the wrong component**: the symptom was a 0.5 mmHg divergence between the two
+    paths, the exact signature of the `member_remake` defect this repository has found six
+    times, and diffing every shared parameter gave zero mismatches before the literal was
+    visible. **Call the function.** A number in a test that could have been computed is a
+    second implementation of the thing under test.
 20. **A RECORDED FAILED SEARCH READ AS EVIDENCE ABOUT THE LITERATURE.** §3.28.
     `RESP.CO2.PRODUCTION` carried a careful note listing what a search for resting
     metabolic rate returned and why each hit was inadmissible. It missed a weighted

@@ -147,7 +147,12 @@ be done in one place rather than by callers.
 """
 function member_remake(prob, sys, member; sex::Symbol = :male)
     bm = member.body_mass
+    # TWO FACTORS SINCE 2026-09-05 AND THIS LIST MUST MIRROR THE COMPONENTS EXACTLY.
+    # `sz` is SURFACE-like, `mz` MASS-like; putting a parameter on the wrong one is
+    # the same class of defect this list has now produced six times, and the
+    # class-level test below is what catches it rather than a name.
     sz = size_factor(bm)
+    mz = mass_factor(bm)
     return remake(prob;
         # EVERY EXTENSIVE PARAMETER, because the base problem was built at the
         # reference mass. The components apply this same scaling at BUILD time;
@@ -169,10 +174,14 @@ function member_remake(prob, sys, member; sex::Symbol = :male)
              # it immediately - MAP spread went from under 1e-4 mmHg to 37.8.
              # That is exactly the "two encodings of one rule" this list warns
              # about, and it is why the assertion exists.
-             # INTENSIVE - it multiplies a volume, which already scales. See the
-             # note in Renal.jl. Only the REFERENCE volume scales here.
+             # STILL INTENSIVE under two-factor scaling. What it multiplies is a
+             # DEVIATION, not a volume: V_blood and V_blood_ref are both mass-like
+             # and cancel at the operating point, and what survives is
+             # sodium-driven and therefore surface-like, matching the Na_filtered
+             # it is divided by. Renal.jl carries the argument and the record of
+             # getting it wrong first.
              sys.rn.G_anp          => CV_ANP_NATRIURETIC_GAIN,
-             sys.rn.V_blood_ref    => sz * LedgerParams.param(:CV_BLOOD_VOLUME_NOMINAL, sex),
+             sys.rn.V_blood_ref    => mz * LedgerParams.param(:CV_BLOOD_VOLUME_NOMINAL, sex),
              # RN.GFR.VOLUME_SENSITIVITY's reference volume, added 2026-09-03.
              # S_gfr_v and dV_gfr_max are both INTENSIVE - a fractional GFR change
              # per fractional volume change, and a fractional bound - so neither
@@ -180,10 +189,10 @@ function member_remake(prob, sys, member; sex::Symbol = :male)
              # V_blood_ref does above, and omitting it would make every heavy
              # member read as volume-expanded in the same way omitting V_blood_ref
              # did. That failure is recorded above; this list is where it happens.
-             sys.rn.V_ecf_ref      => sz * BF_ECF_MASS_FRACTION * BF_BODY_MASS_REFERENCE,
+             sys.rn.V_ecf_ref      => mz * BF_ECF_MASS_FRACTION * BF_BODY_MASS_REFERENCE,
              sys.cv.CO0            => sz * LedgerParams.param(:CV_CO_NOMINAL, sex),
-             sys.cv.BV0            => sz * LedgerParams.param(:CV_BLOOD_VOLUME_NOMINAL, sex),
-             sys.cv.VC0            => sz * LedgerParams.param(:CV_CENTRAL_VOLUME_NOMINAL, sex),
+             sys.cv.BV0            => mz * LedgerParams.param(:CV_BLOOD_VOLUME_NOMINAL, sex),
+             sys.cv.VC0            => mz * LedgerParams.param(:CV_CENTRAL_VOLUME_NOMINAL, sex),
              sys.cv.SV0            => sz * LedgerParams.param(:CV_SV_NOMINAL, sex),
              # RECIPROCAL. MAP = CO*TPR and CO scales, so resistance must fall or
              # larger people come out hypertensive. See src/scaling.jl.
