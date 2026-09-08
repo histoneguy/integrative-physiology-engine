@@ -219,6 +219,50 @@ site — a *segmental* claim, which ADR 0021's disqualification section says thi
 make no statement about, so building it means building segments for real rather than
 observationally.
 
+### B12. Holbrook 1984 says the potassium fraction is FLAT, and it is the better study — NEW, 2026-09-08
+
+**You asked for Holbrook and could not get it; neither could I** — publisher, DOI redirect
+and the USDA repository all failed. **But the abstract carries the decisive sentence**, and
+it cuts against the change you directed two days ago.
+
+Holbrook JT et al., *Am J Clin Nutr* 1984;40(4):786–93, PMID 6486085. **28 adults, one
+year, four 7-day balances, meals and beverages and urine AND FAECES by atomic absorption,
+self-selected FOOD diets.** Apparent absorption of potassium **85%**, and it *"did not
+change significantly over the wide range of intakes."*
+
+**Apparent absorption already nets out colonic secretion**, so a flat value across intakes
+is a direct statement that the exponent is zero — a constant fraction, which is what the
+model had before 2026-09-08. **And the tablet-absorption argument that removed Cappuccio's
+marginal fraction does not touch this study: it is food.**
+
+**What defends the current row is range, and only range.** Holbrook's subjects ate what
+they chose — perhaps 38–115 mmol/day — and across exactly that span the curve moves
+`f_renal` 0.853 → 0.905, about five percentage points, which 28 people with balance-study
+noise would not resolve. Hené's 80 → 300 is the range the model must span and Holbrook's
+design cannot test it. **That is a defence, not a refutation.** Holbrook has 28 subjects to
+Hené's 6, measures the gut term directly rather than by subtraction, and explicitly tested
+constancy and found it.
+
+**There is also a ceiling problem.** At steady state the urinary fraction cannot exceed the
+*absorbed* fraction. `K.RENAL_FRACTION_MAX` is 1.0 on the weaker argument that it cannot
+exceed *intake*; Holbrook measures absorption at 0.85, flat. The model sits above that at
+every intake — 0.884 at the reference, 0.942 at 400 mmol/day.
+
+**No value was changed on the strength of an abstract.** The three options:
+
+1. **Leave it.** The rise stands on Hené's range; Holbrook is underpowered for it. The
+   ceiling tension is recorded and never reached in the model's valid range.
+2. **Revert to a constant at 0.85.** Holbrook's level and slope both, `p` → 0. This is the
+   pre-2026-09-08 structure at a 4% lower level, and it costs the reference individual's
+   bit-identity — resting urinary potassium 61.05 → 58.7 mmol/day against Cappuccio's
+   measured 61.17.
+3. **Keep the rise, lower the ceiling and the level to Holbrook's 0.85.** Coherent, but it
+   rests two structural rows on one abstract.
+
+**My recommendation is 1**, on the range argument, with B12 left open until somebody reads
+Holbrook's Table of intakes. **If you disagree, 2 is the honest fallback** — it is the
+structure the evidence supports if Holbrook's range turns out to be wide.
+
 ### B6. ~~Body size scaling is linear where physiology is sub-linear~~ — DONE 2026-09-05
 
 Fixed in §3.30. Height and body surface area are in the ledger from 9300 measured NHANES
