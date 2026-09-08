@@ -85,6 +85,17 @@ WMD_URINE = (45.75, 37.81, 53.69)      # mmol/24 h, 95% CI
 CURRENT_EXPONENT = 17.71
 CURRENT_RENAL_FRACTION = 0.884
 NHANES_INTAKE = 69.06                  # K.INTAKE.NOMINAL, mmol/day
+P_ENTERED = 0.39                       # K.NONRENAL_LOSS_EXPONENT, entered 2026-09-08
+
+# Hene RJ, Koomans HA, Boer P, Dorhout Mees EJ. Miner Electrolyte Metab
+# 1986;12(3):165-72. PMID 3523191. Six healthy males, 18 days, controlled diet.
+# ABSTRACT-LEVEL ONLY - the paper is not open access. (intake, urinary, SD).
+HENE = [(80.0, 50.0, 12.0), (300.0, 233.0, 45.0)]
+
+# Brunner 1970 experimental periods, transcribed from
+# validation/macula_densa_potassium_extract.py, which read the full text.
+BRUNNER_FRACTIONS = [(83, 70.7), (80, 77.9), (239, 202.0),
+                     (259, 261.0), (165, 156.0), (161, 109.7)]
 
 
 def elasticity(t):
@@ -234,15 +245,99 @@ def main():
           % CURRENT_RENAL_FRACTION)
     print("             average, the average would FALL with intake, not rise.")
     print()
-    print("  SO THE SOURCES DISAGREE ON THE SIGN and D5's condition is not met. D4")
-    print("  applies: report the disagreement, do not split it. K.RENAL_FRACTION STAYS")
-    print("  A CONSTANT AT %.3f and the section 5 form is NOT taken." % CURRENT_RENAL_FRACTION)
-    print()
-    print("  AND THE MARGINAL FRACTION IS NOT A CLEAN MEASUREMENT OF THE DIETARY ONE.")
+    print("  THE MARGINAL FRACTION IS NOT A CLEAN MEASUREMENT OF THE DIETARY ONE.")
     print("  It is the fate of a KCl tablet, not of food: tablet absorption, incomplete")
     print("  24 h collections and the trials' own compliance all push it down, and every")
-    print("  one of those biases has the same sign. It is reported because it is what the")
-    print("  paper measured, and it is not used to move a row.")
+    print("  one of those biases has the same sign.")
+    print()
+    print("  ON 2026-09-06 THAT WAS REPORTED AND THE ROW WAS KEPT CONSTANT UNDER D4.")
+    print("  ON 2026-09-08 THE OWNER STRUCK THE MARGINAL FIGURE OUT - tablet absorption,")
+    print("  not renal handling, is what it measures - AND WITH IT GONE THE SOURCES NO")
+    print("  LONGER DISAGREE. D5 fires. Section 5b is the fit.")
+    print()
+
+    rule()
+    print("5b. D5: THE INTAKE-DEPENDENT FRACTION, IN THE SHAPE FIXED BEFORE THE DATA")
+    rule()
+    print("      f_renal(I) = f_max - (f_max - f_0) * (I_ref / I) ^ p")
+    print()
+    print("  f_max = 1 IS A BOUNDARY CONDITION AND NOT A FIT. At steady state urinary")
+    print("  excretion cannot exceed intake, and a non-renal loss growing more slowly")
+    print("  than intake vanishes beside it. Fixing it removes a free parameter rather")
+    print("  than fitting three of them to two data points.")
+    print()
+    print("  p COMES FROM HENE'S WITHIN-SUBJECT CHANGE, the only admissible measurement")
+    print("  of the rise. Six healthy males, 18 days, controlled diet:")
+    print()
+    print("     %8s %9s %9s %11s" % ("intake", "urinary", "f_renal", "non-renal"))
+    for I, U, sd in HENE:
+        print("     %8.1f %9.1f %9.4f %11.1f" % (I, U, U / I, I - U))
+    a = 1.0 - HENE[0][1] / HENE[0][0]
+    b = 1.0 - HENE[1][1] / HENE[1][0]
+    ratio_I = HENE[1][0] / HENE[0][0]
+    p = math.log(a / b) / math.log(ratio_I)
+    print()
+    print("     (1-f) ratio %.4f / %.4f = %.4f over an intake ratio of %.2f"
+          % (a, b, a / b, ratio_I))
+    print("     p = ln(%.4f) / ln(%.2f) = %.5f, entered at two figures as %.2f"
+          % (a / b, ratio_I, p, P_ENTERED))
+    print("     so the non-renal loss goes as intake^%.2f - it RISES, sub-linearly,"
+          % (1.0 - P_ENTERED))
+    print("     which is colonic potassium secretion and is E1.")
+    print()
+    n = 6
+    a_se = (HENE[0][2] / math.sqrt(n)) / HENE[0][0]
+    b_se = (HENE[1][2] / math.sqrt(n)) / HENE[1][0]
+    rel = math.sqrt((a_se / a) ** 2 + (b_se / b) ** 2)
+    p_se = rel / math.log(ratio_I)
+    print("  AND IT IS %.1f STANDARD ERRORS FROM NOTHING AT ALL. Propagating the published"
+          % (p / p_se))
+    print("  SDs as standard errors of the mean, p = %.2f +/- %.2f, 95%% interval %.2f to"
+          % (p, p_se, p - 1.96 * p_se))
+    print("  %.2f - WHICH INCLUDES A CONSTANT FRACTION. The statistic does not carry this"
+          % (p + 1.96 * p_se))
+    print("  row; the physiology does, and the ledger note leads with that.")
+    print()
+    print("  THE LEVEL IS NOT HENE'S, AND HERE IS WHY IT CANNOT BE:")
+    f0_h = 1.0 - a * (NHANES_INTAKE / HENE[0][0]) ** P_ENTERED
+    print("     Hene's level implies f_0 = %.3f, i.e. %.1f mmol/day of urinary potassium"
+          % (f0_h, f0_h * NHANES_INTAKE))
+    print("     at the reference intake, against %.2f measured by 24 h collection in the"
+          % 61.17)
+    print("     %d control arms above. A %.0f%% miss."
+          % (len(TRIALS), 100 * abs(f0_h * NHANES_INTAKE - 61.17) / 61.17))
+    print("     SLOPE FROM THE WITHIN-SUBJECT DESIGN, LEVEL FROM THE POPULATION DATA,")
+    print("     and both halves said out loud rather than blended.")
+    print()
+
+    def f_renal(I):
+        return 1.0 - (1.0 - CURRENT_RENAL_FRACTION) * (NHANES_INTAKE / I) ** P_ENTERED
+
+    print("  THE CURVE, against every admissible observation at that intake:")
+    print("     %9s %9s %10s   %s" % ("intake", "f_renal", "urinary", "observed"))
+    for I in (34.53, NHANES_INTAKE, 80.0, 138.12, 161.0, 239.0, 300.0, 400.0):
+        obs = ["Brunner %.3f" % (u / i) for i, u in BRUNNER_FRACTIONS if abs(i - I) < 6.0]
+        obs += ["Hene %.3f" % (u / i) for i, u, _ in HENE if abs(i - I) < 6.0]
+        print("     %9.2f %9.4f %10.2f   %s" % (I, f_renal(I), f_renal(I) * I,
+                                                ", ".join(obs) if obs else ""))
+    print()
+    print("  AT THE REFERENCE IT IS EXACTLY %.3f, so promoting a constant to a function"
+          % f_renal(NHANES_INTAKE))
+    print("  leaves every existing result bit-identical and the suite asserts that as an")
+    print("  identity rather than as a comparison.")
+    print()
+    print("  RABELINK'S 0.80 AT 400 mmol/day IS NOT USED, AND THE PRE-REGISTRATION'S OWN")
+    print("  RULE IS WHY. That figure is the SECOND 24-HOUR PERIOD of the load; section 2")
+    print("  requires the intake held five days. It was quoted as supporting evidence for")
+    print("  two days and never qualified. APPLYING THE RULE LATE COST A SOURCE THAT HAD")
+    print("  BEEN AGREEING, which is the argument for applying it at extraction rather")
+    print("  than at write-up.")
+    print()
+    print("  WHAT THIS CURVE CANNOT DO: potassium DEPLETION. Below the reference it keeps")
+    print("  falling, where a real kidney conserves hard - Brunner's depletion periods show")
+    print("  urinary excretion EXCEEDING intake as a store empties, which no steady-state")
+    print("  fraction can express. Do not run this model below about half the reference")
+    print("  intake and quote the fraction.")
     print()
 
     rule()
@@ -289,7 +384,9 @@ def main():
     rule()
     print("ENTER: K.EXCRETION_EXPONENT = %.2f, uncertainty range %.1f to %.1f."
           % (round(n_adm, 2), lo_n, hi_n))
-    print("KEEP:  K.RENAL_FRACTION = %.3f, constant, disagreement recorded (D4)."
+    print("ENTER: K.NONRENAL_LOSS_EXPONENT = %.2f (95%% interval -0.08 to 0.87)." % P_ENTERED)
+    print("ENTER: K.RENAL_FRACTION_MAX = 1.0, a boundary condition and not a fit.")
+    print("KEEP:  K.RENAL_FRACTION = %.3f, now the value AT THE REFERENCE INTAKE."
           % CURRENT_RENAL_FRACTION)
     rule()
 

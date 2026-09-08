@@ -379,6 +379,61 @@ that had been compared with nothing.
 **What this does not fix: `OPEN-QUESTIONS` B11 stands.** There is still no potassium
 adaptation, and §7 of the pre-registration forbade this pass from touching it.
 
+## Amendment A9, 2026-09-08: the renal fraction is no longer a constant
+
+**A8 kept it as one under branch D4 because the sources disagreed on the sign. The owner
+struck out the datum that disagreed** — Cappuccio 2016's *marginal* fraction of 0.734 — on
+the ground that it measures the fate of a **potassium chloride tablet**, not of food, so
+tablet absorption rather than renal handling sets it. With it gone the disagreement
+collapses and **branch D5 fires.**
+
+**The shape was fixed before the data**, in §5 of `validation/potassium_doseresponse_prereg.md`:
+
+    f_renal(I) = f_max − (f_max − f_0) · (I_ref / I)^p
+
+- **`f_max` = 1 is a boundary condition, not a fit.** At steady state urinary excretion
+  cannot exceed intake, and a non-renal loss growing more slowly than intake vanishes
+  beside it. Fixing it removes a free parameter rather than fitting three to two points.
+- **`p` = 0.39 is Hené 1986's within-subject change** — non-renal loss 30 → 67 mmol/day as
+  intake went 80 → 300, so loss ∝ intake^0.61. The only admissible measurement of the rise.
+- **`f_0` = 0.884 is unchanged**, so the reference individual is **bit-identical** and the
+  suite asserts that equality as an identity.
+
+**Slope from the within-subject design, level from the population data.** Hené's own level
+implies 44.6 mmol/day of urinary potassium at ordinary intake against **61.17** measured in
+Cappuccio's 19 control arms — a 27% miss. Its level is out of line with everything else and
+its within-subject change is not. Both halves are said out loud rather than blended.
+
+| intake, mmol/day | `f_renal` | urinary K |
+|---|---|---|
+| 34.5 | 0.848 | 29.3 |
+| **69.1 (reference)** | **0.884** | **61.1** |
+| 138 | 0.912 | 125.9 |
+| 400 | 0.942 | 376.6 |
+
+### A9.1 What this row is worth, stated against itself
+
+**The exponent is 1.6 standard errors from zero and its 95% interval, −0.08 to 0.87,
+includes a constant fraction.** One study, six subjects, **abstract-level only** — the
+weakest provenance of any structural row in this ledger. What carries it is not the
+statistic but that **colonic potassium secretion rises with intake (E1)**: a constant share
+would require the gut to scale its losses exactly with the diet.
+
+**And Rabelink's 0.80 at 400 mmol/day is not used**, by the pre-registration's own rule.
+That figure is the *second 24-hour period* of the load and §2 requires the intake held five
+days. It was quoted as supporting evidence in A7 and A8 for two days and never qualified —
+applying the rule removed a source that appeared to agree.
+
+### A9.2 What it still cannot do
+
+**Potassium depletion.** Below the reference intake the curve keeps falling, where a real
+kidney conserves hard; Brunner's depletion periods show urinary excretion *exceeding*
+intake as a store empties, which no steady-state fraction can express. **Do not run this
+model below about half the reference intake and quote the fraction.**
+
+**And B11 stands.** There is still no potassium adaptation — this changes where the balance
+rests, not how it moves in time.
+
 ## What is NOT decided
 
 - **Renal sympathetic traffic.**
