@@ -1923,6 +1923,22 @@ using SciMLBase
         f_hi = fren_at(4.0 * L.K_INTAKE_NOMINAL)
         @test f_lo < L.K_RENAL_FRACTION < f_hi
 
+        # THE DEFENCE AGAINST HOLBROOK 1984, AS AN ASSERTION RATHER THAN A
+        # PARAGRAPH. Holbrook (PMID 6486085) is the better study of this quantity -
+        # 28 adults, a year, food diets, faeces measured directly - and it reports
+        # apparent potassium absorption FLAT across intakes, which is a statement
+        # that this exponent should be zero. OPEN-QUESTIONS B12 decided on
+        # 2026-09-08 to keep the rise, and the entire argument for doing so is that
+        # Holbrook's subjects ate what they chose, so his span could not resolve a
+        # change this small.
+        #
+        # THAT ARGUMENT IS THIS INEQUALITY AND NOTHING ELSE. Across a plausible
+        # self-selected range the curve must move less than six percentage points -
+        # it presently moves 0.052 - because a 28-subject balance study would not
+        # see that. IF ANYTHING EVER STEEPENS THE EXPONENT THIS FIRES, and the
+        # defence against Holbrook is gone with it. HANDOVER section 3.36.
+        @test 0.0 < fren_at(115.0) - fren_at(38.0) < 0.06
+
         # IT MAY NEVER REACH THE ASYMPTOTE IN ANY RANGE THIS MODEL IS VALID FOR.
         # K.RENAL_FRACTION_MAX is a boundary condition - urinary excretion cannot
         # exceed intake at steady state - and a model that got within a whisker of
