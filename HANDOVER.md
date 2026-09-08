@@ -2410,6 +2410,60 @@ failed six times (§3.24). **Three missed in one change, all found by one assert
 
 ---
 
+### 3.36 THE PAPER I NAMED AS THE ONE THAT WOULD SETTLE IT ARGUES THE OTHER WAY
+
+**§3.35 named Holbrook 1984 as the second dataset that would tighten or refute the
+intake-dependent fraction. Neither the owner nor I could obtain the full text** — publisher,
+DOI redirect and the USDA repository all failed. **The abstract settles more than expected,
+and against the row.**
+
+Holbrook JT et al., *Am J Clin Nutr* 1984;40(4):786–93, PMID 6486085. 28 adults, one year,
+four 7-day balances, meals and beverages and urine **and faeces** by atomic absorption,
+**self-selected food diets**. Apparent absorption of potassium **85%**, and it *"did not
+change significantly over the wide range of intakes."*
+
+**Apparent absorption already nets out colonic secretion**, so flat absorption across
+intakes says the exponent is zero. **And it is food, so the tablet-absorption argument that
+removed Cappuccio's marginal fraction does not touch it.**
+
+#### The balance artefact, proved from the paper's own numbers
+
+Holbrook reports urinary potassium at 77% of intake and a balance of **+0.28 g/day**. That
+is 7.16 mmol/day; sustained for the study's year it is **2614 mmol retained**, against a
+total body potassium of order 3500 — a 75% rise in body potassium in twelve months, in
+weight-stable adults. **So the steady-state urinary fraction implied by Holbrook is its
+absorbed fraction, 0.85, not its measured 0.77**, and the missing route is almost certainly
+sweat and skin, which a urine-plus-faeces collection does not see. Against the ledger's
+0.884 that is 4%, inside the spread of Brunner's own six values. **The level is not the
+problem.**
+
+#### The defence is range, and it is only range
+
+Holbrook's subjects ate what they chose, so the span is that of self-selected diets, perhaps
+38–115 mmol/day. Across exactly that span the model moves `f_renal` 0.853 → 0.905 — five
+percentage points, which 28 people with balance-study noise would not resolve. Hené's
+80 → 300 is the range the model must span and Holbrook cannot test it.
+
+**That is a defence and not a refutation, and the difference is worth being honest about.**
+Holbrook has 28 subjects to Hené's 6, measures the gut term *directly* rather than by
+subtraction, uses food, and explicitly tested constancy and found it. **It is the better
+study on every axis except the one that matters here.**
+
+#### And it puts a ceiling on `f_max` that the model does not respect
+
+At steady state the urinary fraction cannot exceed the **absorbed** fraction.
+`K.RENAL_FRACTION_MAX` = 1.0 rests on the weaker claim that it cannot exceed *intake*;
+Holbrook measures absorption at 0.85 and flat. The model is above that at every intake.
+**No value was changed on the strength of an abstract**, the tension is on both rows and in
+`OPEN-QUESTIONS` B12, and the two rows stand or fall together.
+
+**The transferable bit:** §3.35 recorded Holbrook as "a named target, not a recorded
+failure." Naming it was right — but the target was named as something that would *confirm or
+tighten*, and it turned out to be the strongest evidence against. **Name the paper that
+would refute you, not the one that would complete you.**
+
+---
+
 ### 3.35 THE RENAL FRACTION STOPPED BEING A CONSTANT, AND THE RULE THAT SETTLED IT ALSO REMOVED A SOURCE THAT AGREED
 
 **The owner's call, 2026-09-08:** Cappuccio's *marginal* fraction of 0.734 measures the
