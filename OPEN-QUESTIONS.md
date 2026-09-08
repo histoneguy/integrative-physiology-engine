@@ -219,7 +219,7 @@ site — a *segmental* claim, which ADR 0021's disqualification section says thi
 make no statement about, so building it means building segments for real rather than
 observationally.
 
-### B12. Holbrook 1984 says the potassium fraction is FLAT, and it is the better study — NEW, 2026-09-08
+### B12. ~~Holbrook 1984 says the potassium fraction is FLAT~~ — DECIDED 2026-09-08, option 1: the rise stands
 
 **You asked for Holbrook and could not get it; neither could I** — publisher, DOI redirect
 and the USDA repository all failed. **But the abstract carries the decisive sentence**, and
@@ -259,9 +259,19 @@ every intake — 0.884 at the reference, 0.942 at 400 mmol/day.
 3. **Keep the rise, lower the ceiling and the level to Holbrook's 0.85.** Coherent, but it
    rests two structural rows on one abstract.
 
-**My recommendation is 1**, on the range argument, with B12 left open until somebody reads
-Holbrook's Table of intakes. **If you disagree, 2 is the honest fallback** — it is the
-structure the evidence supports if Holbrook's range turns out to be wide.
+**Owner's decision, 2026-09-08: option 1.** The rise stands; Holbrook is underpowered for
+the span that matters.
+
+**The defence is now an assertion rather than a paragraph.** Option 1 rests entirely on one
+quantitative claim — that across Holbrook's plausible range the model's fraction moves too
+little for a 28-subject balance study to have seen it. The suite now asserts exactly that:
+`f_renal(115) − f_renal(38) < 0.06`, presently 0.052. **If a future change steepens the
+exponent, that test fires and the defence against Holbrook is gone with it** — which is the
+only way this decision can be held to account by anything but memory.
+
+**What would reopen this.** Holbrook's own table of intakes: if the range turns out to be
+wide — say beyond 30–130 mmol/day — the five-point argument fails and option 2 becomes the
+honest structure. That is one table in one paper neither of us can currently reach.
 
 ### B6. ~~Body size scaling is linear where physiology is sub-linear~~ — DONE 2026-09-05
 
