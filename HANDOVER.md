@@ -2410,6 +2410,54 @@ failed six times (§3.24). **Three missed in one change, all found by one assert
 
 ---
 
+### 3.35 THE RENAL FRACTION STOPPED BEING A CONSTANT, AND THE RULE THAT SETTLED IT ALSO REMOVED A SOURCE THAT AGREED
+
+**The owner's call, 2026-09-08:** Cappuccio's *marginal* fraction of 0.734 measures the
+fate of a **potassium chloride tablet**, not of food, so tablet absorption and not renal
+handling sets it. It was the only datum pointing against a rise. With it struck out, §3.34's
+branch D4 no longer applies and the pre-registered D5 fires.
+
+**The shape came from §5 of the pre-registration, fixed before any of this was seen.** The
+data chose one number:
+
+    f_renal(I) = 1 − (1 − 0.884)·(69.06 / I)^0.39
+
+`f_max` = 1 is a **boundary condition** — steady-state urinary excretion cannot exceed
+intake — which removes a free parameter instead of fitting three to two points. `p` = 0.39
+is **Hené's within-subject change**, non-renal loss 30 → 67 mmol/day across intake 80 → 300,
+i.e. loss ∝ intake^0.61. `f_0` stays 0.884, so **the reference individual is bit-identical**
+and the suite asserts that as an identity.
+
+**Slope from the within-subject design, level from the population data**, and both halves
+declared. Hené's own *level* implies 44.6 mmol/day of urinary potassium at ordinary intake
+against 61.17 measured in 19 control arms — a 27% miss — so its level is out of line with
+everything else while its within-subject change is the only admissible measurement of the
+rise that exists.
+
+#### Applying my own rule removed a source that had been agreeing
+
+**Rabelink's ≈0.80 at 400 mmol/day is the second 24-hour period of the load**, and §2 of the
+pre-registration requires the intake held five days before a measurement counts. It was
+quoted in §3.33, in ADR 0021's A7 and again in A8 as evidence that the fraction rises — for
+two days, without qualifying. **A rule applied late costs you a source you liked**, and that
+is the argument for applying it at the point of extraction rather than at the point of
+writing up.
+
+#### The row is entered against itself
+
+`K.NONRENAL_LOSS_EXPONENT` = 0.39 is **1.6 standard errors from zero** and its 95% interval,
+**−0.08 to 0.87, includes a constant fraction**. One study, six subjects, abstract-level
+only: the weakest provenance of any structural row here, and the ledger note says so in the
+first paragraph rather than the last. **What carries it is not the statistic** — it is that
+colonic potassium secretion rises with intake (E1), so a constant share would require the
+gut to scale its losses exactly with the diet.
+
+**Holbrook 1984** (*Am J Clin Nutr*, PMID 6486085, metabolic balance on self-selected diets)
+is the second within-subject dataset that would tighten or refute it, and it was not
+obtainable. That is a named target, not a recorded failure — §3.33's lesson.
+
+---
+
 ### 3.34 THE WEAKEST NUMBER IN THE POTASSIUM COMPONENT NOW HAS AN INTERVAL, AND THE VALUE DID NOT MOVE
 
 **Run after §3.33's retraction, on the owner's instruction to stop recording the gap and

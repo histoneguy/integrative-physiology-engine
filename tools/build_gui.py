@@ -103,14 +103,16 @@ CAVEATS = [
      "tell a spironolactone, a primary aldosteronism and a potassium load apart. Written LINEAR "
      "first, it predicted 7.6 mmol/L from a doubled ordinary diet, and the pre-registered "
      "falsifiable test caught that on its first run."),
-    ("There is no potassium ADAPTATION, and the urinary fraction is a constant (§3.33)",
-     "Compared out of sample against the Utrecht balance studies in healthy volunteers: Rabelink "
-     "1990 found renin and aldosterone back at baseline by day 20 of a 400 mmol/day load with "
-     "kaliuresis maintained, where this model holds aldosterone at 2.80 times baseline for ever. "
-     "And the urinary fraction of dietary potassium rises with intake in humans — Hené 1986 "
-     "measured 0.63 at 80 mEq/day and 0.78 at 300 — where this model uses 0.884 at every intake. "
-     "So the direction and rough size of a chronic potassium load are right and the hormone time "
-     "course is wrong. That is the bounded claim."),
+    ("There is no potassium ADAPTATION (§3.35)",
+     "Rabelink 1990 found renin and aldosterone back at baseline by day 20 of a 400 mmol/day "
+     "potassium load with kaliuresis maintained; this model holds aldosterone at 2.80 times "
+     "baseline for ever, because its excretion relation is fixed and its only adaptive machinery "
+     "acts on the sodium side. So the direction and rough size of a chronic potassium load are "
+     "right and the hormone time course is wrong. The urinary share of dietary potassium is no "
+     "longer a constant — it rises with intake, in a shape fixed before the data — but that "
+     "exponent rests on one abstract-level study in six men and its interval includes no rise at "
+     "all. What carries it is that colonic potassium secretion rises with intake, not the "
+     "statistic."),
     ("Twenty-five parameters are `assumed` and the search is recorded on each",
      "An assumed row means no admissible source could be opened, not that none was sought. Open "
      "the Parameters tab and filter by basis to see every one with its search history. The "
