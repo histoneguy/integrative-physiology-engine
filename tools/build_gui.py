@@ -113,6 +113,15 @@ CAVEATS = [
      "exponent rests on one abstract-level study in six men and its interval includes no rise at "
      "all. What carries it is that colonic potassium secretion rises with intake, not the "
      "statistic."),
+    ("The best study of the potassium fraction says it is FLAT, and the model disagrees (§3.36)",
+     "Holbrook 1984 measured potassium balance directly — 28 adults, one year, food diets, "
+     "faeces analysed — and reports apparent absorption of 85% that did not change over the "
+     "range of intakes, which is a statement that the fraction should be constant. The model "
+     "keeps a rising fraction on one argument: Holbrook's subjects ate what they chose, and "
+     "across that span the model moves only five percentage points, which 28 people would not "
+     "resolve. The model's fraction also exceeds Holbrook's measured absorbed fraction at every "
+     "intake. This was decided deliberately, not overlooked, and one table in that paper — which "
+     "could not be obtained — would settle it."),
     ("Twenty-five parameters are `assumed` and the search is recorded on each",
      "An assumed row means no admissible source could be opened, not that none was sought. Open "
      "the Parameters tab and filter by basis to see every one with its search history. The "

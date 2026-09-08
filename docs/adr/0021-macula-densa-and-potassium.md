@@ -424,6 +424,32 @@ That figure is the *second 24-hour period* of the load and §2 requires the inta
 days. It was quoted as supporting evidence in A7 and A8 for two days and never qualified —
 applying the rule removed a source that appeared to agree.
 
+### A9.3 Holbrook 1984 argues against A9, and A9 stands anyway — decided 2026-09-08
+
+**The paper §3.35 named as the one that would tighten this row turned out to be the strongest
+evidence against it**, and neither the owner nor I could obtain its full text. Holbrook JT et
+al., *Am J Clin Nutr* 1984;40(4):786–93, PMID 6486085: 28 adults, one year, four 7-day
+balances, urine **and faeces** by atomic absorption, **self-selected food diets** — so the
+tablet-absorption argument that cleared the way for A9 does not touch it. Apparent absorption
+of potassium **85%**, *"did not change significantly over the wide range of intakes"*, which
+— absorption already netting out colonic secretion — is a direct statement that `p` = 0.
+
+**Owner's decision: option 1 of `OPEN-QUESTIONS` B12. The rise stands, on range alone.**
+Holbrook's subjects ate what they chose, perhaps 38–115 mmol/day, and across that span this
+curve moves `f_renal` 0.853 → 0.905. Five percentage points is not something 28 people with
+balance-study noise resolve. **Hené's 80 → 300 is the span the model must cross and Holbrook's
+design cannot test it.**
+
+**The defence is now an assertion.** The suite requires `f_renal(115) − f_renal(38) < 0.06`.
+Steepen the exponent and that test fires, taking the argument against Holbrook with it —
+which is the only thing that keeps a decision like this honest once the session that made it
+is over.
+
+**What is accepted in taking option 1:** the model's fraction exceeds Holbrook's measured
+absorbed fraction of 0.85 at *every* intake, not merely near the asymptote. That is tolerated
+on the ground that Holbrook is a different population on different diets and its 0.85 sits
+inside the spread of Brunner's own six values — **not** on the ground that it does not matter.
+
 ### A9.2 What it still cannot do
 
 **Potassium depletion.** Below the reference intake the curve keeps falling, where a real

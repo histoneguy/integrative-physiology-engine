@@ -2457,6 +2457,21 @@ Holbrook measures absorption at 0.85 and flat. The model is above that at every 
 **No value was changed on the strength of an abstract**, the tension is on both rows and in
 `OPEN-QUESTIONS` B12, and the two rows stand or fall together.
 
+#### Decided: the row stands, and the defence became a test
+
+**Owner's call, 2026-09-08: option 1.** The rise survives on range alone. **What makes that
+auditable rather than a preference is that the argument is now an assertion in the suite** —
+`f_renal(115) − f_renal(38) < 0.06`, presently 0.052. That inequality *is* the defence
+against Holbrook: it says the curve moves too little across his span for 28 people to have
+seen it. **Steepen the exponent and the test fires, and the defence goes with it.**
+
+**What option 1 accepts, stated so nobody has to rediscover it:** the model's fraction
+exceeds Holbrook's measured absorbed fraction of 0.85 at *every* intake, not just near the
+asymptote. That is tolerated because Holbrook is a different population on different diets
+and 0.85 sits inside Brunner's own spread — not because it does not matter. **One table in
+one unobtainable paper reopens it:** if Holbrook's intake range is wider than about
+30–130 mmol/day, the five-point argument fails and B12's option 2 is the honest structure.
+
 **The transferable bit:** §3.35 recorded Holbrook as "a named target, not a recorded
 failure." Naming it was right — but the target was named as something that would *confirm or
 tighten*, and it turned out to be the strongest evidence against. **Name the paper that
