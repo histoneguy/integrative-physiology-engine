@@ -333,6 +333,9 @@ def main():
     print("  BEEN AGREEING, which is the argument for applying it at extraction rather")
     print("  than at write-up.")
     print()
+    print("  HOLBROOK 1984 IS THE BEST STUDY OF THIS QUANTITY AND IT ARGUES AGAINST THE")
+    print("  RISE. Section 5c. It is recorded before the caveats, not after them.")
+    print()
     print("  WHAT THIS CURVE CANNOT DO: potassium DEPLETION. Below the reference it keeps")
     print("  falling, where a real kidney conserves hard - Brunner's depletion periods show")
     print("  urinary excretion EXCEEDING intake as a store empties, which no steady-state")
@@ -340,6 +343,69 @@ def main():
     print("  intake and quote the fraction.")
     print()
 
+
+    rule()
+    print("5c. HOLBROOK 1984 - THE CONTRARY EVIDENCE, AND IT IS THE BETTER STUDY")
+    rule()
+    for line in [
+        "  Holbrook JT, Patterson KY, Bodner JE, Douglas LW, Veillon C, Kelsay JL, Mertz",
+        "  W, Smith JC. Sodium and potassium intake and balance in adults consuming",
+        "  self-selected diets. Am J Clin Nutr 1984;40(4):786-93. doi:10.1093/ajcn/40.4.786.",
+        "  PMID 6486085. ABSTRACT-LEVEL ONLY - not open access, and no route reached the",
+        "  full text: the publisher, the DOI redirect and the USDA repository were all",
+        "  tried, and the owner could not obtain it either.",
+        "",
+        "  28 adults, 12 men and 16 women, ONE YEAR, four 7-day balance studies one per",
+        "  season. Meals, beverages, urine AND FECES analysed by atomic absorption.",
+        "  SELF-SELECTED FOOD DIETS - so the owner's tablet-absorption objection to",
+        "  Cappuccio's marginal fraction DOES NOT TOUCH THIS STUDY.",
+        "",
+        "    intake                71.61 mmol/day (2.8 g/day)",
+        "    urinary               55.14 mmol/day = 77% of intake",
+        "    faecal                10.74 mmol/day = 15% of intake",
+        "    apparent absorption   85%, AND IT 'DID NOT CHANGE SIGNIFICANTLY OVER THE",
+        "                          WIDE RANGE OF INTAKES'",
+        "    reported balance      +7.16 mmol/day",
+        "",
+        "  THE POSITIVE BALANCE IS AN ARTEFACT AND THE PAPER'S OWN NUMBERS PROVE IT.",
+        "  7.16 mmol/day for a year is 2614 mmol retained, against a total body potassium",
+        "  of order 3500 mmol - a 75% rise in body potassium in twelve months, in",
+        "  weight-stable adults. (3500 is a round teaching number and is used ONLY to",
+        "  show an impossibility by an order of magnitude, which is what round numbers",
+        "  are legitimately for.) The missing route is almost certainly sweat and skin,",
+        "  which a urine-plus-faeces collection does not see.",
+        "",
+        "  SO HOLBROOK'S STEADY-STATE URINARY FRACTION IS ITS ABSORBED FRACTION, 0.85,",
+        "  and not its measured 0.77. Against the ledger's 0.884 that is a 4% difference,",
+        "  well inside the spread of Brunner's own six values (0.681-1.008), in a",
+        "  different population on different diets. THE LEVEL IS NOT THE PROBLEM.",
+        "",
+        "  THE PROBLEM IS THAT IT SAYS THE FRACTION IS FLAT. Apparent absorption already",
+        "  nets out colonic SECRETION - faecal potassium is unabsorbed diet plus what the",
+        "  colon puts back - so a flat apparent absorption across intakes is a direct",
+        "  statement that the net gut loss is a constant FRACTION, which is p = 0.",
+        "",
+        "  WHAT DEFENDS p = 0.39 IS RANGE, AND ONLY RANGE. Holbrook's subjects ate what",
+        "  they chose; the intake range is the spread of self-selected US diets, perhaps",
+        "  38-115 mmol/day. Across exactly that span this model moves f_renal from 0.853",
+        "  to 0.905 - about five percentage points - which 28 people with balance-study",
+        "  noise would not resolve. Hene's 80 -> 300 is the range the model needs to span",
+        "  and Holbrook's design cannot test it.",
+        "",
+        "  THAT IS A DEFENCE AND NOT A REFUTATION, AND THE DIFFERENCE MATTERS. Holbrook",
+        "  has 28 subjects to Hene's 6, measures the gut term DIRECTLY rather than by",
+        "  subtraction, uses food, and explicitly tested constancy and found it. Hene has",
+        "  the wider range and a within-subject step. Neither is obtainable in full.",
+        "",
+        "  AND IT PUTS A CEILING ON f_max THAT THE MODEL DOES NOT RESPECT. At steady",
+        "  state the urinary fraction cannot exceed the absorbed fraction. K.RENAL_",
+        "  FRACTION_MAX is 1.0 on a conservation argument; Holbrook measures 0.85, flat.",
+        "  The model's fraction is above that at every intake - 0.884 at the reference,",
+        "  0.942 at 400 mmol/day. NO VALUE WAS CHANGED ON THE STRENGTH OF AN ABSTRACT;",
+        "  the tension is recorded and OPEN-QUESTIONS B12 is the decision.",
+    ]:
+        print(line)
+    print()
     rule()
     print("6. THE ONE THING HERE THAT IS A CHECK RATHER THAN A FIT")
     rule()
