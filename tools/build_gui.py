@@ -122,6 +122,15 @@ CAVEATS = [
      "resolve. The model's fraction also exceeds Holbrook's measured absorbed fraction at every "
      "intake. This was decided deliberately, not overlooked, and one table in that paper — which "
      "could not be obtained — would settle it."),
+    ("The oxygen extraction ratio is a PREDICTION nobody can currently check (§3.37)",
+     "Oxygen extraction 0.183 and mixed venous saturation 0.801 compose from three "
+     "independently sourced rows with nothing fitted — a genuine prediction. It was filed as a "
+     "defect for three days for disagreeing with a textbook 0.23 that exists in no ledger row "
+     "here. A pre-registered pass found the comparison cannot currently be made: mixed venous "
+     "blood needs a pulmonary artery catheter, healthy people are not catheterised, and in "
+     "healthy studies the arteriovenous oxygen difference is never measured — it is computed as "
+     "VO2 over cardiac output, which is the same composition this model performs. Treat the "
+     "extraction ratio and mixed venous saturation as unvalidated outputs."),
     ("Twenty-five parameters are `assumed` and the search is recorded on each",
      "An assumed row means no admissible source could be opened, not that none was sought. Open "
      "the Parameters tab and filter by basis to see every one with its search history. The "

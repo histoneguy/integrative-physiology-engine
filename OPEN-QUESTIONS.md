@@ -124,7 +124,56 @@ mIU/L; real thyrotoxicosis is below 0.01. The log-linear relation is fitted acro
 euthyroid range and does not suppress outside it. **`thyroid_secretion` expresses which
 way the disease goes, not how far.**
 
-### B8. Cardiac output is 25% higher than the Fick relation allows — NEW, 2026-09-05
+### B8. ~~Cardiac output is 25% higher than the Fick relation allows~~ — INDETERMINATE 2026-09-08, and the question was wrongly put
+
+**This entry was wrong in its framing and in one of its two assertions, and the pass that
+corrected it is `validation/venous_saturation_prereg.md`, pre-registered before the search.**
+
+**What the model actually does.** Oxygen extraction **0.183** and mixed venous saturation
+**0.801** are a *prediction*: oxygen consumption from Weir's equation on a 197-study
+meta-analysis, arterial content from a sourced dissociation curve, cardiac output from heart
+rate times a tier-A CMR stroke volume. Nothing fitted.
+
+**What this entry judged it against.** 0.23, which **is in no ledger row, no target file and
+no closure check here.** It is a teaching number — directive 1.12 lists it, alongside the
+75% saturation, the 5 mL/dL difference and the 5 L/min cardiac output it composes with.
+**This entry asserted that a sourced prediction was wrong because it disagreed with an
+unsourced convention.**
+
+**Branch V3: the comparison cannot currently be made.** Mixed venous blood needs a pulmonary
+artery catheter and healthy people are not catheterised, so every modern source is intensive
+care, cardiac surgery, anaesthesia, transplantation, COPD or pulmonary hypertension —
+directive 1.7 for the seventh subsystem, predicted in §2 before the search. The one clearly
+admissible source, **Barratt-Boyes & Wood 1957** (*J Lab Clin Med* 50:93–106, PMID 13439270,
+healthy subjects, right-heart saturations) — almost certainly the origin of the textbook 75%
+— is not open access and has no abstract in Europe PMC.
+
+**And the finding the branch did not anticipate:** in healthy subjects the arteriovenous
+oxygen difference is **never measured, it is computed as VO₂/CO.** Every non-invasive healthy
+study divides oxygen uptake by a cardiac output obtained some other way — *the same
+composition this model performs*. It cannot test the model; it can only reveal which
+cardiac-output method was used. **So the extraction ratio is, in health, not independently
+measurable short of a PA catheter.**
+
+**The method assertion is half right, and it is the wrong half.** This entry claimed "CMR is
+known to read stroke volume higher" and cited nothing. Crowe LA et al., *J Clin Med*
+2022;11(10):2717, PMC9143884, open access, read in full: no MRI localisation is
+interchangeable with thermodilution, 2SD of bias **24.1–31.1 mL/beat** — about ±30% on a
+90 mL stroke volume. **The methods disagree enormously, but no direction is established**,
+and the authors suggest thermodilution is the less precise one. So composing a CMR cardiac
+output with a thermodilution-era saturation is indeed illegitimate — but nothing says which
+side is wrong, and this entry assumed it was the model.
+
+**Nothing was entered and `CV.SV.NOMINAL` was not touched.** §7 forbade it under every
+branch, and nothing found would have justified it anyway.
+
+**What would resolve it, in order of value:** a healthy cohort reporting cardiac output *and*
+oxygen consumption in the same subjects by one method family; Barratt-Boyes & Wood in full,
+with its cohort, method and dispersion; a method-matched CMR-versus-reference comparison in
+**health** rather than in pulmonary hypertension.
+
+### B8-OLD. The entry as originally filed, kept because the wrong diagnosis was confident
+
 
 **The sharpest quantified discrepancy in the cardiovascular limb, and nothing in it was
 fitted to anything.** With oxygen consumption now sourced from a 197-study meta-analysis
