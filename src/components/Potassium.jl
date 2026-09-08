@@ -88,11 +88,31 @@ verified by 24-hour urine - which is this model's elasticity, measured twenty
 times. The exponent moved 17.71 -> 17.73, WHICH IS NOTHING, and its interval went
 from a twelvefold spread over ten people to 11.9-24.7 over 1216.
 
-AND THE RENAL FRACTION STAYS A CONSTANT BY DECISION D4, NOT BY DEFAULT: the same
-paper's MARGINAL fraction is 0.734, BELOW this row, which would make the average
-fall with intake where Hene and Rabelink have it rising. The sources disagree on
-the SIGN, so the pre-registered rising form is not taken and the disagreement is
-recorded. See K.RENAL_FRACTION.
+AND THE RENAL FRACTION IS NO LONGER A CONSTANT. D4 kept it as one for two days
+because Cappuccio's MARGINAL fraction (0.734) pointed the other way; the owner
+struck that out on 2026-09-08 on the ground that it measures the fate of a
+potassium chloride TABLET and not of food, so tablet absorption - not renal
+handling - sets it. With it gone the sources no longer disagree and D5 fires.
+
+WHAT SETS THE CURVE. The SHAPE is section 5 of the pre-registration, fixed before
+the data. p_K = 0.39 comes from Hene 1986's WITHIN-SUBJECT change, the only
+admissible measurement of the rise: non-renal loss 30 -> 67 mmol/day as intake went
+80 -> 300, i.e. loss proportional to intake^0.61. The LEVEL stays Brunner's 0.884
+at the reference intake, because Hene's own level implies 44.6 mmol/day of urinary
+potassium at ordinary intake against 61.17 measured in Cappuccio's nineteen control
+arms - a 27% miss. SLOPE FROM THE WITHIN-SUBJECT DESIGN, LEVEL FROM THE POPULATION
+DATA, and both halves said out loud.
+
+THE RISE IS 1.6 STANDARD ERRORS FROM NOTHING AT ALL. p_K = 0.39 with a 95 percent
+interval of -0.08 to 0.87, which INCLUDES A CONSTANT FRACTION. What carries it is
+not the statistic: it is that colonic potassium secretion rises with intake, which
+is E1, and a constant share would require the gut to scale its losses exactly with
+the diet. The interval is on the row.
+
+RABELINK'S 0.80 AT 400 mmol/day IS NOT USED, and applying the pre-registration's
+own rule is why: that figure is the SECOND 24-HOUR PERIOD of the load, and section
+2 requires the intake held five days before a measurement counts. It was quoted as
+supporting evidence for two days and it never qualified.
 
 WHAT IS NOW CHECKED, AND NEVER WAS: f_renal * K_intake = 0.884 * 69.06 = 61.05
 mmol/day of urinary potassium, against 61.17 measured by 24-hour collection in the
@@ -116,6 +136,7 @@ using ..LedgerParams
 using ..LedgerParams:
     K_INTAKE_NOMINAL, K_RENAL_FRACTION, K_FRACTIONAL_EXCRETION,
     K_DISTRIBUTION_VOLUME, K_PLASMA_REFERENCE, K_EXCRETION_EXPONENT,
+    K_RENAL_FRACTION_MAX, K_NONRENAL_LOSS_EXPONENT,
     BF_BODY_MASS_REFERENCE
 
 """
@@ -137,7 +158,14 @@ function Potassium(; name, body_mass = BF_BODY_MASS_REFERENCE, enabled::Bool = t
 
     pars = @parameters begin
         K_intake = sz * K_INTAKE_NOMINAL
-        f_renal  = K_RENAL_FRACTION          # INTENSIVE, a fraction
+        # THE REFERENCE INTAKE SCALES EXACTLY AS THE INTAKE DOES, so the ratio in
+        # f_renal below is SIZE-FREE and the fraction cannot inherit a body-size
+        # dependence it has no evidence for. Same construction as md_drive, and the
+        # mistake section 3.30 records making with G_anp, avoided by shape.
+        K_intake_ref = sz * K_INTAKE_NOMINAL
+        f_renal_0  = K_RENAL_FRACTION        # INTENSIVE, the fraction AT K_intake_ref
+        f_renal_max = K_RENAL_FRACTION_MAX   # INTENSIVE, the limit at large intake
+        p_K      = K_NONRENAL_LOSS_EXPONENT  # INTENSIVE, an exponent
         FE_K     = K_FRACTIONAL_EXCRETION    # INTENSIVE, a fraction
         V_K      = mz * K_DISTRIBUTION_VOLUME
         K_p_ref  = K_PLASMA_REFERENCE        # INTENSIVE, a concentration
@@ -149,13 +177,34 @@ function Potassium(; name, body_mass = BF_BODY_MASS_REFERENCE, enabled::Bool = t
         K_p(t) = K_PLASMA_REFERENCE   # mmol/L   THE ONE STATE
         K_excr(t)                     # mmol/day OUTPUT, renal potassium excretion
         K_load(t)                     # mmol/day the renal load, intake less stool
+        f_renal(t)                    # unitless urinary share of dietary potassium
     end
 
     eqs = if enabled
         [
-            # THE RENAL LOAD. Not all dietary potassium reaches the kidney; the
-            # residual is stool, which this model does not have, so it is removed
-            # here as a sourced fraction rather than ignored.
+            # THE URINARY SHARE OF DIETARY POTASSIUM, AND IT IS NOT A CONSTANT.
+            # The residual is stool, which this model does not have, so it is
+            # removed here rather than ignored - but colonic potassium secretion
+            # rises with intake LESS than proportionally, so the share reaching the
+            # urine RISES. Equivalently, the non-renal loss goes as
+            # intake^(1 - p_K), which is the same statement.
+            #
+            # THE SHAPE WAS FIXED BEFORE THE DATA WERE SEEN, in section 5 of
+            # validation/potassium_doseresponse_prereg.md, committed at 1698d2a.
+            # Choosing a shape after looking is the error ADR 0017's amendment
+            # records; here the only thing the data chose was p_K.
+            #
+            # f_renal_max = 1 IS A BOUNDARY CONDITION, NOT A FIT. At steady state
+            # urinary excretion cannot exceed intake, and a loss growing more
+            # slowly than intake vanishes beside it, so the share tends to one.
+            #
+            # IT IS EXACTLY f_renal_0 AT THE REFERENCE INTAKE, so promoting the
+            # constant to a function leaves every existing result bit-identical -
+            # the same discipline as ADR 0021's observational split.
+            f_renal ~ f_renal_max -
+                      (f_renal_max - f_renal_0) * (K_intake_ref / K_intake)^p_K,
+
+            # THE RENAL LOAD.
             K_load ~ f_renal * K_intake,
 
             # EXCRETION IS A FRACTION OF THE FILTERED LOAD. The shape is sourced -
@@ -197,6 +246,7 @@ function Potassium(; name, body_mass = BF_BODY_MASS_REFERENCE, enabled::Bool = t
         ]
     else
         [
+            f_renal ~ K_RENAL_FRACTION,
             K_load ~ 0.0,
             K_excr ~ 0.0,
             D(K_p) ~ 0.0,

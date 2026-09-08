@@ -1897,6 +1897,40 @@ using SciMLBase
         # comparison is good for. HANDOVER section 3.34.
         @test 45.0 < fin(sys, sol, "kp₊K_excr") < 85.0
 
+        # THE URINARY SHARE IS A FUNCTION OF INTAKE AND IT IS EXACTLY THE OLD
+        # CONSTANT AT THE REFERENCE. That equality is what makes promoting a
+        # constant to a function a structural change with no result attached to it:
+        # every pinned number elsewhere in this file is the rest of the assertion.
+        # Asserted with a tight tolerance because it is an identity, not a fit.
+        @test isapprox(fin(sys, sol, "kp₊f_renal"), L.K_RENAL_FRACTION; rtol = 1e-10)
+
+        # AND IT RISES WITH INTAKE, WHICH IS THE WHOLE POINT OF THE ROW. Colonic
+        # potassium secretion grows more slowly than the diet does, so the share
+        # reaching the urine grows. Hene 1986 is the only admissible within-subject
+        # measurement of it and the exponent is 1.6 standard errors from zero - so
+        # what is asserted here is the DIRECTION and the BOUND, not a magnitude.
+        function fren_at(ki)
+            prob = ODEProblem(sys, Pair[pget(sys, "kp₊K_intake") => ki],
+                              (0.0, 400.0), Pair[])
+            s = solve(prob, Rodas5P(); abstol = 1e-10, reltol = 1e-10, saveat = 400.0)
+            v = NaN
+            for o in observed(sys)
+                String(Symbol(o.lhs)) == "kp₊f_renal(t)" && (v = s[o.lhs][end])
+            end
+            v
+        end
+        f_lo = fren_at(0.5 * L.K_INTAKE_NOMINAL)
+        f_hi = fren_at(4.0 * L.K_INTAKE_NOMINAL)
+        @test f_lo < L.K_RENAL_FRACTION < f_hi
+
+        # IT MAY NEVER REACH THE ASYMPTOTE IN ANY RANGE THIS MODEL IS VALID FOR.
+        # K.RENAL_FRACTION_MAX is a boundary condition - urinary excretion cannot
+        # exceed intake at steady state - and a model that got within a whisker of
+        # it at four times an ordinary diet would be claiming the gut had stopped
+        # losing potassium at all.
+        @test f_hi < 0.96
+        @test f_hi < L.K_RENAL_FRACTION_MAX
+
         # WHAT IS NOT A RESTATEMENT IS THE RESPONSE. Doubling dietary potassium
         # must raise plasma potassium - and by MUCH less than twofold, because
         # excretion rises with the concentration. That is the property which makes

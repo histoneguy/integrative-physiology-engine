@@ -172,7 +172,7 @@ bought by fitting `g_md` to the dataset that already fixes `RN.ANP.TAU`.
 gain near 5.0 and reporting the chronic ratio as 2.57, which is honest but spends the
 prediction. §3.32 and ADR 0021 amendment A6.
 
-### B10. ~~The potassium fraction is a constant and humans are not~~ — DECIDED 2026-09-06, and it stays a constant
+### B10. ~~The potassium fraction is a constant and humans are not~~ — CLOSED 2026-09-08, it is now intake-dependent
 
 **Found by the owner catching a false claim, not by any check here.** `K.RENAL_FRACTION`
 is 0.884 at every intake. The Utrecht balance studies put it lower and *rising with
@@ -188,11 +188,21 @@ supplement appearing in urine, across 19 trials — is **0.734**, below the ledg
 and a marginal below the average makes the average **fall** with intake where Hené and
 Rabelink have it rising. Branch D4: report, do not split.
 
-**Still worth your eye**, because the marginal figure is the fate of a KCl tablet rather
-than of food and every bias on it (tablet absorption, incomplete collections, compliance)
-points the same way. If you think that disqualifies it, the disagreement collapses and D5
-fires. **What did get settled is the exponent** — 17.71 → 17.73, but with an interval of
-11.9–24.7 from 1216 participants in place of a twelvefold spread over ten. §3.34.
+**You struck it out on 2026-09-08** — it measures tablet absorption, not renal handling —
+so the disagreement collapsed and D5 fired. `f_renal` is now
+`1 − 0.116·(69.06/I)^0.39`: the shape from §5 of the pre-registration, the exponent from
+Hené's within-subject change, the level unchanged so the reference individual is
+bit-identical. §3.35 and ADR 0021 amendment A9.
+
+**One thing to know about the row you now own.** The exponent is **1.6 standard errors from
+zero** and its interval includes a constant fraction; it rests on one abstract-level study
+in six men. What carries it is the physiology — colonic potassium secretion rises with
+intake — not the statistic, and the ledger note leads with that. **Holbrook 1984** (*Am J
+Clin Nutr*, PMID 6486085) is the balance study that would tighten or refute it and it was
+not obtainable; if you can get it, that is the highest-value paper in this subsystem.
+
+Also settled in the same pass: the exponent, 17.71 → 17.73, with an interval of 11.9–24.7
+from 1216 participants in place of a twelvefold spread over ten. §3.34.
 
 ### B11. There is no potassium adaptation, and adaptation is what the literature is about — NEW, 2026-09-05
 

@@ -214,6 +214,12 @@ function member_remake(prob, sys, member; sex::Symbol = :male)
              sys.rn.Na_distal_ref  => sz * RN_GFR_NOMINAL * BF_NA_PLASMA_SETPOINT *
                                       (1.0 - RN_NA_PROXIMAL_FRACTION),
              sys.kp.K_intake       => sz * K_INTAKE_NOMINAL,
+             # EIGHTH MEMBER OF THE CLASS THIS LIST KEEPS LOSING - see section 3.24.
+             # It scales exactly as K_intake does, on purpose: the ratio of the two
+             # is what f_renal reads, and a reference that did not scale would make
+             # a heavy person's urinary potassium share differ from a light one's
+             # with nothing sourced saying it should.
+             sys.kp.K_intake_ref   => sz * K_INTAKE_NOMINAL,
              sys.kp.V_K            => mz * K_DISTRIBUTION_VOLUME,
              # ADR 0017's respiratory component, added 2026-09-04. THREE extensive
              # parameters and they must all appear or the loop stops being size
