@@ -2410,6 +2410,64 @@ failed six times (§3.24). **Three missed in one change, all found by one assert
 
 ---
 
+### 3.37 I FILED A DEFECT AGAINST THE MODEL FOR DISAGREEING WITH A NUMBER NOBODY HAD SOURCED
+
+**B8 said the model's cardiac output was 25% higher than the Fick relation allows.** The
+arithmetic was right. The framing was the inverse of how this repository works, and it stood
+for three days.
+
+The model's oxygen extraction ratio, **0.183**, is a *prediction*: oxygen consumption from
+Weir's equation on a 197-study meta-analysis, arterial content from a sourced dissociation
+curve, cardiac output from heart rate times a tier-A CMR stroke volume. **Nothing fitted.**
+B8 judged it against **0.23 — which is in no ledger row, no target file and no closure check
+here.** A teaching number, of exactly the class directive 1.12 lists and this repository has
+already caught wrong four times in six.
+
+**The general form, and it is new to §5:** *a discrepancy is only a defect once BOTH sides
+of it are sourced.* Directive 1.12 was written about numbers entering the ledger. It applies
+just as hard to numbers a model is judged against, and nothing in the five gates looks at
+those — a target lives in prose, and prose is not checked.
+
+#### Branch V3: the comparison cannot currently be made
+
+Mixed venous blood needs a pulmonary artery catheter and healthy people are not
+catheterised, so the whole modern literature is intensive care, cardiac surgery,
+anaesthesia, transplantation, COPD and pulmonary hypertension. **Directive 1.7 for the
+seventh subsystem, and §2 of the pre-registration predicted it before the search.** The one
+admissible source — **Barratt-Boyes & Wood 1957**, healthy subjects, right-heart saturations,
+almost certainly the origin of the textbook 75% — is not open access and has no abstract.
+
+**And the finding the branch did not anticipate is the useful one: in healthy subjects the
+arteriovenous oxygen difference is never measured, it is computed as VO₂/CO.** Every
+non-invasive healthy study divides oxygen uptake by a cardiac output obtained some other way
+— **the same composition this model performs**. It cannot test the model; it only reveals
+which cardiac-output method was used. The extraction ratio is, in health, not independently
+measurable short of a catheter.
+
+#### The method claim was half right and it was the wrong half
+
+B8 asserted "CMR is known to read stroke volume higher" and cited nothing. Crowe LA et al.,
+*J Clin Med* 2022;11(10):2717, PMC9143884, read in full: **no MRI localisation is
+interchangeable with thermodilution, 2SD of bias 24.1–31.1 mL/beat** — about ±30%. The
+methods disagree enormously; **no direction is established**, and the authors suggest
+thermodilution is the imprecise one. Composing a CMR cardiac output with a thermodilution-era
+saturation is illegitimate, but nothing says which side is wrong, and B8 assumed it was the
+model.
+
+#### What the pass was allowed to conclude, written before it ran
+
+§0 of the pre-registration said this pass could **exonerate** the model rather than only
+convict it, and §7 forbade touching `CV.SV.NOMINAL` under every branch. Both were written
+down before the search precisely so that the outcome could not look like a rescue. **Nothing
+was entered; no row was created; the stroke volume is untouched.**
+
+**The bench measurement is why that mattered.** Scaling stroke volume to 76.6 mL preserves
+arterial pressure exactly and leaves both validated cardiovascular targets inside their
+bands — **the "fix" is nearly free, and nothing afterwards would have detected it.** A cheap
+adjustment that lands a model on a convention is the most dangerous kind.
+
+---
+
 ### 3.36 THE PAPER I NAMED AS THE ONE THAT WOULD SETTLE IT ARGUES THE OTHER WAY
 
 **§3.35 named Holbrook 1984 as the second dataset that would tighten or refute the
@@ -2944,6 +3002,14 @@ were solved against that very target. And §5, which is how work goes wrong here
     times, and diffing every shared parameter gave zero mismatches before the literal was
     visible. **Call the function.** A number in a test that could have been computed is a
     second implementation of the thing under test.
+24. **A DISCREPANCY FILED AS A DEFECT WHEN ONLY ONE SIDE OF IT WAS SOURCED.**
+    §3.37. B8 said the model's cardiac output was 25% too high, against an extraction
+    ratio of 0.23 that exists in no ledger row, no target file and no closure check —
+    a teaching number, directive 1.12's own class. **Nothing in the five gates looks at
+    the numbers a model is JUDGED against**: a target lives in prose, and prose is not
+    checked. Before filing a defect, source both sides of the disagreement — and check
+    what a "fix" would cost, because B8's was nearly free and that is the warning sign,
+    not the reassurance.
 20. **A RECORDED FAILED SEARCH READ AS EVIDENCE ABOUT THE LITERATURE — AND IT
     RECURRED ON 2026-09-05, §3.33.** The second instance was potassium: "renal potassium
     clearance in healthy adults could not be sourced" was a description of what four
