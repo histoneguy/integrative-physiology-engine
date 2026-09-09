@@ -208,6 +208,38 @@ def _check_one(p: dict[str, float]) -> int:
           "output and the operating point moves for that sex only.",
           errors)
 
+    # --- ADR 0022: the chronotropic baroreflex arm -------------------------
+    #
+    # THE UNIT CONVERSION IS THE WHOLE POINT OF THIS CHECK. Baroreflex
+    # sensitivity is measured in ms/mmHg because what is measured is the
+    # lengthening of the cardiac interval against a pressure ramp. The model
+    # consumes a DIMENSIONLESS gain, in the same form BR.OPEN_LOOP_GAIN sits in.
+    # With RR = 60000/HR in ms,
+    #
+    #     (1/HR) dHR/dP = -(HR/60000) * BRS   and   G_hr = MAP_ref * that
+    #
+    # so G_hr = BRS * HR0 * MAP_ref / 60000. If this drifts, a sensitivity in
+    # milliseconds is being multiplied into a model that thinks it is
+    # dimensionless, which is section 5 item 18 - two rows sharing a unit symbol
+    # and not a measurement scale, the error that produced a 2.2x wrong hormone
+    # level and a confident, wrong decomposition.
+    #
+    # AND IT IS LOCAL. Rate and interval are reciprocals, so this factor holds at
+    # the operating heart rate and nowhere else. That is why HR0 appears here: a
+    # sensitivity measured at a different rate cannot be dropped in.
+    #
+    # SEXED TWICE OVER, which is why it belongs in a per-sex check: the
+    # sensitivity is a male/female pair AND CV.HR.NOMINAL is a second one.
+    check("chronotropic gain from cardiac baroreflex sensitivity",
+          p["BR.CARDIAC.GAIN"],
+          p["BR.CARDIAC.SENSITIVITY"] * p["CV.HR.NOMINAL"] *
+          p["CV.MAP.SETPOINT"] / 60000.0,
+          "G_hr = BRS * HR0 * MAP_ref / 60000. If this drifts, the dimensionless "
+          "gain the baroreflex reads no longer corresponds to the measured "
+          "sensitivity in ms/mmHg for that sex, and the arm is running on a "
+          "number that means nothing.",
+          errors)
+
     # --- central/peripheral partition, ADR 0012 stage 1 --------------------
     #
     # These two are what make the partition a change of variables rather than a

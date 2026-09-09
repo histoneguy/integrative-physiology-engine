@@ -122,6 +122,85 @@ using SciMLBase
         v = check_pressure_natriuresis(with_br)
         @test v.pass
         @info "baroreflex on" maps=v.maps shift=v.map_shift_mmHg
+
+        # ---------------------------------------------------------------
+        # ADR 0022: THE CHRONOTROPIC ARM. Folded into this testset rather
+        # than given its own, because it makes the SAME structural claim
+        # about the SAME component and can reuse the solve above -
+        # directive 1.10, assert more per unit of compute.
+        #
+        # FALSIFIABLE TEST 1. The reflex resets, so err -> 0 and hr_mod -> 1
+        # at every TRUE steady state, whatever the gain.
+        #
+        # THIS WAS WRITTEN AS `== 1.0` AND IT FAILED AT 1.0000029, WHICH IS
+        # PHYSIOLOGY AND NOT NOISE. The salt step ends 30 days after an intake
+        # change and arterial pressure is still drifting on the renal-body
+        # fluid timescale; `sp` chases MAP with a 1 day reset, so it lags a
+        # drifting pressure by roughly tau times the drift rate and the error
+        # never quite reaches zero. A RESETTING REFLEX IS ONLY EXACTLY NULL AT
+        # A TRUE STEADY STATE, and the end of a 30-day arm is not one.
+        #
+        # So the bar is 1e-5, which still pins the arm to five decimal places
+        # and would catch any gain error or sign error by orders of magnitude.
+        # The claim of BIT-identity was mine and was too strong; the pinned MAP,
+        # V_ecf and salt-sensitivity numbers elsewhere in this file are the real
+        # evidence, and they were pinned before this arm existed and did not move.
+        # Read through the same helper salt_step uses for every other
+        # endpoint. A number in a test that could have been computed by the
+        # code under test is a second implementation of it - section 5
+        # item 21, the literal that accused the wrong component.
+        @test isapprox(IPE._final(with_br.levels[end].sol, with_br.sys, "hr_mod"),
+                       1.0; atol = 1e-5)
+
+        # FALSIFIABLE TEST 2: THE SIGN, AND IT IS RUN RATHER THAN TRUSTED.
+        # ADR 0009's addendum records the vasomotor arm shipping with this
+        # sign inverted and returning a mean arterial pressure of 40 mmHg.
+        # A comment did not catch that; a run did. The characteristic is
+        # algebraic, so the sign can be exercised directly on the entered
+        # gain without another solve.
+        #
+        # Pressure ABOVE setpoint must SLOW the heart: err > 0 -> hr_mod < 1.
+        hr_mod_of(err, G, sat, MAP_ref) = 1 - sat * tanh(G * err / (sat * MAP_ref))
+        LP = IPE.LedgerParams
+        G_m = LP.param(:BR_CARDIAC_GAIN, :male)
+        sat_hr, MAPref = LP.BR_HR_MAX_FRACTION, LP.CV_MAP_SETPOINT
+        @test hr_mod_of(+10.0, G_m, sat_hr, MAPref) < 1.0
+        @test hr_mod_of(-10.0, G_m, sat_hr, MAPref) > 1.0
+        @test hr_mod_of(0.0, G_m, sat_hr, MAPref) == 1.0
+        # Monotone, and bounded by the saturation on both sides, so a large
+        # excursion cannot drive heart rate negative.
+        @test hr_mod_of(50.0, G_m, sat_hr, MAPref) <
+              hr_mod_of(5.0, G_m, sat_hr, MAPref)
+        @test 1 - sat_hr < hr_mod_of(1e6, G_m, sat_hr, MAPref) + 1e-9
+        @test hr_mod_of(-1e6, G_m, sat_hr, MAPref) < 1 + sat_hr + 1e-9
+
+        # THE GAIN IS THE MEASURED SENSITIVITY IN DISGUISE, AND THE UNIT
+        # CONVERSION IS THE THING MOST EASILY GOT WRONG - section 5 item 18,
+        # two rows sharing a unit symbol and not a measurement scale.
+        # check_closure.py asserts this on the ledger; this asserts that the
+        # value the COMPONENT reads is the same one, per sex.
+        for sx in (:male, :female)
+            brs = LP.param(:BR_CARDIAC_SENSITIVITY, sx)
+            hr0 = LP.param(:CV_HR_NOMINAL, sx)
+            @test isapprox(LP.param(:BR_CARDIAC_GAIN, sx),
+                           brs * hr0 * MAPref / 60000.0; rtol = 1e-6)
+        end
+
+        # AND IT IS SEXED, WHICH THE VASOMOTOR ARM IS NOT. Laitinen 1998
+        # gives men 15.0 against women 10.2 ms/mmHg. Asserted as a DIRECTION
+        # rather than a magnitude, because Wada 2014 (Valsalva, n=166) found
+        # no sex effect at all and pooling.md bars pooling the two methods -
+        # so the direction is what this repository is willing to stand on.
+        @test LP.param(:BR_CARDIAC_GAIN, :male) >
+              LP.param(:BR_CARDIAC_GAIN, :female)
+
+        # THE ARM IS A REAL FRACTION OF THE REFLEX AND NOT A ROUNDING TERM.
+        # Section 7.1 of the pre-registration predicted this from the
+        # conversion factor alone, before any source was opened, which is why
+        # the double-count question was made a stop condition and not a
+        # caveat. If this ever falls below a few per cent the arm has been
+        # neutered and the tests above would still pass.
+        @test 0.3 < G_m / LP.BR_OPEN_LOOP_GAIN < 1.0
     end
 
     @testset "salt sensitivity pins G_pn" begin
@@ -759,7 +838,16 @@ using SciMLBase
         # not act on potassium excretion in this model because no human study
         # separates that gain from the potassium load that drives it. If it ever
         # appears here, that gain has been invented.
-        @test r.n_couplings == 20
+        # 20 -> 21 on 2026-09-08, ADR 0022: a SECOND baroreflex -> cardiovascular
+        # edge, the chronotropic arm. It is declared separately rather than folded
+        # into the vasomotor edge because the two differ in the one thing this
+        # graph exists to record - the time constant, 0.5 s vagal against 3 s
+        # sympathetic. Lumping them would hide the faster limb from the partition
+        # rule, which is the only check that reads tau. THE PAIR OF EDGES BETWEEN
+        # ONE PAIR OF SUBSYSTEMS IS NEW HERE and is what a reflex with two efferent
+        # limbs looks like in the graph; if it ever collapses back to one, an arm
+        # has been silently removed.
+        @test r.n_couplings == 21
 
         cs = model_couplings()
         # ADR 0003: instantaneous couplings are not partitionable. If this ever
@@ -798,8 +886,23 @@ using SciMLBase
         # widens the largest adjacent gap rather than narrowing it - so the ADR 0003
         # argument is strengthened, not threatened, by the one state this model has
         # ever chosen to add.
+        #
+        # 5 -> 6 on 2026-09-08, ADR 0022: the VAGAL CHRONOTROPIC limb at 0.4 s. It
+        # widens the range from the other end - thyroxine made the model slower, this
+        # makes it faster, and the declared spread is now 0.4 s to 10.3 days, about
+        # 2.2 million. IT IS THE FASTEST DECLARED COUPLING IN THE MODEL and a
+        # multirate partition may not cut across it.
+        #
+        # AND THIS TAU WAS INVISIBLE FOR ONE COMMIT. model_couplings() deduplicated on
+        # (from, to, kind), so the second baroreflex -> cardiovascular edge collapsed
+        # into the vasomotor one and the 0.4 s never reached this list - the count
+        # stayed 5 while the component declared 6. That is a declaration that looks
+        # present and is not, which is the defect class this whole testset exists to
+        # catch, committed by the graph itself. The key now includes tau and
+        # gain_param. THE COUNT IS WHAT CAUGHT IT.
         b = suggest_boundary(cs)
-        @test length(b.taus) == 5
+        @test length(b.taus) == 6
+        @test minimum(b.taus) == IPE.LedgerParams.BR_CARDIAC_TAU
         @test b.gap !== nothing
         @test b.gap[1] > 10.0
         @info "declared coupling timescales" taus=b.taus gap_ratio=b.gap[1] boundary_s=b.suggested_boundary_seconds
@@ -1298,7 +1401,13 @@ using SciMLBase
         # 9 -> 10 the same day, ADR 0021: plasma potassium. Acid-base got NO state
         # in between, because both halves of its balance failed to source; the
         # count is a record of which balances could be closed.
-        @test length(IPE.mtk_unknowns(sys)) == 10
+        # 10 -> 11 on 2026-09-08, ADR 0022: br.hr_mod. The chronotropic arm was
+        # pre-registered as ALGEBRAIC and the model refused - an algebraic hr_mod
+        # closes an instantaneous loop CO -> MAP -> err -> hr_mod -> CO, and
+        # structural_simplify resolved it by promoting Blood.CO to a state. The
+        # state is paid either way; with the sourced vagal lag it is paid on a
+        # variable that means something. See ADR 0022 and BR.CARDIAC.TAU.
+        @test length(IPE.mtk_unknowns(sys)) == 11
 
         # RESTING PaCO2 RETURNS THE SOURCED INPUT, AND THIS IS NOT A PREDICTION.
         # ADR 0017's ORIGINAL decision 1 made PaCO2 an output of the chemoreflex, as
@@ -1469,7 +1578,7 @@ using SciMLBase
         # enter through a differential equation somewhere, and there are still ten
         # - eight plus thyroxine plus potassium, and none of them is an oxygen
         # state.
-        @test length(IPE.mtk_unknowns(build_model())) == 10
+        @test length(IPE.mtk_unknowns(build_model())) == 11
 
         # ------------------------------------------------------------------
         # THE FICK ARM, ADDED 2026-09-05. ADR 0018 deferred venous content, the

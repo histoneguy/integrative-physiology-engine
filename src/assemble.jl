@@ -55,6 +55,7 @@ call `build_model`.
 """
 function build_raw_model(; body_mass = 70.0, storage::Bool = false,
                          circadian::Bool = false, baroreflex::Bool = true,
+                         chronotropic::Bool = true,
                          raas::Bool = true, adh::Bool = true,
                          respiration::Bool = true,
                          thyroid::Bool = true,
@@ -75,7 +76,9 @@ function build_raw_model(; body_mass = 70.0, storage::Bool = false,
     # so that Osm_load/U_base reproduces the old constant 1.7 L/day, and a
     # varying Osm_load would break that recovery. See Renal.jl and ADR 0008.
     @named rn = Renal(; solute_tracking = adh, body_mass, sex, anp_gain)
-    @named br = Baroreflex(; enabled = baroreflex)
+    # ADR 0022 makes this component SEX-DEPENDENT for the first time: the
+    # chronotropic gain is a male/female pair. The vasomotor gain is not.
+    @named br = Baroreflex(; enabled = baroreflex, chronotropic, sex)
     @named ra = Raas(; enabled = raas)
     @named ad = Adh(; enabled = adh)
     # ADR 0017. Quasi-static, no state, and its only outward flux is water.
@@ -118,6 +121,11 @@ function build_raw_model(; body_mass = 70.0, storage::Bool = false,
         # cardiovascular <-> baroreflex
         br.MAP          ~ cv.MAP,
         cv.tpr_mod      ~ br.tpr_mod,
+        # ADR 0022, 2026-09-08. THE SECOND EFFECTOR. ADR 0009 gave the reflex one
+        # effector and said the arms could not be separated until heart rate
+        # existed; ADR 0011 made cardiac output HR x SV, so it does. This edge is
+        # exactly 1.0 at every steady state because the reflex resets.
+        cv.hr_mod       ~ br.hr_mod,
         # cardiovascular -> raas -> renal
         ra.MAP          ~ cv.MAP,
         rn.fr_mod       ~ ra.fr_mod,
@@ -208,10 +216,28 @@ function model_couplings()
                baroreflex_couplings(), raas_couplings(), adh_couplings(),
                circadian_couplings(), respiratory_couplings(), blood_couplings(),
                thyroid_couplings(), potassium_couplings())
-    seen = Set{Tuple{Symbol,Symbol,CouplingKind}}()
+    # THE KEY INCLUDES tau AND gain_param SINCE 2026-09-08, ADR 0022, AND IT HAD TO.
+    #
+    # Deduplication exists because an edge is often declared from both ends, and two
+    # identical declarations are one edge. Keyed on (from, to, kind) alone it also
+    # collapsed two edges that are NOT the same edge: the baroreflex now reaches the
+    # cardiovascular system through a 3 s sympathetic vasomotor limb AND a 0.4 s vagal
+    # chronotropic one, both Neurohumoral. The second was SILENTLY DROPPED - declared
+    # in the component, absent from the graph, and the count stayed 20 while the
+    # component declared 21.
+    #
+    # THAT IS THE DEFECT CLASS THIS GRAPH EXISTS TO CATCH, COMMITTED BY THE GRAPH
+    # ITSELF: a declaration that looks present and is not. It would have hidden the
+    # FASTER of the two limbs from validate_partition, which reads tau to decide what
+    # a multirate split may cut across - so a partition could have cut a 0.4 s link
+    # believing the fastest coupling in the model was 3 s.
+    #
+    # Two declarations that genuinely are one edge still carry the same tau and gain
+    # and still collapse, so the original purpose is untouched.
+    seen = Set{Tuple{Symbol,Symbol,CouplingKind,Union{Float64,Nothing},Union{Symbol,Nothing}}}()
     out = Coupling[]
     for c in all
-        k = (c.from, c.to, c.kind)
+        k = (c.from, c.to, c.kind, c.tau_seconds, c.gain_param)
         k in seen && continue
         push!(seen, k)
         push!(out, c)
@@ -246,6 +272,7 @@ model_edges() = Set([
     (:cardiovascular, :bodyfluids),   # bf.MAP ~ cv.MAP - INERT, ADR 0010 hook
     (:cardiovascular, :baroreflex),   # br.MAP ~ cv.MAP
     (:baroreflex, :cardiovascular),   # cv.tpr_mod ~ br.tpr_mod
+    (:baroreflex, :cardiovascular),   # cv.hr_mod ~ br.hr_mod - ADR 0022
     (:cardiovascular, :raas),         # ra.MAP ~ cv.MAP
     (:raas, :renal),                  # rn.fr_mod ~ ra.fr_mod
     (:bodyfluids, :adh),              # ad.Osm_ecf ~ bf.Osm_ecf
@@ -279,7 +306,18 @@ function assert_couplings_match_model()
     dangling = Symbol[]
     for r in coupling_ledger_rows(cs)
         startswith(r, "COUPLE.") && continue      # tau rows, not ledger constants yet
-        isdefined(LedgerParams, Symbol(r)) || push!(dangling, Symbol(r))
+        # A SEXED ROW IS NOT A TOP-LEVEL CONSTANT, AND THIS CHECK COULD NOT SEE ONE.
+        # `ledger_to_julia.py` emits male/female pairs into SEX_SPECIFIC and does NOT
+        # emit a bare const, so `isdefined` is false for every one of them. Until ADR
+        # 0022 every gain_param in the repository happened to name a shared `both` row,
+        # so the gap never fired - and it would have fired as "gain_param is not a
+        # ledger parameter", which points at the coupling rather than at the checker.
+        # The tempting workaround is to point the coupling at some shared row instead,
+        # which would make the graph name the WRONG parameter to keep a check quiet.
+        # Fixed here instead: ask the ledger the question the ledger can answer.
+        sym = Symbol(r)
+        isdefined(LedgerParams, sym) || haskey(LedgerParams.SEX_SPECIFIC, sym) ||
+            push!(dangling, sym)
     end
 
     isempty(unknown) || error("Coupling names a subsystem that does not exist " *
@@ -380,6 +418,7 @@ function salt_step(; levels_mEq_day = (205.0, 154.0, 103.0),
                    days_per_level = 30.0,
                    body_mass = 70.0,
                    baroreflex::Bool = true,
+                   chronotropic::Bool = true,
                    raas::Bool = true,
                    adh::Bool = true,
                    circadian::Bool = false,
@@ -388,7 +427,7 @@ function salt_step(; levels_mEq_day = (205.0, 154.0, 103.0),
                    solver = nothing,
                    kwargs...)
 
-    sys = build_model(; body_mass, baroreflex, raas, adh, circadian, sex)
+    sys = build_model(; body_mass, baroreflex, chronotropic, raas, adh, circadian, sex)
     results = NamedTuple[]
     u_carry = nothing          # state carried between levels
     t0 = 0.0

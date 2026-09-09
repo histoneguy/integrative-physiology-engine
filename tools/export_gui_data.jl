@@ -100,6 +100,11 @@ const REPORT = [
     ("raas",           "ra₊aldo",     "Aldosterone activity", "normalised"),
     ("adh",            "ad₊adh",      "Antidiuretic activity", "normalised 0-1"),
     ("baroreflex",     "br₊tpr_mod",  "Baroreflex resistance modifier", "multiplier"),
+    # ADR 0022. BOTH EFFECTORS ARE SHOWN, and both read 1.0 at rest because the
+    # reflex resets - which is the point rather than a dull display. A reader who
+    # sees either move at a STEADY state has found a defect in the reset path.
+    ("baroreflex",     "br₊hr_mod",   "Baroreflex heart rate modifier", "multiplier"),
+    ("cardiovascular", "cv₊HR",       "Heart rate", "1/min"),
     ("respiratory",    "rs₊V_E",      "Minute ventilation", "L/min"),
     ("respiratory",    "rs₊V_A",      "Alveolar ventilation", "L/min"),
     ("respiratory",    "rs₊PaCO2",    "Arterial carbon dioxide tension", "mmHg"),

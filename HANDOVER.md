@@ -3,8 +3,18 @@
 **Date:** 2026-09-05
 **Repo:** https://github.com/histoneguy/integrative-physiology-engine (public)
 **Owner:** Eric George (`histoneguy`)
-**State:** **531/531**, all five gates exit 0, and **`validation/challenges.jl` EXITS 0** —
-every challenge passes against published human data.
+**State:** all five gates exit 0, and **`validation/challenges.jl` EXITS 1** — the two
+Lobo six-hour endpoints fail by 2.8% and 1.7%, which is `OPEN-QUESTIONS` **B9** and is
+the bound the macula densa arm sits against, **not a regression**. Every other challenge
+passes against published human data.
+
+> **THIS LINE SAID `EXITS 0` AND HAD BEEN FALSE SINCE 2026-09-05.** ADR 0021 landed the
+> macula densa arm, B9 was filed the same day recording that the harness exits nonzero
+> and is *meant to*, and this header was never updated — through four subsequent
+> sessions. **The header's own rule is that anything a merge can invalidate does not
+> belong in it**, and a pass/fail claim is exactly that. Verified by running it, not by
+> reading this file. The test count that stood here, 531/531, was stale by the same
+> route and is deliberately **not replaced with another number** — run the suite.
 
 **THE MODEL REPRODUCES HUMAN SALT SENSITIVITY AND THE HUMAN PRESSURE–VOLUME RATIO, BOTH
 FOR THE FIRST TIME.** **1.849** mmHg per 100 mmol/day against a meta-analytic 1.70–2.30,
@@ -51,7 +61,7 @@ Rebuild it after any change with `tools/export_gui_data.jl` then `tools/build_gu
 
 **An ADR is an Architecture Decision Record** — a short document in `docs/adr/`
 recording a structural choice: what was decided, the evidence, what it forecloses, and
-what would show it wrong. There are sixteen and they are referenced constantly. Each
+what would show it wrong. There are TWENTY-TWO and they are referenced constantly. Each
 carries a **Status**, an **Evidence tier** (ADR 0006), and a **Falsifiable test**.
 `tools/check_adrs.py` enforces that much. They are decisions, not documentation: a wrong
 parameter gets re-estimated, a wrong structure invalidates every estimate resting on it.
@@ -221,7 +231,9 @@ prohibits `range-midpoint`, so an interval cannot become a point estimate.
 
 ## 2. STATE
 
-**531/531, five gates exit 0, and the challenge harness exits 0.**
+**Five gates exit 0. The challenge harness exits 1, on B9's two Lobo endpoints and
+nothing else** — run it rather than trusting this line, which was wrong for four
+sessions. Test counts are deliberately not quoted here; `Pkg.test()` is the receipt.
 
 **THE MODEL IS NO LONGER ONLY A RENAL–CARDIOVASCULAR MODEL.** Two subsystems outside
 that axis landed on 2026-09-04 — **respiratory** and **blood** — and a third, thyroid,
@@ -236,24 +248,35 @@ source could be opened (`CV.CO.NOMINAL`, `RN.H2O.OBLIGATORY_LOSS`). **Four of th
 that could be opened were materially wrong.** The `assumed` count went UP by two, and
 that is the honest direction — see `validation/verify_rows_prereg.md` branch 6.
 
-### The model — 8 states after `structural_simplify`
+### The model — 11 states after `structural_simplify`
 
 `bf.V_icf`, `bf.V_ecf`, `bf.Na_ecf`, `br.tpr_mod`, `br.sp`, `ra.pra`, `ra.esc`,
-`rn.anp_sig` — the eighth arrived 2026-09-03 with ADR 0010 (§3.17).
+`rn.anp_sig`, plus `ty.FT4` (ADR 0019), `kp.K_p` (ADR 0021) and **`br.hr_mod`
+(ADR 0022)** — §3.38 records why the last exists: it was pre-registered as stateless
+and the model refused. The list below stopped at eight and was not updated; — the eighth arrived 2026-09-03 with ADR 0010 (§3.17).
 
-**STILL EIGHT AFTER TWO NEW SUBSYSTEMS LANDED ON 2026-09-04, AND THAT WAS THE
+**IT WAS STILL EIGHT AFTER TWO NEW SUBSYSTEMS LANDED ON 2026-09-04, AND THAT WAS THE
 DESIGN.** Respiration is quasi-static at this horizon — arterial PCO2 re-equilibrates
 in minutes and the shortest protocol here is six hours — so its chemoreflex and
 alveolar equation are solved together in closed form. Blood gas is a forward
 computation. **Neither contributes a state, and directive 1.10 is why**: a state is
-paid for on every future run, forever. The suite is 1m48 with 531 assertions.
+paid for on every future run, forever.
+
+**THREE HAVE BEEN ADDED SINCE, AND ONLY ONE WAS CHOSEN.** Thyroxine (ADR 0019) was
+added because its 10.3-day turnover IS the physiology. Plasma potassium (ADR 0021)
+followed. **`br.hr_mod` (ADR 0022) was NOT chosen** — it was pre-registered as algebraic
+and the model refused, because an algebraic chronotropic arm closes an instantaneous
+loop through arterial pressure and `structural_simplify` paid for it by promoting
+`Blood.CO` to a state instead. §3.38. **A lag is what breaks an algebraic loop**, and
+nothing had recorded that the vasomotor arm's 3 s lag was doing that job as well as
+representing a delay.
 
 | Component | Status |
 |---|---|
 | `BodyFluids.jl` | ICF/ECF volumes, sodium mass balance, osmotic equilibration. Intakes now scale with body size. Inactive-Na storage **default off** (ADR 0004). |
-| `Cardiovascular.jl` | ECF → plasma → blood volume, partitioned central/peripheral (ADR 0012). **CO = HR × SV**, and stroke volume is now the SOURCED half (ADR 0011). MAP = CO × TPR, sexed. |
+| `Cardiovascular.jl` | ECF → plasma → blood volume, partitioned central/peripheral (ADR 0012). **CO = HR × `hr_mod` × SV** since ADR 0022 — heart rate is reflex-modulated and no longer a pure parameter, though `hr_mod` returns to 1 at every steady state. Stroke volume is the SOURCED half (ADR 0011) and deliberately keeps the UNMODULATED heart rate in its denominator. MAP = CO × TPR, sexed. |
 | `Renal.jl` | GFR autoregulation, filtered load, pressure natriuresis, RAAS increment, circadian modulation, osmoregulated water excretion, urine solute load tracking sodium, **a lagged volume-keyed natriuretic path keyed to `V_blood`** (ADR 0010, §3.17), and **a censored GFR response to `V_ecf`** (§3.22). **It now reads TWO volumes and they are different volumes** — blood for atrial stretch, extracellular for filtration. |
-| `Baroreflex.jl` | Lumped, resetting, **TPR effector only**. Setpoint scaled by the clock. |
+| `Baroreflex.jl` | Resetting, **TWO effectors since 2026-09-08 (ADR 0022)** — `tpr_mod` on resistance and `hr_mod` on heart rate, driven by one shared error signal. The chronotropic arm carries a **0.4 s vagal lag** and is therefore a state, which the pre-registration did not expect (§3.38), and is **sexed**, which no other neural row is. Setpoint scaled by the clock. |
 | `Raas.jl` | Active at rest — PRA 1.30× the baroreflex plateau since the gain was re-derived (§3.13), 2.31× before. No AngII vasoconstriction, deliberate. |
 | `Adh.jl` | Osmolality → antidiuretic activity → urine osmolality. Algebraic, no states. |
 | `Circadian.jl` | Cosinor clock, connected to renal excretion and the reflex setpoint. **Default OFF** — both arms' parameters contested. |
@@ -314,14 +337,33 @@ blood volume and haematocrit — and left the compartment fraction alone.
 
 ### Ledger
 
-**91 parameters over 104 rows** — 40 `reported`, 39 `derived`, 24 `assumed`, and
-**1 `calibrated`**, since `G_vr` was sourced (§3.19). `RN.GFR.VOLUME_RANGE` was added on 2026-09-03 as the censoring bound on the GFR volume response (§3.22) — the same treatment `RN.AUTOREG.UPPER` gets, and for the same reason. Tiers: 43 A, 36 B,
-25 C. **`CV.VENOUS_RETURN.SENSITIVITY` was the second most consequential unmeasured
-number in the project and it is now sourced in healthy humans.** The ONE remaining
-`calibrated` row is **`RN.PRESSURE_NATRIURESIS.SLOPE` itself, at 8.4** — and whether
-that label is still right is an open question in §7: 8.4 is not fitted, it is the value
-the human joint constraint implies given the sourced volume gain, which is closer to
-`derived`. It is left as `calibrated` because nothing measured it directly.
+**122 parameters over 139 rows** — 53 `reported`, 57 `derived`, 27 `assumed`, and
+**2 `calibrated`**. Tiers: 66 A, 45 B, 28 C.
+
+> **THESE COUNTS WERE RECOMPUTED ON 2026-09-08 AND FOUR OF THEM WERE WRONG.** This
+> paragraph read *"91 parameters over 104 rows — 40 reported, 39 derived, 24 assumed,
+> and 1 calibrated"*, and the coupling line below read 16 while the suite asserted 20.
+> Every figure was true when written and none was updated as rows landed. **The
+> `calibrated` claim is the one that matters**: §2 and §7 both said the ONE remaining
+> calibrated row is `RN.PRESSURE_NATRIURESIS.SLOPE`, and that stopped being true on
+> 2026-09-05 when ADR 0021 entered `RN.MD.RENIN_GAIN` at 5.396, solved against van den
+> Bosch. **A second fitted constant appeared and the file went on saying there was
+> one.** Same failure mode as the stale SHA (§5 item 12) and the stale Lobo validation
+> claim (§3.15): a true sentence left standing while a later change made it false, and
+> **no gate can see any of the three** because a count in prose is not checked.
+> Recomputed from the ledger rather than incremented — `python -c` over
+> `parameters.csv`, `relations.csv` and `docs/adr/`.
+
+Historical note, kept because the direction is the point: this was 40/39/24/1 with
+`G_vr` sourced (§3.19). `RN.GFR.VOLUME_RANGE` was added on 2026-09-03 as the censoring bound on the GFR volume response (§3.22) — the same treatment `RN.AUTOREG.UPPER` gets, and for the same reason. **`CV.VENOUS_RETURN.SENSITIVITY` was the second most consequential unmeasured
+number in the project and it is now sourced in healthy humans.** **THE TWO
+`calibrated` rows are `RN.PRESSURE_NATRIURESIS.SLOPE` at 8.4 and `RN.MD.RENIN_GAIN`
+at 5.396.** Whether the first deserves the label is an open question in §7: 8.4 is not
+fitted, it is the value the human joint constraint implies given the sourced volume
+gain, which is closer to `derived`, and it is left as `calibrated` because nothing
+measured it directly. **The second is fitted in the ordinary sense** — solved against
+van den Bosch's salt–renin ratio, which ADR 0021's falsifiable test 1 declared an
+estimation set before the number existed.
 `RN.GFR.VOLUME_SENSITIVITY` was added on 2026-09-02 (§3.12) and **is now read** —
 wired 2026-09-03, §3.22.
 **The `assumed` count went DOWN by two on 2026-09-01, and that is as honest as its going
@@ -329,7 +371,7 @@ UP was on 2026-08-31.** `CV.CO.NOMINAL` and `RN.H2O.OBLIGATORY_LOSS` did not acq
 citations; they stopped being primitives. Each is now DERIVED from the quantity that is
 actually measured — stroke volume and maximal urine concentration — and it is those two
 rows that carry the new sources.
-**53 relations** — 18 definitional, 18 empirical, 13 conservation, 4 placeholder.
+**72 relations** — 30 definitional, 22 empirical, 16 conservation, 4 placeholder. Recomputed 2026-09-08; this line said 53, which was true on 2026-09-04 and stopped being true with the acid-base, potassium and chronotropic relations.
 Nine landed on 2026-09-04 with the respiratory and blood components (§3.24), including
 `Renal.gfr_vol_mod`'s siblings `Respiratory.V_E` (`sourced-piecewise-threshold`) and
 `Blood.SaO2` (`sourced-published-fit`).
@@ -346,7 +388,8 @@ from the sourced stroke volume.
 
 ### Couplings — connected 2026-08-27
 
-**16 couplings** as of 2026-09-04 — 13, plus respiratory to bodyfluids (ADR 0017) and two INBOUND to blood with none outbound, which is what a forward computation looks like in the graph (ADR 0018). **An outbound edge from blood would mean an oxygen feedback had been built**, and the count is the cheapest tripwire for that. Cross-checked against the built model by
+**21 couplings** as of 2026-09-08 — the count the suite asserts, recomputed rather than
+inherited, because this line said 16 while the suite said 20. Respiratory to bodyfluids (ADR 0017); two INBOUND to blood with none outbound, which is what a forward computation looks like in the graph (ADR 0018); thyroid to respiratory (ADR 0019); three for the macula densa and potassium (ADR 0021); and **a SECOND baroreflex → cardiovascular edge for the chronotropic arm (ADR 0022)**, declared separately from the vasomotor one because the two differ in the time constant, which is the field the partition rule actually reads. **An outbound edge from blood would mean an oxygen feedback had been built**, and the count is the cheapest tripwire for that. Cross-checked against the built model by
 `assert_couplings_match_model()`. Declared time constants **3.0 / 302.4 / 3600 / 3600 s**,
 largest gap **100.8×**, suggested boundary **30.1 s**. `cost_profile` on a real solution
 returns `nf/nw = 2.5` — **linear-algebra bound, so partitioning is the right lever.** Both
@@ -2407,6 +2450,218 @@ because the coupling graph suggests the opposite.
 densa reference delivery. The class-level test found all three in one run at `worst =
 0.26`, which is exactly what it was rebuilt to do after naming individual parameters
 failed six times (§3.24). **Three missed in one change, all found by one assertion.**
+
+---
+
+### 3.38 THE BAROREFLEX HAS TWO EFFECTORS. THE PASS TURNED ON A STOP CONDITION, NOT ON THE VALUE
+
+**Date: 2026-09-08.** ADR 0022. Pre-registered in
+`validation/chronotropic_baroreflex_prereg.md`, committed **before any source was
+opened**; the search is `validation/chronotropic_baroreflex_extract.py` and the
+transients are `bench/chronotropic_diagnostic.jl`.
+
+ADR 0009 lumped the vagal and sympathetic arms onto resistance and named the condition
+for splitting them: *separating them buys nothing until heart rate exists.* ADR 0011
+made cardiac output `HR × SV`. It exists.
+
+#### The stop condition was the whole pass, and it was written before the value
+
+**A second effector on top of a WHOLE-REFLEX gain does not extend a model, it doubles
+the reflex** — and every gate would stay green, because the ledger parses, the
+relations carry citations, the closure identities hold and the arm nulls at every
+steady state. That is **§5 item 22 asked in advance for once**, instead of being found
+afterwards by an acute challenge 2.8% outside a band.
+
+`BR.OPEN_LOOP_GAIN` = 2.0 is named *"sympathetic arterial baroreflex open-loop gain"*,
+and "sympathetic" does not settle it, because heart rate carries a sympathetic limb
+too. **Three independent lines settled it:**
+
+| line | what it shows |
+|---|---|
+| Yamasaki's own decomposition, read in full | the gain is arterial pressure → **plasma noradrenaline** → arterial pressure. A **cholinergic** vagal limb cannot appear in a noradrenergic product **by construction** |
+| the animal preparations behind its 1.0–3.5 | vagotomised where it could be checked — **2 of 6, at search level**, declared and not treated as sourced |
+| **Dutoit 2010, n = 53 healthy adults** | cardiac and sympathetic baroreflex sensitivity are **uncorrelated within individuals, R² = 0.0003** |
+
+**Two arms that vary independently are not one gain apportioned between effectors.**
+Branch C1: the arms **add**. The residual overlap is declared and is not zero — the
+phenylephrine ramp is predominantly but not exclusively vagal.
+
+#### The arithmetic fixed before the search held, and that is why the stop condition existed
+
+§7.1 of the pre-registration derived the conversion from ledger rows alone and
+predicted, **before any source was opened**, that a cardiac gain would come out the
+same order as the 2.0 already there:
+
+    G_hr = BRS × HR0 × MAP_ref / 60000
+
+| | sensitivity | gain | share of the vasomotor arm |
+|---|---|---|---|
+| men | 15.0 ms/mmHg | 1.3485 | 67% |
+| women | 10.2 ms/mmHg | 0.9614 | 48% |
+
+Laitinen 1998, **phenylephrine bolus, 117 healthy adults aged 23–77**, abstract only.
+**The first sexed pair in the neural subsystem**, and it is sexed twice over — the
+sensitivity is a pair and it is converted through `CV.HR.NOMINAL`, which is a second
+one.
+
+#### Two rules fixed before the search both bit, which is the argument for fixing them
+
+**Schumann 2024 is inadmissible.** §4 named it as *"best normative source found"* from a
+previous session. It is a **spontaneous-sequence and spectral** study, and ADR 0002
+states in terms that this model cannot represent the beat-to-beat fluctuations those
+methods are computed from.
+
+**And that exclusion is measured, not asserted.** Bonyhay 2013 ran both methods in the
+**same 18 subjects**: modified Oxford 15.7 ± 9.2 against a transfer-function modulus
+19.4 ± 10.5 ms/mmHg, mean relative difference **20.7%**, limit of agreement 10.8. They
+correlate across subjects and **do not agree within them.** Branch C6 would have widened
+admissibility had they agreed. It did not fire.
+
+#### THE ROW I WAS BUILDING ALONGSIDE QUOTES ITS PAPER'S QUESTION AND MISSES ITS ANSWER
+
+`BR.OPEN_LOOP_GAIN` carries **2.0, the mid-point of the ANIMAL range quoted in
+Yamasaki's INTRODUCTION**, and the row's note faithfully repeats his sentence that human
+open-loop gain *"has not been clarified"*.
+
+**That sentence is the paper's problem statement, and the paper is the answer to it.**
+Yamasaki's own result is a **human** measurement — GL = **5.62 ± 0.98** supine, n = 7,
+vagal effects blocked by atropine — which is exactly the quantity that row is supposed
+to hold, and it is **2.8× larger**. The paper never compares the two.
+
+**This is §3.13 exactly**: `RAAS.RENIN.PRESSURE_GAIN` sat `assumed` for six days behind
+a sentence about a paper that said the opposite, and the source was already cited three
+lines above the problem. **Found by the stop condition, not by any gate.**
+
+**Deliberately not changed.** Moving 2.0 → 5.62 changes **no** steady state — the reflex
+resets — and **every** transient, including the two Lobo endpoints B9 lives on. Doing it
+inside the pass that adds a second effector leaves neither testable. It is its own pass,
+and n = 7 in one sex is thin for a 2.8× move.
+
+#### I PRE-REGISTERED THE ARM AS STATELESS AND THE MODEL REFUSED
+
+§5 of the pre-registration made `hr_mod` **algebraic** by default, on directive 1.10
+grounds — a 200–600 ms effector is quasi-static against a six-hour protocol — and put
+the burden on *adding* a lag. **That was refuted by building it, and the reason is
+structural, not physiological.**
+
+An algebraic `hr_mod` closes an **instantaneous loop** through arterial pressure:
+`CO → MAP → err → hr_mod → CO`. `structural_simplify` resolved it by promoting
+**`Blood.CO` to a state**. So the stateless arm **cost a state anyway**, in another
+component, on a variable where it meant nothing — and nothing but the state list would
+have said so.
+
+**The vasomotor arm never had this problem because its 3 s lag makes `tpr_mod` a state,
+and a lag is exactly what breaks an algebraic loop.** ADR 0009 chose that lag for its
+delay and got loop-breaking for free; **nobody recorded that the second property was
+load-bearing**, so the pre-registration could reason about the delay alone and be wrong.
+
+The state is paid either way, so it is now paid where it means something:
+`BR.CARDIAC.TAU` = 0.4 s, from the same La Rovere sentence `BR.EFFECTOR.TAU` comes from.
+**Ten states before, eleven after.** It is now the fastest thing in the model, seven
+times faster than the vasomotor effector, which is the physiology.
+
+**And it nulls at every steady state**, because the reflex resets. So chronic salt
+sensitivity, the pressure–volume ratio and every resting value are unchanged **to five
+significant figures** — the largest salt-step difference with the arm on against off is
+**4e-4 mmHg**. **The suite asserted `hr_mod == 1.0` and got 1.0000029** — not noise: the salt arm ends while
+pressure is still drifting, and a setpoint chasing it with a 1-day reset lags by roughly
+tau times the drift rate. **A resetting reflex is exactly null only at a true steady
+state.** The bar is 1e-5. **A passing suite is still no evidence whatever about this
+arm** — §5 item 23 — and every test that can fail is a transient.
+
+#### AND THE COUPLING GRAPH SILENTLY DROPPED THE NEW EDGE
+
+`model_couplings()` deduplicated on `(from, to, kind)`. That is right for one edge
+declared from both ends and **wrong for two genuinely different edges between the same
+pair**: the second baroreflex → cardiovascular coupling was declared in the component,
+absent from the graph, and the count stayed 20 while the component declared 21.
+
+**That is the defect class this graph exists to catch, committed by the graph itself** —
+a declaration that looks present and is not, which is how `bodyfluids → endocrine`
+survived (§1.11). It would have hidden the **faster** limb from `validate_partition`,
+which reads tau to decide what a multirate split may cut across. The key now includes
+`tau_seconds` and `gain_param`.
+
+**AND THE COUNT IS WHAT CAUGHT IT.** The declared time constants went 5 → 6 and the
+suite asserts that number, so the missing edge showed up as an arithmetic failure rather
+than as silence. **Declared timescales now span 0.4 s to 10.3 days, about 2.2 million** —
+the vagal limb is the fastest coupling in the model, and thyroxine the slowest. **ADR
+0019's state widened that range from the slow end and this one widens it from the fast
+end**, so the ADR 0003 partitioning argument is strengthened by both; the largest
+adjacent gap is unchanged and no multirate split may cut across the 0.4 s link.
+
+#### The one out-of-sample transient points the wrong way, and it is asserted as an omission
+
+§8 of the pre-registration asked whether either acute protocol reports heart rate.
+**Jensen 2013 Table 4 does**, and it was never looked at before:
+
+    pulse rate   54.1 (11.0) -> 57.2 (11.9) beats/min on 23 mL/kg saline
+    systolic BP  114.5 - 117.7 mmHg, essentially flat
+
+**Pulse rate ROSE while pressure did not.** An arterial baroreflex chronotropic arm
+**cannot** produce that — at `err ≈ 0` it predicts no change, and had pressure risen it
+predicts a **fall**. The candidate is **atrial stretch through the cardiopulmonary
+receptors**, which ADR 0009 names as a separate component and which this model does not
+have.
+
+**ADR 0022's falsifiable test 5 asserts the omission rather than describing it** — the
+inversion ADR 0020 used for the missing respiratory compensation. If a future change
+makes this arm reproduce that rise, the arm has been given a job that belongs to the
+low-pressure receptors.
+
+#### THE PRESSURE RAMP IS THE PRIMARY TEST, AND IT VALIDATES THE UNIT CONVERSION END TO END
+
+**Run `julia --project=. bench/chronotropic_diagnostic.jl`.** §8 item 1 named an
+in-model pressure ramp as the primary test before the arm was built. A 20% step in
+systemic resistance:
+
+| | ΔMAP | `hr_mod` | cardiac output |
+|---|---|---|---|
+| arm off | 5.2489 mmHg | 1.0 | 8571 → 8568 L/day |
+| **arm on** | **3.6335 mmHg** | **0.9450** | 8571 → 8098 L/day |
+
+**The excursion is cut by 30.8%. The open-loop arithmetic predicts 31.0%** — a
+negative-feedback loop attenuates by `1/(1+G)`, and adding 1.3485 to 2.0 gives exactly
+that.
+
+**THAT IS THE MEASUREMENT-SCALE CHECK PASSING ON THE BUILT MODEL RATHER THAN ON THE
+LEDGER.** A sensitivity measured in ms/mmHg, converted through the operating cardiac
+interval, lands the closed-loop buffering within a fifth of a percent of what the gains
+say it should. **Nothing was fitted to produce it**, and §5 item 18 — two rows sharing a
+unit symbol and not a measurement scale — is the error it would have caught.
+
+**What it does NOT establish is the absolute gain.** The sourced sensitivity is measured
+in intact humans and is therefore closed-loop, while `G_hr` sits in an open-loop slot;
+the two differ by one plus the total loop gain. §7.2 recorded that **before** the arm was
+built and deliberately applied no correction, because computing one needs the total loop
+gain, which is what §6 was establishing. Declared, not silently fixed, and it is the
+sharpest remaining question about this row.
+
+#### AND IT TURNED ONE OF B9'S TWO RED LINES GREEN, WHICH THE PRE-REGISTRATION CALLED IN ADVANCE
+
+The arm buffers the pressure rise during Lobo's infusion, so less sodium leaves by
+pressure natriuresis:
+
+| endpoint | before | after | band | |
+|---|---|---|---|---|
+| urine, 6 h | 770.976 mL | **754.800 mL** | 380–750 | still fails, **0.64%** over against 2.80% |
+| urinary sodium, 6 h | 129.098 mmol | **126.478 mmol** | 63–127 | now **passes** |
+
+**§8.1 of the pre-registration predicted this movement in writing, before the run, and
+forbade both of the things that would have made it worthless** — choosing the gain to
+produce it, and re-solving `RN.MD.RENIN_GAIN` afterwards. Neither was done. The gain
+comes from Laitinen and from nothing in this repository.
+
+**That distinction is the whole of why this is reportable.** §3.37 records that a fix
+which lands a model on a target nearly free is the most dangerous kind, and this one was
+nearly free. What separates it is that the number was fixed by external data and the
+consequence was written down before it was measured — **which is auditable, and a claim
+of good intentions is not.**
+
+**What it measures is the size of what was missing**: about 2% of each endpoint, which is
+three-quarters of the urine excess and all of the sodium excess. **B9 is not closed** —
+4.8 mL still stands outside, and that residual is what the absent renal sympathetic arm
+has to explain. ADR 0021's prediction is unchanged and now has a second data point.
 
 ---
 
