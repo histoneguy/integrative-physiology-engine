@@ -156,3 +156,44 @@ as a defect.
 
 `BR.RESET.TAU` is a different matter and is untouched: it is ASSUMED, with no reported
 value in any species. That remains debt.
+
+---
+
+## Amendment, 2026-09-08 — the arms are no longer lumped. See ADR 0022
+
+**The condition this record set has been met.** ADR 0009 lumped the vagal and
+sympathetic arms onto total peripheral resistance and said why: the model is
+cycle-averaged, heart rate was a parameter, and the vagal arm had nothing to act on.
+It recorded, as an explicit instruction, *do not re-separate them without a protocol
+that needs it.*
+
+ADR 0011 made cardiac output `HR × SV`. **ADR 0022 splits the arms**, giving the reflex
+a second effector, `hr_mod`, on heart rate. The decision, the evidence and the
+falsifiable tests live there. Three things about it belong here, on the record it
+amends:
+
+1. **The gain in this record is the VASOMOTOR arm, not the whole reflex**, and that was
+   established before the second effector was built rather than assumed afterwards.
+   `BR.OPEN_LOOP_GAIN` decomposes through plasma noradrenaline, so a cholinergic vagal
+   limb cannot be inside it; and the two arms are uncorrelated within healthy
+   individuals (Dutoit 2010, n = 53, R² = 0.0003). **The arms add. They do not split
+   this number.** Had it gone the other way, a second effector would have doubled the
+   reflex with every gate still green.
+
+2. **The lumping argument was right for its time and is now the thing to check.** "One
+   lumped lag on TPR is the honest representation at this resolution" was true while
+   heart rate did not exist. What made it stop being true was ADR 0011, and **nothing
+   in this repository connected the two records** — the note that did was a comment in
+   `Cardiovascular.jl` saying heart rate is a parameter *until a chronotropic
+   baroreflex exists*. A structural precondition recorded only in a source comment is
+   one nobody re-reads.
+
+3. **`BR.OPEN_LOOP_GAIN` now carries a recorded defect.** Its 2.0 is the mid-point of
+   an animal range quoted in Yamasaki's *introduction*, while Yamasaki's own *result*
+   is a human measurement of 5.62 supine with vagal effects blocked — the very quantity
+   this row is meant to hold. Not changed in ADR 0022's pass, because it moves every
+   transient in the model; it is its own pass. See HANDOVER §3.38.
+
+**What is unchanged:** the resetting structure, and with it this record's falsifiable
+test. The reflex is still a fast buffer and not a long-term regulator, and the second
+effector nulls at every steady state exactly as the first does.

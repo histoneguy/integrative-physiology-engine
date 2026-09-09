@@ -108,11 +108,13 @@ function Cardiovascular(; name, sex::Symbol = :male,
         # follow from it. Defaults here would overdetermine initialization.
         V_ecf(t)        # L        INPUT from body fluids
         tpr_mod(t)      # unitless INPUT from baroreflex (1.0 = no reflex action)
+        hr_mod(t)       # unitless INPUT from baroreflex, ADR 0022 (1.0 = none)
         V_plasma(t)     # L
         V_blood(t)      # L
         V_central(t)    # L        intrathoracic; the filling variable (ADR 0012)
         V_periph(t)     # L        everything else; V_central + V_periph = V_blood
         SV(t)           # mL       stroke volume (ADR 0011)
+        HR(t)           # 1/min    heart rate, reflex-modulated (ADR 0022)
         CO(t)           # L/day
         TPR(t)          # mmHg/(L/day)
         MAP(t)          # mmHg     OUTPUT
@@ -198,7 +200,29 @@ function Cardiovascular(; name, sex::Symbol = :male,
         # INDEX or stroke INDEX once normalised to body surface area, so the real
         # dimorphism is body size, and body_mass is still a hard-coded 70.0.
         SV  ~ max(0.0, SV0 + (G_vc / (HR0 * 1440.0)) * (V_central - VC0) * 1000.0),
-        CO  ~ HR0 * 1440.0 * SV / 1000.0,
+        # ADR 0022: HEART RATE IS NOW REFLEX-MODULATED. hr_mod arrives from the
+        # baroreflex and is EXACTLY 1.0 at every steady state, because the reflex
+        # resets - so this line is bit-identical to `CO ~ HR0*1440*SV/1000` at
+        # rest and differs only in transients. That is asserted, not assumed.
+        #
+        # STROKE VOLUME DELIBERATELY KEEPS THE UNMODULATED HR0 IN ITS
+        # DENOMINATOR. Putting hr_mod there too would make filling depend on the
+        # reflex, which is a force-interval or filling-time coupling that nothing
+        # here sources and that would silently change what CV.SV.NOMINAL means.
+        # The identity HR0*1440*SV == CO0 + G_vc*(V_central - VC0) therefore
+        # still holds exactly, and cardiac output is that quantity times hr_mod.
+        #
+        # WHAT THIS DOES NOT REPRESENT: heart rate responding to atrial stretch.
+        # Jensen 2013's Table 4 measures pulse rate RISING about 3 beats/min on a
+        # 23 mL/kg saline load while systolic pressure stays flat, and an arterial
+        # baroreflex cannot produce that. The candidate is the cardiopulmonary
+        # limb, which ADR 0009 names as a separate component and which this model
+        # does not have. See ADR 0022's falsifiable test 5.
+        # HEART RATE IS A NAMED OUTPUT NOW THAT IT VARIES. It was implicit in the
+        # cardiac output expression while it was a constant; a quantity the reflex
+        # moves should be readable, and the GUI reads this.
+        HR  ~ HR0 * hr_mod,
+        CO  ~ HR * 1440.0 * SV / 1000.0,
 
         # TPR is now a STATE-DEPENDENT quantity, scaled by baroreflex outflow.
         # It was a constant until the baroreflex landed; tpr_mod = 1.0 recovers

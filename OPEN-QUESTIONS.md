@@ -195,7 +195,41 @@ output and oxygen consumption in the same subjects, which makes the extraction r
 internal rather than composed. **Its own pre-registered pass**; re-sourcing it inside the
 metabolic pass would have been adjusting a second parameter to rescue the first.
 
-### B9. Two acute saline endpoints now fail, and the failure is a bound rather than a bug — NEW, 2026-09-05
+### B9. ~~Two~~ ONE acute saline endpoint fails — UPDATED 2026-09-08, and half of it closed for a reason that was written down first
+
+**ADR 0022's chronotropic arm moved both endpoints and turned one green.** It buffers the
+pressure rise during the infusion, so less sodium leaves by pressure natriuresis:
+
+| endpoint | before | after | band | |
+|---|---|---|---|---|
+| urine, 6 h | 770.976 mL | **754.800 mL** | 380–750 | still **FAIL**, 0.64% over against 2.80% |
+| sodium, 6 h | 129.098 mmol | **126.478 mmol** | 63–127 | now **PASS** |
+
+**B9 IS NOT CLOSED AND MUST NOT BE.** `chronotropic_baroreflex_prereg.md` §8.1 predicted
+this movement **in writing before the run**, forbade choosing the gain to produce it, and
+forbade re-solving `RN.MD.RENIN_GAIN` on the strength of it. **Neither was done.** The
+chronotropic gain comes from Laitinen 1998 and from nothing in this repository — that is
+the only thing separating this from the "nearly free fix" §3.37 warns is the most
+dangerous kind.
+
+**What it actually measures is how much of the excess was missing chronotropic
+buffering: about 2% of each endpoint, which is three-quarters of the urine excess and
+all of the sodium excess.** The remaining 4.8 mL is what the renal sympathetic arm has
+to explain, and ADR 0021's prediction — that building it lowers `g_md` and brings the
+last endpoint inside — is unchanged and now has a second, independent data point.
+
+**A DECISION YOU MAY WANT TO MAKE.** One green line was bought by a change made for an
+unrelated reason. If you would rather the record showed both endpoints failing until the
+sympathetic arm exists, the alternative is to say so here rather than to move a
+parameter. **My judgement: leave it.** The gain is externally sourced, the prediction
+was pre-registered, and suppressing a real improvement to keep a record tidy is its own
+kind of dishonesty.
+
+---
+
+**The original entry, unchanged below.**
+
+### B9-ORIGINAL. Two acute saline endpoints now fail, and the failure is a bound rather than a bug — NEW, 2026-09-05
 
 **`validation/challenges.jl` exits nonzero on this branch and it is meant to.** The macula
 densa arm (ADR 0021) gives distal sodium delivery a route to renin and renin a route back
@@ -353,9 +387,26 @@ it belongs in a file about things that cannot be resolved.** Listing undone work
 open question is a way of not doing it. It stays here only until each item is built, in
 this order.
 
-1. **The baroreflex has one effector while heart rate exists.** ADR 0009 gives it
-   resistance only. Deliberately deferred because the reflex resets and therefore nulls
-   at every steady state, so the cardiac gain needs its own sourcing pass.
+1. ~~**The baroreflex has one effector while heart rate exists.**~~ **BUILT 2026-09-08**
+   (ADR 0022, §3.38). The chronotropic arm exists: one error signal, two efferent
+   limbs, `hr_mod` on heart rate alongside `tpr_mod` on resistance. **No new state** —
+   the vagal effector is quasi-static at this horizon, which is the argument that kept
+   Respiratory and Blood stateless. Sourced from Laitinen 1998, phenylephrine bolus in
+   117 healthy adults, and it arrives as a **sexed pair**, the first in the neural
+   subsystem.
+
+   **The pass turned on a stop condition, not on the value.** Before anything was
+   built it had to be settled whether `BR.OPEN_LOOP_GAIN` was the whole reflex or the
+   vasomotor arm alone, because a second effector on top of a whole-reflex gain
+   doubles the reflex with every gate still green. It is the vasomotor arm: Yamasaki's
+   gain decomposes through plasma noradrenaline and a cholinergic limb cannot appear
+   in a noradrenergic product, and Dutoit 2010 finds the two arms **uncorrelated**
+   within 53 healthy adults at R² = 0.0003.
+
+   **What is left of it is the low-pressure limb, and it now has a number.** Jensen
+   2013 measures pulse rate *rising* on a saline load while pressure stays flat, which
+   this arm cannot produce. That is the cardiopulmonary receptors, still absent, and
+   ADR 0022's falsifiable test 5 asserts the omission rather than describing it.
 2. ~~**Renin is pressure-only.**~~ **HALF BUILT 2026-09-05** (§3.31, §3.32, ADR 0021).
    The macula densa arm exists, and the ceiling §7 recorded against the model — a renin
    ratio capped at 1.14 across the human salt range, against a measured 2.73 — is

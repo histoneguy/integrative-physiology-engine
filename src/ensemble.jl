@@ -230,6 +230,16 @@ function member_remake(prob, sys, member; sex::Symbol = :male)
              #
              # PaCO2 stays invariant because C and V_basal both scale, and their
              # ratio is what sets it. The body-size testset asserts that.
+             # ADR 0022's chronotropic gain, added 2026-09-08. INTENSIVE - a
+             # dimensionless gain - so it does not scale, and it is here for the
+             # OTHER reason this list exists: it is SEX-SPECIFIC, and sexed twice
+             # over, through BR.CARDIAC.SENSITIVITY and through CV.HR.NOMINAL.
+             # Omitting it would pair a female model with a male reflex gain in
+             # every population run, silently - which is precisely what happened
+             # to cv.Hct, cv.f_pv and cv.HR0 and went unnoticed until the
+             # class-level test was built (section 3.24). Written down at the time
+             # the parameter was created rather than after the test caught it.
+             sys.br.G_hr           => LedgerParams.param(:BR_CARDIAC_GAIN, sex),
              sys.rs.VCO2           => sz * RESP_CO2_PRODUCTION,
              sys.rs.S_co2          => sz * RESP_CHEMO_CO2_SLOPE,
              sys.rs.V_basal        => sz * RESP_VENTILATION_BASAL,

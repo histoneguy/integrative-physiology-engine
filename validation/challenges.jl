@@ -211,10 +211,21 @@ check("fraction of the sodium load excreted by 6 h", na6/308.0*100, 20.0, 45.0, 
 # to be wrong. THE PREDICTION IS THAT BUILDING RENAL SYMPATHETIC TRAFFIC LOWERS g_md AND
 # BRINGS THESE TWO ENDPOINTS BACK INSIDE THEIR BANDS.
 println()
-println("  ^^ THESE TWO FAILURES ARE ADR 0021 AND THEY ARE NOT TUNED AWAY. The macula")
+println("  ^^ THE ACUTE LIMB BOUNDS ADR 0021'S ARM AND IS NOT TUNED AWAY. The macula")
 println("     densa arm can carry a chronic renin ratio of about 2.57 before the acute")
 println("     limb leaves its band; the estimation set says 2.73. The gap is the renal")
 println("     sympathetic arm the model does not have. See ADR 0021 amendment A6.")
+println()
+println("     THIS SAID 'THESE TWO FAILURES' UNTIL 2026-09-08 AND THERE IS NOW ONE.")
+println("     ADR 0022's chronotropic arm buffers the pressure rise, so less sodium")
+println("     goes out by pressure natriuresis: urine 770.976 -> 754.800 mL and sodium")
+println("     129.098 -> 126.478 mmol, about 2% on each. The SODIUM endpoint is now")
+println("     inside its band; the URINE endpoint still fails, at 0.64% over against")
+println("     2.80% before. B9 IS NOT CLOSED BY THIS. The chronotropic gain was")
+println("     sourced from Laitinen 1998 and the movement was PREDICTED IN WRITING")
+println("     before the run (chronotropic_baroreflex_prereg.md section 8.1), which")
+println("     is the only reason this is a prediction rather than a rescue. RN.MD.")
+println("     RENIN_GAIN was NOT re-solved, and must not be on the strength of this.")
 
 println()
 println(repeat("=", 100))
