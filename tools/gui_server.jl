@@ -156,6 +156,7 @@ mutable struct Session
     sys
     prob
     integ          # ONE integrator, stepped forward - see step_chunk!
+    minteg::Vector{Any}   # one per population member, same discipline
     u0::Vector{Float64}
     t::Float64
     pmap::Dict{String,Float64}      # parameter name -> current value
@@ -198,7 +199,7 @@ function new_session(; sex::Symbol = :male, body_mass = 70.0, mode = "individual
             push!(members, member_remake(prob, sys, m; sex))
         end
     end
-    return Session(sys, prob, nothing, Vector{Float64}(prob.u0), 0.0, pmap,
+    return Session(sys, prob, nothing, Any[], Vector{Float64}(prob.u0), 0.0, pmap,
                    Dict{String,Float64}(), false, false, duration, chunk,
                    mode, members, ReentrantLock())
 end
@@ -271,6 +272,17 @@ function apply_pending!(s::Session)
     s.integ = init(remake(s.prob; u0 = s.u0,
                           tspan = (s.t, s.t + max(s.duration, 1.0))),
                    Rodas5P(); abstol = 1e-8, reltol = 1e-6, save_everystep = false)
+    # POPULATION MEMBERS ARE REBUILT FROM THEIR CURRENT STATE TOO. Without this a
+    # parameter edit applies to an individual run and is silently ignored by a
+    # population one - the same class of quiet divergence as the frozen members.
+    if !isempty(s.minteg)
+        cur = [Vector{Float64}(ig.u) for ig in s.minteg]
+        s.minteg = Any[init(remake(mp; u0 = cur[i],
+                                   tspan = (s.t, s.t + max(s.duration, 1.0))),
+                            Rodas5P(); abstol = 1e-8, reltol = 1e-6,
+                            save_everystep = false)
+                       for (i, mp) in enumerate(s.members)]
+    end
     return true
 end
 
@@ -354,15 +366,32 @@ function handle_stream(io, s::Session)
         tspan = (s.t, min(s.t + s.chunk, s.duration))
         try
             if s.mode == "population"
-                rows = Any[]
-                for (i, mprob) in enumerate(s.members)
-                    mp = remake(mprob; u0 = i <= length(s.members) ? mprob.u0 : mprob.u0,
-                                tspan = tspan)
-                    sol = solve(mp, Rodas5P(); saveat = [tspan[2]], abstol = 1e-8,
-                                reltol = 1e-6)
-                    push!(rows, sample_quantities(s.sys, sol))
+                # ONE INTEGRATOR PER MEMBER, STEPPED - the same discipline as the
+                # individual path, and it was NOT what this branch did.
+                #
+                # It re-solved every chunk from `mprob.u0`, which is each member's
+                # INITIAL state and is never updated, so the whole population froze:
+                # members differed from one another correctly and none of them moved
+                # in time. Days 1, 2, 3 and 4 came back identical. The tell was a
+                # no-op ternary left in while writing - both arms read `mprob.u0`.
+                #
+                # A FROZEN POPULATION IS THE WORST FAILURE SHAPE AVAILABLE HERE: the
+                # spread looks right, so the picture is convincing and completely
+                # static, and nothing errors. Found by running it (directive 1.11),
+                # not by any check.
+                if isempty(s.minteg)
+                    s.minteg = Any[init(remake(mp; tspan = (s.t, s.t + max(s.duration, 1.0))),
+                                        Rodas5P(); abstol = 1e-8, reltol = 1e-6,
+                                        save_everystep = false) for mp in s.members]
                 end
-                write(io, jval(Dict("t" => tspan[2], "members" => rows)), "\n")
+                rows = Any[]
+                for ig in s.minteg
+                    step!(ig, max(tspan[2] - ig.t, 1e-9), true)
+                    push!(rows, sample_quantities(s.sys, ig))
+                end
+                isempty(s.minteg) || (s.t = s.minteg[1].t)
+                write(io, jval(Dict("t" => s.t, "members" => rows)), "
+")
             else
                 integ = step_chunk!(s, tspan[2])
                 write(io, jval(Dict("t" => s.t,
