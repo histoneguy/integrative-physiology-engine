@@ -47,6 +47,14 @@ found by connecting something, and none by any of the five gates.
 
 - **Provenance is the point.** Numbers enter via `ledger/parameters.csv`, equations via
   `ledger/relations.csv`, both with citations. Nothing is hardcoded in a component.
+- **A derived number cannot be more precise than what it came from.** Significant
+  figures do not increase through arithmetic: three-figure inputs give a three-figure
+  answer. And the inputs' uncertainty must be carried, not dropped - a derived row whose
+  inputs have error bars has one. The only exception is a value that exists to close an
+  identity `check_closure.py` checks, which is bookkeeping and never a precision claim.
+  **No model output may be quoted beyond what its weakest input supports**, and a
+  disagreement inside that uncertainty is not a finding. Directive 1.13, enforced by
+  `tools/ledger_to_julia.py`.
 - **Never write a citation you have not opened.** A wrong author on correct data passes
   every check in this repo. It has already happened.
 - **Never rename the `Provenance` job** in `.github/workflows/ci.yml`. Branch protection

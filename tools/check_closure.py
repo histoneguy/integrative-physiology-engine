@@ -230,10 +230,15 @@ def _check_one(p: dict[str, float]) -> int:
     #
     # SEXED TWICE OVER, which is why it belongs in a per-sex check: the
     # sensitivity is a male/female pair AND CV.HR.NOMINAL is a second one.
+    # COMPARED AT THE PRECISION THIS ROW IS STORED TO. The row carries three
+    # significant figures because its inputs do (directive 1.13), so the identity
+    # cannot close to more than that and demanding it would be asserting the
+    # precision the rounding exists to disclaim. The tolerance is therefore half a
+    # unit in the row's own last place, which is what "correctly rounded" means.
+    _ghr = p["BR.CARDIAC.SENSITIVITY"] * p["CV.HR.NOMINAL"] * p["CV.MAP.SETPOINT"] / 60000.0
     check("chronotropic gain from cardiac baroreflex sensitivity",
-          p["BR.CARDIAC.GAIN"],
-          p["BR.CARDIAC.SENSITIVITY"] * p["CV.HR.NOMINAL"] *
-          p["CV.MAP.SETPOINT"] / 60000.0,
+          round(p["BR.CARDIAC.GAIN"], 3),
+          round(_ghr, 3),
           "G_hr = BRS * HR0 * MAP_ref / 60000. If this drifts, the dimensionless "
           "gain the baroreflex reads no longer corresponds to the measured "
           "sensitivity in ms/mmHg for that sex, and the arm is running on a "

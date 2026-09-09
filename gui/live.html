@@ -1,0 +1,378 @@
+<!-- Live simulator front end. Served by tools/gui_server.jl, which drives the REAL
+     Julia model - there is no second implementation of the physiology here. -->
+<meta charset="utf-8">
+<title>IPE — live simulator</title>
+<style>
+  :root{
+    --bg:#0e1116; --panel:#161b22; --line:#2a313c; --ink:#e6edf3; --dim:#8b949e;
+    --accent:#4493f8; --warn:#d29922; --bad:#f85149; --ok:#3fb950;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:13px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;}
+  header{display:flex;align-items:center;gap:14px;padding:8px 14px;
+         border-bottom:1px solid var(--line);background:var(--panel);
+         position:sticky;top:0;z-index:20;flex-wrap:wrap}
+  h1{font-size:14px;margin:0;font-weight:600;letter-spacing:.2px}
+  .grow{flex:1}
+  button,select,input[type=number]{background:#21262d;color:var(--ink);
+    border:1px solid var(--line);border-radius:6px;padding:5px 10px;font:inherit}
+  button{cursor:pointer}
+  button:hover{border-color:var(--accent)}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#06121f;font-weight:600}
+  button.danger{border-color:var(--bad);color:var(--bad)}
+  .seg{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+  .seg button{border:0;border-radius:0;padding:5px 12px}
+  .seg button[aria-pressed=true]{background:var(--accent);color:#06121f;font-weight:600}
+  main{display:grid;grid-template-columns:1fr 340px;gap:0;height:calc(100vh - 47px)}
+  #plots{overflow:auto;padding:12px;display:grid;
+         grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;align-content:start}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+  .card h3{margin:0 0 2px;font-size:11px;font-weight:600;color:var(--dim);
+           text-transform:uppercase;letter-spacing:.4px}
+  .val{font:600 18px/1.1 var(--mono);margin-bottom:4px}
+  .val small{font:400 11px var(--mono);color:var(--dim);margin-left:4px}
+  canvas{width:100%;height:92px;display:block}
+  .foot{font:9px var(--mono);color:#6e7681;margin-top:3px}
+  .flat{color:var(--warn)}
+  .unc{font:10px var(--mono);color:var(--ok);margin-left:4px}
+  .unc.none{color:#6e7681}
+  aside{border-left:1px solid var(--line);background:var(--panel);overflow:auto;padding:12px}
+  aside h2{font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--dim);
+           margin:14px 0 6px}
+  aside h2:first-child{margin-top:0}
+  .row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+  .row label{flex:1;font-size:12px}
+  .row input[type=number]{width:96px;font:12px var(--mono)}
+  #search{width:100%;padding:6px 8px;margin-bottom:8px}
+  .p{border-top:1px solid var(--line);padding:6px 0}
+  .p .id{font:11px var(--mono);color:var(--accent);word-break:break-all}
+  .p .meta{font-size:11px;color:var(--dim);margin:2px 0}
+  .p .cite{font-size:10px;color:#6e7681;max-height:2.6em;overflow:hidden}
+  .p input{width:100%;font:12px var(--mono);margin-top:3px}
+  .tag{display:inline-block;font:10px var(--mono);padding:0 5px;border-radius:3px;
+       border:1px solid var(--line);color:var(--dim);margin-right:4px}
+  .tag.A{color:var(--ok);border-color:#1e4429}
+  .tag.B{color:var(--warn);border-color:#4a3a12}
+  .tag.C{color:var(--bad);border-color:#5a1e1a}
+  .banner{padding:6px 14px;font-size:12px;background:#1c2128;border-bottom:1px solid var(--line);
+          color:var(--dim)}
+  .banner b{color:var(--warn)}
+  #status{font:11px var(--mono);color:var(--dim)}
+</style>
+
+<header>
+  <h1>Integrative Physiology Engine</h1>
+  <div class="seg" id="mode">
+    <button data-m="individual" aria-pressed="true">Individual</button>
+    <button data-m="population" aria-pressed="false">Population</button>
+  </div>
+  <label>Sex <select id="sex"><option>male</option><option>female</option></select></label>
+  <label>Mass <input type="number" id="mass" value="70" step="1" style="width:64px"> kg</label>
+  <label>Duration <input type="number" id="dur" value="60" step="5" style="width:70px"> d</label>
+  <label>Step <input type="number" id="chunk" value="0.25" step="0.05" style="width:70px"> d</label>
+  <label>Rate <input type="number" id="rate" value="20" step="5" style="width:64px"> /s</label>
+  <span class="grow"></span>
+  <span id="status">idle</span>
+  <button id="pause">Pause</button>
+  <button class="primary" id="run" disabled>Loading…</button>
+  <button class="danger" id="stop">Stop</button>
+</header>
+
+<div class="banner" id="uncert">
+  <b>Point estimates.</b> Parameter uncertainty is not propagated — every curve is one
+  draw with no error bar. <b>How precisely each quantity is known comes from its own
+  source</b> and differs per row; the reported dispersion and tier are shown against
+  every parameter on the right. Charts are floored at solver tolerance, so a flat panel
+  means the model did not move.
+</div>
+
+<main>
+  <div id="plots"></div>
+  <aside>
+    <h2>Plot</h2>
+    <div id="picker"></div>
+    <h2>Parameters <span id="pcount" style="color:var(--dim)"></span></h2>
+    <input id="search" placeholder="filter by id, e.g. BR. or renin">
+    <div id="params"></div>
+  </aside>
+</main>
+
+<script>
+const $ = s => document.querySelector(s);
+const state = {
+  mode:'individual', id:null, meta:null, series:{}, times:[],
+  shown:['cv₊MAP','cv₊HR','bf₊V_ecf','rn₊Na_excr','br₊tpr_mod','br₊hr_mod',
+         'bf₊C_Na','ra₊pra','kp₊K_p','bl₊SaO2'],
+  paused:false, abort:null, queue:[], rate:20, timer:null, edited:{}
+};
+
+// ---- charts: tiny canvas line plots, no library -------------------------
+//
+// TWO RULES, AND THE SECOND ONE IS THE IMPORTANT ONE.
+//
+// 1. Every panel is LABELLED with its y-range. An unlabelled auto-scaled chart is
+//    unreadable: you cannot tell a 50 mEq/day swing from a 0.0001 one.
+// 2. The zoom has a FLOOR, and it is set by the SOLVER, not by the literature.
+//    Auto-scaling to the data range magnifies integrator noise into a
+//    dramatic-looking wiggle. The honest cut is the solver's own relative
+//    tolerance: below that a wiggle is numerical, above it the model really did
+//    move and the panel must show it.
+//
+//    THIS IS DELIBERATELY NOT A SIGNIFICANT-FIGURES RULE. How precisely a quantity
+//    is KNOWN comes from the source it was measured in and differs per row - two
+//    figures for a tonometric solubility, four for an NHANES mean of 8809 adults.
+//    That governs how a number is INTERPRETED, and it is shown per parameter in the
+//    panel on the right. It has no business deciding what a chart is allowed to draw.
+const REL_FLOOR = 1e-6;          // solver reltol
+
+function axisFmt(v){
+  const a = Math.abs(v);
+  if(a === 0) return '0';
+  if(a >= 1000 || a < 0.01) return v.toExponential(2);
+  return Number(v.toPrecision(4)).toString();
+}
+
+function draw(cv, vals, digits){
+  const dpr = devicePixelRatio||1, w = cv.clientWidth, h = cv.clientHeight;
+  if(cv.width !== w*dpr){ cv.width = w*dpr; cv.height = h*dpr; }
+  const g = cv.getContext('2d'); g.setTransform(dpr,0,0,dpr,0,0);
+  g.clearRect(0,0,w,h);
+  const PADL = 52;                       // room for the y labels
+  if(vals.length < 2){
+    g.fillStyle='#6e7681'; g.font='10px ui-monospace,monospace';
+    g.fillText('waiting…', PADL+4, h/2);
+    return {flat:false};
+  }
+  let lo = Math.min(...vals), hi = Math.max(...vals);
+  const centre = (hi + lo) / 2;
+  const span = hi - lo;
+  const floor = Math.abs(centre) * REL_FLOOR;
+  let flat = false;
+  if(span <= floor || span === 0){
+    flat = true;
+    const half = (Math.abs(centre) * REL_FLOOR) / 2 || 0.5;
+    lo = centre - half; hi = centre + half;
+  } else {
+    const pad = span * 0.12; lo -= pad; hi += pad;
+  }
+
+  // plot frame
+  g.strokeStyle = '#2a313c'; g.lineWidth = 1;
+  g.beginPath(); g.moveTo(PADL, 0.5); g.lineTo(PADL, h-0.5); g.lineTo(w, h-0.5); g.stroke();
+
+  // y labels: top, middle, bottom
+  g.fillStyle = '#6e7681'; g.font = '9px ui-monospace,monospace';
+  g.textAlign = 'right';
+  g.fillText(fmt(hi, digits), PADL-4, 9);
+  g.fillText(fmt((hi+lo)/2, digits), PADL-4, h/2+3);
+  g.fillText(fmt(lo, digits), PADL-4, h-2);
+  g.textAlign = 'left';
+
+  // trace
+  g.strokeStyle = flat ? '#6e7681' : '#4493f8';
+  g.lineWidth = 1.5; g.beginPath();
+  const pw = w - PADL;
+  vals.forEach((v,i)=>{
+    const x = PADL + (i/(vals.length-1))*pw;
+    const y = h - ((v-lo)/(hi-lo))*h;
+    i ? g.lineTo(x,y) : g.moveTo(x,y);
+  });
+  g.stroke();
+  return {flat, span};
+}
+
+// PRECISION PER QUANTITY, carried on the quantity itself. A blood pressure is
+// meaningful to about 1 mmHg; a reflex modifier that sits at 1.0000 needs four
+// decimals to say anything. There is no single correct width, so the server sends
+// one per row and this only formats it.
+function fmt(v, digits){
+  if(v === null || v === undefined || Number.isNaN(v)) return '—';
+  if(digits === undefined) digits = 3;
+  return v.toFixed(digits);
+}
+
+function renderCards(){
+  const box = $('#plots'); box.innerHTML = '';
+  for(const key of state.shown){
+    const q = state.meta.quantities.find(x=>x.key===key); if(!q) continue;
+    const card = document.createElement('div'); card.className='card';
+    const vals = state.series[key]||[];
+    const last = vals.length ? vals[vals.length-1] : null;
+    card.innerHTML = `<h3>${q.label}</h3>
+      <div class="val">${fmt(last, q.digits)}<small>${q.units}</small></div>
+      <canvas></canvas>
+      <div class="foot"></div>`;
+    box.appendChild(card);
+    const r = draw(card.querySelector('canvas'), vals, q.digits);
+    const t0 = state.times[0], t1 = state.times[state.times.length-1];
+    const tspan = state.times.length ? `${fmt(t0,2)}–${fmt(t1,2)} d` : '';
+    card.querySelector('.foot').innerHTML = r.flat
+      ? `<span class="flat">flat</span> below solver tolerance &nbsp; ${tspan}`
+      : `range ${fmt(r.span, q.digits)} ${q.units} &nbsp; ${tspan}`;
+  }
+}
+
+function renderPicker(){
+  const box = $('#picker'); box.innerHTML='';
+  const groups = {};
+  state.meta.quantities.forEach(q=>(groups[q.group] ||= []).push(q));
+  for(const [g,qs] of Object.entries(groups)){
+    const d = document.createElement('div');
+    d.innerHTML = `<div style="font-size:10px;color:#6e7681;margin:6px 0 2px">${g}</div>`;
+    qs.forEach(q=>{
+      const id = 'q_'+q.key;
+      const on = state.shown.includes(q.key);
+      const r = document.createElement('label');
+      r.className='row'; r.style.marginBottom='2px';
+      r.innerHTML = `<input type=checkbox ${on?'checked':''} data-k="${q.key}">
+                     <span style="flex:1;font-size:12px">${q.label}</span>`;
+      r.querySelector('input').onchange = e=>{
+        const k = e.target.dataset.k;
+        if(e.target.checked) state.shown.push(k);
+        else state.shown = state.shown.filter(x=>x!==k);
+        renderCards();
+      };
+      d.appendChild(r);
+    });
+    box.appendChild(d);
+  }
+}
+
+function renderParams(){
+  const filter = $('#search').value.trim().toLowerCase();
+  const box = $('#params'); box.innerHTML='';
+  const ps = state.meta.parameters.filter(p =>
+    !filter || p.id.toLowerCase().includes(filter) ||
+    p.key.toLowerCase().includes(filter) ||
+    (p.citation||'').toLowerCase().includes(filter));
+  $('#pcount').textContent = `(${ps.length}/${state.meta.parameters.length})`;
+  ps.slice(0,400).forEach(p=>{
+    const d = document.createElement('div'); d.className='p';
+    const cur = state.edited[p.key] ?? p.value;
+    d.innerHTML = `<div class="id">${p.id}</div>
+      <div class="meta"><span class="tag ${p.tier}">tier ${p.tier}</span>
+        <span class="tag">${p.method}</span>${p.units||''}
+        ${p.unc ? `<span class="unc">${p.unc}</span>` : '<span class="unc none">no dispersion reported</span>'}</div>
+      <input type="number" step="any" value="${cur}" data-k="${p.key}">
+      <div class="cite">${(p.citation||'').slice(0,160)}</div>`;
+    d.querySelector('input').onchange = e=>{
+      const v = parseFloat(e.target.value);
+      if(!Number.isFinite(v)) return;
+      state.edited[p.key] = v;
+      if(state.id) post('/api/update',{id:state.id, params:{[p.key]:v}});
+    };
+    box.appendChild(d);
+  });
+}
+
+async function post(url, body){
+  return fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify(body)}).then(r=>r.json());
+}
+
+function push(t, q){
+  state.times.push(t);
+  for(const [k,v] of Object.entries(q)){
+    (state.series[k] ||= []).push(v);
+    if(state.series[k].length > 4000) state.series[k].shift();
+  }
+  if(state.times.length > 4000) state.times.shift();
+}
+
+// The client paces rendering, so "rate" is frames of simulated time per second and
+// the server is free to run ahead. Pause stops consumption, not the socket.
+function startPacer(){
+  clearInterval(state.timer);
+  state.timer = setInterval(()=>{
+    if(state.paused) return;
+    let n = Math.max(1, Math.round(state.rate/10));
+    while(n-- && state.queue.length){
+      const m = state.queue.shift();
+      if(m.q) push(m.t, m.q);
+      else if(m.members){
+        // population: plot the member-wise mean, and record spread for the label
+        const keys = Object.keys(m.members[0]||{});
+        const mean = {};
+        keys.forEach(k=>{ mean[k] = m.members.reduce((a,r)=>a+(r[k]||0),0)/m.members.length; });
+        push(m.t, mean);
+      }
+    }
+    $('#status').textContent = state.times.length
+      ? `t = ${fmt(state.times[state.times.length-1])} d · buffer ${state.queue.length}`
+      : 'running';
+    renderCards();
+  }, 100);
+}
+
+async function run(){
+  // GATED ON READINESS, NOT ON TIMING. The handlers bind while the parameter
+  // list is still being fetched, so an early click used to create no session and
+  // report nothing - the button looked dead. It is now disabled until init()
+  // finishes, and this guard is the belt to that braces.
+  if(!state.meta){ $('#status').textContent = 'still loading model metadata…'; return; }
+  stop();
+  state.series={}; state.times=[]; state.queue=[]; state.paused=false;
+  const spec = {mode:state.mode, sex:$('#sex').value,
+                body_mass:+$('#mass').value, duration:+$('#dur').value,
+                chunk:+$('#chunk').value, n_members:8};
+  const s = await post('/api/session', spec);
+  state.id = s.id;
+  // re-apply any edits made before this run
+  if(Object.keys(state.edited).length)
+    await post('/api/update',{id:state.id, params:state.edited});
+  state.rate = +$('#rate').value;
+  startPacer();
+  const ctl = new AbortController(); state.abort = ctl;
+  const res = await fetch('/api/stream?id='+state.id, {signal:ctl.signal});
+  const rd = res.body.getReader(); const dec = new TextDecoder(); let buf='';
+  while(true){
+    const {done, value} = await rd.read(); if(done) break;
+    buf += dec.decode(value, {stream:true});
+    const lines = buf.split('\n'); buf = lines.pop();
+    for(const ln of lines){
+      if(!ln.trim()) continue;
+      let m; try{ m = JSON.parse(ln); }catch{ continue; }
+      if(m.error){ $('#status').textContent = 'error: '+m.error; continue; }
+      if(m.done){ $('#status').textContent = `finished at t = ${fmt(m.t)} d`; continue; }
+      state.queue.push(m);
+    }
+  }
+}
+
+function stop(){
+  if(state.abort){ try{state.abort.abort();}catch{} state.abort=null; }
+  if(state.id) post('/api/update',{id:state.id, stop:true}).catch(()=>{});
+  clearInterval(state.timer);
+}
+
+$('#run').onclick = run;
+$('#stop').onclick = ()=>{ stop(); $('#status').textContent='stopped'; };
+$('#pause').onclick = e=>{
+  state.paused = !state.paused;
+  e.target.textContent = state.paused ? 'Resume' : 'Pause';
+  if(state.id) post('/api/update',{id:state.id, paused:state.paused});
+};
+$('#rate').onchange = e=>{ state.rate = +e.target.value; };
+$('#dur').onchange  = e=>{ if(state.id) post('/api/update',{id:state.id, duration:+e.target.value}); };
+$('#chunk').onchange= e=>{ if(state.id) post('/api/update',{id:state.id, chunk:+e.target.value}); };
+$('#search').oninput = renderParams;
+document.querySelectorAll('#mode button').forEach(b=>b.onclick=()=>{
+  state.mode = b.dataset.m;
+  document.querySelectorAll('#mode button').forEach(x=>
+    x.setAttribute('aria-pressed', String(x===b)));
+});
+
+(async function init(){
+  try{
+    state.meta = await fetch('/api/meta').then(r=>r.json());
+  }catch(e){
+    $('#status').textContent = 'cannot reach server — is gui_server.jl running?';
+    return;
+  }
+  renderPicker(); renderParams(); renderCards();
+  const b = $('#run'); b.disabled = false; b.textContent = 'Run';
+  $('#status').textContent = 'ready — press Run';
+})();
+</script>

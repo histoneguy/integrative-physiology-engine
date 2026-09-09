@@ -415,6 +415,12 @@ test needs, plus a combined trajectory.
 """
 
 function salt_step(; levels_mEq_day = (205.0, 154.0, 103.0),
+                   # 30 days per arm. A 90-day arm changes the salt-step shift by
+                   # 0.5% and dMAP/dV_ecf by 0.6% - below the resolution of every
+                   # target either is judged against (1.70-2.30 and 2.97-4.16, spans
+                   # of 35% and 40%). Lengthening it was tried on 2026-09-09 and
+                   # REVERTED: it tripled integration on every call to chase precision
+                   # that does not exist, which is directive 1.9's named failure.
                    days_per_level = 30.0,
                    body_mass = 70.0,
                    baroreflex::Bool = true,
