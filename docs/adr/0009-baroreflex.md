@@ -197,3 +197,58 @@ amends:
 **What is unchanged:** the resetting structure, and with it this record's falsifiable
 test. The reflex is still a fast buffer and not a long-term regulator, and the second
 effector nulls at every steady state exactly as the first does.
+
+---
+
+## Amendment, 2026-09-09 — the gain is a HUMAN number, and this record's ethical-ceiling argument was wrong
+
+**`BR.OPEN_LOOP_GAIN` is 5.62, not 2.0, at the owner's instruction.** The citation did
+not change. This record and that row both carried the mid-point of an **animal** range
+of 1.0–3.5 that Yamasaki 2021 quotes in his *introduction*, while Yamasaki's own
+**result** is a human measurement: **GL(0) = 5.62 ± 0.98 supine**, n = 7 healthy males
+aged 19–37, arterial pressure as the output variable, means ± SD.
+
+### The addendum of 2026-08-21 is corrected, not merely updated
+
+That addendum tiered the row E2 and defended the animal provenance like this:
+
+> *That is not a study anyone may perform on a human — isolating the carotid sinus from
+> the systemic circulation to open the loop is definitionally terminal. Under the amended
+> ADR 0006 this is an ethical ceiling.*
+
+**The ceiling is real for that PREPARATION and false for the QUANTITY.** Yamasaki
+obtained the open-loop gain in conscious humans without opening the loop surgically, by
+constructing an equilibrium diagram from graded head-up tilt and ganglionic blockade.
+**The number was obtainable all along by a different method, in the paper this record
+already cited.**
+
+**That is §3.19's lesson repeated exactly.** The venous-return pass missed its relation
+for weeks by searching for the wrong *object* — a compliance in mL/mmHg rather than the
+composite `dCO/dV_blood` — and the fix was to ask what is *measurable*, not whether the
+obvious preparation is permitted. **An ethical ceiling justifies animal data only after
+the human literature has been searched for a different route to the same quantity.**
+
+### What the tier becomes, and what stays weak
+
+Still **E2**, and for a different reason than before: no longer species extrapolation
+under an ethical ceiling, but a direct human measurement in **seven young men whose
+authors explicitly disclaim representativeness**. It is entered `both`, so it is a male
+number applied to women — the `CV.HEMATOCRIT.NOMINAL` failure, declared. And it is a
+young cohort in a model whose stroke volume comes from 45–74 year olds.
+
+### Why this pairs correctly with ADR 0022 and would not have before
+
+Yamasaki blocked vagal effects with atropine throughout, so **5.62 is sympathetic
+pressure control with the cardiac vagal limb removed.** Since ADR 0022 that limb is a
+separate effector with its own sourced gain, so the two rows now partition the reflex
+the way the measurements do. **Made before ADR 0022, this change would have deleted the
+vagal contribution from the model entirely.**
+
+### What it does, and what was deliberately not done about it
+
+No steady state moves — the reflex resets, so `tpr_mod → 1` whatever the gain, and this
+record's falsifiable test is untouched. **Every transient moves**: total loop gain goes
+from about 3.35 to about 6.97, so a pressure disturbance is buffered roughly twice as
+hard. **Nothing was re-estimated to compensate** — in particular `RN.MD.RENIN_GAIN` and
+`CV.ANP.NATRIURETIC_GAIN` were not re-solved. HANDOVER §3.39 has the measured
+consequences, including what it costs `OPEN-QUESTIONS` B9.

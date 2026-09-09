@@ -17,8 +17,10 @@ from __future__ import annotations
 import argparse
 import csv
 import hashlib
+import math
 import re
 import sys
+from decimal import Decimal
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -115,6 +117,107 @@ def validate(rows: list[dict]) -> None:
             f"{pid2}: sex rows are {sorted(sexes)}. A parameter needs exactly one "
             "'both' row OR both a 'male' and a 'female' row."
         )
+
+
+    # ------------------------------------------------------------------
+    # PRECISION MUST NOT EXCEED THE UNCERTAINTY. Added 2026-09-09, after the
+    # owner pointed out - correctly, and more than once - that this belongs in
+    # the logic rather than in someone's eye.
+    #
+    # THE RULE, IN SIGNIFICANT FIGURES. Where a row states an interval that is an
+    # uncertainty ON THE ESTIMATE, the value may carry about one guard digit past
+    # the point the interval resolves, and no more:
+    #
+    #     allowed ~ floor(log10(|value| / half-width)) + 2
+    #
+    # Two or more figures beyond that is asserting a resolution the measurement
+    # does not have - 2.277 against a range of 1.79 to 2.76 is the example that
+    # prompted this.
+    #
+    # SIGNIFICANT FIGURES AND NOT DECIMAL PLACES, because a value like 1400 is
+    # written to two figures and a decimal-place test reads it as four.
+    #
+    # THREE THINGS ARE DELIBERATELY NOT CHECKED, because judging them this way
+    # would condemn correct rows:
+    #
+    #   * `sd` - a standard deviation is POPULATION SPREAD, not uncertainty on a
+    #     mean. With n = 8809 the mean is known far better than the spread, so
+    #     AB.HCO3.PLASMA is right to carry 25.04 against an SD of 2.24. The
+    #     correct comparator is the standard error, and n lives in prose.
+    #   * DERIVED rows that close an identity `check_closure.py` asserts. Those
+    #     must carry every digit or the closure gate fails on its own arithmetic;
+    #     directive 1.9's exception, and CV.CO.NOMINAL is the recorded case. This
+    #     is detected by reading check_closure.py rather than by a hand list, so
+    #     it cannot drift out of date.
+    #   * a `range` that is a population percentile or a choice between formulas
+    #     rather than an error bar. parameters.csv has one `range` type for both
+    #     meanings - pooling.md already records that this file lacks columns it
+    #     wants - so those are named below with the reason.
+    #
+    # EXEMPTIONS SHRINK, and each names why its digits are real.
+    PRECISION_EXEMPT = {
+        "RN.NA.FRACTIONAL_REABSORPTION":
+            "directive 1.9's own example - what matters is 1 - FR_Na = 0.0081, so a "
+            "small difference of large numbers needs the digits on the large ones",
+        "THY.TSH.EUTHYROID": "range is the 2.5-97.5 population percentile, not an error bar",
+        "K.INTAKE.NOMINAL": "range is the population percentile of 8893 dietary recalls",
+        "BF.SIZE.EXPONENT": "range is the choice between BSA formulas, not a fit error",
+        "BF.OSM.PLASMA_SETPOINT": "range is the clinical reference interval, not an error bar",
+        "CV.ANP.NATRIURETIC_GAIN":
+            "SOLVED, not measured - it is the gain that reproduces a chronic salt "
+            "sensitivity of 2.00, so its digits are reproducible while its "
+            "confidence is only the 500-900 the target window permits",
+    }
+
+    closure_src = ""
+    closure_path = Path(__file__).with_name("check_closure.py")
+    if closure_path.exists():
+        closure_src = closure_path.read_text(encoding="utf-8")
+
+    def _sigfigs(txt_val: str) -> int:
+        t = txt_val.strip().lstrip("+-").split("e")[0].split("E")[0]
+        if "." in t:
+            ip, fp = t.split(".")
+            digits = (ip.lstrip("0") + fp) if ip.strip("0") else fp.lstrip("0")
+            return max(len(digits), 1)
+        return max(len(t.strip("0")), 1)
+
+    for i, r in enumerate(rows, start=2):
+        pid3 = (r.get("param_id") or "").strip()
+        if pid3 in PRECISION_EXEMPT:
+            continue
+        method = (r.get("extraction_method") or "").strip().lower()
+        # A derived row that closes an identity must carry every digit.
+        if method == "derived" and pid3 and f'"{pid3}"' in closure_src:
+            continue
+        utype = (r.get("uncertainty_type") or "").strip().lower()
+        uval = (r.get("uncertainty_value") or "").strip()
+        if utype not in ("range", "ci") or not uval:
+            continue
+        m = re.match(r"^\s*([0-9.eE+-]+)\s*[-\u2013]\s*([0-9.eE+-]+)\s*$", uval)
+        if not m:
+            continue
+        try:
+            half = abs(float(m.group(2)) - float(m.group(1))) / 2.0
+            val_txt = (r.get("value") or "").strip()
+            V = abs(float(val_txt))
+        except ValueError:
+            continue
+        if half <= 0 or V <= 0:
+            continue
+        allowed = math.floor(math.log10(V / half)) + 2
+        actual = _sigfigs(val_txt)
+        # STRICTLY MORE THAN ALLOWED, not "two beyond". The earlier threshold of
+        # allowed+2 was a tolerance I gave myself, and it let 2.19 stand against an
+        # interval of 0.833-3.270 - a value known to +/-55% carrying three figures.
+        # The rule is the rule: do not carry figures the interval does not support.
+        if actual > allowed:
+            errors.append(
+                f"line {i}: {pid3} = {val_txt} carries {actual} significant figures "
+                f"against an uncertainty half-width of {half:g}, which supports about "
+                f"{max(allowed,1)}. Round the value, or add the row to "
+                f"PRECISION_EXEMPT with the reason its digits are real."
+            )
 
     if errors:
         raise LedgerError("\n".join(errors))

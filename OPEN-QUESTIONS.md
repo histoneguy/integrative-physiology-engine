@@ -195,7 +195,37 @@ output and oxygen consumption in the same subjects, which makes the extraction r
 internal rather than composed. **Its own pre-registered pass**; re-sourcing it inside the
 metabolic pass would have been adjusting a second parameter to rescue the first.
 
-### B9. ~~Two~~ ONE acute saline endpoint fails — UPDATED 2026-09-08, and half of it closed for a reason that was written down first
+### B9. ~~Two acute saline endpoints fail~~ — CLOSED 2026-09-09 as SUPERSEDED, not resolved, and the closure cost something
+
+**The harness exits 0 and both endpoints are inside their bands.** That happened because
+the two baroreflex gains were corrected, not because the physics B9 recorded was fixed.
+
+    urine   770.976 -> 754.800 (ADR 0022) -> 738.134 mL    band 380-750
+    sodium  129.098 -> 126.478 (ADR 0022) -> 123.756 mmol  band  63-127
+
+**Nothing was fitted.** The chronotropic gain is Laitinen 1998 and the vasomotor gain is
+Yamasaki's own human measurement, both sourced independently of these endpoints and of
+each other. `RN.MD.RENIN_GAIN` and `CV.ANP.NATRIURETIC_GAIN` were **not** re-solved.
+
+**WHAT WAS LOST, AND IT IS THE REASON THIS IS NOT A WIN.** These two endpoints were the
+only quantitative bound on the macula densa arm. ADR 0021 amendment A6 measured that the
+arm can carry a chronic renin ratio of about **2.57** before the acute limb leaves its
+band, against a ledger **2.73**, and named that 6% gap as where the missing renal
+sympathetic traffic lives. **Inside the band they bound nothing**, so ADR 0021's
+prediction — that building sympathetic traffic lowers `g_md` and brings the endpoints
+back — is no longer testable against Lobo.
+
+**The physiology B9 recorded is unchanged.** There is still no renal sympathetic arm and
+`RN.MD.RENIN_GAIN` still absorbs whatever it would contribute. What is gone is the
+measurement that made that absorption visible as a number. **A green harness is worth
+less here than the red one was**, and what would restore the constraint is an acute
+protocol that is not a saline bolus — §7's monoculture item.
+
+---
+
+**The 2026-09-08 entry, kept because the half-way state is where the reasoning is.**
+
+### B9-INTERIM. ONE acute saline endpoint fails — 2026-09-08
 
 **ADR 0022's chronotropic arm moved both endpoints and turned one green.** It buffers the
 pressure rise during the infusion, so less sodium leaves by pressure natriuresis:
@@ -371,6 +401,51 @@ their filtration. That needs a body-composition row this model does not have.
 it right; no measured population spread of filtration or cardiac output has been compared
 against. Luu 2022 and Zhan 2024 are now *usable* — a per-1.73-m² figure must be multiplied
 by 1.8545/1.73 to reach this reference individual — but they have not been used.
+
+### B13. The reflex gain that now sets every transient rests on seven young men — NEW, 2026-09-09
+
+`BR.OPEN_LOOP_GAIN` = **5.62 ± 0.98**, Yamasaki 2021, and it is a far more load-bearing
+row than it was at 2.0, because the total loop gain went from about 3.35 to about 6.97
+and **pressure excursions are now attenuated roughly twice as hard**. Everything acute in
+this model runs through it.
+
+**Its cohort is n = 7 healthy males aged 19–37, and the authors disclaim
+representativeness in their own limitations.** It is entered `both`, so it is a male
+number applied to women — the `CV.HEMATOCRIT.NOMINAL` failure, declared. And it is a
+young cohort in a model whose stroke volume comes from 45–74 year olds and whose heart
+rate comes from 29–65, against a reflex gain that falls steeply with age.
+
+**It is still better than what it replaced** — seven young men measured directly, in the
+right species, posture and units, beat six animal studies read through somebody's
+introduction. But a second human estimate of the open-loop gain, in a larger or older or
+mixed-sex cohort, is now **the highest-value cardiovascular source this model could
+acquire**, because more of the model's behaviour depends on this one number than on any
+other unreplicated row.
+
+### B14. Two thirds of the ledger has no error bar, and derived rows drop the ones upstream — NEW, 2026-09-09
+
+**Counted, not estimated:** 92 of 139 rows carry no dispersion at all, and **38 of 57
+`derived` rows carry none even where their inputs have one**. A derived value whose
+inputs have error bars has an error bar; leaving the field blank is not neutral, it
+silently claims the number is exact. Directive 1.13 part 2.
+
+**This is why validation band M cannot be run** — §3.23 established that the stronger
+test, does the model predict the population central value, needs the model to carry an
+error bar, and §7 has recorded since it was written that parameter uncertainty is not
+propagated. **The count makes it concrete.** It is also why the ensemble sampling only
+body mass and this are one problem seen from two sides.
+
+**What I did NOT do, deliberately.** I did not invent dispersions to fill the column.
+Propagating them properly means, for each derived row, taking the inputs' stated
+intervals through the derivation - which is real work and in several cases the inputs
+have no interval either, so the honest entry is a statement that propagation is
+impossible rather than a number.
+
+**The enforceable half is already in.** `tools/ledger_to_julia.py` now refuses a value
+resolved finer than its own stated interval. What it cannot yet require is that a
+derived row HAVE an interval, because 38 rows would fail on the day it is switched on
+and most cannot be fixed without the upstream work above. **Turning that check on is the
+natural end of this item**, and the count is how progress on it should be measured.
 
 ### B7. A de-indexing correction is owed
 

@@ -3,10 +3,12 @@
 **Date:** 2026-09-05
 **Repo:** https://github.com/histoneguy/integrative-physiology-engine (public)
 **Owner:** Eric George (`histoneguy`)
-**State:** all five gates exit 0, and **`validation/challenges.jl` EXITS 1** — the two
-Lobo six-hour endpoints fail by 2.8% and 1.7%, which is `OPEN-QUESTIONS` **B9** and is
-the bound the macula densa arm sits against, **not a regression**. Every other challenge
-passes against published human data.
+**State:** all five gates exit 0, and **`validation/challenges.jl` EXITS 0** — every
+challenge passes against published human data, for the first time since ADR 0021 landed.
+**Read §3.39 before treating that as good news.** The two Lobo endpoints came inside
+their bands because the baroreflex gains were corrected, not because the missing renal
+sympathetic arm was built, and they were the only quantitative bound on the macula densa
+arm. B9 closes as SUPERSEDED, not resolved.
 
 > **THIS LINE SAID `EXITS 0` AND HAD BEEN FALSE SINCE 2026-09-05.** ADR 0021 landed the
 > macula densa arm, B9 was filed the same day recording that the harness exits nonzero
@@ -227,13 +229,49 @@ honest note is the correct outcome and the `assumed` count going UP is progress
 **central value with dispersion** over those reporting an interval — `pooling.md`
 prohibits `range-midpoint`, so an interval cannot become a point estimate.
 
+### 1.13 A DERIVED NUMBER CANNOT BE MORE PRECISE THAN WHAT IT WAS DERIVED FROM — FOUNDATIONAL — 2026-09-09
+
+**Set by the owner after this was got wrong repeatedly in one session.** It is first-year
+material and it belongs in the logic, not in anyone's eye.
+
+**THE RULE, IN TWO PARTS.**
+
+1. **Significant figures do not increase through arithmetic.** A value derived from
+   inputs carrying three significant figures carries three. Multiplying 15.0 by 62.0 by
+   87.0 and dividing by 60000 gives **1.35**, not 1.3485. The extra digits are an
+   artefact of floating point, not information, and writing them down asserts a
+   resolution that exists nowhere in the measurement chain.
+
+2. **The uncertainty on the inputs must be carried, not dropped.** A derived row whose
+   inputs have error bars has an error bar. Leaving `uncertainty_type` empty on such a
+   row is not neutral - it silently claims the number is exact. Where the propagation is
+   not done, say so on the row.
+
+**THE ONE EXCEPTION, AND IT IS NARROW.** A derived row may carry extra digits when it
+exists to close an identity the closure gate checks, because the gate compares
+arithmetic and not physiology - `CV.CO.NOMINAL` is the recorded case, and directive
+1.9's `RN.NA.FRACTIONAL_REABSORPTION` is the other. **Extra digits there are a
+bookkeeping device and never a precision claim**, and the row must say which it is.
+
+**WHAT THIS FORBIDS DOWNSTREAM.** No model output may be quoted to more figures than the
+weakest input behind it. Where a result is compared against a human range, the
+comparison is limited by whichever of the two is coarser - and it is almost always the
+data. **A disagreement inside the inputs' own uncertainty is not a finding**, and
+chasing one costs time that buys nothing. §5 item 9 records that it has done so twice.
+
+**ENFORCED.** `tools/ledger_to_julia.py` fails on a value resolved more than about one
+guard digit past its own stated interval, in significant figures rather than decimal
+places, exempting population spreads and closure identities with a written reason for
+each. The gate is the limit; this directive is why it exists.
+
 ---
 
 ## 2. STATE
 
-**Five gates exit 0. The challenge harness exits 1, on B9's two Lobo endpoints and
-nothing else** — run it rather than trusting this line, which was wrong for four
-sessions. Test counts are deliberately not quoted here; `Pkg.test()` is the receipt.
+**Five gates exit 0. The challenge harness exits 0** — run it rather than trusting this
+line, which was wrong for four sessions in the other direction. **§3.39 explains why a
+green harness is currently worth less than the red one it replaced.** Test counts are
+deliberately not quoted here; `Pkg.test()` is the receipt.
 
 **THE MODEL IS NO LONGER ONLY A RENAL–CARDIOVASCULAR MODEL.** Two subsystems outside
 that axis landed on 2026-09-04 — **respiratory** and **blood** — and a third, thyroid,
@@ -2453,6 +2491,136 @@ failed six times (§3.24). **Three missed in one change, all found by one assert
 
 ---
 
+### 3.40 FOUR PARAMETERS OF THIRTY CARRY THE MODEL. TWENTY-FOUR MOVE IT BY NOTHING
+
+**Date: 2026-09-09. Run `julia --project=. bench/uncertainty_sweep.jl`.** For every
+ledger row with a stated interval, re-solve the chronic salt step at both ends and
+report how far the answer moves.
+
+**Nothing here had ever asked this question.** §7 has recorded since it was written that
+parameter uncertainty is not propagated, and the practical consequence was that time
+went into the third significant figure of rows whose entire error bar changes nothing.
+
+| parameter | interval | swing in salt sensitivity |
+|---|---|---|
+| `CV.ANP.NATRIURETIC_GAIN` | 500–900 | **0.83, 45% of baseline** |
+| `RN.PRESSURE_NATRIURESIS.SLOPE` | 5.43–20.0 | **0.46, 25%** |
+| `CV.MAP.SETPOINT` | 79–95 | **0.28, 15%** |
+| `CV.SV.NOMINAL` | 61–89 | **0.18, 10%** |
+| `K.PLASMA.REFERENCE` | 3.65–4.29 | 0.09, below the 5% line |
+| `RN.GFR.NOMINAL` | 127–178 | 0.06, below the 5% line |
+
+**Four of thirty clear 5%.** The last two are listed because they are next, not because they qualify.
+
+**AND TWENTY-FOUR ROWS SWING 0.000 ACROSS THEIR WHOLE INTERVAL.** Among them
+`RAAS.ALDO.K_GAIN` over 0.833–3.27, `K.EXCRETION_EXPONENT` over 11.9–24.7,
+`CV.VENOUS_RETURN.SENSITIVITY` over 1012–1941, `BF.NA.PLASMA_SETPOINT` over 135–145,
+and every thyroid row. **A fourfold range in the aldosterone-potassium gain moves the
+model's headline output by nothing measurable.**
+
+**THE USE OF THIS IS DECIDING WHERE WORK GOES.** The four rows at the top carry almost
+all the model's sensitivity, and three of them are the ones already known to be weak:
+the natriuretic gain and the pressure natriuresis slope are the two fitted constants,
+and the pressure setpoint is a single sourced number the whole loop rests on. **Sourcing
+work belongs there and nowhere else**, and an argument about a row in the bottom group
+is an argument below the noise floor of its own measurement.
+
+**WHAT IT IS NOT.** One parameter at a time, so correlations and interactions are
+invisible. Real propagation is joint and means sampling the ledger, which is
+`OPEN-QUESTIONS` B14 and is what makes validation band M runnable.
+
+---
+
+### 3.39 THE OPEN-LOOP GAIN IS 5.62, THE CHALLENGE HARNESS NOW EXITS 0, AND THAT IS A LOSS
+
+**Date: 2026-09-09, at the owner's explicit instruction.** `BR.OPEN_LOOP_GAIN`
+2.0 → 5.62. **The citation did not change.**
+
+§3.38 found that this row carried the mid-point of an **animal** range quoted in
+Yamasaki's *introduction* while Yamasaki's own *result* is a human measurement, and left
+it alone as its own pass. This is that pass, and it is one value.
+
+    GL(0) = 5.62 +/- 0.98 SD, supine, n = 7 healthy males aged 19-37
+    arterial pressure as the output variable; means +/- SD stated in Methods and Table 2
+
+#### It pairs correctly with ADR 0022 and would have been wrong without it
+
+Yamasaki blocked vagal effects with atropine throughout, so **5.62 is sympathetic
+pressure control with the cardiac vagal limb removed.** Since ADR 0022 that limb is a
+separate effector with its own sourced gain, so the two rows now **partition the reflex
+the way the measurements do**. Made a day earlier, this change would have deleted the
+vagal contribution from the model entirely.
+
+#### ADR 0009's ethical-ceiling argument is falsified by the paper it cites
+
+That record defended the animal provenance on the grounds that opening the baroreflex
+loop is *"definitionally terminal"* and so unperformable in humans. **The ceiling is real
+for that preparation and false for the quantity.** Yamasaki got the open-loop gain in
+conscious humans from graded tilt plus ganglionic blockade, without opening the loop
+surgically. **§3.19's lesson repeated: ask what is measurable, not whether the obvious
+preparation is permitted.**
+
+#### What moved, and the answer is essentially nothing that is judged
+
+**Run `julia --project=. bench/gain_uncertainty_sweep.jl`.** The row is 5.62 ± 0.98 SD
+in seven subjects — **±17% on the value** — so the honest question is not what the point
+estimate does but what its whole range does.
+
+| `G_br` | salt sensitivity | `dMAP/dV_ecf` |
+|---|---|---|
+| 2.0, the old animal mid-range | 1.85 | 3.00 |
+| 4.64 (−1 SD) | 1.84 | 2.99 |
+| **5.62 (entered)** | **1.84** | **2.98** |
+| 6.60 (+1 SD) | 1.83 | 2.97 |
+
+**A 181% change in the parameter moves chronic salt sensitivity by 0.5%, and the
+parameter's own ±1 SD moves it by 0.3%** — against human ranges of 1.70–2.30 and
+2.97–4.16, which span 35% and 40%. **This row does not materially set the chronic
+outputs.** It sets transients: the pressure ramp of §3.38 buffers roughly twice as
+hard, and that is where the change is worth having.
+
+**Four pins moved in the fourth significant figure and were re-pinned.** They are
+tripwires for unintended change, not agreement claims (§2), and the right response to
+one firing on an intended change is to confirm and re-pin. **A 90-day arm converges and
+removes the movement entirely; that was measured, and then reverted** — tripling
+integration on every call to chase a difference an order of magnitude below the
+parameter's own uncertainty is directive 1.9's named failure, and §5 item 9 records that
+it once cost a third of a session. It cost time again here.
+
+**THE GENERAL POINT, AND IT IS THE OWNER'S.** The values this model rests on are not
+exact. `BR.OPEN_LOOP_GAIN` carries ±17%, `BR.CARDIAC.SENSITIVITY` a population SD near
+±60%, and most rows carry no dispersion at all because none was reported. §7 has
+recorded since it was written that **parameter uncertainty is not propagated here** and
+that validation band M cannot be run until it is. Until that changes, **no model output
+may be quoted beyond three significant figures**, and a disagreement inside a few per
+cent is not a finding.
+
+#### THE HARNESS EXITS 0 FOR THE FIRST TIME SINCE ADR 0021, AND IT IS WORTH LESS THAN THE FAILURE IT REPLACED
+
+    urine   770.976 -> 754.800 (ADR 0022) -> 738.134 mL    band 380-750
+    sodium  129.098 -> 126.478 (ADR 0022) -> 123.756 mmol  band  63-127
+
+**Nothing was fitted to do that.** Two reflex corrections, sourced independently of these
+endpoints and of each other — Laitinen's chronotropic sensitivity and Yamasaki's own
+human vasomotor gain — buffer the pressure rise, so less sodium leaves by pressure
+natriuresis. **`RN.MD.RENIN_GAIN` and `CV.ANP.NATRIURETIC_GAIN` were not re-solved.**
+
+**AND THAT IS WHY IT IS A LOSS.** Those two endpoints were the **only quantitative bound
+on the macula densa arm**: ADR 0021 amendment A6 measured that it can carry a chronic
+renin ratio of about **2.57** before the acute limb leaves its band, against a ledger
+value of **2.73**, and named the 6% gap as where the missing renal sympathetic traffic
+lives. **Inside the band, they bound nothing.** ADR 0021's prediction — that building
+sympathetic traffic lowers `g_md` and brings the endpoints back — is no longer testable
+against Lobo, because they are no longer outside.
+
+**A green harness is less informative here than the red one was**, and `OPEN-QUESTIONS`
+B9 closes as *superseded* rather than as *resolved*. The physiology it recorded is
+unchanged: the model still has no renal sympathetic arm, and `RN.MD.RENIN_GAIN` still
+absorbs whatever that arm would contribute. **What is gone is the measurement that made
+that absorption visible as a number.**
+
+---
+
 ### 3.38 THE BAROREFLEX HAS TWO EFFECTORS. THE PASS TURNED ON A STOP CONDITION, NOT ON THE VALUE
 
 **Date: 2026-09-08.** ADR 0022. Pre-registered in
@@ -3201,7 +3369,20 @@ were solved against that very target. And §5, which is how work goes wrong here
 6. **Silent string replacements.** Assert on every replacement.
 7. **A gate cannot check a label you supplied.**
 8. **Do not run experiments on uncommitted work.**
-9. **Chasing precision that does not exist.** See §1.9.
+9. **Chasing precision that does not exist.** See §1.9. **IT RECURRED ON 2026-09-09
+   AND COST MOST OF A SESSION, WITH THIS ENTRY ALREADY ON THE PAGE.** Raising
+   `BR.OPEN_LOOP_GAIN` moved four pins in the FOURTH significant figure. That was
+   treated as a finding: a convergence investigation, the salt-step horizon changed
+   30 → 90 days, then reverted. Then one value was rounded three times — 2.189,
+   2.19, 2.2 — each pass triggering a five-minute suite run and a re-pin cascade.
+   **The parameter in question swings the model by 0.000 across its entire stated
+   interval** (§3.40).
+   **THE ORDER WAS THE ERROR, NOT THE INTENT.** `bench/uncertainty_sweep.jl` answers
+   in one run which parameters matter, and it was written LAST. Run it FIRST: a
+   disagreement smaller than a parameter's own error bar is not a finding, and the
+   sweep says which those are before any time goes into them. Directive 1.13 and the
+   gate in `ledger_to_julia.py` exist so the precision question is answered by a
+   check rather than by argument.
 10. **Citations without an author list.**
 11. **A name can carry a convention its value contradicts.** Twice now — §3.2. No gate
     catches it; only wiring does.
