@@ -214,8 +214,17 @@ const PERTURBATIONS = [
                    "volume by the plasma share, and the SODIUM leaves with that " *
                    "volume at the prevailing concentration, so the loss is isotonic " *
                    "and V_blood falls by exactly 1 L. " *
-                   "NO TRANSCAPILLARY REFILL and no erythropoietic response - the red " *
-                   "cell mass simply stays where it is put.",
+                   "THE ACUTE RESPONSE IS TRUSTWORTHY AND THE RECOVERY LIMB IS NOT. " *
+                   "Measured: volume and pressure fall, heart rate and renin rise, " *
+                   "and sodium excretion goes to zero - all correct. But the model " *
+                   "then OVERSHOOTS to about 16.7 L of extracellular fluid against a " *
+                   "starting 14.56 and stays there, with renin settling at 0.37 " *
+                   "against a pre-bleed 1.25. It is not convalescing, it is finding a " *
+                   "NEW EQUILIBRIUM: the red cell mass is permanently a litre short " *
+                   "and nothing here restores it, so the loop rebalances at a higher " *
+                   "volume with chronically suppressed renin. NO ERYTHROPOIESIS and NO " *
+                   "TRANSCAPILLARY REFILL, which are the two mechanisms that would " *
+                   "unwind it. Read the first hours; do not read the days.",
          "bleed_litres" => 1.0, "duration" => 0.0),
 
     Dict("id" => "anaemia", "label" => "Anaemia, Hb 15.3 → 9", "kind" => "param",
@@ -278,8 +287,11 @@ mutable struct Session
     timed::Vector{Any}              # (revert_time, Dict(param => original))
     paused::Bool
     stop::Bool
-    duration::Float64
+    duration::Float64      # 0 or less = run until stopped
     chunk::Float64
+    rate::Float64          # SIMULATED days per real second - server-side pacing
+    warmup::Float64        # silent days to equilibrium before anything is graphed
+    warmed::Bool
     mode::String
     members::Vector{Any}
     lock::ReentrantLock
@@ -294,7 +306,8 @@ const SESSIONS = Dict{String,Session}()
 pname(p) = replace(String(Symbol(p)), "(t)" => "")
 
 function new_session(; sex::Symbol = :male, body_mass = 70.0, mode = "individual",
-                     n_members = 8, duration = 60.0, chunk = 0.25)
+                     n_members = 8, duration = 0.0, chunk = 0.25, rate = 2.0,
+                     warmup = 30.0)
     sys = build_model(; sex, body_mass)
     prob = ODEProblem(sys, Dict(), (0.0, duration); jac = true)
     pmap = Dict{String,Float64}()
@@ -316,7 +329,7 @@ function new_session(; sex::Symbol = :male, body_mass = 70.0, mode = "individual
     end
     return Session(sys, prob, nothing, Any[], Vector{Float64}(prob.u0), 0.0, pmap,
                    Dict{String,Float64}(), Dict{String,Float64}(), Any[],
-                   false, false, duration, chunk,
+                   false, false, duration, chunk, rate, warmup, false,
                    mode, members, ReentrantLock())
 end
 
@@ -501,15 +514,68 @@ function meta_json()
                      "perturbations" => PERTURBATIONS))
 end
 
+"""
+Run silently to equilibrium before anything is graphed.
+
+WHY. From its default initial condition this model is NOT in balance: sodium excretion
+goes 205 -> 186 -> 205 over the first day and settles only by about day 30. A
+perturbation applied before that is confounded with the settling transient, and the
+response you see is the sum of two things. This integrates the transient away with
+nothing emitted, then zeroes the clock, so t = 0 on the graph is a model AT REST and
+every later excursion belongs to the perturbation.
+
+The cost is nothing - a 400-day solve is 42 ms warm (section 5 item 4b), so thirty
+days is a few milliseconds against a first-call compile of tens of seconds.
+"""
+function warm_up!(io, s::Session)
+    s.warmed && return
+    s.warmup <= 0 && (s.warmed = true; return)
+    write(io, jval(Dict("warming" => true, "days" => s.warmup)), "
+"); flush(io)
+    if s.mode == "population"
+        s.minteg = Any[init(remake(mp; tspan = (0.0, s.warmup + 1.0)), Rodas5P();
+                            abstol = 1e-8, reltol = 1e-6, save_everystep = false)
+                       for mp in s.members]
+        for ig in s.minteg; step!(ig, s.warmup, true); end
+        # Restart each member's clock at zero from its equilibrated state.
+        s.minteg = Any[init(remake(mp; u0 = Vector{Float64}(s.minteg[i].u),
+                                   tspan = (0.0, 1.0e6)), Rodas5P();
+                            abstol = 1e-8, reltol = 1e-6, save_everystep = false)
+                       for (i, mp) in enumerate(s.members)]
+    else
+        ig = init(remake(s.prob; u0 = s.u0, tspan = (0.0, s.warmup + 1.0)), Rodas5P();
+                  abstol = 1e-8, reltol = 1e-6, save_everystep = false)
+        step!(ig, s.warmup, true)
+        s.u0 = Vector{Float64}(ig.u)
+        s.integ = nothing                      # rebuilt at t = 0 by step_chunk!
+    end
+    s.t = 0.0
+    s.warmed = true
+    write(io, jval(Dict("warmed" => true, "days" => s.warmup)), "
+"); flush(io)
+end
+
 function handle_stream(io, s::Session)
     send_headers(io, "200 OK", "application/x-ndjson"; stream = true)
+    warm_up!(io, s)
     emitted = 0
-    while !s.stop && s.t < s.duration
+    # duration <= 0 means RUN UNTIL STOPPED. An instrument you have to restart to
+    # perturb is not one you can perturb at will, and the previous version raced to
+    # its end faster than anyone could click.
+    while !s.stop && (s.duration <= 0 || s.t < s.duration)
+        wall0 = time()
         if s.paused
             sleep(0.05); continue
         end
         apply_pending!(s)
-        tspan = (s.t, min(s.t + s.chunk, s.duration))
+        # AN UNBOUNDED RUN IS NOT CLAMPED BY ITS OWN END. This read
+        # min(s.t + chunk, s.duration), and with duration = 0 meaning "run until
+        # stopped" that made every chunk end at 0, so the clock advanced by the
+        # 1e-9 step! floor instead of by the chunk. 1215 chunks covered a
+        # microsecond of simulated time and the plot looked frozen at rest -
+        # which is exactly what a settled model is supposed to look like, so the
+        # only tell was the t axis.
+        tspan = (s.t, s.duration > 0 ? min(s.t + s.chunk, s.duration) : s.t + s.chunk)
         try
             if s.mode == "population"
                 # ONE INTEGRATOR PER MEMBER, STEPPED - the same discipline as the
@@ -548,8 +614,16 @@ function handle_stream(io, s::Session)
             write(io, jval(Dict("error" => sprint(showerror, e))), "\n")
             flush(io); break
         end
-        s.t = tspan[2]
         emitted += 1
+        # SERVER-SIDE PACING. The stream used to emit as fast as it could compute, so
+        # a 60-day run finished in seconds and a perturbation applied "during" it
+        # landed after the end. Sim time now advances at `rate` simulated days per
+        # real second, which is what makes the run something you can interact with.
+        if s.rate > 0
+            want = s.chunk / s.rate
+            spent = time() - wall0
+            spent < want && sleep(want - spent)
+        end
     end
     write(io, jval(Dict("done" => true, "t" => s.t)), "\n")
     flush(io)
@@ -595,8 +669,10 @@ function serve(io)
                         body_mass = Float64(get(spec, "body_mass", 70.0)),
                         mode = String(get(spec, "mode", "individual")),
                         n_members = Int(get(spec, "n_members", 8.0)),
-                        duration = Float64(get(spec, "duration", 60.0)),
-                        chunk = Float64(get(spec, "chunk", 0.25)))
+                        duration = Float64(get(spec, "duration", 0.0)),
+                        chunk = Float64(get(spec, "chunk", 0.25)),
+                        rate = Float64(get(spec, "rate", 2.0)),
+                        warmup = Float64(get(spec, "warmup", 30.0)))
         SESSIONS[id] = s
         return send_body(io, "200 OK", "application/json",
                          jval(Dict("id" => id, "t" => s.t,
@@ -614,6 +690,7 @@ function serve(io)
         haskey(spec, "stop")     && (s.stop = Bool(spec["stop"]))
         haskey(spec, "duration") && (s.duration = Float64(spec["duration"]))
         haskey(spec, "chunk")    && (s.chunk = Float64(spec["chunk"]))
+        haskey(spec, "rate")     && (s.rate = Float64(spec["rate"]))
         if haskey(spec, "params")
             lock(s.lock) do
                 for (k, v) in spec["params"]
