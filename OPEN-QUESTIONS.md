@@ -510,11 +510,42 @@ this order.
    extraction ratio. It needed no new component and, initially, no new source — the
    metabolic row ADR 0018 said was missing existed under another name. Oxygen is still a
    forward computation with no feedback, which ADR 0018 decides deliberately.
-5. **No age dimension.** The alveolar–arterial difference widens with age and carries a
+5. **RED CELL MASS IS A PARAMETER, NOT A STATE — so it can be lost and never
+   recovered.** Found 2026-09-10 by building the haemorrhage perturbation and watching
+   the recovery, and the arithmetic was available before the run rather than after it.
+
+   `V_blood = f_pv*V_ecf + Hct*BV0`. A bleed removes red cells permanently, blood
+   volume is what sets cardiac output and therefore pressure, so the loop must restore
+   it — and the only route left is plasma. Plasma is 21% of extracellular fluid, so
+   replacing **0.453 L of red cells costs 2.15 L of extracellular expansion**. Predicted
+   16.71 L against a starting 14.56; observed 16.65.
+
+   **The signature is haemodilution: effective haematocrit falls 0.453 → 0.373**, which
+   is what a real person looks like a few days after losing a litre. And renin then sits
+   at 0.37 against a pre-bleed 1.25 — suppressed entirely through the macula densa arm,
+   because 14% more extracellular fluid raises filtration and distal delivery. The
+   pressure term barely moves. **Every step is correct; the model simply never unwinds.**
+
+   **What it would take.** Red cell volume as a STATE, erythropoietin driven by renal
+   oxygen delivery, and a destruction term at the ~120 day lifespan. The upstream
+   quantities already exist — arterial content, delivery, haemoglobin, and a kidney.
+
+   **AND IT WOULD BE THIS MODEL'S FIRST OXYGEN FEEDBACK.** ADR 0018 made blood a forward
+   computation deliberately — two inbound edges, no outbound — and recorded that an
+   outbound edge means an oxygen feedback has been built and needs its own record. The
+   coupling count is the tripwire for precisely this. Red cells at 120 days would become
+   the slowest state by an order of magnitude over thyroxine.
+
+   **Not the next item.** Renal sympathetic traffic still is, because two of the four
+   parameters that carry this model (§3.40) are the fitted constants that arm would help
+   determine, and erythropoiesis touches neither. Until it exists, **read the first hours
+   of a haemorrhage and not the days.**
+
+6. **No age dimension.** The alveolar–arterial difference widens with age and carries a
    young-adult value; so does maximal urine concentrating ability.
-6. **Sea level, awake, resting, adult, non-pregnant, healthy.** No hypoxic ventilatory
+7. **Sea level, awake, resting, adult, non-pregnant, healthy.** No hypoxic ventilatory
    drive, no posture, no exercise, no sleep, no circadian modulation switched on.
-7. **One thyroid hormone.** Free thyroxine only — no triiodothyronine, no deiodination,
+8. **One thyroid hormone.** Free thyroxine only — no triiodothyronine, no deiodination,
    no protein binding, so the low-T3 state and the monotherapy-versus-combination
    question are outside the model by construction.
 
