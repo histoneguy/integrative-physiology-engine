@@ -149,6 +149,119 @@ const QUANTITIES = [
     ("blood",          "bl₊pH",         "Arterial pH",                 "-",            3),
 ]
 
+
+# ---------------------------------------------------------------------------
+# PERTURBATIONS
+#
+# WHAT THIS MODEL CAN HONESTLY BE ASKED TO DO, and what it cannot. The second
+# list is the more useful one: a slider that produces a plausible-looking
+# response to a manoeuvre the model has no mechanism for is worse than no
+# slider, because the picture is convincing and means nothing. That is the
+# lesson the frozen population taught and it applies to inputs as well.
+#
+# `kind` is "param" (goes through the pending-parameter path), "state" (edits a
+# state variable, which is what a volume loss is), or "blocked" (rendered
+# greyed out with the reason, never applied).
+#
+# `duration` in DAYS reverts the change automatically - an infusion is a window,
+# not a step.
+# ---------------------------------------------------------------------------
+const PERTURBATIONS = [
+    Dict("id" => "salt_high", "label" => "High salt diet", "kind" => "param",
+         "group" => "validated",
+         "note" => "Chronic step in sodium intake. THE model's validated chronic " *
+                   "manoeuvre - salt sensitivity is judged against a meta-analytic " *
+                   "1.70-2.30 mmHg per 100 mmol/day.",
+         "sets" => Dict("bf₊Na_intake" => 305.0), "duration" => 0.0),
+
+    Dict("id" => "salt_low", "label" => "Low salt diet", "kind" => "param",
+         "group" => "validated",
+         "note" => "The low arm of the same step, 103 mmol/day.",
+         "sets" => Dict("bf₊Na_intake" => 103.0), "duration" => 0.0),
+
+    Dict("id" => "saline_2l", "label" => "IV saline, 2 L over 1 h", "kind" => "param",
+         "group" => "validated",
+         "note" => "Lobo 2001, the model's validated ACUTE challenge: 2 L of 0.9% " *
+                   "saline, 308 mmol sodium, infused over one hour. Reverts itself.",
+         "sets" => Dict("bf₊Na_intake" => 205.0 + 308.0 * 24.0,
+                        "bf₊H2O_intake" => 2.5 + 2.0 * 24.0,
+                        "rn₊H2O_in" => 2.5 + 2.0 * 24.0),
+         "duration" => 1.0 / 24.0),
+
+    Dict("id" => "water_load", "label" => "Oral water load, 1.5 L", "kind" => "param",
+         "group" => "expressible",
+         "note" => "Raises water intake for one hour. NO ACUTE OSMOTIC MAGNITUDE MAY " *
+                   "BE QUOTED from this - BF.ICF_ECF.OSMOTIC_TAU is assumed at 30 min " *
+                   "and a 1.4 L load moves peak osmolality 8.8 to 17.6 mOsm/kg across " *
+                   "its plausible range. Directions and steady states are fine.",
+         "sets" => Dict("bf₊H2O_intake" => 2.5 + 1.5 * 24.0,
+                        "rn₊H2O_in" => 2.5 + 1.5 * 24.0),
+         "duration" => 1.0 / 24.0),
+
+    Dict("id" => "deprivation", "label" => "Fluid deprivation", "kind" => "param",
+         "group" => "expressible",
+         "note" => "Water intake to zero. The model conserves correctly - it loses " *
+                   "about 1.07% of body mass over 24 h, inside the published 1-1.5%. " *
+                   "The comparison against Pross 2013 is INDETERMINATE because that " *
+                   "paper reports the osmolality and not the deficit.",
+         "sets" => Dict("bf₊H2O_intake" => 0.0, "rn₊H2O_in" => 0.0),
+         "duration" => 0.0),
+
+    Dict("id" => "haemorrhage", "label" => "Haemorrhage, 1 L whole blood", "kind" => "state",
+         "group" => "expressible",
+         "note" => "Removes ONE LITRE OF WHOLE BLOOD, not one litre of plasma: the " *
+                   "red cell term falls by the haematocrit share, the extracellular " *
+                   "volume by the plasma share, and the SODIUM leaves with that " *
+                   "volume at the prevailing concentration, so the loss is isotonic " *
+                   "and V_blood falls by exactly 1 L. " *
+                   "NO TRANSCAPILLARY REFILL and no erythropoietic response - the red " *
+                   "cell mass simply stays where it is put.",
+         "bleed_litres" => 1.0, "duration" => 0.0),
+
+    Dict("id" => "anaemia", "label" => "Anaemia, Hb 15.3 → 9", "kind" => "param",
+         "group" => "expressible",
+         "note" => "Content and delivery fall, extraction rises, mixed venous " *
+                   "saturation falls, and ARTERIAL saturation and tension do not move " *
+                   "at all. That is what distinguishes content from tension (§3.27).",
+         "sets" => Dict("bl₊Hb" => 9.0), "duration" => 0.0),
+
+    Dict("id" => "renal_impair", "label" => "Reduced GFR, 50%", "kind" => "param",
+         "group" => "expressible",
+         "note" => "Halves nominal filtration. GFR largely CANCELS out of the steady " *
+                   "state - a 15% error in the whole renal input moved the salt-step " *
+                   "shift by 0.0006 mmHg (§3.5) - so expect the transients to move and " *
+                   "the chronic pressure not to.",
+         "sets" => Dict("rn₊GFR0" => 76.3), "duration" => 0.0),
+
+    Dict("id" => "exercise", "label" => "Physical activity", "kind" => "blocked",
+         "group" => "blocked",
+         "note" => "NOT EXPRESSIBLE. This is a RESTING model (OPEN-QUESTIONS C6). " *
+                   "Exercise needs muscle vasodilation, a chronotropic drive that is " *
+                   "not baroreflex, a venous return change from the muscle pump and a " *
+                   "metabolic rate rise - and only the last of those exists here, " *
+                   "through the thyroid arm, where it is thyrotoxicosis and not " *
+                   "exercise. A slider here would produce a plausible curve that " *
+                   "means nothing.",
+         "sets" => Dict(), "duration" => 0.0),
+
+    Dict("id" => "altitude", "label" => "Altitude / hypoxia", "kind" => "blocked",
+         "group" => "blocked",
+         "note" => "NOT EXPRESSIBLE. ADR 0017 omits the hypoxic ventilatory drive, " *
+                   "RESP.ALVEOLAR.K assumes sea-level barometric pressure, and " *
+                   "Blood.jl reuses that same constant for inspired PO2. The model is " *
+                   "sea level in three places (§7).",
+         "sets" => Dict(), "duration" => 0.0),
+
+    Dict("id" => "tilt", "label" => "Head-up tilt / standing", "kind" => "blocked",
+         "group" => "blocked",
+         "note" => "NOT EXPRESSIBLE. No posture and no cardiopulmonary receptors - " *
+                   "ADR 0009 names the low-pressure limb as a separate component that " *
+                   "does not exist. ADR 0022 test 5 asserts that absence rather than " *
+                   "describing it: Jensen measures pulse rate RISING on a volume load " *
+                   "and this model cannot produce that.",
+         "sets" => Dict(), "duration" => 0.0),
+]
+
 # ---------------------------------------------------------------------------
 # Session
 # ---------------------------------------------------------------------------
@@ -160,7 +273,9 @@ mutable struct Session
     u0::Vector{Float64}
     t::Float64
     pmap::Dict{String,Float64}      # parameter name -> current value
-    pending::Dict{String,Float64}   # edits waiting for the next chunk
+    pending::Dict{String,Float64}   # parameter edits waiting for the next chunk
+    pstate::Dict{String,Float64}    # STATE edits - a volume loss is one of these
+    timed::Vector{Any}              # (revert_time, Dict(param => original))
     paused::Bool
     stop::Bool
     duration::Float64
@@ -200,7 +315,8 @@ function new_session(; sex::Symbol = :male, body_mass = 70.0, mode = "individual
         end
     end
     return Session(sys, prob, nothing, Any[], Vector{Float64}(prob.u0), 0.0, pmap,
-                   Dict{String,Float64}(), false, false, duration, chunk,
+                   Dict{String,Float64}(), Dict{String,Float64}(), Any[],
+                   false, false, duration, chunk,
                    mode, members, ReentrantLock())
 end
 
@@ -253,8 +369,37 @@ function step_chunk!(s::Session, target)
     return s.integ
 end
 
+"""Apply a state edit by name, e.g. `bf₊V_ecf`. Returns true if anything moved.
+
+A VOLUME LOSS IS A STATE EDIT, not a parameter one, which is why this exists. The
+integrator is rebuilt from the modified vector rather than mutated in place, so the
+step-size history is discarded exactly once and deliberately - a haemorrhage is a
+discontinuity and pretending otherwise would let the solver step over it.
+"""
+function apply_states!(s::Session)
+    isempty(s.pstate) && return false
+    names = String.(Symbol.(mtk_unknowns(s.sys)))
+    names = [replace(n, "(t)" => "") for n in names]
+    for (k, v) in s.pstate
+        i = findfirst(==(k), names)
+        i === nothing && continue
+        s.u0[i] = v
+    end
+    empty!(s.pstate)
+    return true
+end
+
 function apply_pending!(s::Session)
-    isempty(s.pending) && return false
+    # Timed reverts first: an infusion is a window, not a step.
+    if !isempty(s.timed)
+        due = [e for e in s.timed if s.t >= e[1]]
+        for e in due, (k, v) in e[2]
+            s.pending[k] = v
+        end
+        filter!(e -> s.t < e[1], s.timed)
+    end
+    moved_state = apply_states!(s)
+    isempty(s.pending) && !moved_state && return false
     lock(s.lock) do
         for (k, v) in s.pending
             s.pmap[k] = v
@@ -352,7 +497,8 @@ function meta_json()
     end
     qs = [Dict("group" => g, "key" => k, "label" => l, "units" => u, "digits" => d)
           for (g, k, l, u, d) in QUANTITIES]
-    return jval(Dict("quantities" => qs, "parameters" => params))
+    return jval(Dict("quantities" => qs, "parameters" => params,
+                     "perturbations" => PERTURBATIONS))
 end
 
 function handle_stream(io, s::Session)
@@ -476,6 +622,67 @@ function serve(io)
             end
         end
         return send_body(io, "200 OK", "application/json", jval(Dict("ok" => true)))
+    elseif path == "/api/perturb" && method == "POST"
+        spec = jparse(body)
+        id = String(get(spec, "id", ""))
+        haskey(SESSIONS, id) || return send_body(io, "404 Not Found", "text/plain", "no session")
+        s = SESSIONS[id]
+        pid = String(get(spec, "perturbation", ""))
+        idx = findfirst(x -> x["id"] == pid, PERTURBATIONS)
+        idx === nothing && return send_body(io, "400 Bad Request", "text/plain", "unknown perturbation")
+        pert = PERTURBATIONS[idx]
+        # A BLOCKED PERTURBATION IS REFUSED BY THE SERVER, not merely greyed out in
+        # the page. A disabled button is a UI convention; a refusal is the model
+        # saying it has no mechanism, and it should say so wherever it is asked.
+        pert["kind"] == "blocked" &&
+            return send_body(io, "409 Conflict", "application/json",
+                             jval(Dict("blocked" => true, "note" => pert["note"])))
+        lock(s.lock) do
+            if pert["kind"] == "state" && pert["id"] == "haemorrhage"
+                # Whole blood, not plasma. V_blood = f_pv*V_ecf + Hct*BV0, so a bleed
+                # of X litres removes X*(1-Hct) of plasma and X*Hct of red cells:
+                #   dV_ecf = -X*(1-Hct)/f_pv     and     dBV0 = -X
+                # which gives dV_blood = -X exactly. Removing ECF alone would be
+                # dehydration wearing the word haemorrhage.
+                X   = Float64(get(spec, "magnitude", pert["bleed_litres"]))
+                hct = get(s.pmap, "cv₊Hct", 0.453)
+                fpv = get(s.pmap, "cv₊f_pv", 0.2111)
+                nm  = [replace(String(Symbol(u)), "(t)" => "") for u in mtk_unknowns(s.sys)]
+                iv  = findfirst(==("bf₊V_ecf"), nm)
+                ina = findfirst(==("bf₊Na_ecf"), nm)
+                dV  = -X * (1 - hct) / fpv          # plasma share, through f_pv
+                if iv !== nothing
+                    s.pstate["bf₊V_ecf"] = s.u0[iv] + dV
+                    # THE SODIUM GOES WITH IT, AND LEAVING IT BEHIND IS NOT A SMALL
+                    # ERROR. Blood is isotonic with the extracellular space, so a bleed
+                    # removes sodium at the prevailing concentration. The first version
+                    # dropped the VOLUME and kept the SOLUTE, which is a haemorrhage
+                    # in name and a severe hypernatraemia in fact - plasma sodium 140
+                    # -> 150 and osmolality 288 -> 307 within twelve hours.
+                    #
+                    # THE MODEL CAUGHT IT, WHICH IS THE POINT. The concentrated plasma
+                    # raised the filtered load, the macula densa arm read that as more
+                    # distal delivery and SUPPRESSED renin - the opposite of what a
+                    # bleed does. A wrong input propagated correctly to a wrong answer
+                    # whose sign was obviously wrong, and the sign is what exposed it.
+                    if ina !== nothing
+                        s.pstate["bf₊Na_ecf"] = s.u0[ina] + (s.u0[ina] / s.u0[iv]) * dV
+                    end
+                end
+                s.pending["cv₊BV0"] = get(s.pmap, "cv₊BV0", 5.62) - X
+            else
+                for (k, v) in pert["sets"]
+                    s.pending[k] = Float64(v)
+                end
+            end
+            if pert["duration"] > 0
+                orig = Dict{String,Float64}(k => get(s.pmap, k, Float64(v))
+                                            for (k, v) in pert["sets"])
+                push!(s.timed, (s.t + pert["duration"], orig))
+            end
+        end
+        return send_body(io, "200 OK", "application/json",
+                         jval(Dict("ok" => true, "applied" => pert["label"], "t" => s.t)))
     end
     return send_body(io, "404 Not Found", "text/plain", "not found")
 end
