@@ -76,9 +76,10 @@
   </div>
   <label>Sex <select id="sex"><option>male</option><option>female</option></select></label>
   <label>Mass <input type="number" id="mass" value="70" step="1" style="width:64px"> kg</label>
-  <label>Duration <input type="number" id="dur" value="60" step="5" style="width:70px"> d</label>
+  <label>Run for <input type="number" id="dur" value="0" step="10" style="width:64px"> d</label>
+  <label>Settle <input type="number" id="warm" value="30" step="5" style="width:60px"> d</label>
   <label>Step <input type="number" id="chunk" value="0.25" step="0.05" style="width:70px"> d</label>
-  <label>Rate <input type="number" id="rate" value="20" step="5" style="width:64px"> /s</label>
+  <label>Rate <input type="number" id="rate" value="2" step="1" style="width:60px"> d/s</label>
   <span class="grow"></span>
   <span id="status">idle</span>
   <button id="pause">Pause</button>
@@ -325,8 +326,9 @@ function startPacer(){
   clearInterval(state.timer);
   state.timer = setInterval(()=>{
     if(state.paused) return;
-    let n = Math.max(1, Math.round(state.rate/10));
-    while(n-- && state.queue.length){
+    // The SERVER paces now, so this just drains. Rate-limiting here as well would
+    // let the buffer grow without bound and put the plot behind the simulation.
+    while(state.queue.length){
       const m = state.queue.shift();
       if(m.q) push(m.t, m.q);
       else if(m.members){
@@ -352,9 +354,12 @@ async function run(){
   if(!state.meta){ $('#status').textContent = 'still loading model metadata…'; return; }
   stop();
   state.series={}; state.times=[]; state.queue=[]; state.paused=false;
+  // duration 0 = run until stopped. `warmup` integrates the settling transient
+  // away with nothing graphed, so t = 0 on the plot is a model AT REST.
   const spec = {mode:state.mode, sex:$('#sex').value,
                 body_mass:+$('#mass').value, duration:+$('#dur').value,
-                chunk:+$('#chunk').value, n_members:8};
+                chunk:+$('#chunk').value, n_members:8,
+                rate:+$('#rate').value, warmup:+$('#warm').value};
   const s = await post('/api/session', spec);
   state.id = s.id;
   // re-apply any edits made before this run
@@ -373,6 +378,9 @@ async function run(){
       if(!ln.trim()) continue;
       let m; try{ m = JSON.parse(ln); }catch{ continue; }
       if(m.error){ $('#status').textContent = 'error: '+m.error; continue; }
+      if(m.warming){ $('#status').textContent =
+        `settling to equilibrium (${m.days} d, not graphed)…`; continue; }
+      if(m.warmed){ $('#status').textContent = 'at rest — running'; continue; }
       if(m.done){ $('#status').textContent = `finished at t = ${fmt(m.t)} d`; continue; }
       state.queue.push(m);
     }
@@ -392,7 +400,8 @@ $('#pause').onclick = e=>{
   e.target.textContent = state.paused ? 'Resume' : 'Pause';
   if(state.id) post('/api/update',{id:state.id, paused:state.paused});
 };
-$('#rate').onchange = e=>{ state.rate = +e.target.value; };
+$('#rate').onchange = e=>{ state.rate = +e.target.value;
+  if(state.id) post('/api/update',{id:state.id, rate:+e.target.value}); };
 $('#dur').onchange  = e=>{ if(state.id) post('/api/update',{id:state.id, duration:+e.target.value}); };
 $('#chunk').onchange= e=>{ if(state.id) post('/api/update',{id:state.id, chunk:+e.target.value}); };
 $('#search').oninput = renderParams;
