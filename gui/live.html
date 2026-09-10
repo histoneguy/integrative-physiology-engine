@@ -38,6 +38,12 @@
   .flat{color:var(--warn)}
   .unc{font:10px var(--mono);color:var(--ok);margin-left:4px}
   .unc.none{color:#6e7681}
+  .pert{display:block;width:100%;text-align:left;margin-bottom:4px;font-size:12px}
+  .pert.blocked{opacity:.5;border-style:dashed;cursor:not-allowed}
+  .pert.validated{border-color:#1e4429}
+  #pertnote{font-size:11px;color:var(--dim);border-left:2px solid var(--line);
+            padding:4px 8px;margin:6px 0 2px;min-height:1px}
+  #pertnote.blocked{border-left-color:var(--bad);color:#c9a4a0}
   aside{border-left:1px solid var(--line);background:var(--panel);overflow:auto;padding:12px}
   aside h2{font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--dim);
            margin:14px 0 6px}
@@ -91,6 +97,9 @@
 <main>
   <div id="plots"></div>
   <aside>
+    <h2>Perturb</h2>
+    <div id="perturb"></div>
+    <div id="pertnote"></div>
     <h2>Plot</h2>
     <div id="picker"></div>
     <h2>Parameters <span id="pcount" style="color:var(--dim)"></span></h2>
@@ -211,6 +220,35 @@ function renderCards(){
     card.querySelector('.foot').innerHTML = r.flat
       ? `<span class="flat">flat</span> below solver tolerance &nbsp; ${tspan}`
       : `range ${fmt(r.span, q.digits)} ${q.units} &nbsp; ${tspan}`;
+  }
+}
+
+// PERTURBATIONS. The blocked ones are RENDERED, not hidden, because "the model has
+// no mechanism for this" is the most useful thing the page can tell you about
+// exercise, altitude or standing up. Hiding them would leave you wondering.
+function renderPerturb(){
+  const box = $('#perturb'); box.innerHTML='';
+  const note = $('#pertnote');
+  for(const pt of (state.meta.perturbations||[])){
+    const b = document.createElement('button');
+    b.className = 'pert ' + (pt.kind==='blocked' ? 'blocked' : (pt.group||''));
+    b.textContent = pt.label + (pt.kind==='blocked' ? '  — not expressible' : '');
+    b.onmouseenter = ()=>{ note.textContent = pt.note;
+                           note.className = pt.kind==='blocked' ? 'blocked' : ''; };
+    b.onclick = async ()=>{
+      if(pt.kind==='blocked'){
+        note.textContent = pt.note; note.className='blocked'; return;
+      }
+      if(!state.id){ note.textContent='Press Run first — a perturbation is applied to a running simulation.'; return; }
+      const r = await fetch('/api/perturb',{method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({id:state.id, perturbation:pt.id})});
+      const j = await r.json();
+      note.className = j.blocked ? 'blocked' : '';
+      note.textContent = j.blocked ? j.note
+        : `applied: ${j.applied} at t = ${fmt(j.t,2)} d`;
+    };
+    box.appendChild(b);
   }
 }
 
@@ -371,7 +409,7 @@ document.querySelectorAll('#mode button').forEach(b=>b.onclick=()=>{
     $('#status').textContent = 'cannot reach server — is gui_server.jl running?';
     return;
   }
-  renderPicker(); renderParams(); renderCards();
+  renderPerturb(); renderPicker(); renderParams(); renderCards();
   const b = $('#run'); b.disabled = false; b.textContent = 'Run';
   $('#status').textContent = 'ready — press Run';
 })();

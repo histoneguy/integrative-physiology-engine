@@ -464,11 +464,18 @@ this order.
 
 1. ~~**The baroreflex has one effector while heart rate exists.**~~ **BUILT 2026-09-08**
    (ADR 0022, §3.38). The chronotropic arm exists: one error signal, two efferent
-   limbs, `hr_mod` on heart rate alongside `tpr_mod` on resistance. **No new state** —
-   the vagal effector is quasi-static at this horizon, which is the argument that kept
-   Respiratory and Blood stateless. Sourced from Laitinen 1998, phenylephrine bolus in
-   117 healthy adults, and it arrives as a **sexed pair**, the first in the neural
-   subsystem.
+   limbs, `hr_mod` on heart rate alongside `tpr_mod` on resistance. Sourced from
+   Laitinen 1998, phenylephrine bolus in 117 healthy adults, and it arrives as a
+   **sexed pair**, the first in the neural subsystem.
+
+   **THIS ENTRY SAID "NO NEW STATE" AND THAT WAS WRONG.** It was true of the
+   pre-registration and false of what got built, and it stood while §3.38 said the
+   opposite — the contradiction this repository exists to prevent. The arm carries a
+   **0.4 s vagal lag (`BR.CARDIAC.TAU`) and IS the eleventh state.** An algebraic
+   `hr_mod` closes an instantaneous loop through arterial pressure, `CO → MAP → err →
+   hr_mod → CO`, and `structural_simplify` paid for it by promoting `Blood.CO` to a
+   state instead. **The state was paid either way**; it is now paid on a variable with
+   a physical meaning and a sourced time constant.
 
    **The pass turned on a stop condition, not on the value.** Before anything was
    built it had to be settled whether `BR.OPEN_LOOP_GAIN` was the whole reflex or the
