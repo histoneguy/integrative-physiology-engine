@@ -42,6 +42,7 @@ using ..LedgerParams
 using ..LedgerParams:
     CV_VENOUS_RETURN_SENSITIVITY,
     CV_CENTRAL_FRACTION, CV_CENTRAL_CO_SENSITIVITY,
+    RBC_LIFESPAN, RBC_PRODUCTION_GAIN,
     BF_BODY_MASS_REFERENCE
 
 """
@@ -67,6 +68,19 @@ function Cardiovascular(; name, sex::Symbol = :male,
     sz = size_factor(body_mass)
     mz = mass_factor(body_mass)
 
+    # THE REFERENCE RED CELL VOLUME, RESOLVED ONCE IN JULIA, ADR 0023. It is the
+    # initial condition for V_rbc, and it has to be a NUMBER rather than the
+    # symbolic product Hct*BV0: a symbolic state default becomes an initialization
+    # EQUATION, which then collides with every caller that supplies its own u0 -
+    # which is every salt-step level, every ensemble member and every perturbation.
+    #
+    # Resolved once and used for the parameter defaults AND the state default, so
+    # the reference is stated in exactly one place. Writing it twice is failure
+    # mode 21 and it is how two copies of a constant drift apart.
+    hct_ref  = LedgerParams.param(:CV_HEMATOCRIT_NOMINAL, sex)
+    bv0_ref  = mz * LedgerParams.param(:CV_BLOOD_VOLUME_NOMINAL, sex)
+    vrbc_ref = hct_ref * bv0_ref
+
     pars = @parameters begin
         # EXTENSIVE: a flow and two volumes.
         # SEXED as of 2026-09-01. CO0 is now DERIVED from the sourced stroke
@@ -78,7 +92,7 @@ function Cardiovascular(; name, sex::Symbol = :male,
         # SEXED as of 2026-08-27 (Oberholzer 2024, CO rebreathing): 80.3 mL/kg in
         # men, 70.3 in women. f_pv and VC0 are DERIVED from it and are sexed with
         # it, so all three go through the ADR 0014 accessor.
-        BV0    = mz * LedgerParams.param(:CV_BLOOD_VOLUME_NOMINAL, sex)
+        BV0    = bv0_ref
         # TPR CARRIES THE RECIPROCAL, and this is the line that keeps arterial
         # pressure intensive. MAP = CO*TPR, CO ~ s, so TPR ~ 1/s or big people
         # would be hypertensive. Physically that is right: resistance falls as
@@ -89,7 +103,7 @@ function Cardiovascular(; name, sex::Symbol = :male,
         # constant. While CV.HEMATOCRIT.NOMINAL carries a single `both` row this
         # returns that value for either sex; the moment a male/female pair is
         # entered it starts returning the right one, with no change here.
-        Hct    = LedgerParams.param(:CV_HEMATOCRIT_NOMINAL, sex)
+        Hct    = hct_ref
         f_pv   = LedgerParams.param(:CV_PLASMA_ECF_FRACTION, sex)   # DERIVED from BV0
         G_vr   = CV_VENOUS_RETURN_SENSITIVITY      # CALIBRATED - see ledger
         f_c    = CV_CENTRAL_FRACTION               # PLACEHOLDER - cancels, see below
@@ -101,6 +115,14 @@ function Cardiovascular(; name, sex::Symbol = :male,
         # adults - so stroke volume carries the whole of the cardiac scaling.
         HR0    = LedgerParams.param(:CV_HR_NOMINAL, sex)   # 1/min, SEX-SPECIFIC
         SV0    = sz * LedgerParams.param(:CV_SV_NOMINAL, sex)   # mL, EXTENSIVE
+        # ADR 0023. BOTH INTENSIVE: a lifespan is a time and the gain is
+        # dimensionless, so neither scales with body mass. The extensive part of
+        # erythropoiesis is the reference red cell volume Hct*BV0, which scales
+        # through BV0 as it already did - the mistake HANDOVER section 3.30
+        # records for G_anp, avoided here by construction because the gain is
+        # stated as a fractional response to a fractional signal.
+        tau_life = RBC_LIFESPAN            # day; the model's time base IS days
+        G_epo    = RBC_PRODUCTION_GAIN     # dimensionless
     end
 
     vars = @variables begin
@@ -109,7 +131,11 @@ function Cardiovascular(; name, sex::Symbol = :male,
         V_ecf(t)        # L        INPUT from body fluids
         tpr_mod(t)      # unitless INPUT from baroreflex (1.0 = no reflex action)
         hr_mod(t)       # unitless INPUT from baroreflex, ADR 0022 (1.0 = none)
+        sat_rel(t)      # unitless INPUT from blood, ADR 0023 (1.0 = at reference)
+        o2_deficit(t)   # unitless fractional deficit in oxygen CAPACITY
         V_plasma(t)     # L
+        V_rbc(t) = vrbc_ref    # L  STATE, ADR 0023 - red cell volume
+        Hct_eff(t)      # fraction live red cell fraction of blood volume
         V_blood(t)      # L
         V_central(t)    # L        intrathoracic; the filling variable (ADR 0012)
         V_periph(t)     # L        everything else; V_central + V_periph = V_blood
@@ -155,7 +181,120 @@ function Cardiovascular(; name, sex::Symbol = :male,
         # BV0/V_ecf0 and the sourced male/female pair could not move any result.
         # It cancels in the LEVEL. It does not cancel in the DERIVATIVE, which is
         # now f_pv = BV0*(1-Hct)/V_ecf0 - so the 0.453/0.395 pair finally bites.
-        V_blood  ~ V_plasma + Hct * BV0,
+        # RED CELL VOLUME IS A STATE. ADR 0023, 2026-09-16, AND IT REPLACES THE
+        # CONSTANT ABOVE - the comment above this one is the 2026-09-02 correction
+        # that made red cells stop expanding with plasma, and it was right as far
+        # as it went. What it left is a term that can be LOST AND NEVER RECOVERED,
+        # which the haemorrhage perturbation measured: a 1 L bleed settles at
+        # 16.65 L of extracellular fluid against a starting 14.56, permanently,
+        # because replacing 0.453 L of red cells with plasma costs 2.15 L of
+        # extracellular expansion. The acute limb was right and the chronic limb
+        # was a fiction.
+        #
+        # BV0 STILL APPEARS AND IT IS NOW ONLY THE REFERENCE. Hct*BV0 is the red
+        # cell volume the ledger is stated at; it sets the production rate and the
+        # initial condition, and it never moves. That split - reference parameter
+        # against live variable - is erythropoiesis_prereg.md section 2, fixed
+        # before any source was opened, because section 3.8 records what happened
+        # last time haematocrit played two roles at once.
+        #
+        # PRODUCTION EQUALS DESTRUCTION AT THE REFERENCE BY CONSTRUCTION, NOT BY
+        # TUNING. At o2_deficit = 0 the first term is exactly Hct*BV0/tau_life and
+        # the second is V_rbc/tau_life, so the state is stationary at V_rbc =
+        # Hct*BV0 identically, for any gain and any lifespan. The operating point
+        # cannot move, which is what the pre-registration required and what
+        # check_closure.py now asserts.
+        #
+        # THE LOOP GAIN IS THE RECOVERY RATE, AND THAT IS THE WHOLE IDENTIFIABILITY
+        # STORY. Linearising, the deficit decays with time constant
+        # tau_life/(1+G_epo) = 120/5 = 24 days. Lifespan and gain are therefore NOT
+        # separately identified by the recovery data they came from - only their
+        # ratio is - and RBC.LIFESPAN's note says so rather than pretending the
+        # split is measured. Nothing in this model reads the lifespan alone.
+        #
+        # DESTRUCTION IS FIRST-ORDER AND THAT IS A NAMED SIMPLIFICATION. Real red
+        # cells die at a fixed AGE: survival is near-rectangular, not exponential.
+        # This gets the mean lifespan right and the distribution wrong, which
+        # matters to a cohort-labelling experiment and does not matter to a volume
+        # balance. Declared in the pre-registration section 5, before building.
+        # THE SENSED SIGNAL IS TOTAL OXYGEN-CARRYING CAPACITY AGAINST ITS
+        # REFERENCE - red cell mass times how well it is saturated - AND IT IS NOT
+        # ARTERIAL CONTENT. erythropoiesis_prereg.md section 4 pre-registered
+        # content, and content was wrong. THE PRE-REGISTRATION WAS WRONG AND THE
+        # TEST SUITE IS WHAT CAUGHT IT, which is the only reason to write one.
+        #
+        # WHAT WENT WRONG: content is a CONCENTRATION. Expand the plasma and it
+        # falls with no red cell lost, so a content-keyed loop reads a salt load as
+        # anaemia and grows erythrocytes. Measured, before this was changed: across
+        # the 205 -> 103 mEq/day salt step red cell volume moved 2.546 -> 2.507 L
+        # and salt sensitivity went 2.98 -> 4.24, a 42% shift in the model's
+        # headline result. That is HANDOVER section 3.8's defect exactly - red
+        # cells expanding with plasma - returning through a different door five
+        # weeks after it was closed, and the comment forty lines above this one
+        # states the physiology it violates: a plasma expansion DILUTES the
+        # haematocrit, it does not recruit erythrocytes.
+        #
+        # WHY CONTENT IS WRONG PHYSIOLOGICALLY, WHICH IS THE PART THAT MATTERS:
+        # dilutional anaemia does not drive erythropoiesis, because the kidney
+        # senses oxygen DELIVERY against its own consumption and flow rises to meet
+        # the fall in concentration. That is why normovolaemic haemodilution is
+        # tolerated at all.
+        #
+        # AND DELIVERY WAS TRIED AND IS NOT AVAILABLE HERE. CO*CaO2 would be the
+        # right reduction, but this model's cardiac output is far too insensitive
+        # to blood volume to supply the compensation - the venous return term gives
+        # an elasticity of 0.22, so delivery still carries three quarters of the
+        # dilution artefact. The correction cannot be made with what the model has.
+        #
+        # SO THE LOOP REGULATES CAPACITY, NOT CONCENTRATION, and the cost is stated
+        # rather than hidden: the deficit is deliberately NOT normalised by blood
+        # volume. Every volume perturbation this model can express is a PLASMA
+        # perturbation, and it has no viscosity, no renal blood flow and no renal
+        # oxygen consumption with which to tell dilution from depletion. Keying to
+        # capacity gets the cases the model HAS right and gives up a case it does
+        # not have.
+        #
+        # SATURATION IS STILL IN IT, AND THAT IS WHY THE EDGE FROM BLOOD SURVIVES.
+        # A fall in arterial saturation raises production at unchanged red cell
+        # mass, so the hypoxic limb is built and will work the day an inspired
+        # oxygen fraction or an altitude becomes an input. Today FiO2 and the
+        # barometric pressure are constants, so sat_rel is 1.0 and this term is
+        # inert - the same discipline the thyroid metabolic arm is wired under.
+        # THE REFERENCE HERE IS THE SYMBOLIC Hct*BV0 AND NOT THE JULIA CONSTANT
+        # vrbc_ref, AND THE DIFFERENCE IS NOT COSMETIC. vrbc_ref is resolved at
+        # BUILD time, so it is baked into the compiled equation and `remake` cannot
+        # move it; every ensemble member would then be judged against the 70 kg
+        # male reference. Measured before this was corrected: a heavy member read
+        # its own perfectly normal red cell mass as polycythaemia, suppressed
+        # production, lost blood volume, and the kidney compensated out to 20.7 L
+        # of extracellular fluid against a natively built 18.7.
+        #
+        # vrbc_ref survives for the INITIAL CONDITION only, where a number is
+        # exactly what is required. Reference in the equations, number in the
+        # state default, one source for both.
+        o2_deficit ~ 1.0 - sat_rel * (V_rbc / (Hct * BV0)),
+
+        # PRODUCTION AND DESTRUCTION, AND THE GAIN IS EXACTLY THE RECOVERY RATE.
+        # Because the deficit is now proportional to the red cell mass deficit with
+        # a coefficient of ONE, linearising gives d(dV)/dt = -(1+G_epo)/tau_life *
+        # dV, so the time constant is tau_life/(1+G_epo) = 120/5 = 24 days - which
+        # is RBC.RECOVERY_TAU, the number the gain was derived from. THAT WOULD NOT
+        # HAVE HELD UNDER THE PRE-REGISTERED CONTENT SIGNAL: the coefficient there
+        # is (1-Hct) = 0.55, the closed loop would have run at 33 days rather than
+        # 24, and the ledger row would have been asserting an identity the model
+        # did not satisfy - failure mode 22, a calibrated parameter quietly
+        # re-estimated by a second path.
+        D(V_rbc) ~ (Hct * BV0 / tau_life) * (1.0 + G_epo * o2_deficit) -
+                   V_rbc / tau_life,
+
+        V_blood  ~ V_plasma + V_rbc,
+
+        # THE LIVE HAEMATOCRIT, AND IT IS A DIFFERENT OBJECT FROM THE PARAMETER Hct
+        # THREE LINES UP. Hct is the reference the ledger is stated at and it may
+        # never move; Hct_eff is what a centrifuge would read now. Conflating them
+        # would move every derived cardiovascular row, which is why the split was
+        # written down in advance.
+        Hct_eff  ~ V_rbc / V_blood,
 
         # ADR 0012 stage 1: the central/peripheral partition. f_c is constant in
         # time, so this is a CHANGE OF VARIABLES and nothing else. VC0 = f_c*BV0

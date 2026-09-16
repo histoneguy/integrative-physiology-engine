@@ -143,6 +143,20 @@ function build_raw_model(; body_mass = 70.0, storage::Bool = false,
         # their product. Every earlier coupling passed a signal or a flux.
         bl.PaCO2        ~ rs.PaCO2,
         bl.CO           ~ cv.CO,
+        # ADR 0023, ADDED 2026-09-16. THE OXYGEN LOOP CLOSES, AND IT IS THE FIRST
+        # LOOP IN THIS MODEL THAT IS NOT ABOUT PRESSURE OR VOLUME OR SOLUTE.
+        #
+        # Downward: the live haematocrit sets haemoglobin, so arterial content
+        # finally responds to losing red cells. SAME EDGE AS bl.CO, so the coupling
+        # graph does not gain a second cardiovascular -> blood entry.
+        #
+        # Upward: arterial saturation, which with red cell mass makes the oxygen
+        # CAPACITY that drives production. THIS ONE IS NEW
+        # and it is the 22nd edge - the tripwire ADR 0018 left in Blood.jl for
+        # exactly this moment, which said an outbound edge here means an oxygen
+        # feedback has been built and needs its own record.
+        bl.Hct_eff      ~ cv.Hct_eff,
+        cv.sat_rel      ~ bl.sat_rel,
         # ADDED 2026-09-05. The metabolic load reaches blood so that oxygen
         # CONSUMPTION exists and the Fick relation can be closed - the deferral ADR
         # 0018 recorded, discharged with no new source because VCO2 and the
@@ -268,7 +282,8 @@ model_edges() = Set([
     (:renal, :raas),                  # ra.md_drive ~ rn.md_drive - ADR 0021
     (:renal, :potassium),             # kp.GFR ~ rn.GFR - ADR 0021
     (:potassium, :raas),              # ra.K_p ~ kp.K_p - ADR 0021
-    (:cardiovascular, :blood),        # bl.CO ~ cv.CO - ADR 0018
+    (:cardiovascular, :blood),        # bl.CO ~ cv.CO, bl.Hct_eff ~ cv.Hct_eff - ADR 0018/0023
+    (:blood, :cardiovascular),        # cv.sat_rel ~ bl.sat_rel - ADR 0023
     (:cardiovascular, :bodyfluids),   # bf.MAP ~ cv.MAP - INERT, ADR 0010 hook
     (:cardiovascular, :baroreflex),   # br.MAP ~ cv.MAP
     (:baroreflex, :cardiovascular),   # cv.tpr_mod ~ br.tpr_mod

@@ -259,7 +259,13 @@ function member_remake(prob, sys, member; sex::Symbol = :male)
              # checks one parameter - it compares a remade member against a natively
              # built one across EVERY parameter, which catches the class rather than
              # the instance.
-             sys.bl.Hb             => LedgerParams.param(:BLOOD_HB_CONCENTRATION, sex),
+             # WAS sys.bl.Hb UNTIL 2026-09-16, ADR 0023. Haemoglobin stopped being a
+            # parameter when red cell mass became a state - it is now MCHC times the
+            # live haematocrit - so the row that has to be re-sexed here is the
+            # MCHC. Leaving the old entry would have set a VARIABLE through the
+            # parameter map, which remake accepts without complaint and which does
+            # nothing at all.
+            sys.bl.MCHC           => LedgerParams.param(:RBC_MCHC, sex),
              # THREE MORE SEXED PARAMETERS, ALL OMITTED SINCE THE DAY THEY BECAME
              # SEXED, AND ALL FOUND AT ONCE BY THE TESTSET BELOW. None of them scales
              # with mass - a haematocrit, a plasma fraction and a heart rate are all
@@ -277,9 +283,24 @@ function member_remake(prob, sys, member; sex::Symbol = :male)
              sys.cv.Hct            => LedgerParams.param(:CV_HEMATOCRIT_NOMINAL, sex),
              sys.cv.f_pv           => LedgerParams.param(:CV_PLASMA_ECF_FRACTION, sex),
              sys.cv.HR0            => LedgerParams.param(:CV_HR_NOMINAL, sex)],
+        # THE FOURTH INITIAL CONDITION, ADDED 2026-09-16 WITH ADR 0023, AND IT IS
+        # THE FIRST ONE OUTSIDE BODY FLUIDS. Red cell volume is a state whose
+        # starting value is Hct*BV0 - sexed through BOTH factors and mass-scaled
+        # through BV0 - so a remade member that kept the base problem's value would
+        # start a 50 kg woman with a 70 kg man's red cell mass. That is a 31%
+        # error in the largest single component of blood volume, and the
+        # class-level test below caught it on the first run with worst = 0.0107.
+        #
+        # THE POINT IS THAT THIS LIST NOW HAS TWO KINDS OF ENTRY AND THE HEADING
+        # ABOVE ONLY DESCRIBED ONE. Every previous omission was a PARAMETER; this
+        # is a STATE, and adding a state to a component that has sexed or extensive
+        # parameters silently creates an obligation here. Written down so the
+        # tenth one is looked for rather than found.
         u0 = [sys.bf.V_icf  => bm * BF_ICF_MASS_FRACTION,
               sys.bf.V_ecf  => bm * BF_ECF_MASS_FRACTION,
-              sys.bf.Na_ecf => bm * BF_ECF_MASS_FRACTION * BF_NA_PLASMA_SETPOINT])
+              sys.bf.Na_ecf => bm * BF_ECF_MASS_FRACTION * BF_NA_PLASMA_SETPOINT,
+              sys.cv.V_rbc  => LedgerParams.param(:CV_HEMATOCRIT_NOMINAL, sex) *
+                               mz * LedgerParams.param(:CV_BLOOD_VOLUME_NOMINAL, sex)])
 end
 
 """

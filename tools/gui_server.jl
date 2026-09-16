@@ -144,6 +144,12 @@ const QUANTITIES = [
     ("thyroid",        "ty₊TSH",        "Thyrotropin",                 "mIU/L",        3),
     ("respiratory",    "rs₊V_E",        "Minute ventilation",          "L/min",        2),
     ("respiratory",    "rs₊PaCO2",      "Arterial CO2 tension",        "mmHg",         1),
+    # ADR 0023. Haematocrit and haemoglobin were PARAMETERS until red cell mass
+    # became a state, so streaming them would have drawn two flat lines. They now
+    # move, and they are the two numbers a clinician actually reads off a bleed.
+    ("blood",          "cv₊Hct_eff",   "Haematocrit",                 "fraction",     3),
+    ("blood",          "bl₊Hb",        "Haemoglobin",                 "g/dL",         1),
+    ("blood",          "cv₊V_rbc",     "Red cell volume",             "L",            3),
     ("blood",          "bl₊SaO2",       "Arterial O2 saturation",      "fraction",     3),
     ("blood",          "bl₊DO2",        "Oxygen delivery",             "mL/min",       0),
     ("blood",          "bl₊pH",         "Arterial pH",                 "-",            3),
@@ -210,29 +216,42 @@ const PERTURBATIONS = [
     Dict("id" => "haemorrhage", "label" => "Haemorrhage, 1 L whole blood", "kind" => "state",
          "group" => "expressible",
          "note" => "Removes ONE LITRE OF WHOLE BLOOD, not one litre of plasma: the " *
-                   "red cell term falls by the haematocrit share, the extracellular " *
-                   "volume by the plasma share, and the SODIUM leaves with that " *
-                   "volume at the prevailing concentration, so the loss is isotonic " *
-                   "and V_blood falls by exactly 1 L. " *
-                   "THE ACUTE RESPONSE IS TRUSTWORTHY AND THE RECOVERY LIMB IS NOT. " *
-                   "Measured: volume and pressure fall, heart rate and renin rise, " *
-                   "and sodium excretion goes to zero - all correct. But the model " *
-                   "then OVERSHOOTS to about 16.7 L of extracellular fluid against a " *
-                   "starting 14.56 and stays there, with renin settling at 0.37 " *
-                   "against a pre-bleed 1.25. It is not convalescing, it is finding a " *
-                   "NEW EQUILIBRIUM: the red cell mass is permanently a litre short " *
-                   "and nothing here restores it, so the loop rebalances at a higher " *
-                   "volume with chronically suppressed renin. NO ERYTHROPOIESIS and NO " *
-                   "TRANSCAPILLARY REFILL, which are the two mechanisms that would " *
-                   "unwind it. Read the first hours; do not read the days.",
+                   "red cells leave as a state, the extracellular volume by the plasma " *
+                   "share, and the SODIUM leaves with that volume at the prevailing " *
+                   "concentration, so the loss is isotonic and V_blood falls by exactly 1 L. " *
+                   "BOTH LIMBS WORK AS OF 2026-09-16, ADR 0023, AND THE CHRONIC ONE IS NEW. " *
+                   "Measured acutely: volume and pressure fall, heart rate and renin rise, " *
+                   "sodium excretion goes to zero. MAP falls 87 -> 73 instantly and the " *
+                   "baroreflex pulls it back to 85 within the hour; renin goes 1.25 -> 2.23; " *
+                   "and the haematocrit then dilutes 0.453 -> 0.39 over three days as plasma " *
+                   "refills. All correct. Red cell mass then " *
+                   "regenerates with a time constant of 24 days, and the extracellular volume " *
+                   "returns to its starting 14.56 L instead of settling at 16.65 L for ever, " *
+                   "which is what it did while red cell volume was a constant. " *
+                   "WHAT THE RECOVERY IS NOT: a prediction. The 24-day time constant is DERIVED " *
+                   "from Pottgiesser 2008 - 29 men, 550 mL donated, haemoglobin mass back in " *
+                   "36 +/- 11 days - so it is an ESTIMATION SET, and the model reproducing it is " *
+                   "not agreement. That number also lumps IRON availability in with " *
+                   "erythropoietic drive, so an iron-deficient donor - who may take ten times as " *
+                   "long - cannot be represented here at all.",
          "bleed_litres" => 1.0, "duration" => 0.0),
 
-    Dict("id" => "anaemia", "label" => "Anaemia, Hb 15.3 → 9", "kind" => "param",
+    Dict("id" => "anaemia", "label" => "Anaemia, Hb 15.3 → 9", "kind" => "state",
          "group" => "expressible",
          "note" => "Content and delivery fall, extraction rises, mixed venous " *
                    "saturation falls, and ARTERIAL saturation and tension do not move " *
-                   "at all. That is what distinguishes content from tension (§3.27).",
-         "sets" => Dict("bl₊Hb" => 9.0), "duration" => 0.0),
+                   "at all. That is what distinguishes content from tension (§3.27). " *
+                   "APPLIED TO RED CELL MASS SINCE 2026-09-16, ADR 0023. It used to " *
+                   "set the haemoglobin PARAMETER directly, which is no longer " *
+                   "possible - haemoglobin is now MCHC times the live haematocrit, so " *
+                   "the only way to be anaemic here is to have fewer red cells. That " *
+                   "is a better perturbation and a narrower one: it is the anaemia OF " *
+                   "RED CELL LOSS, and this model has no other kind. " *
+                   "IT NOW RECOVERS, which the parameter version could not. Red cell " *
+                   "mass regenerates with a 24-day time constant, so watch the " *
+                   "haematocrit climb back over months while blood volume, pressure " *
+                   "and renin unwind with it.",
+         "rbc_fraction" => 9.0 / 15.3, "duration" => 0.0),
 
     Dict("id" => "renal_impair", "label" => "Reduced GFR, 50%", "kind" => "param",
          "group" => "expressible",
@@ -715,7 +734,18 @@ function serve(io)
             return send_body(io, "409 Conflict", "application/json",
                              jval(Dict("blocked" => true, "note" => pert["note"])))
         lock(s.lock) do
-            if pert["kind"] == "state" && pert["id"] == "haemorrhage"
+            if pert["kind"] == "state" && pert["id"] == "anaemia"
+                # ANAEMIA IS NOW A RED CELL MASS, NOT A HAEMOGLOBIN. ADR 0023.
+                # Scaling V_rbc by the target haemoglobin ratio reproduces the old
+                # perturbation exactly at t = 0 and, unlike it, lets the loop
+                # recover - which is the whole point of the state existing.
+                nm  = [replace(String(Symbol(u)), "(t)" => "") for u in mtk_unknowns(s.sys)]
+                irb = findfirst(==("cv₊V_rbc"), nm)
+                f   = Float64(get(spec, "magnitude", pert["rbc_fraction"]))
+                if irb !== nothing
+                    s.pstate["cv₊V_rbc"] = s.u0[irb] * f
+                end
+            elseif pert["kind"] == "state" && pert["id"] == "haemorrhage"
                 # Whole blood, not plasma. V_blood = f_pv*V_ecf + Hct*BV0, so a bleed
                 # of X litres removes X*(1-Hct) of plasma and X*Hct of red cells:
                 #   dV_ecf = -X*(1-Hct)/f_pv     and     dBV0 = -X
@@ -727,6 +757,7 @@ function serve(io)
                 nm  = [replace(String(Symbol(u)), "(t)" => "") for u in mtk_unknowns(s.sys)]
                 iv  = findfirst(==("bf₊V_ecf"), nm)
                 ina = findfirst(==("bf₊Na_ecf"), nm)
+                irb = findfirst(==("cv₊V_rbc"), nm)
                 dV  = -X * (1 - hct) / fpv          # plasma share, through f_pv
                 if iv !== nothing
                     s.pstate["bf₊V_ecf"] = s.u0[iv] + dV
@@ -746,7 +777,21 @@ function serve(io)
                         s.pstate["bf₊Na_ecf"] = s.u0[ina] + (s.u0[ina] / s.u0[iv]) * dV
                     end
                 end
-                s.pending["cv₊BV0"] = get(s.pmap, "cv₊BV0", 5.62) - X
+                # THE RED CELLS COME OFF THE STATE NOW, NOT OFF BV0. ADR 0023.
+                #
+                # This used to lower the PARAMETER cv.BV0 by the whole bleed,
+                # because red cell volume was the constant Hct*BV0 and there was
+                # nowhere else to take it from. That worked, and it was wrong in two
+                # ways: BV0 is the REFERENCE the entire ledger is stated at - f_pv is
+                # DERIVED from it - so moving it silently restated the operating
+                # point; and nothing could ever put it back, which is exactly why a
+                # bleed used to settle permanently volume-expanded.
+                #
+                # V_rbc is a state, so the cells are simply removed and the
+                # erythropoietic loop regenerates them over months. BV0 does not move.
+                if irb !== nothing
+                    s.pstate["cv₊V_rbc"] = s.u0[irb] - X * hct
+                end
             else
                 for (k, v) in pert["sets"]
                     s.pending[k] = Float64(v)
