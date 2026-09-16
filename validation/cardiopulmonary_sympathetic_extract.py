@@ -185,6 +185,69 @@ RODDIE_1957 = dict(
 )
 
 # ---------------------------------------------------------------------------
+# THE FOLLOW-UP SEARCH, 2026-09-16: THE VASOMOTOR GAIN EXISTS AND IS STILL NOT
+# ENTERABLE
+#
+# Roddie established the arm and could not supply a gain. This searched for one.
+# It exists, it is conventional, and it fails on three independent grounds - any
+# one of which would disqualify it.
+# ---------------------------------------------------------------------------
+VASOMOTOR_GAIN = dict(
+    primary=("Mack GW, Shi X, Nose H, Tripathi A, Nadel ER. Diminished baroreflex "
+             "control of forearm vascular resistance in physically fit humans. "
+             "J Appl Physiol 1987;63(1):105."),
+    reading_level="ABSTRACT AND SECONDARY DESCRIPTION - full text not opened",
+    design=("Change in CENTRAL VENOUS PRESSURE as the stimulus, FOREARM VASCULAR "
+            "RESISTANCE as the response, across LBNP 0 to -20 mmHg. The slope of that "
+            "line IS the cardiopulmonary baroreflex gain, in resistance units per mmHg, "
+            "and it is the conventional way the field states this quantity."),
+    values={"unfit (n=5)": "-5.15 +/- 0.58 U/mmHg",
+            "fit (n=6)":   "-2.42 +/- 0.57 U/mmHg"},
+    corroborating=("Other work gives -7.93 +/- 1.71 hypovolaemic, -4.36 +/- 1.38 "
+                   "normovolaemic and -2.56 +/- 1.59 in a third condition, so the "
+                   "normovolaemic healthy figure sits near -4 to -5 U/mmHg."),
+
+    why_not_enterable=[
+        ("IT RESTS ON THE PREMISE THE FIELD RETIRED. The method is described in the "
+         "paper's own words as 'selective unloading of the cardiopulmonary "
+         "mechanoreceptors with lower body negative pressure (0 to -20 mmHg)'. That is "
+         "exactly the selectivity Taylor 2001 and Fu 2008 refute and the 2018 review "
+         "dates to before 1975. The gain is therefore contaminated by arterial "
+         "baroreceptor unloading BY AN UNKNOWN AMOUNT, and nothing in the paper can "
+         "separate the two because its design assumes they are already separate."),
+
+        ("IT IS A LIMB RESISTANCE, NOT A SYSTEMIC ONE. This model has TPR and no "
+         "forearm. Converting needs the forearm's share of systemic resistance, and "
+         "Roddie's own paper records that forearm SKIN does not participate while "
+         "muscle does - so even the limb figure is a mixture. That is the cross-scale "
+         "composition section 3.26 records going wrong with free thyroxine."),
+
+        ("THERE IS NO SINGLE HEALTHY-ADULT VALUE, AND THE PAPER'S POINT IS THAT THERE "
+         "IS NOT. The gain differs 2.1-fold between fit and unfit subjects - that is "
+         "the title - and roughly 3-fold across volume status. A row entered as one "
+         "number would be asserting a constant the source exists to deny."),
+    ],
+
+    the_shape_of_the_trap=(
+        "THIS NUMBER WOULD HAVE PASSED EVERY GATE IN THIS REPOSITORY. It is in healthy "
+        "humans, stated in units per mmHg, with a standard error and a named cohort, "
+        "from a peer-reviewed primary. It reads as sourced. What is wrong with it is "
+        "not visible in the value, the units, or the citation - only in the method "
+        "section of a paper published eleven years before the assumption it relies on "
+        "was overturned. Section 5 item 24: a discrepancy is only a defect once BOTH "
+        "sides are sourced, and here the STIMULUS is the unsourced side."),
+
+    what_would_actually_work=(
+        "A gain relating limb or systemic vascular resistance to central venous "
+        "pressure obtained WITHOUT assuming LBNP selectivity - for example by measuring "
+        "arterial pressure and central venous pressure simultaneously and modelling "
+        "both afferents, which is what Roddie did qualitatively in 1957 and nobody "
+        "since appears to have done quantitatively. Failing that, a manoeuvre other "
+        "than LBNP: passive leg raising with both pressures recorded is the obvious "
+        "candidate and is the preparation Roddie already validated."),
+)
+
+# ---------------------------------------------------------------------------
 # DIRECTIVE 1.12 - THE ROUND NUMBERS MET, AND NOT ENTERED
 # ---------------------------------------------------------------------------
 TEACHING_NUMBERS = [
@@ -276,6 +339,24 @@ def main():
     print()
     print("  AND: " + r["discussion_note"])
     print()
+    print("THE VASOMOTOR GAIN - FOUND, AND STILL NOT ENTERABLE")
+    print("-" * 78)
+    v = VASOMOTOR_GAIN
+    print("  " + v["primary"])
+    print("  [" + v["reading_level"] + "]")
+    print("  " + v["design"])
+    for k, val in v["values"].items():
+        print("    " + k.ljust(14) + val)
+    print("  " + v["corroborating"])
+    print()
+    for i, r in enumerate(v["why_not_enterable"], 1):
+        print("  " + str(i) + ". " + r)
+        print()
+    print("  " + v["the_shape_of_the_trap"])
+    print()
+    print("  WHAT WOULD WORK: " + v["what_would_actually_work"])
+    print()
+
     print("DIRECTIVE 1.12 - ROUND NUMBERS MET AND NOT ENTERED")
     print("-" * 78)
     for n in TEACHING_NUMBERS:
