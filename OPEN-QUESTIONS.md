@@ -489,7 +489,31 @@ this order.
    2013 measures pulse rate *rising* on a saline load while pressure stays flat, which
    this arm cannot produce. That is the cardiopulmonary receptors, still absent, and
    ADR 0022's falsifiable test 5 asserts the omission rather than describing it.
-2. ~~**Renin is pressure-only.**~~ **HALF BUILT 2026-09-05** (§3.31, §3.32, ADR 0021).
+2. **RENAL SYMPATHETIC TRAFFIC — SEARCHED 2026-09-15, NOT BUILT, AND THE REASON IS
+   THE MANOEUVRE.** `validation/cardiopulmonary_sympathetic_prereg.md` §4 required an
+   admissible source to **separate** cardiopulmonary from arterial baroreceptor
+   unloading, and named low-level lower-body negative pressure as the way. **That premise
+   is refuted.** Arterial baroreceptors are consistently unloaded at −10 and −15 mmHg;
+   the selective reading is a pre-1975 convention the field retired after 1985.
+
+   So the sympathetic gain is **not independently identifiable**, and with one datum —
+   van den Bosch's salt–renin ratio — it and `RN.MD.RENIN_GAIN` would trade off freely.
+   **Branch S3: the renin arm is not built and `RN.MD.RENIN_GAIN` is untouched.**
+
+   **What would unblock it:** a manoeuvre that genuinely separates the two afferents, or
+   a direct measurement of renal sympathetic outflow against central volume in healthy
+   humans. Not more searching on LBNP.
+
+   **AND THE CHRONOTROPIC HALF MOVED COMPONENTS.** The human heart-rate rise on atrial
+   loading **persists in transplant recipients and after pharmacological denervation**,
+   and is present in isolated sinoatrial node and single pacemaker cells. It is largely
+   **intracardiac mechano-electric coupling, not a reflex** — so if built it belongs in
+   `Cardiovascular.jl` keyed to central volume, **not** in `Baroreflex.jl`, and it brings
+   none of the other efferents with it. An intrinsic pacemaker property does not release
+   renin or vasopressin. **That is the arm that would satisfy ADR 0022's test 5**, and it
+   needs a quantitative human gain that this pass did not obtain.
+
+2b. ~~**Renin is pressure-only.**~~ **HALF BUILT 2026-09-05** (§3.31, §3.32, ADR 0021).
    The macula densa arm exists, and the ceiling §7 recorded against the model — a renin
    ratio capped at 1.14 across the human salt range, against a measured 2.73 — is
    exceeded. **Potassium arrived with it**, because aldosterone is one node and renin is
