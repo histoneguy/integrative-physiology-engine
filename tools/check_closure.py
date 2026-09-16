@@ -322,7 +322,26 @@ def _check_one(p: dict[str, float]) -> int:
     # construction. Three derived values keep that true. If any drifts, the
     # model silently stops excreting what it takes in, which is precisely the
     # class of failure this gate was written for.
-    solute = p["RN.URINE.SOLUTE_LOAD"]
+    # THE REFERENCE LOAD IS COMPOSED, NOT READ. CORRECTED 2026-09-16, Half A of
+    # urine_solute_prereg.md, and it is falsifiable test 3 of that document.
+    #
+    # This read RN.URINE.SOLUTE_LOAD directly and every check below composed a
+    # chain from it. Renal.jl does not evaluate that row at the operating point:
+    # with solute tracking on it computes Osm_nonNa + osm_Na*Na_excr, and the
+    # residual was pinned at the MID salt arm while the model runs at the NOMINAL
+    # one. So this gate certified a chain the model does not run - it reported
+    # 1.699 against 1.7 and passed, while the running model excreted 1.7 L/day
+    # only by sitting 0.59 mOsm/kg above its own osmolality setpoint.
+    #
+    # That is the defect HANDOVER section 3.8's own comment names - A GATE MUST
+    # ASSERT WHAT THE CODE DOES - and it is the second time a closure check has
+    # certified an expression the component no longer evaluates.
+    #
+    # Composing it here from the residual and the NOMINAL sodium intake is what
+    # Renal.jl actually evaluates at the reference. If the two ever drift apart
+    # again this line is where it shows.
+    solute = (p["RN.URINE.SOLUTE_NONNA"] +
+              p["RN.URINE.OSM_PER_NA"] * p["BF.NA.INTAKE_NOMINAL"])
     u_min  = p["ADH.URINE.OSM_MIN"]
     v_base = p["BF.H2O.INTAKE_NOMINAL"] - p["BF.H2O.INSENSIBLE_LOSS"]
 
@@ -411,15 +430,20 @@ def _check_one(p: dict[str, float]) -> int:
           "kidney can reach, so the volume is forced, not chosen.",
           errors)
 
-    check("non-sodium solute is the residual at the mid salt arm",
+    # REPOINTED FROM THE MID ARM TO THE NOMINAL ARM, 2026-09-16, Half A.
+    # The residual used to be pinned at BF.NA.INTAKE_MID so that introducing
+    # solute tracking left the salt step's middle level bit-identical. That was
+    # change management, it worked, and it then became the reference point for
+    # three derived constants - none of which the model occupies. The reference
+    # is the NOMINAL arm, and it is the only arm the operating point is stated at.
+    check("reference solute load is the residual plus nominal sodium",
           p["RN.URINE.SOLUTE_NONNA"] +
-          p["RN.URINE.OSM_PER_NA"] * p["BF.NA.INTAKE_MID"],
-          solute,
-          "Osm_nonNa + osm_Na*Na_mid = the REFERENCE solute load. The load now "
-          "tracks sodium excretion, and the residual is pinned so the mid arm "
-          "returns exactly the reference. If this drifts, U_max, U_base and "
-          "k_adh - all derived from that reference - describe a different model "
-          "than the one being run.",
+          p["RN.URINE.OSM_PER_NA"] * p["BF.NA.INTAKE_NOMINAL"],
+          p["RN.URINE.SOLUTE_LOAD"],
+          "Osm_nonNa + osm_Na*Na_nominal must equal the stated reference solute "
+          "load, because U_base, k_adh and the obligatory volume are all derived "
+          "from it. Pinned at the MID arm until 2026-09-16, which left the model "
+          "running at 702 while every constant was computed from 600.",
           errors)
 
     check("baseline urine osmolality closes water balance",

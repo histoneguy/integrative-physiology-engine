@@ -383,8 +383,18 @@ using SciMLBase
         # sphygmomanometer resolves - and comes from cardiac output going
         # 8570.88 -> 8571. Directive 1.13.
 
-                         154.0 => 86.1434,
-                         103.0 => 85.2139)
+        # RE-PINNED 2026-09-16 BY urine_solute_prereg.md, AND THE REFERENCE MOVED
+        # BECAUSE THE DISABLED BRANCH GOT MORE ACCURATE, NOT LESS. With adh=false
+        # the solute load is the fixed Osm_ref and urine osmolality is the fixed
+        # U_base, so water excretion is their ratio and NOTHING CAN CORRECT IT.
+        # The old pair, 600/353, gave 1.699717 L/day against a required 1.7 -
+        # a 0.28 mL/day drift the model had no way to see. The new pair,
+        # 930/547.06, gives 1.700004. The recorded MAP therefore embedded a slow
+        # water accumulation, and removing it moved the 30-day endpoint by 0.011
+        # mmHg. That is the fourth significant figure on a pressure, which is
+        # directive 1.9 territory - but it is a rounding error being REMOVED.
+                         154.0 => 86.1324,
+                         103.0 => 85.2023)
         # RE-PINNED 2026-09-09, BR.OPEN_LOOP_GAIN 2.0 -> 5.62. A stronger
         # reflex leaves a larger residual setpoint error at the end of a
         # 30-day arm, because pressure is still drifting there and the
@@ -489,8 +499,8 @@ using SciMLBase
         # together on purpose: these two blocks pin the SAME three numbers to
         # assert DIFFERENT claims about them. RN.GFR.VOLUME_SENSITIVITY wired.
         pre_raas = (205.0 => 86.9954,
-                    154.0 => 86.1434,
-                    103.0 => 85.2139)
+                    154.0 => 86.1324,
+                    103.0 => 85.2023)
         # RE-PINNED 2026-09-09 with BR.OPEN_LOOP_GAIN 2.0 -> 5.62, same cause and
         # same magnitude as the ADR 0012 copy above: a stronger reflex leaves a
         # larger residual setpoint error at the end of a 30-day arm. Fourth
@@ -762,6 +772,105 @@ using SciMLBase
         @test 0.05 < a < 0.60
     end
 
+    @testset "the urine solute load is sourced, and the model rests on its setpoint" begin
+        # The falsifiable tests urine_solute_prereg.md section 9 committed to
+        # before any source was opened. Two halves, and they were measured apart:
+        # HALF A fixed a reference point and needed no source, HALF B sourced the
+        # load from Kitada 2017.
+        L   = IPE.LedgerParams
+        sys = build_model()
+        sol = IPE.solve_individual(sys; tspan_days = 60.0)
+        obs(n) = only(o.lhs for o in observed(sys) if String(Symbol(o.lhs)) == n)
+        load  = sol[obs("rn₊Osm_load(t)")][end]
+        uosm  = sol[obs("rn₊u_osm(t)")][end]
+        water = sol[obs("rn₊H2O_excr(t)")][end]
+        adh   = sol[obs("ad₊adh(t)")][end]
+        osm   = sol[obs("bf₊Osm_ecf(t)")][end]
+
+        # ---- TEST 1: THE REFERENCE WATER BALANCE IS UNCHANGED ---------------
+        #
+        # Conservation, not a fit. It held before this pass and it must hold
+        # after, whatever the load became - which is exactly why sourcing the
+        # load cannot be judged by whether the water balance still closes.
+        @test isapprox(water,
+                       L.BF_H2O_INTAKE_NOMINAL - L.BF_H2O_INSENSIBLE_LOSS;
+                       rtol = 1e-4)
+
+        # ---- TEST 2: THE MODEL RESTS *AT* ITS OSMOTIC SETPOINT --------------
+        #
+        # THIS IS HALF A AND IT USED TO FAIL. RN.URINE.SOLUTE_NONNA was pinned so
+        # the total returned 600 at the MID salt arm while the model runs at the
+        # NOMINAL one, so its actual load was 702 and never 600 - yet U_base,
+        # k_adh and the obligatory volume were all derived from 600. k_adh is
+        # LIVE, so the loop could only excrete 1.7 L/day by displacing plasma
+        # osmolality until antidiuretic activity was high enough: it had to reach
+        # u_osm = 702/1.7 = 412.9, hence adh 0.3894, hence Osm_ecf 287.594.
+        # Measured before the fix: 0.3895 and 287.592.
+        #
+        # 1e-4 relative is 0.03 mOsm/kg. Nothing in this model measures plasma
+        # osmolality to better than a whole unit, so this is not a physiological
+        # claim - it is the assertion that the offset is SOLVER noise and not a
+        # derived constant stated at the wrong operating point.
+        @test isapprox(osm, L.BF_OSM_PLASMA_SETPOINT; rtol = 1e-4)
+        @test isapprox(sol[obs("bf₊C_Na(t)")][end],
+                       L.BF_NA_PLASMA_SETPOINT; rtol = 1e-4)
+
+        # ---- TEST 3: THE LEDGER IDENTITY IS STATED AT THE REFERENCE ---------
+        #
+        # check_closure.py composes the reference load rather than reading the
+        # row, because Renal.jl computes Osm_nonNa + osm_Na*Na_excr and never
+        # evaluates RN.URINE.SOLUTE_LOAD at the operating point. This is the
+        # same identity asserted from the Julia side.
+        @test isapprox(load,
+                       L.RN_URINE_SOLUTE_NONNA +
+                       L.RN_URINE_OSM_PER_NA * L.BF_NA_INTAKE_NOMINAL; rtol = 1e-4)
+        @test isapprox(load, L.RN_URINE_SOLUTE_LOAD; rtol = 1e-3)
+
+        # ---- TEST 4: ANTIDIURETIC ACTIVITY STAYS MID-RANGE ------------------
+        #
+        # A bigger solute load needs a more concentrated urine, which costs ADH
+        # authority. The pre-registration fixed 0.2-0.6 in advance because a
+        # component parked against its own ceiling cannot regulate upward.
+        @test 0.2 < adh < 0.6
+
+        # ---- TEST 5: THE SODIUM SLOPE IS UNTOUCHED --------------------------
+        #
+        # Only the CONSTANT part of the load moved. RN.URINE.OSM_PER_NA is charge
+        # balance and is sourced; a pass that changed it changed a sourced row.
+        @test L.RN_URINE_OSM_PER_NA == 2.0
+        r = salt_step()
+        loads = [lv.sol[sys.rn.Osm_load][end] for lv in r.levels]
+        nas   = [lv.sol[obs("rn₊Na_excr(t)")][end] for lv in r.levels]
+        slope = (loads[1] - loads[3]) / (nas[1] - nas[3])
+        @test isapprox(slope, 2.0; rtol = 1e-3)
+
+        # ---- TEST 6: BOTH LIMITS STAY PHYSIOLOGICAL -------------------------
+        #
+        # Branch U6 was the stop condition: a load large enough to push the
+        # obligatory volume up against the reference urine volume would leave the
+        # model permanently near its concentrating limit. It does not fire - the
+        # obligatory volume roughly doubled to 0.95 L/day and the reference is
+        # 1.7 - but it is checked rather than assumed.
+        v_ref = L.BF_H2O_INTAKE_NOMINAL - L.BF_H2O_INSENSIBLE_LOSS
+        @test isapprox(L.RN_H2O_OBLIGATORY_LOSS,
+                       L.RN_URINE_SOLUTE_LOAD / L.ADH_URINE_OSM_MAX; rtol = 1e-3)
+        @test L.RN_H2O_OBLIGATORY_LOSS < 0.7 * v_ref
+        @test L.RN_URINE_SOLUTE_LOAD / L.ADH_URINE_OSM_MIN > 10.0
+
+        # ---- AND THE ONE THAT WAS FREE --------------------------------------
+        #
+        # Kitada measures urine osmolality at 508 +/- 170 mOsm/kg in the same
+        # 12 g/day arm the load came from. THE MODEL WAS NOT FITTED TO IT: urine
+        # volume is set by this model's own water balance, 2.5 in less 0.8
+        # insensible, and the solute load was sourced independently, so their
+        # quotient could have landed anywhere. It lands at 547.
+        #
+        # Asserted against ONE SD and no tighter. The SD is day-to-day and
+        # between-subject spread over 739 collections, not uncertainty on a mean,
+        # and directive 1.13 forbids reading agreement inside it as a finding.
+        @test abs(uosm - 508.0) < 170.0
+    end
+
     @testset "ADH amplifies salt sensitivity, and that direction is expected" begin
         # Water follows salt: at lower sodium intake plasma osmolality falls,
         # ADH is suppressed, water is excreted, and ECF volume falls FURTHER
@@ -811,8 +920,17 @@ using SciMLBase
         # If it drifts, the mid arm stops returning the reference load and every
         # ADH constant derived from that load is silently describing a different
         # model. check_closure.py asserts the same thing on the ledger.
+        # REPOINTED FROM THE MID ARM TO THE NOMINAL ARM, 2026-09-16, Half A of
+        # urine_solute_prereg.md. The residual used to be pinned at
+        # BF.NA.INTAKE_MID so that introducing solute tracking left the salt
+        # step's middle level bit-identical - change management, not physiology.
+        # It then became the reference point for three derived constants, none of
+        # which the model occupies: at the NOMINAL arm the load was 702 while
+        # U_base, k_adh and the obligatory volume were all computed from 600, and
+        # the loop paid for it by resting 0.59 mOsm/kg above its own osmolality
+        # setpoint.
         @test isapprox(L.RN_URINE_SOLUTE_NONNA +
-                       L.RN_URINE_OSM_PER_NA * L.BF_NA_INTAKE_MID,
+                       L.RN_URINE_OSM_PER_NA * L.BF_NA_INTAKE_NOMINAL,
                        L.RN_URINE_SOLUTE_LOAD; rtol = 1e-3)
 
         # The load must RESPOND, and monotonically. At steady state excretion

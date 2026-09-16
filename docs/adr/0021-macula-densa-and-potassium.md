@@ -474,3 +474,43 @@ rests, not how it moves in time.
   excretion.** They are lumped into one exponent because no human study separates them,
   so spironolactone, primary aldosteronism and a pure flow change are all outside this
   model — it cannot tell them from a change in plasma potassium.
+
+---
+
+## Addendum, 2026-09-16 — `RN.MD.RENIN_GAIN` re-solved because the WATER limb moved
+
+**5.396 → 5.81.** No renin datum changed. The estimation set is exactly what it was:
+van den Bosch's 5.74 and 2.10 ng/mL/h at 24 h urinary sodium 38 and 230 mmol/day.
+
+**This row is DEFINED as the value reproducing that ratio**, so when anything upstream
+of renin moves, it moves too or it stops being what its own name says. What moved was
+`validation/urine_solute_prereg.md`: the urine solute load's reference point was
+corrected and then the load was sourced, and `ADH.OSM.SENSITIVITY` rose **64%** as a
+consequence. A stiffer osmotic limb changes the extracellular volume excursion across
+the salt arms, and renin follows volume.
+
+**Measured: the salt–renin ratio fell 2.733 → 2.581**, a 5.6% drop, roughly a third of
+it from the reference-point correction alone.
+
+### The coupling is the finding, and it had never been quantified
+
+**A 64% change in the osmoregulatory gain moves the salt–renin response by 5.6%.** The
+two limbs are coupled about an order of magnitude less than one-for-one. That is worth
+knowing before the next pass touches either, and it is the kind of number this record
+could not previously have stated.
+
+### What has NOT changed
+
+**It is still a fit and it may never be reported as agreement.** Nothing about
+re-solving it makes the salt–renin ratio evidence for this model — it is the datum the
+gain is solved against, and §5 item 22 is the reason to say so every time.
+
+**Decision 7 stands.** This gain still absorbs the renal sympathetic traffic the model
+does not have, and building that arm must still lower it. The 2026-09-10 pass
+(`validation/cardiopulmonary_sympathetic_prereg.md`) could not build it: the manoeuvre
+that would isolate the cardiopulmonary afferent does not isolate it.
+
+**Precision corrected in the same change: 4 significant figures → 3.** van den Bosch
+reports 5.74 and 2.10, three figures each, so their ratio is not known to four and a
+gain solved against it cannot be. Directive 1.13, applied to a row that was already
+violating it before this pass touched it.

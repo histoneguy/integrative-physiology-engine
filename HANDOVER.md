@@ -3298,6 +3298,147 @@ failed on a correction that was right.
 
 ---
 
+### 3.42 THE WORK LIST NAMED THE WRONG NUMBER, AND THE MODEL WAS 0.6 mOsm/kg OFF ITS OWN SETPOINT
+
+**2026-09-16.** §4 item 8 said `RN.URINE.SOLUTE_LOAD = 600 mOsm/day` was the
+load-bearing unsourced number on the water side. **It was not 600. It was 702**, and
+finding that out is what the pass turned out to be about.
+
+`Osm_load = Osm_nonNa + 2·Na_excr`, and `Osm_nonNa = 292` was pinned so the total
+returned 600 at the **MID** salt arm, 154 mEq/day. The model's reference is the
+**NOMINAL** arm, 205. So `292 + 2·205 = 702`.
+
+**THREE CONSTANTS WERE DERIVED AT A LOAD THE MODEL NEVER OCCUPIED** —
+`RN.H2O.OBLIGATORY_LOSS`, `ADH.URINE.OSM_BASELINE` and `ADH.OSM.SENSITIVITY`, all from
+600. The last is **live**: it is the gain of the whole osmoregulatory limb, and it is
+derived by requiring that *at the osmotic setpoint the model excretes exactly intake
+minus insensible loss*. At 600 that holds. At 702 it gives 1.99 L/day against a
+required 1.70, and the loop pays the difference with a permanent offset:
+
+    to excrete 1.7 L/day at a load of 702 it needs u_osm = 412.9
+    hence adh = 0.3894,  hence Osm_ecf = 284 + 0.3894/0.10835 = 287.594
+
+Measured in the running model: **adh 0.3895, Osm_ecf 287.592.** Plasma sodium sat at
+140.30 against a sourced setpoint of 140.0, for no physiological reason at all.
+
+#### And the closure gate passed, because it checked the same wrong number
+
+`check_closure.py` composed osmolality → activity → urine osmolality → volume using
+`solute = p["RN.URINE.SOLUTE_LOAD"]` = 600, reported **1.699 vs 1.7**, and passed.
+**The chain it certified is not the chain the model runs.** That is the defect §3.8's
+own comment names — *a gate must assert what the code does* — and it is the **second**
+time a closure check has certified an expression the component no longer evaluates.
+The fix is to compose the reference load from the residual and the nominal sodium
+intake, which is what `Renal.jl` actually evaluates.
+
+#### Where the mid-arm pin came from
+
+`RN.URINE.SOLUTE_NONNA`'s own note says it plainly: pinning at the mid arm *"achieves
+that: the mid arm is unchanged to the last digit and only the high and low arms move."*
+**That was change management**, a way to introduce solute tracking without moving the
+salt step. It worked, and it then became the reference point for three derived
+constants. **A bit-identity convenience chosen during one change outlived its purpose
+and became the model's operating point.**
+
+### The two halves, measured apart because the pre-registration required it
+
+**HALF A — the reference point. No source, and it is a bug.** Re-derive the three
+constants at the load the model has. Plasma osmolality returns to 287.000 and plasma
+sodium to 140.000. Nothing sourced moves.
+
+**HALF B — the sourcing**, Kitada 2017 (below).
+
+| | before | Half A | Half A + B |
+|---|---|---|---|
+| reference solute load | 600 | 702 | **930** |
+| `RN.URINE.SOLUTE_NONNA` | 292 | 292 | **520** |
+| `RN.H2O.OBLIGATORY_LOSS` | 0.611 | 0.715 | **0.947** |
+| `ADH.URINE.OSM_BASELINE` | 353 | 412.9 | **547.06** |
+| `ADH.OSM.SENSITIVITY` | 0.1084 | 0.1298 | **0.17777** |
+| resting antidiuretic activity | 0.389 | 0.389 | **0.533** |
+| `bf.Osm_ecf` | 287.59 | **287.00** | **287.00** |
+
+**Reporting one number for both would have given the sourcing credit for a bug fix.**
+
+### The source, and the coherence constraint that was fixed before searching
+
+**Kitada K et al, *J Clin Invest* 2017;127(5):1944–1959, PMID 28414295, open access,
+full text read.** Table 1, human balance study, 12 g/day arm: 10 healthy men, **739
+complete 24 h collections**, urine osmolality 508 ± 170 mOsm/kg, urine volume 22 ± 7
+mL/kg/day. Companion: Rakova 2017, PMID 28414302, full text and supplement read, for
+the protocol and the anthropometrics.
+
+**TABLE 1 IS PUBLISHED AS AN IMAGE, AND AN AUTOMATED EXTRACTION OF IT RETURNED A
+TRANSPOSED MOUSE COLUMN.** The numbers it produced did not self-consistently add up —
+`2Na + 2K + urea` disagreed with the reported sum, and a urine volume of 51.5 mL/kg/day
+means 3.6 L in a man drinking 2.5. **The table was read off the rendered image
+instead.** A wrong number on a correct citation passes every gate in this repository,
+and this is the closest that has come to happening since PMID 2966064.
+
+**The pre-registration named Rakova 2013 in advance** because `BF.NA.INTAKE_MID` is
+already derived from it. That paper is the sodium-rhythm study and reports no osmolar
+excretion at all; the numbers are in the 2017 companions. **Same cohort, so §3.24's
+rule holds — but by a different paper, and the pre-registration gets no credit for
+naming one that did not contain the number.**
+
+**The coherence constraint was the point of fixing it in advance.** The urine solute
+load **is a diet**, not a physiological constant, so it had to come from a cohort at
+this model's own salt intake or the mismatch would land silently in the residual.
+Rakova's 12 g/day arm is **200 mmol Na/day against `BF.NA.INTAKE_NOMINAL` = 205**.
+
+**The body weight is pinned two independent ways**, which is what makes the per-kg
+units trustworthy: 200 mmol/day dietary sodium against a measured 2.3 mmol/kg/day
+implies 83 kg at the usual 95% urinary recovery, and Supplemental Table S1 reports 81.5
+and 84.2 kg for the two 12 g/day arms.
+
+#### The ledger predicted its own answer
+
+`RN.URINE.SOLUTE_NONNA`'s note already said 292 was *"almost certainly TOO LOW"* and
+that a real remainder is *"nearer 400–500"*. **Measured: 546 at the cohort, 520 at this
+model's reference sodium intake.** An inherited debt that was written down, quantified
+in advance, and then discharged at the value it predicted.
+
+#### One agreement that was free, and it is the only one worth quoting
+
+The model's urine osmolality comes out at **547 mOsm/kg against Kitada's measured
+508 ± 170**. It was not fitted: urine volume is fixed by this model's own water balance
+(2.5 in less 0.8 insensible) and the load was sourced independently, so their quotient
+could have landed anywhere. **Inside one SD, and the SD is day-to-day spread over 739
+collections, so directive 1.13 forbids reading it as tighter than that.**
+
+### What is NOT built, and it is now a number rather than an unknown
+
+**The non-sodium load is not constant, and the model holds it constant.** In the source
+the remainder **falls** from 7.08 to 6.58 mOsm/kg/day as salt goes 6 → 12 g/day,
+because urine urea concentration falls 13.9% — the natriuretic-ureotelic pattern the
+paper is about. So total osmolar excretion rises at about **1.5 mOsm per mEq** of
+excreted sodium where this model uses **2.0**.
+
+The 2.0 is not wrong: it is charge balance on the sodium term and it is sourced. What
+is wrong is holding the *rest* fixed. **Across its own salt arms the model therefore
+over-responds on the solute limb by roughly 30%** — 204 mOsm/day of swing where the
+data imply 157. Building the dependence needs a urea-recycling or glucocorticoid
+mechanism with no sourced form, and this pass pre-registered none.
+
+**And branch U4 did not fire, for a reason that is not the one it was written for.**
+Kitada's osmolyte sum is literally `U2Na2KUreaV`, so the `2(Na+K)` source condition U4
+required is **met**. It fails on coherence instead: the model excretes 61 mmol/day of
+potassium against the cohort's 91. `K.INTAKE.NOMINAL` is a free-living Western figure
+and the Mars crews ate a controlled diet. Wiring the explicit potassium term would
+replace a constant with a model variable that is itself incoherent with the source the
+total came from — the §10 failure moved into a new place rather than removed.
+
+### And one rounding error came out in the wash
+
+With ADH disabled the solute load is a fixed `Osm_ref` and urine osmolality a fixed
+`U_base`, so water excretion is their quotient and **nothing can correct it**. The old
+pair 600/353 gave 1.699717 L/day against a required 1.7 — a **0.28 mL/day drift the
+model had no way to see**, accumulating over a 30-day arm. The new pair gives 1.700004.
+Two recorded MAP references moved by 0.011 mmHg as a result, and they moved because the
+disabled branch got *more* accurate.
+
+---
+
 ## 4. NEXT, IN ORDER
 
 **Rewritten 2026-09-03, and item 1 was discharged the same day.** The previous list's
@@ -3404,17 +3545,27 @@ were solved against that very target. And §5, which is how work goes wrong here
    carries no sex information; the volume path is keyed to a sexed volume, so it does. It
    is asserted in the suite as a prediction. **Source it or falsify it.**
 
-8. **`RN.URINE.SOLUTE_LOAD = 600 mOsm/day` is the load-bearing unsourced number on the
-   water side.** `ADH.URINE.OSM_MAX` is sourced, so the obligatory volume, `U_base`,
-   `k_adh` and every steady state hang off a conventional figure that
-   `RN.URINE.SOLUTE_NONNA` already records as too low — measured totals are 700–900.
-   Correcting it moves every ADH constant and needs its own pre-registration.
+8. **~~`RN.URINE.SOLUTE_LOAD` is the load-bearing unsourced number on the water
+   side.~~ DONE 2026-09-16 — and it was 702, not 600.** Sourced from Kitada 2017
+   (PMID 28414295, open access, full text read, **Table 1 read as an image**) at
+   **930 mOsm/day**, from the same Mars105/Mars520 cohort `BF.NA.INTAKE_MID` already
+   comes from and at this model's own salt intake. `RN.URINE.SOLUTE_NONNA` 292 → 520,
+   discharging the debt its own note predicted at "nearer 400–500". `ADH.OSM.SENSITIVITY`
+   rose 64%, `RN.MD.RENIN_GAIN` was re-solved 5.396 → 5.81 against its unchanged
+   estimation set, and the model now rests **at** its osmotic setpoint instead of 0.6
+   mOsm/kg above it. §3.42.
 
-9. **Chronotropic baroreflex.** ADR 0009 gives the reflex one effector; HR now exists.
-   **Deliberately deferred** — the reflex resets so it nulls at every steady state, and the
-   cardiac gain needs a sourcing pass. Best normative source found: **Schumann 2024**,
-   *Am J Physiol Heart Circ Physiol* 326:H158–H165, n=980 healthy, and it is about **sex
-   differences in BRS**, so it would also give item 7 a second dimorphic pair.
+   **What is left of it:** the non-sodium load is held constant and the data say it
+   falls with salt loading, so the model over-responds on the solute limb by about 30%
+   across its own salt arms. And `K.INTAKE.NOMINAL` is a free-living Western figure
+   while the cohort ate a controlled diet — 61 mmol/day against 91 — which is what
+   blocks wiring urinary potassium into the load.
+
+9. **~~Chronotropic baroreflex.~~ DONE 2026-09-08, ADR 0022.** The reflex has two
+   effectors; `br.hr_mod` is a state because the model refused it as an algebraic
+   term (§3.38). **Schumann 2024 is still worth opening for item 7** — n = 980
+   healthy, and it is about sex differences in baroreflex sensitivity, so it would
+   give the sex-dependent salt-sensitivity prediction a second dimorphic pair.
 
 10. **Body surface area.** GFR and cardiac output scale sub-linearly in mass, so
     `scaling.jl` overstates their population spread. It also unlocks Luu 2022 (n = 3,206)
