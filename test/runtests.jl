@@ -897,7 +897,11 @@ using SciMLBase
         # ONE PAIR OF SUBSYSTEMS IS NEW HERE and is what a reflex with two efferent
         # limbs looks like in the graph; if it ever collapses back to one, an arm
         # has been silently removed.
-        @test r.n_couplings == 21
+        @test r.n_couplings == 22   # 21 -> 22 on 2026-09-16, ADR 0023: the outbound
+                                    # edge from blood. erythropoiesis_prereg.md
+                                    # falsifiable test 5 named this count as the
+                                    # tripwire ADR 0018 left for the day an oxygen
+                                    # feedback was built, and it fired.
 
         cs = model_couplings()
         # ADR 0003: instantaneous couplings are not partitionable. If this ever
@@ -951,7 +955,9 @@ using SciMLBase
         # catch, committed by the graph itself. The key now includes tau and
         # gain_param. THE COUNT IS WHAT CAUGHT IT.
         b = suggest_boundary(cs)
-        @test length(b.taus) == 6
+        @test length(b.taus) == 7   # +1 on 2026-09-16, ADR 0023: the erythropoietic
+                                    # lag at 24 days, now the slowest in the model
+                                    # by a factor of three over the thyroid axis.
         @test minimum(b.taus) == IPE.LedgerParams.BR_CARDIAC_TAU
         @test b.gap !== nothing
         @test b.gap[1] > 10.0
@@ -1457,7 +1463,7 @@ using SciMLBase
         # structural_simplify resolved it by promoting Blood.CO to a state. The
         # state is paid either way; with the sourced vagal lag it is paid on a
         # variable that means something. See ADR 0022 and BR.CARDIAC.TAU.
-        @test length(IPE.mtk_unknowns(sys)) == 11
+        @test length(IPE.mtk_unknowns(sys)) == 12   # 11 -> 12, ADR 0023: cv.V_rbc
 
         # RESTING PaCO2 RETURNS THE SOURCED INPUT, AND THIS IS NOT A PREDICTION.
         # ADR 0017's ORIGINAL decision 1 made PaCO2 an output of the chemoreflex, as
@@ -1628,7 +1634,7 @@ using SciMLBase
         # enter through a differential equation somewhere, and there are still ten
         # - eight plus thyroxine plus potassium, and none of them is an oxygen
         # state.
-        @test length(IPE.mtk_unknowns(build_model())) == 11
+        @test length(IPE.mtk_unknowns(build_model())) == 12   # 11 -> 12, ADR 0023: cv.V_rbc
 
         # ------------------------------------------------------------------
         # THE FICK ARM, ADDED 2026-09-05. ADR 0018 deferred venous content, the
@@ -1738,6 +1744,138 @@ using SciMLBase
         @test isapprox(f.pH, m.pH; rtol = 1e-12)
 
         @info "blood gas" SaO2=m.SaO2 CaO2=m.CaO2 DO2=m.DO2 VO2=m.VO2 avDO2=m.avDO2 SvO2=m.SvO2 ER=m.ER pH=m.pH
+    end
+
+    @testset "ADR 0023: red cell mass is a state, and the bleed now unwinds" begin
+        # The five falsifiable tests erythropoiesis_prereg.md committed to before
+        # any source was opened. Test 5 - the coupling count rising 21 -> 22 with
+        # the new edge outbound from blood - lives in the coupling testset above,
+        # where that count already had a home.
+        L   = IPE.LedgerParams
+        sys = build_model()
+
+        # A ONE LITRE BLEED OF WHOLE BLOOD, applied the way the GUI applies it:
+        # red cells and plasma leave in their prevailing proportions, and the
+        # SODIUM leaves with the plasma at the prevailing concentration. Leaving
+        # the sodium behind is a haemorrhage in name and a severe hypernatraemia in
+        # fact, and the model caught that once already by suppressing renin when a
+        # bleed should raise it.
+        function bleed(litres; days = 400.0)
+            base = IPE.solve_individual(sys; tspan_days = 60.0)
+            u    = Dict(u_ => base[u_][end] for u_ in IPE.mtk_unknowns(sys))
+            hct  = base[sys.cv.Hct_eff][end]
+            fpv  = L.param(:CV_PLASMA_ECF_FRACTION, :male)
+            dV   = -litres * (1 - hct) / fpv          # plasma share, through f_pv
+            u[sys.bf.Na_ecf] += (u[sys.bf.Na_ecf] / u[sys.bf.V_ecf]) * dV
+            u[sys.bf.V_ecf]  += dV
+            u[sys.cv.V_rbc]  -= litres * hct
+            prob = ODEProblem(sys, collect(u), (0.0, days); jac = true)
+            (pre = base, post = solve(prob, FBDF(); saveat = 1.0,
+                                      abstol = 1e-8, reltol = 1e-6))
+        end
+
+        # ---- FALSIFIABLE TEST 1: THE OPERATING POINT DID NOT MOVE -------------
+        #
+        # Production equals destruction at reference BY CONSTRUCTION, so this is a
+        # guarantee rather than a calibration - the same shape as ADR 0012 stage 1
+        # and ADR 0021's split. check_closure.py asserts the arithmetic; this
+        # asserts the model actually rests there after 60 days of integration.
+        b = bleed(1.0)
+        vrbc0 = L.param(:CV_HEMATOCRIT_NOMINAL, :male) *
+                L.param(:CV_BLOOD_VOLUME_NOMINAL, :male)
+        @test isapprox(b.pre[sys.cv.V_rbc][end], vrbc0; rtol = 1e-5)
+        @test isapprox(b.pre[sys.cv.Hct_eff][end],
+                       L.param(:CV_HEMATOCRIT_NOMINAL, :male); rtol = 1e-4)
+        # And haemoglobin still reproduces the sourced row now that it is derived
+        # through MCHC rather than read directly. This is the identity that let
+        # RBC.MCHC carry five figures.
+        hb = only(o.lhs for o in observed(sys) if String(Symbol(o.lhs)) == "bl₊Hb(t)")
+        # rtol 1e-3, NOT TIGHTER, AND THE REASON IS DIRECTIVE 1.13. The sourced row
+        # is 15.3 g/dL - three significant figures - so anything inside 0.05 is
+        # indistinguishable from it and a tighter assertion would be asserting a
+        # precision the measurement does not have. 1e-3 is still thirty times
+        # tighter than the source supports, which is enough to catch a structural
+        # change and not enough to fail on the fifth decimal of a haematocrit.
+        @test isapprox(b.pre[hb][end], L.param(:BLOOD_HB_CONCENTRATION, :male);
+                       rtol = 1e-3)
+
+        # ---- FALSIFIABLE TEST 2: THE BLEED UNWINDS ---------------------------
+        #
+        # THIS IS THE REASON THE PASS EXISTS AND IT USED TO FAIL. With red cell
+        # volume a constant, a 1 L bleed removed 0.453 L of erythrocytes that
+        # nothing restored; blood volume could only be made up from plasma, which
+        # is 21% of extracellular fluid, so the loop settled permanently at about
+        # 16.65 L of ECF against a starting 14.56 with renin at 0.37 against 1.25.
+        # It was not convalescing, it was finding a new equilibrium.
+        vecf_pre  = b.pre[sys.bf.V_ecf][end]
+        vecf_peak = maximum(b.post[sys.bf.V_ecf])
+        vecf_end  = b.post[sys.bf.V_ecf][end]
+        @test vecf_peak > vecf_pre                      # it does expand, acutely
+        @test vecf_end < vecf_pre + 0.1 * (vecf_peak - vecf_pre)   # and it comes back
+        @test isapprox(vecf_end, vecf_pre; rtol = 5e-3)
+        @test isapprox(b.post[sys.cv.V_rbc][end], vrbc0; rtol = 5e-3)
+
+        # ---- FALSIFIABLE TEST 3: TWO TIMESCALES, VISIBLY DIFFERENT -----------
+        #
+        # Haematocrit falls within a day as plasma refills, and returns over
+        # months as erythrocytes do. If those two were the same number the state
+        # would be buying nothing.
+        hct_pre = b.pre[sys.cv.Hct_eff][end]
+        hct_d1  = b.post[sys.cv.Hct_eff][2]
+        @test hct_d1 < hct_pre - 0.02          # acute dilution, and it is large
+        @test b.post[sys.cv.Hct_eff][end] > hct_pre - 0.005   # months later, back
+        # THE SEPARATION ITSELF. Time to close half the red cell deficit must be
+        # weeks, not days: tau is 24 days, so the half-time is 24*ln2 = 17.
+        deficit = vrbc0 .- b.post[sys.cv.V_rbc]
+        half    = findfirst(<=(0.5 * maximum(deficit)), deficit)
+        @test 10 < b.post.t[half] < 30
+        # AND THE SEPARATION IS THE CLAIM, so assert the RATIO rather than two
+        # absolute times. Plasma refills within a day or two; red cells take
+        # weeks. If those ever converge the state has stopped earning its cost -
+        # which is the second failure mode the pre-registration named, making the
+        # model slower for nothing.
+        vb  = b.post[sys.cv.V_blood]
+        t_v = b.post.t[findfirst(>=(0.5 * (vb[end] - vb[1]) + vb[1]), vb)]
+        @test t_v <= 2.0
+        @test b.post.t[half] / t_v > 5.0
+
+        # ---- FALSIFIABLE TEST 4: CONTENT MOVES, TENSION DOES NOT -------------
+        #
+        # HANDOVER section 3.27's distinction has to survive the loop closing.
+        # Anaemia is a CONTENT problem: fewer carriers, each just as saturated.
+        # A model that dropped saturation after a bleed would be describing a
+        # lung disease.
+        sat  = only(o.lhs for o in observed(sys) if String(Symbol(o.lhs)) == "bl₊SaO2(t)")
+        cao2 = only(o.lhs for o in observed(sys) if String(Symbol(o.lhs)) == "bl₊CaO2(t)")
+        @test b.post[cao2][2] < b.pre[cao2][end] - 0.5       # content falls
+        @test isapprox(b.post[sat][2], b.pre[sat][end]; rtol = 1e-6)   # tension does not
+        # AND PRODUCTION ACTUALLY RISES, which is the claim the gain makes.
+        dfc = only(o.lhs for o in observed(sys)
+                   if String(Symbol(o.lhs)) == "cv₊o2_deficit(t)")
+        @test b.post[dfc][2] > 0.1                            # a real signal
+        @test isapprox(b.pre[dfc][end], 0.0; atol = 1e-5)     # and none at rest
+
+        # ---- THE GAIN IS THE RECOVERY RATE, NOT A FREE PARAMETER -------------
+        #
+        # tau_life/(1+G) must be RBC.RECOVERY_TAU, or the ledger is asserting an
+        # identity the model does not satisfy - failure mode 22. This is the check
+        # that would have caught the pre-registered CONTENT signal, under which the
+        # closed loop ran at 33 days against a derived 24.
+        tau_fit = -1.0 / ((log(deficit[60]) - log(deficit[20])) / 40.0)
+        @test isapprox(tau_fit, L.RBC_RECOVERY_TAU; rtol = 0.05)
+        @test isapprox(L.RBC_LIFESPAN / (1 + L.RBC_PRODUCTION_GAIN),
+                       L.RBC_RECOVERY_TAU; rtol = 1e-6)
+
+        # ---- THE SALT STEP MUST NOT TOUCH RED CELL MASS ----------------------
+        #
+        # The defect that forced the sensed signal from content to capacity. Over
+        # 30 days per arm the haematocrit is free to move - it MUST, that is
+        # dilution - but the red cell mass behind it may not.
+        r = salt_step()
+        vr = [lv.sol[sys.cv.V_rbc][end] for lv in r.levels]
+        he = [lv.sol[sys.cv.Hct_eff][end] for lv in r.levels]
+        @test maximum(vr) - minimum(vr) < 1e-4      # mass: pinned
+        @test maximum(he) - minimum(he) > 0.005     # haematocrit: dilutes, as it should
     end
 
     @testset "ADR 0019: the thyroid axis, on ONE free-thyroxine scale" begin

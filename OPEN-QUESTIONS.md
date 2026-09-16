@@ -562,35 +562,44 @@ this order.
    metabolic row ADR 0018 said was missing existed under another name. Oxygen is still a
    forward computation with no feedback, which ADR 0018 decides deliberately.
 5. **RED CELL MASS IS A PARAMETER, NOT A STATE — so it can be lost and never
-   recovered.** Found 2026-09-10 by building the haemorrhage perturbation and watching
-   the recovery, and the arithmetic was available before the run rather than after it.
+   recovered. CLOSED 2026-09-16 BY ADR 0023.** Found 2026-09-10 by building the
+   haemorrhage perturbation and watching the recovery, and the arithmetic was available
+   before the run rather than after it.
 
-   `V_blood = f_pv*V_ecf + Hct*BV0`. A bleed removes red cells permanently, blood
-   volume is what sets cardiac output and therefore pressure, so the loop must restore
-   it — and the only route left is plasma. Plasma is 21% of extracellular fluid, so
-   replacing **0.453 L of red cells costs 2.15 L of extracellular expansion**. Predicted
-   16.71 L against a starting 14.56; observed 16.65.
+   `V_blood = f_pv*V_ecf + Hct*BV0`. A bleed removed red cells permanently, blood
+   volume is what sets cardiac output and therefore pressure, so the loop had to restore
+   it — and the only route left was plasma. Plasma is 21% of extracellular fluid, so
+   replacing **0.453 L of red cells cost 2.15 L of extracellular expansion**. Predicted
+   16.71 L against a starting 14.56; observed 16.65. Every step was correct; the model
+   simply never unwound.
 
-   **The signature is haemodilution: effective haematocrit falls 0.453 → 0.373**, which
-   is what a real person looks like a few days after losing a litre. And renin then sits
-   at 0.37 against a pre-bleed 1.25 — suppressed entirely through the macula densa arm,
-   because 14% more extracellular fluid raises filtration and distal delivery. The
-   pressure term barely moves. **Every step is correct; the model simply never unwinds.**
+   **WHAT IT TOOK, AND IT WAS NOT WHAT THIS ENTRY PREDICTED.** Red cell volume is now
+   the twelfth state, haematocrit split into a reference parameter and a live variable,
+   and haemoglobin became `MCHC × Hct_eff` — one parameter removed rather than added,
+   because §3.24's implied MCHC was already a check that could have failed. The
+   destruction term is at the ~120 day lifespan and the loop gain is DERIVED from
+   Pottgiesser 2008's 36-day haemoglobin-mass recovery.
 
-   **What it would take.** Red cell volume as a STATE, erythropoietin driven by renal
-   oxygen delivery, and a destruction term at the ~120 day lifespan. The upstream
-   quantities already exist — arterial content, delivery, haemoglobin, and a kidney.
+   This entry said the drive would be **renal oxygen delivery**. It is not, and it is not
+   arterial content either — the pre-registration's own §4 named content and the test
+   suite falsified it. See §3.41.
 
-   **AND IT WOULD BE THIS MODEL'S FIRST OXYGEN FEEDBACK.** ADR 0018 made blood a forward
-   computation deliberately — two inbound edges, no outbound — and recorded that an
-   outbound edge means an oxygen feedback has been built and needs its own record. The
-   coupling count is the tripwire for precisely this. Red cells at 120 days would become
-   the slowest state by an order of magnitude over thyroxine.
+   **MEASURED AFTER: the bleed unwinds completely.** Blood volume falls by exactly 1 L,
+   MAP 87 → 73 instantly and back to 85 within the hour, HR 62 → 64, renin 1.25 → 2.23,
+   sodium excretion to zero; haematocrit then dilutes 0.453 → 0.39 over three days while
+   extracellular volume overshoots to 16.1 L; red cell mass regenerates with a 24-day
+   time constant, and by day 200 everything is back — V_ecf 14.560 against a starting
+   14.56, Hct 0.4530, Hb 15.30, MAP 86.99, renin 1.251, sodium excretion 205.
 
-   **Not the next item.** Renal sympathetic traffic still is, because two of the four
-   parameters that carry this model (§3.40) are the fitted constants that arm would help
-   determine, and erythropoiesis touches neither. Until it exists, **read the first hours
-   of a haemorrhage and not the days.**
+   **IT WAS THIS MODEL'S FIRST OXYGEN FEEDBACK**, and the coupling count 21 → 22 with the
+   new edge outbound from blood is the tripwire ADR 0018 left for exactly this. Red cells
+   are now the slowest state by a factor of three over thyroxine.
+
+   **WHAT IS STILL OPEN.** The recovery time constant is an ESTIMATION SET and the model
+   reproducing it is not agreement. It lumps iron availability into erythropoietic drive,
+   so an iron-deficient donor — who may take ten times as long — cannot be represented.
+   It is a male number applied to both sexes. And the model still cannot represent
+   anaemia of renal disease, or any erythropoietic response to dilution rather than loss.
 
 6. **No age dimension.** The alveolar–arterial difference widens with age and carries a
    young-adult value; so does maximal urine concentrating ability.

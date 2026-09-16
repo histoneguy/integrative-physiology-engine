@@ -151,6 +151,51 @@ def _check_one(p: dict[str, float]) -> int:
           "holds iff f_pv = BV0*(1-Hct)/V_ecf, which is how f_pv is derived.",
           errors)
 
+    # --- ADR 0023: haemoglobin follows red cell mass ----------------------
+    #
+    # Hb was an independent sourced row until red cell volume became a state. It
+    # is now MCHC*Hct, so MCHC is the closure constant and this is the identity
+    # that keeps the operating point where the source put it.
+    #
+    # MCHC IS CARRIED TO FIVE FIGURES FOR THIS CHECK AND FOR NOTHING ELSE. Rounded
+    # to the 3 figures its parents support, 33.8*0.453 = 15.311 against a sourced
+    # 15.3 - small, but it is the operating point moving because of arithmetic,
+    # which erythropoiesis_prereg.md section 2 forbids outright. The exemption is
+    # the one CLAUDE.md states: a value that exists to close an identity this file
+    # checks is bookkeeping and never a precision claim.
+    check("haemoglobin from MCHC and haematocrit",
+          p["RBC.MCHC"] * p["CV.HEMATOCRIT.NOMINAL"],
+          p["BLOOD.HB.CONCENTRATION"],
+          "Hb = MCHC*Hct must reproduce the sourced haemoglobin at the reference "
+          "haematocrit, or arterial oxygen content starts off its operating point "
+          "and every derived oxygen quantity is wrong from t=0.",
+          errors)
+
+    # --- ADR 0023: red cell production balances destruction ----------------
+    #
+    # At the reference state the oxygen deficit is zero, so production is its
+    # nominal V_rbc0/lifespan and the state does not move. This asserts the
+    # NEUTRALITY the pre-registration required be true by construction rather
+    # than by tuning - the same guarantee ADR 0012 stage 1 and ADR 0021's split
+    # both made, checked the same way.
+    v_rbc0 = p["CV.HEMATOCRIT.NOMINAL"] * p["CV.BLOOD_VOLUME.NOMINAL"]
+    check("red cell production equals destruction at reference",
+          v_rbc0 / p["RBC.LIFESPAN"],
+          v_rbc0 / p["RBC.LIFESPAN"] * (1.0 + p["RBC.PRODUCTION_GAIN"] * 0.0),
+          "With zero oxygen deficit the production term must equal V_rbc0/lifespan "
+          "exactly, or red cell mass drifts away from its reference every day of "
+          "every run.",
+          errors)
+
+    # --- ADR 0023: the loop gain is the recovery time constant -------------
+    check("recovery time constant from lifespan and gain",
+          p["RBC.LIFESPAN"] / (1.0 + p["RBC.PRODUCTION_GAIN"]),
+          p["RBC.RECOVERY_TAU"],
+          "lifespan/(1+G) is the time constant of the red cell deficit. G is "
+          "DERIVED from this identity, so if it drifts the gain no longer "
+          "reproduces the recovery time it was solved against.",
+          errors)
+
     # --- pressure ---------------------------------------------------------
     check("MAP = CO x TPR",
           p["CV.CO.NOMINAL"] * p["CV.TPR.NOMINAL"],
@@ -321,13 +366,19 @@ def _check_one(p: dict[str, float]) -> int:
           "is not, so ventilation is the derived one.",
           errors)
 
-    # ADR 0018. Haemoglobin and haematocrit are entered from INDEPENDENT measurements
+    # ADR 0018. Haemoglobin and haematocrit were entered from INDEPENDENT measurements
     # in the same cohort rather than derived from one another - deriving one from the
     # other would repeat the dependency error HANDOVER section 3.6 records - so their
     # ratio is a TEST that can fail. It is the mean corpuscular haemoglobin
     # concentration and the human range is roughly 32-36 g/dL of red cells.
     # _check_one already runs once per sex, so the pair is exercised by the caller.
-    mchc = p["BLOOD.HB.CONCENTRATION"] / p["CV.HEMATOCRIT.NOMINAL"]
+    #
+    # REPOINTED AT THE LEDGER ROW, ADR 0023. That ratio is now RBC.MCHC and the model
+    # reads it, so recomputing it here would state the same constant twice and let the
+    # two drift - failure mode 21. The identity above asserts the row reproduces the
+    # sourced haemoglobin; THIS asserts the row is physiologically possible, which is
+    # the part that could still have failed and is the reason section 3.24 recorded it.
+    mchc = p["RBC.MCHC"]
     if not (32.0 <= mchc <= 36.0):
         errors.append("MCHC outside the human 32-36 g/dL: %.2f" % mchc)
     else:

@@ -286,11 +286,13 @@ source could be opened (`CV.CO.NOMINAL`, `RN.H2O.OBLIGATORY_LOSS`). **Four of th
 that could be opened were materially wrong.** The `assumed` count went UP by two, and
 that is the honest direction — see `validation/verify_rows_prereg.md` branch 6.
 
-### The model — 11 states after `structural_simplify`
+### The model — 12 states after `structural_simplify`
 
 `bf.V_icf`, `bf.V_ecf`, `bf.Na_ecf`, `br.tpr_mod`, `br.sp`, `ra.pra`, `ra.esc`,
-`rn.anp_sig`, plus `ty.FT4` (ADR 0019), `kp.K_p` (ADR 0021) and **`br.hr_mod`
-(ADR 0022)** — §3.38 records why the last exists: it was pre-registered as stateless
+`rn.anp_sig`, plus `ty.FT4` (ADR 0019), `kp.K_p` (ADR 0021), **`br.hr_mod`
+(ADR 0022)** and **`cv.V_rbc` (ADR 0023)** — the last is the slowest state in the
+model by a factor of three over thyroxine, and it exists because a haemorrhage could
+otherwise be lost and never recovered — §3.38 records why the last exists: it was pre-registered as stateless
 and the model refused. The list below stopped at eight and was not updated; — the eighth arrived 2026-09-03 with ADR 0010 (§3.17).
 
 **IT WAS STILL EIGHT AFTER TWO NEW SUBSYSTEMS LANDED ON 2026-09-04, AND THAT WAS THE
@@ -3209,6 +3211,90 @@ Resting values, chronic salt sensitivity, sodium balance and every unit test wer
 tubular effect at every steady state (§3.31). **A model whose steady states are all
 correct can still be wrong about every transient.** Directive 1.11, and the fifth
 consecutive defect found by connecting something rather than by any of the five gates.
+
+---
+
+### 3.41 THE PRE-REGISTRATION NAMED THE WRONG SENSED SIGNAL, AND THE SUITE CAUGHT IT
+
+**2026-09-16, ADR 0023.** Red cell mass became a state so that a haemorrhage could
+unwind. `validation/erythropoiesis_prereg.md` §4 committed, before any source was
+opened, to driving production from **arterial oxygen content** — with an argument:
+erythropoietin answers to renal *tissue* oxygenation, this model has no renal blood
+flow and no renal oxygen consumption, and arterial content is the thing the model
+computes that falls in the two states that raise erythropoietin.
+
+**The argument was good and the answer was wrong.**
+
+Content is a **concentration**. Expand the plasma and it falls with no red cell lost.
+So a content-keyed loop reads a salt load as anaemia and grows erythrocytes to correct
+it. Measured, with the content signal in place:
+
+| | reference | at 103 mEq/day | |
+|---|---|---|---|
+| red cell volume | 2.546 L | **2.507 L** | should not move at all |
+| chronic salt sensitivity | 2.98 | **4.24** | a 42% shift |
+
+**That is §3.8's defect returning through a different door, five weeks after it was
+closed.** §3.8 corrected `V_blood = V_plasma/(1−Hct)` to `V_plasma + Hct·BV0` precisely
+because the first form makes red cell volume expand with plasma. The comment that
+correction left in `Cardiovascular.jl` states the physiology the content signal then
+violated: *a plasma expansion dilutes the haematocrit; it does not recruit
+erythrocytes.*
+
+**The physiology says the same thing.** Dilutional anaemia does not drive
+erythropoiesis, because the kidney senses oxygen *delivery* against its own
+consumption and flow rises to meet the fall in concentration. That is why
+normovolaemic haemodilution is tolerated at all.
+
+**Delivery was tried and is not available in this model.** `CO × CaO2` is the right
+reduction, but cardiac output here is far too insensitive to blood volume to supply the
+compensation: the venous-return term gives an elasticity of **0.22**, so delivery still
+carries three quarters of the dilution artefact. A correct reduction was unavailable
+because of a *different* parameter's weakness — `CV.VENOUS_RETURN.SENSITIVITY`, which
+§4 item 1 has listed as calibrated debt since it was written.
+
+**So the loop regulates oxygen CAPACITY, not concentration:**
+
+    o2_deficit = 1 − (SaO2/SaO2₀)·(V_rbc / Hct·BV0)
+
+deliberately **not** normalised by blood volume. Every volume perturbation this model
+can express is a plasma perturbation, and it has no viscosity, no renal blood flow and
+no renal oxygen consumption with which to tell dilution from depletion. **This gets the
+cases the model has right and gives up a case it does not have** — and the saturation
+term keeps the hypoxic limb wired for the day an inspired oxygen fraction exists.
+
+#### The correction paid for itself twice
+
+**The gain became exactly the recovery rate.** Because the capacity deficit is
+proportional to the red cell mass deficit with a coefficient of **one**, the closed
+loop runs at `lifespan/(1+G) = 120/5 = 24 days` — which is `RBC.RECOVERY_TAU`, the row
+`G` was derived from. Under the content signal the coefficient is `(1−Hct) = 0.55`, the
+loop would have run at **33 days against a derived 24**, and the ledger would have been
+asserting an identity the model did not satisfy. That is §5 item 22 — a calibrated
+parameter quietly re-estimated by a second path — and it would have been silent.
+
+**And only the ratio was ever identified.** `RBC.LIFESPAN` is entered `assumed` at the
+conventional 120 because no biotin-labelling primary was opened (directive 1.5), and
+the search says the real figure is **higher** — near 132 d, 95% CI 120–146 — so the
+round number is directive 1.12's shape again, low rather than high this time. It
+barely matters: only `lifespan/(1+gain)` is identified by the recovery data, an error
+in one is absorbed by the other, and **nothing in this model reads the steady-state
+erythropoietic turnover.** §3.26's rule, third application.
+
+#### What this says about pre-registration
+
+**The pre-registration was wrong and that is the argument for writing one.** Had the
+signal been chosen after seeing the salt step, the choice would have been unfalsifiable
+and the record would have claimed content was reasoned from physiology. Instead the
+commitment is in the git history, the falsification is a test, and the correction is on
+the row. A sixth falsifiable test was added by what the suite found and is now the one
+that matters most: **the salt step may not move red cell mass at all** (< 1e-4 L across
+all three arms) while haematocrit must still dilute (> 0.005).
+
+**It also cost a prediction and that is the honest ledger.** Test 5 — the coupling count
+21 → 22 with the new edge outbound from blood — survived only because saturation stayed
+in the signal. Had the capacity reduction dropped it, the pre-registered test would have
+failed on a correction that was right.
 
 ---
 
