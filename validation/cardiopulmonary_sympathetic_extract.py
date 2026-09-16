@@ -72,12 +72,15 @@ LBNP_NOT_SELECTIVE = [
 # substantially NOT a neural arc.
 # ---------------------------------------------------------------------------
 
+# CORRECTED 2026-09-16: RODDIE 1957 WAS OBTAINED BY THE OWNER AND READ IN FULL, AND
+# THE SECONDARY SOURCES HAD OVER-SOLD IT. See RODDIE_1957 below. The entry as first
+# written is kept because the mis-citation is the instructive part.
 CHRONOTROPIC_IS_LARGELY_INTRINSIC = dict(
     human_phenomenon=(
-        "Roddie IC, Shepherd JT, Whelan RF. J Physiol 1957;139(3):369-376. Passive leg "
-        "elevation raised venous return in healthy volunteers and heart rate rose, IN "
-        "THE ABSENCE of a rise in arterial pressure. NOT OPENED - cited here from "
-        "secondary description, and no quantitative gain was obtained."),
+        "SUPERSEDED - see RODDIE_1957. As first written, from secondary description: "
+        "'Passive leg elevation raised venous return in healthy volunteers and heart "
+        "rate rose, in the absence of a rise in arterial pressure.' That is TRUE and "
+        "it is not what the paper is about."),
     mechanism=(
         "The positive chronotropic response to stretch PERSISTS IN HEART TRANSPLANT "
         "RECIPIENTS and after pharmacological denervation, and is present in isolated "
@@ -97,6 +100,88 @@ CHRONOTROPIC_IS_LARGELY_INTRINSIC = dict(
         "to central volume, NOT in Baroreflex.jl as a neural arc - and it brings NONE of "
         "the other efferents with it. An intrinsic pacemaker property does not release "
         "renin, does not release vasopressin, and does not constrict vessels."),
+)
+
+
+# ---------------------------------------------------------------------------
+# RODDIE 1957, READ IN FULL 2026-09-16 - AND IT IS A VASOMOTOR PAPER
+#
+# Obtained by the owner after this pass recorded it as unopenable. Reading it
+# changes what it supports, which is the whole argument for directive 1.5.
+# ---------------------------------------------------------------------------
+RODDIE_1957 = dict(
+    citation=("Roddie IC, Shepherd JT, Whelan RF. Reflex changes in vasoconstrictor "
+              "tone in human skeletal muscle in response to stimulation of receptors "
+              "in a low-pressure area of the intrathoracic vascular bed. "
+              "J Physiol 1957;139(3):369-376."),
+    reading_level="FULL TEXT, READ",
+    subjects="healthy adults aged 19-36; 6 in the nerve-block series, 8 with "
+             "simultaneous arterial pressure, 3 with central venous pressure",
+
+    # WHAT THE SECONDARY SOURCES SAID IT WAS
+    mis_citation=(
+        "Repeatedly cited as the human demonstration of a chronotropic response to "
+        "atrial loading. THE HEART RATE APPEARS IN ONE SENTENCE: it 'increased in most "
+        "subjects when the legs were raised', but in the subject of Fig. 5 'the increase "
+        "in rate was inconspicuous, though a marked increase in forearm blood flow "
+        "occurred'. NO HEART RATE NUMBERS ARE GIVEN ANYWHERE IN THE PAPER. "
+        "The claim is true and thin, and it is not what the paper measured."),
+
+    # WHAT IT ACTUALLY ESTABLISHES, AND IT IS WORTH MORE
+    subject=("Reflex VASODILATATION in forearm skeletal muscle on passive leg raising, "
+             "by RELEASE OF VASOCONSTRICTOR TONE, from receptors in a low-pressure area "
+             "of the intrathoracic bed. The cardiopulmonary VASOMOTOR arm."),
+
+    # THE SEPARATION THE PRE-REGISTRATION DEMANDED, BY A DIFFERENT ROUTE THAN LBNP
+    separation=(
+        "Arterial pressure was often unaltered; pulse pressure was sometimes unchanged "
+        "or REDUCED while the dilatation was marked; and 'it was not possible in this "
+        "series of experiments to correlate the magnitude of the dilatation with changes "
+        "in arterial mean or pulse pressure'. Supported independently by evidence that "
+        "carotid stretch receptor activity in man does not change limb vessel calibre "
+        "(Ernsting & Parry 1957; Roddie & Shepherd 1957). THIS IS A GENUINE "
+        "CARDIOPULMONARY ISOLATION, and it is not the manoeuvre the 1980s literature "
+        "argued about."),
+
+    # AND IT IS THE STIMULUS, NOT A POSTURAL ARTEFACT
+    stimulus_controls=(
+        "The response does not occur when thigh cuffs at 180 mmHg prevent blood "
+        "returning; it is LARGER when legs and lower trunk are raised than legs alone, "
+        "so it is not splanchnic pooling; and a 30 mmHg neck cuff does not affect "
+        "forearm flow, so it is not cephalic venous congestion. Central venous pressure "
+        "and the amplitude of venous pulsation both rise, and do not rise when the "
+        "thigh cuffs are inflated."),
+
+    # TABLE 1 - forearm blood flow, mL/100 mL/min
+    table1_intact=[(5.0, 11.5), (6.0, 13.0), (5.0, 9.5), (5.0, 9.5), (5.0, 10.0), (3.3, 5.6)],
+    table1_blocked=[(11.5, 11.5), (14.5, 15.0), (16.0, 15.0), (9.0, 9.5), (12.2, 12.0), (6.5, 6.0)],
+    table1_meaning=(
+        "Leg raising roughly DOUBLES intact forearm muscle flow while the "
+        "nerve-blocked forearm does not move. The blocked forearm is full release of "
+        "vasoconstrictor tone, and the intact forearm APPROACHES BUT NEVER EXCEEDS it - "
+        "which is how the authors conclude the mechanism is withdrawal of sympathetic "
+        "tone rather than active vasodilator nerves. Atropine in the brachial artery "
+        "does not abolish it, ruling out a cholinergic dilator."),
+
+    # WHY IT STILL DOES NOT YIELD A LEDGER ROW
+    no_gain=(
+        "NO QUANTITATIVE GAIN IS OBTAINABLE FROM THIS PAPER, and the authors say so "
+        "themselves twice. They could not correlate dilatation magnitude with arterial "
+        "pressure change, and of the venous pressure rise they write that 'it cannot be "
+        "concluded that these changes represent the stimulus responsible'. The response "
+        "is also measured as FOREARM MUSCLE flow, and the paper states hand and forearm "
+        "SKIN are unaffected - so converting it to a whole-body resistance needs the "
+        "muscle share of systemic resistance, a composition across scales of exactly "
+        "the kind section 3.26 records going wrong. NOTHING IS ENTERED."),
+
+    # AND A SENTENCE THAT READS LIKE THIS MODEL'S OWN ARGUMENT
+    discussion_note=(
+        "'A vasodilatation in muscle of the type described, if produced by an increase "
+        "in venous return to the heart, would permit an increase in cardiac output "
+        "without much change in arterial pressure, thus avoiding arterial baroreceptor "
+        "stimulation which would tend to slow the heart reflexly.' That is the "
+        "cardiopulmonary arm's functional role stated in 1957, and it is why Jensen can "
+        "see a volume load raise heart rate with pressure flat."),
 )
 
 # ---------------------------------------------------------------------------
@@ -168,6 +253,29 @@ def main():
     for k in ("human_phenomenon", "mechanism", "animal_quantitative", "consequence"):
         print(f"  {k.upper()}: {c[k]}\n")
 
+    print("RODDIE 1957 - OBTAINED BY THE OWNER AND READ IN FULL, 2026-09-16")
+    print("-" * 78)
+    r = RODDIE_1957
+    print("  " + r["citation"])
+    print("  [" + r["reading_level"] + "]  " + r["subjects"])
+    print()
+    print("  MIS-CITATION: " + r["mis_citation"])
+    print()
+    print("  WHAT IT ESTABLISHES: " + r["subject"])
+    print()
+    print("  SEPARATION: " + r["separation"])
+    print()
+    print("  CONTROLS: " + r["stimulus_controls"])
+    print()
+    print("  TABLE 1, forearm flow mL/100 mL/min, horizontal -> legs raised:")
+    print("    intact  ", r["table1_intact"])
+    print("    blocked ", r["table1_blocked"])
+    print("  " + r["table1_meaning"])
+    print()
+    print("  WHY NO ROW: " + r["no_gain"])
+    print()
+    print("  AND: " + r["discussion_note"])
+    print()
     print("DIRECTIVE 1.12 - ROUND NUMBERS MET AND NOT ENTERED")
     print("-" * 78)
     for n in TEACHING_NUMBERS:
