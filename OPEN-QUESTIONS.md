@@ -512,6 +512,33 @@ this order.
    none of the other efferents with it. An intrinsic pacemaker property does not release
    renin or vasopressin. **That is the arm that would satisfy ADR 0022's test 5**, and it
    needs a quantitative human gain that this pass did not obtain.
+   **RODDIE 1957 WAS OBTAINED BY THE OWNER ON 2026-09-16 AND READ IN FULL, AND IT IS A
+   VASOMOTOR PAPER.** The secondary literature cites it as the human demonstration of a
+   chronotropic response to atrial loading. **Heart rate appears in one sentence** — it
+   "increased in most subjects", and was "inconspicuous" in the very subject whose
+   forearm dilatation was marked — **with no numbers anywhere in the paper.** True, thin,
+   and not what was measured.
+
+   **What it does establish is better than what it was cited for.** The cardiopulmonary
+   **vasomotor** arm in healthy humans, with the isolation this pre-registration demanded
+   and could not get from lower-body negative pressure: arterial pressure often
+   unaltered, pulse pressure sometimes *reduced* while dilatation was marked, no
+   correlation between dilatation and either pressure, and independent evidence that
+   carotid stretch receptors in man do not change limb vessel calibre. Controls rule out
+   splanchnic pooling and cephalic venous congestion. Leg raising roughly **doubles**
+   intact forearm muscle flow while a nerve-blocked forearm does not move, and the intact
+   forearm approaches but never exceeds the blocked one — so the mechanism is
+   **withdrawal of sympathetic tone**, not active vasodilator nerves.
+
+   **It still yields no ledger row, and the authors say why twice.** They could not
+   correlate the dilatation with pressure change, and of the venous pressure rise they
+   write that it *"cannot be concluded that these changes represent the stimulus
+   responsible"*. The response is forearm **muscle** flow with skin explicitly
+   unaffected, so converting it to a whole-body resistance needs the muscle share of
+   systemic resistance — the cross-scale composition §3.26 records going wrong.
+
+   **So the sourceable cardiopulmonary arm is the VASOMOTOR one, not the chronotropic
+   one**, and what it lacks is a gain rather than a phenomenon.
 
 2b. ~~**Renin is pressure-only.**~~ **HALF BUILT 2026-09-05** (§3.31, §3.32, ADR 0021).
    The macula densa arm exists, and the ceiling §7 recorded against the model — a renin
