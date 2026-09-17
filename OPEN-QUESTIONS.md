@@ -122,11 +122,33 @@ argued** (`bench/late_time_course.jl`):
 against a human chronic window of **1.70–2.30**. **The acute response needs about three
 times the gain the chronic one permits.**
 
-**WHAT WOULD RESOLVE IT:** a saturating or multi-timescale volume–natriuresis path — what
-ADR 0010 proposed and never built — which must satisfy the 7 h half-life and the
-1.70–2.30 window simultaneously. It needs its own pre-registration. **Do not close it by
-refitting `RN.ANP.TAU`**: §3.46 shows the lag cannot reach the target at any value, so
-moving it would be fitting the wrong parameter and would still fail.
+**WHAT WOULD RESOLVE IT — AND THE PASS THAT TRIED IT FOUND SOMETHING ELSE. See B1c.**
+
+### B1c. Two acute human datasets disagree by twofold, and no form reconciles them
+
+**HANDOVER §3.47.** Both candidate forms were built, with the discriminator fixed before
+either: a static convex gain bends the chronic pressure–sodium relation (12–20% of the MAP
+range), an adapting rate-sensitive one leaves it exactly straight (2.1%, unchanged from
+linear). **The convex form is refuted. ADR 0010's specified SATURATING path points the
+wrong way entirely** — the requirement is *more* response per litre at large excursions,
+not less.
+
+The adapting form reaches the target and breaks the out-of-sample number:
+
+| | t½ h | salt sens | **Jensen %** (measured 122) |
+|---|---|---|---|
+| linear, as merged | 13.05 | 1.9604 | **110.4** |
+| k = 1/3 | 10.90 | 1.9596 | **127.6** |
+| k = 2/3 | **7.47** | 1.9603 | **178.8** |
+
+**Drummer wants an acute gain three times the chronic one; Jensen says it is already about
+right. No value of k satisfies both.**
+
+**WHAT WOULD RESOLVE IT is a third measurement, not a parameter:** Drummer's full text,
+which would give the interval series rather than one half-life read from an abstract; or
+any study reporting **both** cumulative volume and fractional sodium excretion in the same
+subjects. **Neither form may be adopted until then** — both are committed default-off,
+and the default build is unchanged at 12 states.
 
 ### B2. Salt sensitivity is a fit, and the sex difference in it is a prediction nobody has checked
 

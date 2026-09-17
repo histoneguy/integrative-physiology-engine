@@ -822,3 +822,45 @@ moved none of them. A build of the saturating form needs its own pre-registratio
 two constraints it must satisfy **simultaneously** are the **7 h half-life** and the
 **1.70–2.30 chronic window**. Those are now this record's identifying experiment, replacing
 the acute-magnitude comparison the addendum retired.
+
+---
+
+## Amendment, 2026-09-17 (second) — this record's SATURATING specification points the wrong way
+
+**HANDOVER §3.47, `validation/volume_natriuresis_form_prereg.md`.** This record has said
+since 2026-08-21 that *"the real path is lagged or **saturating**"*, and its unbuilt
+component is specified that way.
+
+**THE REQUIREMENT IS THE OPPOSITE.** §3.46 measured that the acute response needs about
+**three times** the gain the chronic one permits — a response per litre that is **larger**
+at a large excursion. **A saturating path delivers less.** Building this record's component
+as written would have made the failure worse.
+
+**The error is traceable and is recorded rather than designed around.** The saturating
+argument came from the acute **magnitude** comparison — *"matching Jensen's acute +123%
+needs roughly half"* the chronic gain — and the first amendment above withdrew that
+comparison as a model peak set against a study's final sample. **The conclusion was not
+followed out when its evidence moved.**
+
+### Both forms were built, and the discriminator was fixed before either
+
+| form | reaches t½ ≈ 7 h | chronic relation bend | slope ratio |
+|---|---|---|---|
+| static convex in volume | no — plateaus at 7.55 h | **12–20%** of the MAP range | 0.39–0.54 |
+| adapting, rate-sensitive | **yes, 7.47 h at k = 2/3** | **2.1%, unchanged** | **1.11** |
+
+The convex form is **refuted**: the human relation is quoted as one slope per 100 mmol/day
+by Cutler 1997, He 2013 and He 2002 alike, and a relation whose top-of-range slope is twice
+its bottom-of-range slope is not that.
+
+### AND THE SURVIVING FORM BREAKS THE OUT-OF-SAMPLE NUMBER
+
+Jensen's final-window fractional sodium excretion rise goes **110.4% → 178.8%** against a
+measured **122%**. **The two acute human datasets disagree by about twofold about the acute
+gain**, and no adapting fraction satisfies both.
+
+**NOTHING IS ADOPTED.** `anp_adaptation` and `anp_convexity` are both committed
+**default-off**, on the precedent `G_anp` itself was introduced on, and the default build
+is unchanged at 12 states. **This record's identifying experiment is now the conflict
+itself**: a study reporting both cumulative volume and fractional sodium excretion in the
+same subjects, or Drummer's full text in place of one half-life read from an abstract.

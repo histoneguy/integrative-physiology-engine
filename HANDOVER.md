@@ -3817,6 +3817,122 @@ that.
 
 ---
 
+### 3.47 THE TWO ACUTE HUMAN DATASETS DISAGREE WITH EACH OTHER BY TWOFOLD
+
+**2026-09-17**, `validation/volume_natriuresis_form_prereg.md`. Opened to build the
+saturating path ADR 0010 has specified since 2026-08-21. **Nothing was adopted, and what
+came back is a sharper question than the one the pass was opened to answer.**
+
+### FIRST, ADR 0010's SPECIFICATION POINTS THE WRONG WAY
+
+§3.46's requirement is a response per litre that is **larger** at a large excursion than at
+a small one — `ΔV_blood` ≈ 0.441 L acute against ≈ 0.131 L chronic, needing about three
+times the response. **A saturating path flattens at large excursions and delivers less.**
+Building ADR 0010's component as written would have made the failure worse.
+
+The record got it backwards traceably: its saturating argument came from the acute
+**magnitude** comparison, *"matching Jensen's acute +123% needs roughly half"* the chronic
+gain — and **§3.45 withdrew that comparison** as a model peak set against a study's final
+sample. **The conclusion was not followed out when its evidence moved.**
+
+### STAGE 1 — NOTHING THE MODEL ALREADY HAS REACHES IT
+
+Directive 1.11, and the pre-registration forbade writing a term until this was reported:
+
+    storage ON, tau_store 0.1 - 30 d    11.90 - 13.05 h    (the ledger 7 d: 12.93)
+    storage ON, f_store 0.05 - 0.50     12.57 - 13.03 h
+    tau_osm 1 - 120 min                 12.98 - 13.23 h
+    ADH disabled                        26.30 h
+
+**The fastest storage kinetics buy 1.2 h of the 6.1 that are missing.** Two of those rows
+also needed a flag flipped to be swept at all — `build_model` defaults to `storage = false`
+and ADR 0004 is PROVISIONAL, so `BF.NA.STORAGE_TAU` and
+`BF.NA.OSMOTICALLY_INACTIVE_FRACTION` are **bit-identical from 0.1 d to 30 d against the
+default build**. And the water limb is not the bottleneck: disabling ADH makes the decay
+*twice as slow*.
+
+### STAGE 2 — THE CONVEX FORM IS REFUTED BY ITS PRE-REGISTERED DISCRIMINATOR
+
+§3.1 fixed the test before either form was built: a static convex gain **bends** the
+chronic pressure–sodium relation, an adapting one leaves it **straight**, and every
+meta-analysis quotes one slope per 100 mmol/day. With `G_anp` re-solved to hold the chronic
+anchor at every point:
+
+| `c_anp` | `G_anp` | t½ h | bend % | slope ratio 38–103 : 154–230 |
+|---|---|---|---|---|
+| 0 | 589.2 | 13.05 | **2.1%** | **1.11** |
+| 50 | 272.4 | 8.93 | 12.2% | 0.54 |
+| 200 | 103.9 | 7.78 | 18.3% | 0.41 |
+| 400 | 56.8 | 7.55 | 19.8% | 0.39 |
+
+**It never reaches 7 h — it plateaus near 7.5 — and buying even 8.9 h costs a relation
+whose slope at the top of the dietary range is twice its slope at the bottom. REFUTED.**
+
+**AND THE PRE-REGISTRATION GOT THE DIRECTION OF THE BEND WRONG.** §3.1 said the relation
+would go **concave**; it goes **convex** — the low-intake slope collapses 2.11 → 1.05 while
+the high-intake slope rises 1.90 → 2.72. The refutation rests on the **size** of the bend,
+which is what the test was about. **The mechanism of its sign is not established and is not
+guessed at.**
+
+### STAGE 3 — THE ADAPTING FORM PASSES THE DISCRIMINATOR AND REACHES THE TARGET
+
+A slow state subtracts a fixed fraction of the sustained drive, so the acute-to-chronic
+ratio is `1/(1 - k_adapt)` exactly — **§3.46's measured factor of three IMPLIES
+`k_adapt` = 2/3, which was therefore not fitted.**
+
+| | `G_anp` | t½ h | salt sens | bend % | slope r | **Jensen %** |
+|---|---|---|---|---|---|---|
+| linear, as merged | 589.0 | 13.05 | 1.9604 | 2.1% | 1.11 | **110.4** |
+| k = 1/3 | 883.6 | 10.90 | 1.9596 | 2.1% | 1.11 | **127.6** |
+| k = 2/3 | 1764.0 | **7.47** | 1.9603 | **2.1%** | **1.11** | **178.8** |
+| k = 3/4 | 2347.3 | 6.30 | 1.9610 | 2.1% | 1.11 | 212.4 |
+
+**The bend stays at 2.1% and the slope ratio at 1.11 at every `k`** — bit-identical to the
+linear form, because form (B) is linear in the excursion at every timescale. **The
+discriminator discriminated.**
+
+### AND THEN IT BREAKS THE ONE OUT-OF-SAMPLE NUMBER
+
+Jensen's final-window fractional sodium excretion rise goes **110.4% → 178.8%** against a
+**measured 122%**. The model was inside; at k = 2/3 it is 46% over.
+
+**SO THE TWO ACUTE HUMAN DATASETS DISAGREE WITH EACH OTHER.** Drummer's volume half-life
+wants an acute gain about three times the chronic one. Jensen's fractional sodium excretion
+says the acute response is already about right. Reading the table: **k = 1/3 puts Jensen at
+127.6 against 122 — inside — and leaves the half-life at 10.90 h. k = 2/3 reaches the
+half-life and puts Jensen 46% out. NO VALUE OF `k` SATISFIES BOTH**, and they imply acute
+gains differing by about twofold.
+
+**That is the result of this pass, and it is not a modelling failure.** It is two human
+measurements of the same manoeuvre that cannot both be right about the same model.
+
+### §8's DECOMPOSITION, AND THE TEST AS WRITTEN COULD NOT ANSWER WHAT IT MEANT TO
+
+It asked for the half-life the **form** buys at the **old** gain: **14.32 h, worse than
+13.05**, with salt sensitivity **4.339**. Read naively that says the form is decoration.
+**It is not the right reading**, and the three-way comparison is:
+
+| | t½ | salt sens | |
+|---|---|---|---|
+| gain ×3 alone, no form | 6.98 h | **0.681** | fails chronic (§3.46) |
+| form alone, old gain | 14.32 h | **4.339** | fails chronic |
+| form + re-solved gain | **7.47 h** | **1.960** | passes both |
+
+The form removes two thirds of the **chronic** drive by construction, so at a fixed gain
+the chronic natriuresis collapses; the re-solve **restores the anchor the form deliberately
+removed** rather than fitting the half-life. **Neither piece works alone.** The form is what
+makes a threefold acute gain admissible at all.
+
+### NOTHING IS ADOPTED
+
+`anp_adaptation` and `anp_convexity` both stay **default-off**, on the precedent `G_anp`
+itself was introduced on. **A form that fixes its target by breaking the only
+out-of-sample number the sodium limb has is not a fix**, and merging it as the default
+would spend that number. The default build is unchanged at 12 states and the full suite
+passes bit-identically.
+
+---
+
 ## 4. NEXT, IN ORDER
 
 **Rewritten 2026-09-03, and item 1 was discharged the same day.** The previous list's
@@ -3883,22 +3999,26 @@ were solved against that very target. And §5, which is how work goes wrong here
    and renal sympathetic traffic are absent. Both are E1, both are inside components
    that already exist, and neither needs a paper nobody can open.
 
-2. **THE ACUTE LOAD IS CLEARED 1.9x TOO SLOWLY, AND NO PARAMETER CAN FIX IT — §3.46.**
-   Drummer 1992 (PMID **1590419**, not the HDT paper) measures a volume half-life of
-   **≈7 h** after 2 L of isotonic saline; the model gives **13.10 h**. The lag floors at
-   11.97 h even when made instantaneous, so it is not the lag; the gains reach 7 h at ×3
-   and take the chronic salt sensitivity to **0.681** against a human **1.70–2.30**.
-   **The acute response needs about three times the gain the chronic one permits.**
+2. **THE TWO ACUTE HUMAN DATASETS DISAGREE BY TWOFOLD, AND THAT IS NOW THE PROBLEM —
+   §3.46 and §3.47.** Drummer 1992 (PMID **1590419**) measures a volume half-life of
+   **≈7 h** after 2 L of isotonic saline; the model gives **13.10 h**, and reaching 7 h
+   needs an acute natriuretic gain about **three times** the chronic one. Jensen 2013
+   (PMID 24067081) says the acute fractional sodium excretion is **already right** —
+   +110.4% against a measured +122% — and triples to +178.8% if that gain is supplied.
+   **No adapting fraction satisfies both.**
 
-   **THIS IS NOW THE SHARPEST OPEN PROBLEM IN THE SODIUM LIMB, AND IT IS STRUCTURAL.** It
-   is not closed by re-solving anything — §3.46 shows every single-parameter route fails.
-   What it points at is the FORM of the volume–natriuresis path: a saturating or
-   multi-timescale term, which is what ADR 0010 proposed and never built. **Any such
-   build needs its own pre-registration**, and the two constraints it must satisfy
-   simultaneously are the 7 h half-life and the 1.70–2.30 chronic window.
+   **THE FORM QUESTION IS SETTLED AND THE PARAMETER QUESTION IS NOT.** §3.47 built both
+   candidate forms and pre-registered the discriminator before either: a static convex
+   gain bends the chronic pressure–sodium relation (12–20% of the MAP range, high-intake
+   slope twice the low), an adapting rate-sensitive one leaves it exactly straight (2.1%,
+   unchanged). **ADR 0010's specified SATURATING path points the wrong way entirely.**
 
-   *(The magnitude question that used to sit here is closed: measured like for like on
-   Jensen's own 210–240 min window the model is at +110.1% against +122%. §3.45.)*
+   **WHAT WOULD RESOLVE IT is not a parameter but a third measurement**, because two
+   acute human datasets of the same manoeuvre currently imply gains a factor of two
+   apart. The obvious candidates: Drummer's full text, which would give the interval
+   series rather than one half-life from an abstract; and any study reporting **both**
+   cumulative volume and fractional sodium excretion in the same subjects. **Neither form
+   may be adopted until that conflict is resolved** — both are committed default-off.
 
 3. **`BF.ICF_ECF.OSMOTIC_TAU` BLOCKS EVERY ACUTE OSMOTIC MAGNITUDE.** `assumed` at 30 min.
    Near zero on multi-day runs and DOMINANT on acute ones: a 1.4 L water load moves peak

@@ -42,6 +42,15 @@ CAVEATS = [
      "unconstrained is after 240 min, where Jensen's protocol ends and the model has not yet "
      "peaked. Jensen was deliberately excluded from estimation, so it must not be closed by "
      "refitting."),
+    ("Two acute human datasets disagree by twofold (§3.46, §3.47)",
+     "Drummer 1992 (PMID 1590419) measures a volume half-life of about 7 h after 2 L of "
+     "isotonic saline; the model gives 13.10 h, and reaching 7 h needs an acute natriuretic "
+     "gain about THREE TIMES the chronic one. Jensen 2013 says the acute fractional sodium "
+     "excretion is ALREADY RIGHT — +110% against a measured +122% — and goes to +179% "
+     "if that gain is supplied. No form reconciles them. Both candidate forms were built and "
+     "are committed switched OFF; the convex one is refuted outright, because it bends the "
+     "chronic pressure–sodium relation that every meta-analysis treats as one straight "
+     "line. What would resolve it is a third measurement, not a parameter."),
     ("The acute load is cleared 1.9x too slowly, and no parameter fixes it (§3.46)",
      "Drummer 1992 (PMID 1590419) measures a volume half-life of about 7 h after 2 L of "
      "isotonic saline in six healthy supine volunteers. The model gives 13.10 h. The lag "
