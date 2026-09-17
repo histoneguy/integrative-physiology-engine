@@ -3888,6 +3888,49 @@ were solved against that very target. And §5, which is how work goes wrong here
 
 ---
 
+### THE SUITE'S COST IS COMPILATION, AND A TIMING ON THIS MACHINE IS NOT EVIDENCE
+
+**Measured 2026-09-16, after chasing a regression that did not exist.** Recorded so the
+next person does not spend the same hour.
+
+**REPEATED CALLS ARE ALREADY FREE.** In one session:
+
+    build_model()  #1  46.68 s    #2  0.03 s    #3  0.03 s
+    salt_step()    #1  45.41 s    #2  0.44 s    #3  0.47 s
+
+`runtests.jl` calls `salt_step()` with no arguments **eleven** times and `build_model()`
+**thirteen**. That looks like waste and is not: Julia caches the compiled code, so the
+repeats cost about 0.4 s each. **Memoising them was tried and bought ~5 s of 312 —
+reverted, because a shared-fixture hazard for 1.6% is bad economics.**
+
+**THE COST IS ONE-TIME COMPILATION, PER DISTINCT CONFIGURATION.** About 90 s goes on the
+first build and first salt step, and the rest on `structural_simplify` plus codegen for
+each of the ~14 distinct configurations the suite exercises — `raas=false`, `adh=false`,
+the sex pair, `body_mass=95`, the thyroid variants, the ensemble. **Cutting that means
+cutting configurations, which is coverage, which directive 1.10 does not permit.**
+
+**ERYTHROPOIESIS MADE EACH COMPILATION ABOUT 26% DEARER AND THAT IS THE REAL COST OF THE
+TWELFTH STATE:**
+
+    build #1   37.16 s -> 46.68 s        salt_step #1   35.42 s -> 45.42 s
+
+ADR 0023 §10 named this in advance — *"making the model slower for nothing"* — and it is
+about 20 s, not minutes. **CI did not move: 3.9 min before, 3.8 min after.**
+
+#### AND THE MACHINE DRIFTS MORE THAN THE CODE DOES
+
+**The same commit measured 2m14.7s and later 5m40.8s in one session.** Nothing changed but
+the machine. A paired back-to-back run then put current `main` at **4m39.3s** against
+**5m40.8s** for the commit before the de-indexing pass — i.e. current is *faster*, which
+is the opposite of what the unpaired numbers suggested.
+
+**SO: A SINGLE WALL-CLOCK TIMING ON THIS MACHINE IS NOT EVIDENCE OF ANYTHING.** Compare
+only paired runs taken back to back, or use the CI job durations, which run on hardware
+nobody here is also compiling on — and even those vary ±25% between two jobs on identical
+code, with 28-minute outliers in the run list.
+
+---
+
 ## 6. SETTLED — DO NOT RELITIGATE
 
 - **Julia stays.** **The `Provenance` job name.** **ADR 0004 default off.**
