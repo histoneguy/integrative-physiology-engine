@@ -27,10 +27,14 @@ claim the model exists to demonstrate rather than assert.
 GitHub Actions to find out whether something works.
 
 **MEASURED 2026-09-16, because the old note here said "~40 s warm" and it has not been
-that for a long time.** Full suite 3m19s; one model testset about 2m; **a ledger-only
-change checked against `IPE_TESTS="ledger provenance"` costs 23 s.** Most edits in this
-repo are ledger edits, so use the filter - it is the difference between 23 seconds and
-four and a half minutes.
+that for a long time.** One model testset about 2 min; **a ledger-only change checked
+against `IPE_TESTS="ledger provenance"` costs 23 s.** Most edits in this repo are ledger
+edits, so use the filter.
+
+**NO FULL-SUITE WALL-CLOCK FIGURE IS QUOTED HERE ON PURPOSE.** It has measured anywhere
+from 2m13s to 6m30s for code that differed by nothing. The 23 s figure is quotable
+because it is dominated by Julia startup rather than by the machine's mood; a whole-suite
+number is not.
 
 **THE COST IS COMPILATION, NOT INTEGRATION.** `structural_simplify` plus codegen for each
 of the ~14 distinct model configurations the suite exercises. Repeated calls are already

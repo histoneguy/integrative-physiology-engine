@@ -3997,6 +3997,28 @@ TWELFTH STATE:**
 ADR 0023 §10 named this in advance — *"making the model slower for nothing"* — and it is
 about 20 s, not minutes. **CI did not move: 3.9 min before, 3.8 min after.**
 
+#### AND I THEN MADE THE SAME MISTAKE AGAIN, TWO COMMITS LATER
+
+**Dropping the symbolic Jacobian was written up as "29% off the simulation", 4m39s ->
+3m19s. THAT CLAIM IS WITHDRAWN.** It was an unpaired local wall-clock comparison of the
+kind the section below forbids, taken on the machine that had just been shown to drift
+from 2m13s to 5m40s on identical code.
+
+**CI refused to confirm it.** The Julia jobs came in at 12m46s and 13m57s against 11m3s
+and 14m1s before the change - no improvement. And on that same pull request the
+non-gating diagnostics job ran **2m11s and 13m32s for identical code**, so CI runner
+variance is about 6x and cannot resolve a 29% effect either.
+
+**WHAT SURVIVES IS THE PAIRED MEASUREMENT, AND IT IS ENOUGH.** First solve with a
+symbolic Jacobian 21.0 s against 8.4 s without, taken seconds apart in one session, with
+the answers agreeing to 8.6e-10. **12.6 s of compilation saved per model configuration is
+real. "29% off the suite" was never established.** The change stays - it costs nothing
+and 772 tests pass - but the number came out of the record.
+
+**THE LESSON IS THAT WRITING THE RULE DOWN DID NOT STOP ME BREAKING IT.** The paragraph
+below was committed two commits before the claim it forbids. A rule in the handover is
+not a gate, and this repository has no gate for a performance claim.
+
 #### AND THE MACHINE DRIFTS MORE THAN THE CODE DOES
 
 **The same commit measured 2m14.7s and later 5m40.8s in one session.** Nothing changed but
