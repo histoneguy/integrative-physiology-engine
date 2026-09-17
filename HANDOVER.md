@@ -3933,6 +3933,92 @@ passes bit-identically.
 
 ---
 
+### 3.48 DRUMMER'S FULL TEXT IS CLOSED, AND THE SEARCH FOR IT FOUND SOMETHING BETTER
+
+**2026-09-17.** `RN.ANP.TAU`'s falsification clause asked for *"a human isotonic-loading
+study reporting the full cumulative sodium excretion curve out to 72 h"*, and §3.47 named
+Drummer's full text as the thing that would resolve the acute conflict.
+
+### IT IS NOT OBTAINABLE, AND EVERY ROUTE IS RECORDED SO NOBODY REPEATS THE SEARCH
+
+Drummer C et al. *Am J Physiol* 1992;262(5 Pt 2):F744–54. PMID 1590419.
+
+| route | result |
+|---|---|
+| Europe PMC | `isOpenAccess=N`, `inEPMC=N`, `inPMC=N`, `hasPDF=N`, one link marked *Subscription required* |
+| OpenAlex | `oa_status: closed`, `best_oa_location: null`, **four** locations, none open |
+| `journals.physiology.org` | HTTP **403** |
+| **the authors' own institutional repository**, `elib.dlr.de/27251` | metadata only — *"Dieses Archiv kann nicht den Volltext zur Verfügung stellen"* |
+
+**The clause is not discharged. It is BLOCKED**, which is a different thing and is recorded
+as such — the same standing `RESP.CO2.ARTERIAL_RESTING` carries for Crapo 1999.
+
+**And the two obvious substitutes are closed as well.** PMID 1324562, the head-down-tilt
+companion: `isOpenAccess=N`. And **Luft FC et al., Am J Kidney Dis 1983;2(4):464–70, PMID
+6823962**: `oa_status: closed`. That one hurts, because it is the sharpest instrument that
+exists for §3.47's conflict — **2 L of saline over 2 h into normal men at FOUR prior sodium
+intakes (10, 300, 600, 800 mEq/day)**, reporting that the natriuresis **depends on prior
+intake**, with fractional sodium excretion of **6–7%** maximal at 600 mEq/day. That is the
+acute response measured at four chronic operating points. **Abstract only.**
+
+### BUT THE SEARCH RETURNED AN OPEN, MODERN, QUANTITATIVE BALANCE STUDY
+
+**Van Regenmortel N, Langer T, De Weerdt T, Roelant E, Malbrain M, Van den Wyngaert T,
+Jorens P. Effect of sodium administration on fluid balance and sodium balance in health and
+the perioperative setting. J Crit Care 2022;67:157–165. PMID 34798374.
+doi:10.1016/j.jcrc.2021.10.022. OPEN ACCESS, CC BY-NC-ND, FULL TEXT READ** from the
+Milano-Bicocca institutional copy.
+
+The healthy arm, **MIHMoSA**: 12 healthy volunteers, crossover, two 48 h periods, **no oral
+intake at all**, maintenance fluid at 25 mL/kg/day containing 154 or 54 mmol/L of sodium.
+Habitual intake of the participants, from a dedicated 24 h collection: **124 mmol/day
+(IQR 86–176)**.
+
+| | Na54 | Na154 |
+|---|---|---|
+| sodium administered, 48 h | **188 ± 44 mmol** | **535 ± 127 mmol** |
+| urine sodium, 48 h | 311 ± 104 | 503 ± 216 |
+| cumulative sodium balance at 48 h | **−132** (−179 to 84) | **+39** (−8 to 87) |
+| cumulative fluid balance at 48 h | **162 mL** (−34 to 357) | **751 mL** (555 to 947) |
+
+Between-treatment: **ΔNa 171 mmol (155–188) → Δfluid 590 mL (450–729) → Δweight 586 g
+(198–973).**
+
+### TWO THINGS IN IT ARE WORTH MORE THAN WHAT DRUMMER WOULD HAVE GIVEN
+
+**(1) A TIMESCALE, IN HEALTH, WITH A NUMBER.** *"Urinary sodium excretion gradually
+increased, reaching a plateau at around 200 mmol/L after approximately 24 h"*, and sodium
+output *"matches intake again near the end of the 48 h study period."* **The model has never
+been tested on how long it takes to realign excretion with a stepped intake** — only on
+where it ends up. That is a new endpoint and this model already runs the manoeuvre.
+
+**(2) A HUMAN NUMBER THAT BEARS ON ADR 0004, WHICH IS PROVISIONAL AND SWITCHED OFF.** 171
+mmol of extra sodium retained 590 mL of fluid. **At plasma tonicity 171 mmol would carry
+1221 mL. Only 48% of it appeared as fluid.** The paper draws the same conclusion in its own
+words — *"sodium-induced fluid retention is eventually limited, even in the presence of
+persisting sodium administration"* — and supports it with the TOPMAST contrast, where 321
+mmol bought 887 mL. **`BF.NA.OSMOTICALLY_INACTIVE_FRACTION` is `assumed` at 0.15 and
+`storage` defaults to false**, so the model represents none of this. §3.47's stage 1
+measured those rows as bit-identical across a 300-fold sweep *because the branch is off*.
+
+### WHAT MUST NOT BE DONE WITH IT YET
+
+**This is a different manoeuvre from Drummer's and Jensen's** — a 48 h continuous infusion
+against an acute bolus — so **it does not resolve §3.47's conflict** and must not be
+presented as doing so.
+
+**And it carries a confound the paper names itself: the subjects fasted for 48 h.** Body
+weight fell in both arms, the authors attribute part of it to undernutrition, and a balance
+study in a fasting subject is not a balance study in a fed one. **The between-treatment
+contrast is the defensible quantity** because the fast is common to both arms; the absolute
+balances are not.
+
+**NOTHING WAS EXTRACTED INTO THE LEDGER FROM IT. Using it as a test needs its own
+pre-registration**, and this section exists so that writing one is not mistaken for
+discovering it afterwards.
+
+---
+
 ## 4. NEXT, IN ORDER
 
 **Rewritten 2026-09-03, and item 1 was discharged the same day.** The previous list's

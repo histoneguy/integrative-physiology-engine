@@ -144,11 +144,16 @@ The adapting form reaches the target and breaks the out-of-sample number:
 **Drummer wants an acute gain three times the chronic one; Jensen says it is already about
 right. No value of k satisfies both.**
 
-**WHAT WOULD RESOLVE IT is a third measurement, not a parameter:** Drummer's full text,
-which would give the interval series rather than one half-life read from an abstract; or
-any study reporting **both** cumulative volume and fractional sodium excretion in the same
-subjects. **Neither form may be adopted until then** — both are committed default-off,
-and the default build is unchanged at 12 states.
+**WHAT WOULD RESOLVE IT is a third measurement, not a parameter — AND THE TWO BEST ONES
+ARE BEHIND PAYWALLS.** Pursued 2026-09-17, HANDOVER §3.48. Drummer's full text is
+`oa_status: closed` at all four locations, and **the authors' own institutional repository
+says it cannot provide it**. Luft 1983 (PMID 6823962) — 2 L over 2 h at four prior sodium
+intakes, natriuresis dependent on prior intake, FE_Na 6–7% — is closed too, and it is the
+sharpest instrument that exists for this. **Both are abstract-only. This is BLOCKED, not
+resolved**, and it needs institutional access rather than more searching.
+
+**Neither form may be adopted until then** — both are committed default-off, and the
+default build is unchanged at 12 states.
 
 ### B2. Salt sensitivity is a fit, and the sex difference in it is a prediction nobody has checked
 
@@ -689,3 +694,26 @@ this order.
   protocol mismatch. Resolved by any 24 h human deprivation study reporting **both** the
   body-mass deficit **and** the osmolality change in the same subjects.
 - **`START-HERE.md` is stale** and describes an obsolete workflow. Not rewritten.
+
+### B1d. An open balance study exists that the model has never been tested against
+
+**HANDOVER §3.48.** Found while searching for Drummer's full text. Van Regenmortel N et al.
+*J Crit Care* 2022;67:157–165, **PMID 34798374, open access CC BY-NC-ND, full text read**.
+Healthy arm (MIHMoSA): 12 volunteers, crossover, 48 h, no oral intake, 154 vs 54 mmol/L
+maintenance fluid at 25 mL/kg/day; habitual intake 124 mmol/day.
+
+**Two endpoints the model has never been judged on:**
+
+1. **How long realignment takes.** Urinary sodium excretion plateaus *"after approximately
+   24 h"* and output matches intake by the end of 48 h. **This model has only ever been
+   tested on where a salt step ENDS UP, never on how long it takes to get there.**
+2. **How much of a sodium load appears as fluid.** ΔNa 171 mmol → Δfluid **590 mL**. At
+   plasma tonicity that sodium would carry 1221 mL, so **only 48% appeared as fluid.** The
+   paper's own conclusion: *"sodium-induced fluid retention is eventually limited."* This
+   bears directly on `BF.NA.OSMOTICALLY_INACTIVE_FRACTION` (`assumed` 0.15) and ADR 0004,
+   which is **PROVISIONAL and switched off by default**.
+
+**Not yet used, and it must not be used without a pre-registration.** It is a different
+manoeuvre from the acute bolus, so it does not settle B1c; and the subjects **fasted for
+48 h**, which the paper itself names as a confound on the absolute balances. The
+between-treatment contrast is the defensible quantity.
