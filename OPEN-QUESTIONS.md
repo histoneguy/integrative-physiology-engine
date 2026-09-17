@@ -124,7 +124,14 @@ times the gain the chronic one permits.**
 
 **WHAT WOULD RESOLVE IT — AND THE PASS THAT TRIED IT FOUND SOMETHING ELSE. See B1c.**
 
-### B1c. Two acute human datasets disagree by twofold, and no form reconciles them
+### B1c. ~~Two acute human datasets disagree by twofold~~ WITHDRAWN 2026-09-17 — §3.49
+
+**The conflict recorded here does not exist.** With Drummer's full text the model is 1.25×
+off on the **sodium** half-life and 1.90× off on the **volume** half-life; §3.46's
+three-fold gain requirement was a water problem being driven through a sodium lever, which
+is why it broke Jensen. Jensen measures fractional **sodium** excretion and agrees.
+**The open problem is the sodium store — see B1e.** What follows is kept as the record of
+how the forms were tested, and its discriminator result stands.
 
 **HANDOVER §3.47.** Both candidate forms were built, with the discriminator fixed before
 either: a static convex gain bends the chronic pressure–sodium relation (12–20% of the MAP
@@ -717,3 +724,28 @@ maintenance fluid at 25 mL/kg/day; habitual intake 124 mmol/day.
 manoeuvre from the acute bolus, so it does not settle B1c; and the subjects **fasted for
 48 h**, which the paper itself names as a confound on the absolute balances. The
 between-treatment contrast is the defensible quantity.
+
+### B1e. Water cannot leave ahead of salt in this model, and in people it does
+
+**HANDOVER §3.49.** Drummer 1992's full text reports **two** monoexponential half-lives
+after an acute isotonic load: **7 h for body weight, 10 h for sodium balance.** Weight comes
+back first — a ratio of **0.70**. **The model's ratio is 1.065**, because `V_ecf` is tied to
+`Na_ecf` and there is nowhere to put sodium that does not carry water.
+
+**Three independent human numbers point the same way:**
+
+| | |
+|---|---|
+| Drummer's half-life dissociation | 7 h weight against 10 h sodium |
+| Van Regenmortel 2022 | ΔNa 171 mmol → Δfluid 590 mL — **48%** of what plasma tonicity implies |
+| Drummer's haematocrit | −10.0% at 6 h; model −6.4% |
+
+**`BF.NA.OSMOTICALLY_INACTIVE_FRACTION` is `assumed` at 0.15, and ADR 0004 is PROVISIONAL
+with `storage` defaulting to false**, so nothing in the running model reads either row.
+
+**The third number is probably NOT the store** — a haematocrit shortfall at 6 h is what a
+constant `f_pv` would produce, since the model equilibrates an infused load across plasma
+and interstitium instantly. It is listed because it must not be swept into the store's
+evidence by accident.
+
+**Pre-registered: `validation/sodium_store_prereg.md`.**
