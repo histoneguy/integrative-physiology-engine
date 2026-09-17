@@ -73,7 +73,7 @@ function run_population(sys, population;
                         ensemble_alg = EnsembleThreads(),
                         kwargs...)
 
-    base = ODEProblem(sys, [], (0.0, tspan_days), []; jac = true, sparse = true)
+    base = ODEProblem(sys, [], (0.0, tspan_days), []; sparse = true)
 
     # SciMLBase now hands prob_func/output_func an EnsembleContext rather than a
     # bare Int, and has changed the arity it calls them with. Accept both: pinning
