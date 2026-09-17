@@ -4,6 +4,22 @@ using ModelingToolkit
 using OrdinaryDiffEq
 using SciMLBase
 
+# THE SALT-SENSITIVITY PIN, STATED ONCE. It was written out THREE times - in
+# "salt sensitivity pins G_pn", in "ADH amplifies salt sensitivity" and in "size
+# scaling leaves the reference individual bit-identical" - and all three had to be
+# found by hand when it moved. HANDOVER section 3.32 already recorded this exact
+# failure at TWO copies: "this is a VALUE written down twice, and the second copy
+# was missed on the first pass." It was three, and failure mode 21 is the general
+# form. One const, three readers.
+#
+# 1.8858 -> 2.0042 on 2026-09-16 by deindexing_prereg.md Stage 2. De-indexing the
+# stroke volume raised male TPR0 (CO fell at unchanged MAP), and dMAP/dV_ecf scales
+# with it. THE MODEL STAYS INSIDE THE HUMAN 1.70-2.30 mmHg per 100 mmol/day and
+# moves from near the floor toward the middle. NOTHING WAS FITTED TO PUT IT THERE -
+# deindexing_prereg.md section 4 forbids re-estimating G_pn or G_anp, and neither
+# moved.
+const SALT_MAP_SHIFT = 2.0042
+
 @testset "IPE" begin
 
     # TOLERANCES IN THIS FILE ARE PHYSICAL, NOT NUMERICAL.
@@ -266,7 +282,7 @@ using SciMLBase
         # construction. What moved is the RESPONSE, which is the whole point.
         r = salt_step()
         v = check_pressure_natriuresis(r)
-        @test isapprox(v.map_shift_mmHg, 1.8858; atol = 0.05)
+        @test isapprox(v.map_shift_mmHg, SALT_MAP_SHIFT; atol = 0.05)
 
         # AND THE OTHER HALF OF THE PAIR, ADDED 2026-09-02 AT NO EXTRA COMPUTE:
         # dMAP/dV_ecf, which is set by CV.VENOUS_RETURN.SENSITIVITY and NOT by G_pn.
@@ -298,7 +314,13 @@ using SciMLBase
         # human 2.97-4.16 that spans 40%, so the agreement is unchanged in any
         # sense the data can resolve - directive 1.9. The pin is tight because a
         # loose pin catches nothing, NOT because the figure means anything.
-        @test isapprox(ratio, 2.9814; rtol = 1e-3)
+        # 2.9814 -> 3.2185 on 2026-09-16, deindexing_prereg.md Stage 2. Same
+        # cause as SALT_MAP_SHIFT above: de-indexing lowered male cardiac output at
+        # an unchanged MAP, so TPR0 rose and dMAP/dV_ecf rose with it. THE MODEL
+        # MOVES FROM THE FLOOR OF THE HUMAN 2.97-4.16 INTO THE BAND, and it was not
+        # fitted there - this test's own comment says "do not simply refit G_vr to
+        # make it pass", and G_vr was not touched.
+        @test isapprox(ratio, 3.2185; rtol = 1e-3)
     end
 
     @testset "ADR 0012 stage 1 is a change of variables, not of behaviour" begin
@@ -377,7 +399,7 @@ using SciMLBase
         # reason: the operating point is pinned by construction and only the
         # response can move. This is a sourced physiological term landing, not a
         # tuning.
-        pre_partition = (205.0 => 86.9954,
+        pre_partition = (205.0 => 87.0053,
         # RE-PINNED 2026-09-09 when 55 ledger values were rounded to measurement
         # precision. The movement is 0.01 mmHg - four orders below what a
         # sphygmomanometer resolves - and comes from cardiac output going
@@ -393,8 +415,8 @@ using SciMLBase
         # water accumulation, and removing it moved the 30-day endpoint by 0.011
         # mmHg. That is the fourth significant figure on a pressure, which is
         # directive 1.9 territory - but it is a rounding error being REMOVED.
-                         154.0 => 86.1324,
-                         103.0 => 85.2023)
+                         154.0 => 86.0856,
+                         103.0 => 85.0956)
         # RE-PINNED 2026-09-09, BR.OPEN_LOOP_GAIN 2.0 -> 5.62. A stronger
         # reflex leaves a larger residual setpoint error at the end of a
         # 30-day arm, because pressure is still drifting there and the
@@ -459,8 +481,12 @@ using SciMLBase
         # still the DISABLED-ADH branch, so it moves for its own reasons and by its
         # own amount; the default model moved 2.0404 -> 1.8858 over the same change.
         # 1.8001 -> 1.7893 on 2026-09-09 with BR.OPEN_LOOP_GAIN, same cause.
+        # 1.7893 -> 1.9088 on 2026-09-16, deindexing_prereg.md Stage 2. Still the
+        # DISABLED-ADH branch, so it moves by its own amount; the default model
+        # moved 1.8858 -> 2.0042 over the same change, and SALT_MAP_SHIFT carries
+        # that one.
         @test isapprox(check_pressure_natriuresis(r).map_shift_mmHg,
-                       1.7893; rtol = 1e-3)   # 4.9352 -> 4.9067 -> 4.7672 -> 2.2467
+                       1.9088; rtol = 1e-3)   # 4.9352 -> 4.9067 -> 4.7672 -> 2.2467
                        # 2026-09-02: ADR 0010's volume-keyed path landed and the
                        # disabled-ADH branch moved with everything else.
     end
@@ -498,9 +524,9 @@ using SciMLBase
         # REPINNED 2026-09-03 with the ADR 0012 block above, and they move
         # together on purpose: these two blocks pin the SAME three numbers to
         # assert DIFFERENT claims about them. RN.GFR.VOLUME_SENSITIVITY wired.
-        pre_raas = (205.0 => 86.9954,
-                    154.0 => 86.1324,
-                    103.0 => 85.2023)
+        pre_raas = (205.0 => 87.0053,
+                    154.0 => 86.0856,
+                    103.0 => 85.0956)
         # RE-PINNED 2026-09-09 with BR.OPEN_LOOP_GAIN 2.0 -> 5.62, same cause and
         # same magnitude as the ADR 0012 copy above: a stronger reflex leaves a
         # larger residual setpoint error at the end of a 30-day arm. Fourth
@@ -904,7 +930,7 @@ using SciMLBase
         # the reabsorbed fraction, and it damps the pressure excursion. The
         # `on > off` assertion above is the claim this testset exists to make and
         # it is untouched: ADH still amplifies, from a lower base.
-        @test isapprox(on, 1.8858; atol = 0.02)
+        @test isapprox(on, SALT_MAP_SHIFT; atol = 0.02)
     end
 
     @testset "the urine solute load tracks sodium (water limb responds to salt)" begin
@@ -1249,7 +1275,7 @@ using SciMLBase
         # round - which is the mistake ADR 0010's gain made and this testset caught
         # within one run - the loop below would have failed and this line passed.
         v = check_pressure_natriuresis(salt_step())
-        @test isapprox(v.map_shift_mmHg, 1.8858; atol = 0.02)
+        @test isapprox(v.map_shift_mmHg, SALT_MAP_SHIFT; atol = 0.02)
 
         # THE INVARIANCE ITSELF, on the whole loop rather than on one arm.
         # With sodium intake scaled along with the individual - which is what an
@@ -1491,8 +1517,27 @@ using SciMLBase
         # HANDOVER section 7. Assert the DIRECTION and the magnitude separately so
         # that a future source can falsify the size without silently deleting the
         # direction.
+        # 1.172 -> 1.062 ON 2026-09-16, AND MOST OF THIS PREDICTION WAS AN
+        # INDEXING ARTEFACT. deindexing_prereg.md Stage 2.
+        #
+        # CV.SV.NOMINAL carried Petersen's COHORT body size - men of 1.96 m2
+        # against women of 1.67, a 17 percent difference - on top of the model's
+        # own sexed mass sampling. Its own note called that a double count and
+        # said fixing it needed a BSA row. With the pair de-indexed to the model's
+        # reference body the stroke-volume difference falls 28 -> 13 percent, the
+        # cardiac-output difference 22 -> 7.5, and this prediction 17.2 -> 6.2.
+        #
+        # THE DIRECTION SURVIVES AND THE MAGNITUDE DID NOT. That is why the two
+        # were asserted separately, and this is the case that separation was
+        # written for: "Assert the DIRECTION and the magnitude separately so that
+        # a future source can falsify the size without silently deleting the
+        # direction." It was not a future SOURCE that falsified it - it was a
+        # double count inside the model.
+        #
+        # HANDOVER section 4 item 7 says of this number: "Source it or falsify
+        # it." Two thirds of it is now falsified, from inside.
         @test f > m
-        @test isapprox(f / m, 1.172; rtol = 0.02)
+        @test isapprox(f / m, 1.062; rtol = 0.02)
 
         # THE PAIR IS NOT INERT ANY MORE, AND THIS IS WHERE IT BITES. ADR 0014's
         # falsifiable test asks that a sexed pair change a result. It changes the
@@ -1517,7 +1562,27 @@ using SciMLBase
         # by haematocrit, which section 7 listed as debt precisely because it
         # could not be.
         em, ef = exc(:male), exc(:female)
-        @test ef < em
+        # INVERTED 2026-09-16, ef < em -> ef > em, AND NOT DELETED.
+        #
+        # The block above says dMAP/dV_ecf scales as TPR0*BV0 and that the product
+        # is 6.9 percent LARGER in women, so women reach the same pressure shift on
+        # a smaller extracellular excursion. De-indexing the stroke volume raised
+        # male TPR0 and lowered female, and the product reversed:
+        #
+        #     before  male 0.057043  female 0.060959   female/male = 1.069
+        #     after   male 0.061539  female 0.057908   female/male = 0.941
+        #
+        # So women now need a LARGER excursion, not a smaller one. The sign of a
+        # sexed model prediction reversed because a body-size component was being
+        # counted twice.
+        #
+        # THIS TEST'S OWN DIAGNOSTIC IS WRONG HERE AND THAT IS WORTH SAYING. It
+        # reads: "If this assertion ever fails while the one above still passes,
+        # the cardiac sex pair has stopped reaching the circulation at all." The
+        # pair still reaches the circulation - it points the other way. The
+        # diagnostic assumed TPR0 would keep its sexed ordering, and de-indexing
+        # is exactly what changes that ordering.
+        @test ef > em
         tpv(sx) = L.param(:CV_TPR_NOMINAL, sx) * L.param(:CV_PLASMA_ECF_FRACTION, sx)
 
         # THE CLOSED-FORM IDENTITY NO LONGER HOLDS, 2026-09-02, and that is

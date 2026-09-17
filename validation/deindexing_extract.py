@@ -96,6 +96,63 @@ def gfr_deindexed(bsa):
     return SOARES["idx_mL_min"] * (bsa / BSA_CONVENTION) * 1440.0 / 1000.0
 
 
+STAGE2_OUTCOME = [
+    "THE PRE-REGISTERED PREDICTION HELD AND IT COULD HAVE FAILED. Male stroke",
+    "volume -6.9 percent, female +5.0. Opposite signs, each under 10, fixed in",
+    "deindexing_prereg.md section 6 before the implied cohort BSA was computed.",
+    "",
+    "BUT THE CONSEQUENCE IS NOT THE ROW. CV.SV.NOMINAL carried Petersen's COHORT",
+    "body size - men of 1.96 m2 against women of 1.67 - on top of the model's own",
+    "sexed mass sampling. Removing that double count moves:",
+    "",
+    "    stroke volume sex difference        28  -> 13  percent",
+    "    cardiac output sex difference       22  -> 7.5 percent",
+    "    predicted salt-sensitivity ratio    1.172 -> 1.062",
+    "    TPR0 x BV0, female/male             1.069 -> 0.941",
+    "",
+    "THE LAST LINE IS A REVERSAL. The test suite asserted, with the mechanism",
+    "written out, that dMAP/dV_ecf scales as TPR0*BV0 and that the product is",
+    "larger in women, so women reach the same pressure shift on a SMALLER",
+    "extracellular excursion. De-indexing raised male TPR0 and lowered female, and",
+    "the ordering flipped: women now need a LARGER excursion.",
+    "",
+    "SO A SEXED MODEL PREDICTION WAS SUBSTANTIALLY AN INDEXING ARTEFACT. HANDOVER",
+    "section 4 item 7 records the 17.7 percent as debt and says 'source it or",
+    "falsify it'. Two thirds of it is now falsified, and not by a source - by a",
+    "double count inside the model that the row itself had described.",
+    "",
+    "NOTHING WAS FITTED. deindexing_prereg.md section 4 forbids re-estimating",
+    "G_pn and G_anp and neither moved. The two regression pins that failed both",
+    "moved INTO the middle of their human bands: the salt-sensitivity shift from",
+    "1.886 to 2.004 against a human 1.70-2.30, and dMAP/dV_ecf from 2.98 to 3.22",
+    "against a human 2.97-4.16, where 2.98 sat on the floor. Their own comments",
+    "say to re-pin and not to refit, and that is what was done.",
+]
+
+STAGE3_DEFERRAL = [
+    "GFR IS NOT DE-INDEXED IN THIS PASS. The correction is computed above and is",
+    "+5.4 percent for men and +1.2 for women at the corrected reference body.",
+    "",
+    "WHY NOT. Sodium excretion is GFR * C_Na * (1-FR), so a higher GFR must be",
+    "absorbed by RN.NA.FRACTIONAL_REABSORPTION, which is derived and would take it",
+    "at the operating point. But BF.NA.INTAKE_NOMINAL is a single `both` row while",
+    "the de-indexed GFR is a PAIR, so FR_Na would become sexed too - and the model",
+    "would then assert a sex difference in tubular reabsorption that exists only",
+    "because both sexes are fed the same absolute sodium. Soares measured NO sex",
+    "difference in indexed GFR, p = 0.134.",
+    "",
+    "AND THE SENSITIVITY, NOT ONLY THE LEVEL, WOULD MOVE. Everything acting on FR",
+    "scales with the filtered load, so a 5 percent GFR rise makes every natriuretic",
+    "response stronger - and section 3.40 measured CV.ANP.NATRIURETIC_GAIN's own",
+    "interval swinging salt sensitivity by 45 percent of baseline. Moving GFR and",
+    "then re-fitting the two parameters that carry the model is what",
+    "deindexing_prereg.md section 9 names as the second way this pass fails.",
+    "",
+    "THIS PASS ALREADY CARRIES A REVERSED SEXED PREDICTION. Two structural changes",
+    "and one review is how a real effect and an artefact get attributed to each",
+    "other. Recorded, unapplied, and HANDOVER section 4 item 10 stays open for it.",
+]
+
 def main() -> int:
     W = 78
     print("=" * W)
@@ -194,9 +251,20 @@ def main() -> int:
     print("  female UP, opposite signs, each under 10 percent. Prereg section 6, fixed")
     print("  before the implied cohort BSA was computed; section 8 falsifiable test 4.")
 
+    print("\n5. WHAT STAGE 2 DID TO THE MODEL, AND IT IS BIGGER THAN THE ROW")
+    print("-" * W)
+    for line in STAGE2_OUTCOME:
+        print("  " + line)
+
+    print("\n6. STAGE 3 IS NOT TAKEN, AND THE NUMBER IS RECORDED UNAPPLIED")
+    print("-" * W)
+    for line in STAGE3_DEFERRAL:
+        print("  " + line)
+
     print("\n" + "=" * W)
-    print("STAGE 1: branch B1 for men (BSA -1.7%), branch B2 for women (+0.15%).")
-    print("Stages 2 and 3 follow at the corrected reference body.")
+    print("STAGE 1: B1 for men (BSA -1.7%), B2 for women (+0.15%). Behaviourally inert.")
+    print("STAGE 2: taken. Opposite signs as predicted. A sexed prediction reversed.")
+    print("STAGE 3: DEFERRED. GFR +5.4% male / +1.2% female, measured and unapplied.")
     print("=" * W)
     return 0
 
