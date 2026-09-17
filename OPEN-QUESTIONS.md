@@ -748,4 +748,21 @@ constant `f_pv` would produce, since the model equilibrates an infused load acro
 and interstitium instantly. It is listed because it must not be swept into the store's
 evidence by accident.
 
-**Pre-registered: `validation/sodium_store_prereg.md`.**
+**Stage 1 is done — HANDOVER §3.50.** The store **can** produce the dissociation, which
+refutes the pre-registration's own §2.1 prediction: the ratio crosses 0.70 at `f_store`
+≈ **0.40**, against a ledger value of 0.15 that leaves it at 1.046 — indistinguishable from
+switched off.
+
+**But it reproduces the ORDERING and not the SPEED.** Drummer needs volume 7 h *and* sodium
+10 h, both faster than this model's 13.3 and 12.5. The store speeds volume and **slows**
+sodium, pivoting the pair rather than moving both down: at the crossing, volume is 10.5 h
+against 7 and sodium 14.9 h against 10. Jensen degrades 110.2 → 88.7 against a measured 122
+— still inside the harness band, and still the wrong way.
+
+**So the store is necessary and not sufficient**, and something else must speed the whole
+clearance up. The pre-registration forbids this pass from finding out what, because §3.49
+withdrew a published conclusion for reading a water defect as a sodium one.
+
+**What it needs now is sourcing, not fitting.** `f_store` ≈ 0.40 is a **diagnostic**.
+Titze's balance and skin-sodium work has never been opened in this repository, and ADR 0004
+keeps `provisional` until it has been. `storage` stays `false` by default.
