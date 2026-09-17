@@ -83,7 +83,9 @@ function Renal(; name, solute_tracking::Bool = true,
                body_mass = BF_BODY_MASS_REFERENCE,
                sex::Symbol = :male,
                anp_gain = CV_ANP_NATRIURETIC_GAIN,
-               anp_convexity = 0.0)
+               anp_convexity = 0.0,
+               anp_adaptation::Bool = false,
+               anp_adapt_fraction = 0.0, anp_adapt_tau = 1.0)
 
     # SURFACE-like for filtration, the pressure-natriuresis slope and the solute
     # load; MASS-like for the reference volumes. src/scaling.jl carries the
@@ -260,6 +262,37 @@ function Renal(; name, solute_tracking::Bool = true,
         # KEPT AT DEFAULT ZERO so the refutation can be re-run, on the precedent
         # G_anp itself was introduced on. It is not a candidate.
         c_anp      = anp_convexity
+        # FORM (B), THE ADAPTING TERM. DIAGNOSTIC, BEHIND anp_adaptation, AND THE
+        # DEFAULT BUILD IS BIT-IDENTICAL - with the flag off the extra state is
+        # eliminated by structural_simplify exactly as bf.Na_store is, so the model
+        # is still 12 states. Same pattern as ADR 0004's storage compartment.
+        #
+        # WHAT IT IS. The natriuretic drive adapts: a slow state subtracts a fixed
+        # FRACTION of the sustained signal, so a RAPID volume excursion sees the
+        # full gain and a SUSTAINED one sees (1 - k_adapt) of it. The acute-to-
+        # chronic ratio is therefore 1/(1 - k_adapt) exactly, and HANDOVER 3.46
+        # measured that the acute response needs about THREE times the chronic -
+        # which is k_adapt = 2/3.
+        #
+        # WHY THIS FORM AND NOT THE CONVEX ONE. validation/volume_natriuresis_form_prereg.md
+        # section 3.1 fixed the discriminator before either was built: a static
+        # convex gain BENDS the chronic pressure-sodium relation, an adapting one
+        # leaves it STRAIGHT, and the human relation is quoted as a single slope per
+        # 100 mmol/day by all three meta-analyses. The convex form was built and
+        # refuted - see c_anp above. This one is linear in the excursion at every
+        # timescale, so it cannot bend the chronic relation at all, and that is a
+        # PREDICTION this pass must check rather than assume.
+        #
+        # IT IS ALSO WHAT THE MODEL ALREADY DOES ELSEWHERE. ra.esc is an escape
+        # state on the RAAS tubular arm, and fr_mod goes to zero at steady state by
+        # the same device. This is that mechanism on the volume-keyed path.
+        #
+        # BOTH ROWS ARE INTENSIVE. k_adapt is a fraction; tau_adapt is a time. And
+        # NEITHER HAS A LEDGER ROW, on the precedent G_anp itself was introduced on:
+        # a diagnostic may exist without one, and must not acquire one until it is
+        # sourced rather than solved.
+        k_adapt    = anp_adapt_fraction
+        tau_adapt  = anp_adapt_tau
         V_blood_ref = mz * LedgerParams.param(:CV_BLOOD_VOLUME_NOMINAL, sex)
         # THE LAG, AND IT IS WHY THE ALGEBRAIC FORM WAS REFUTED. A single
         # instantaneous gain cannot carry both limbs: the ACUTE natriuretic
@@ -309,6 +342,7 @@ function Renal(; name, solute_tracking::Bool = true,
         # mEq/day. Its steady-state value is G_anp*(V_blood - V_blood_ref), so the
         # CHRONIC gain is G_anp exactly and the ACUTE gain is smaller by the lag.
         anp_sig(t) = 0.0
+        anp_adapt(t) = 0.0   # FORM (B) - zero and inert unless anp_adaptation
     end
 
     eqs = [
@@ -454,7 +488,7 @@ function Renal(; name, solute_tracking::Bool = true,
         # EXACTLY, so every existing result is bit-identical by construction.
         D(anp_sig) ~ (G_anp * (V_blood - V_blood_ref) *
                       (1.0 + c_anp * abs(V_blood - V_blood_ref) / V_blood_ref)
-                      - anp_sig) / tau_anp,
+                      - anp_adapt - anp_sig) / tau_anp,
 
         Na_reabsorbed ~ FR_effective * Na_filtered,
         Na_excr       ~ Na_filtered - Na_reabsorbed,
@@ -514,6 +548,14 @@ function Renal(; name, solute_tracking::Bool = true,
         # at the reference load; see the test.
         H2O_excr ~ max(Osm_load / U_max, Osm_load / u_osm),
     ]
+
+    # FORM (B). With the flag off this is D(anp_adapt) ~ 0 on a state initialised at
+    # zero, which structural_simplify eliminates - the default build stays at 12
+    # states and every existing result is bit-identical by construction.
+    append!(eqs, anp_adaptation ?
+            [D(anp_adapt) ~ (k_adapt * G_anp * (V_blood - V_blood_ref) - anp_adapt) /
+                            tau_adapt] :
+            [D(anp_adapt) ~ 0.0])
 
     return MTKSystem(eqs, t, vars, pars; name)
 end
