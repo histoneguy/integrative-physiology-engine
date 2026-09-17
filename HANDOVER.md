@@ -3933,7 +3933,12 @@ passes bit-identically.
 
 ---
 
-### 3.48 DRUMMER'S FULL TEXT IS CLOSED, AND THE SEARCH FOR IT FOUND SOMETHING BETTER
+### 3.48 DRUMMER'S FULL TEXT IS CLOSED TO SEARCH, AND THE OWNER SUPPLIED IT ANYWAY
+
+**2026-09-17. The routes below are all still closed and are kept so nobody repeats the
+search — but the paper itself is no longer missing: the owner produced it from
+institutional access the same day, along with Fujimoto 2013. What it says is §3.49, and it
+OVERTURNS §3.46 and §3.47.**
 
 **2026-09-17.** `RN.ANP.TAU`'s falsification clause asked for *"a human isotonic-loading
 study reporting the full cumulative sodium excretion curve out to 72 h"*, and §3.47 named
@@ -4019,6 +4024,82 @@ discovering it afterwards.
 
 ---
 
+### 3.49 THE FULL TEXT SAYS THE SODIUM IS NEARLY RIGHT AND THE WATER IS WRONG
+
+**2026-09-17**, on the paper the owner supplied. `bench/drummer_fulltext.jl`.
+Pre-registered under `validation/late_time_course_prereg.md`, whose §6 branch L2 asked for
+exactly this and could not get it.
+
+### THE ABSTRACT CARRIED ONE HALF-LIFE. THE FULL TEXT CARRIES TWO
+
+> *"By fitting the decline in body weight relations to a monoexponential function, a
+> half-life of ~7 h for returning to baseline body weights was found. **The respective
+> half-life for reachieving sodium balance was 10 h.**"*
+
+| | model | Drummer | |
+|---|---|---|---|
+| volume excursion half-life | 13.33 h | **7.0 h** | 1.90× too slow |
+| **sodium** excursion half-life | 12.52 h | **10.0 h** | **1.25× too slow** |
+
+And the interval series, as differences from a same-subject **control experiment**:
+
+| window | model H₂O | Drummer | model Na | Drummer |
+|---|---|---|---|---|
+| 0–3 h | 53 mL | 104 | 31.1 mmol | 20.0 |
+| 3–22 h | **1429** | **1322** | **220.6** | **261.0** |
+| 22–46 h | 475 | 504 | 53.4 | 91.3 |
+
+**The bulk period is within 8% on water and 15% on sodium.** The model reproduces the
+cumulative excretion of an acute isotonic load rather well.
+
+### SO §3.46 AND §3.47 DIAGNOSED THE WRONG ORGAN, AND THE CONFLICT THEY REPORTED DISSOLVES
+
+§3.46 measured that reaching a 7 h half-life needs **about three times** the natriuretic
+gain, and §3.47 concluded that Drummer and Jensen therefore **disagree by twofold** and
+that *"no value of k satisfies both"*. **THAT CONCLUSION IS WITHDRAWN.**
+
+**The three-fold requirement was the model being made to fix a WATER problem by excreting
+SODIUM.** Jensen measures fractional **sodium** excretion; the model is 1.25× off on sodium
+and Jensen has it at 110.4% against 122%. **Those two agree, and they never disagreed.**
+What disagreed was a sodium-only lever pointed at a volume endpoint.
+
+**The `anp_adaptation` and `anp_convexity` diagnostics remain correct as measurements and
+are now answers to a question that should not have been asked.** Both stay default-off.
+§3.47's discriminator result — that a static convex gain bends the chronic pressure–sodium
+relation and an adapting one does not — is unaffected and stands.
+
+### WHAT IS ACTUALLY BROKEN, AND THREE INDEPENDENT HUMAN NUMBERS NOW POINT AT IT
+
+**Drummer's weight returns FASTER than his sodium: a half-life ratio of 0.70. The model's
+is 1.065.** In this model extracellular volume is tied to extracellular sodium, so **water
+cannot leave ahead of salt.** A compartment that holds sodium *without* water is exactly
+what produces that dissociation.
+
+| evidence | number |
+|---|---|
+| Drummer's half-life dissociation | weight 7 h against sodium 10 h, ratio **0.70**; model **1.065** |
+| Van Regenmortel 2022 (§3.48) | ΔNa 171 mmol → Δfluid **590 mL**; at plasma tonicity it would carry 1221 mL, so **48%** appeared as fluid |
+| Drummer's haematocrit | falls **10.0%** (45.6 → 40.6) by 6 h; **model 6.4%** |
+
+**`BF.NA.OSMOTICALLY_INACTIVE_FRACTION` is `assumed` at 0.15 and ADR 0004 is PROVISIONAL
+and SWITCHED OFF.** That is why §3.47's stage 1 found those rows bit-identical across a
+300-fold sweep: nothing reads them.
+
+**The haematocrit shortfall is a separate defect and is not the store.** It is the
+constant-`f_pv` suspect named in `volume_natriuresis_form_prereg.md` §2.1: the model
+distributes an infused load instantly and in fixed proportion, so it understates the
+**early** intravascular share. Drummer gave 2.1 L in 25 min against Lobo's 2 L in 60 min,
+and the model matches Lobo's 6 h plasma expansion while missing Drummer's 6 h haematocrit —
+which is what a too-fast equilibration would do. **Recorded, not pursued here.**
+
+### AND TWO CORRECTIONS TO THE PROTOCOL AS THIS REPOSITORY RECORDED IT
+
+**The dose is 30 mL/kg, not "2 litres"** — the abstract rounds and the methods do not. 2.1 L
+at 70 kg. **And the subjects were supine throughout and ate and drank nothing from 06:30 to
+noon**, so the first three post-infusion hours are a fasting measurement.
+
+---
+
 ## 4. NEXT, IN ORDER
 
 **Rewritten 2026-09-03, and item 1 was discharged the same day.** The previous list's
@@ -4085,26 +4166,23 @@ were solved against that very target. And §5, which is how work goes wrong here
    and renal sympathetic traffic are absent. Both are E1, both are inside components
    that already exist, and neither needs a paper nobody can open.
 
-2. **THE TWO ACUTE HUMAN DATASETS DISAGREE BY TWOFOLD, AND THAT IS NOW THE PROBLEM —
-   §3.46 and §3.47.** Drummer 1992 (PMID **1590419**) measures a volume half-life of
-   **≈7 h** after 2 L of isotonic saline; the model gives **13.10 h**, and reaching 7 h
-   needs an acute natriuretic gain about **three times** the chronic one. Jensen 2013
-   (PMID 24067081) says the acute fractional sodium excretion is **already right** —
-   +110.4% against a measured +122% — and triples to +178.8% if that gain is supplied.
-   **No adapting fraction satisfies both.**
+2. **~~THE TWO ACUTE HUMAN DATASETS DISAGREE BY TWOFOLD~~ THEY DO NOT — §3.49 WITHDRAWS
+   IT. THE SODIUM STORE IS THE OPEN PROBLEM.** With Drummer's full text the model is
+   **1.25× off on sodium** and **1.90× off on volume**: the sodium limb is roughly right
+   and the water limb is not, and §3.46's three-fold gain requirement was a water problem
+   being pushed through a sodium lever. Jensen agrees with Drummer once the right quantity
+   is compared.
 
-   **THE FORM QUESTION IS SETTLED AND THE PARAMETER QUESTION IS NOT.** §3.47 built both
-   candidate forms and pre-registered the discriminator before either: a static convex
-   gain bends the chronic pressure–sodium relation (12–20% of the MAP range, high-intake
-   slope twice the low), an adapting rate-sensitive one leaves it exactly straight (2.1%,
-   unchanged). **ADR 0010's specified SATURATING path points the wrong way entirely.**
+   **Drummer's weight half-life is 7 h against a sodium half-life of 10 h — a ratio of
+   0.70. The model's is 1.065**, because extracellular volume is tied to extracellular
+   sodium and water cannot leave ahead of salt. **Three independent human numbers now point
+   at an osmotically inactive sodium store**: that dissociation, Van Regenmortel's 171 mmol
+   → 590 mL (48% of the sodium appearing as fluid), and Drummer's 10.0% haematocrit fall
+   against the model's 6.4%.
 
-   **WHAT WOULD RESOLVE IT is not a parameter but a third measurement**, because two
-   acute human datasets of the same manoeuvre currently imply gains a factor of two
-   apart. The obvious candidates: Drummer's full text, which would give the interval
-   series rather than one half-life from an abstract; and any study reporting **both**
-   cumulative volume and fractional sodium excretion in the same subjects. **Neither form
-   may be adopted until that conflict is resolved** — both are committed default-off.
+   **`BF.NA.OSMOTICALLY_INACTIVE_FRACTION` is `assumed` at 0.15 and ADR 0004 is PROVISIONAL
+   and switched off**, so the model represents none of it. **Pre-registered in
+   `validation/sodium_store_prereg.md`.**
 
 3. **`BF.ICF_ECF.OSMOTIC_TAU` BLOCKS EVERY ACUTE OSMOTIC MAGNITUDE.** `assumed` at 30 min.
    Near zero on multi-day runs and DOMINANT on acute ones: a 1.4 L water load moves peak
