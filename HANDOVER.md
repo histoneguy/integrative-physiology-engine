@@ -4100,6 +4100,69 @@ noon**, so the first three post-infusion hours are a fasting measurement.
 
 ---
 
+### 3.50 THE STORE PRODUCES THE DISSOCIATION AND CANNOT PRODUCE THE SPEED
+
+**2026-09-17**, `validation/sodium_store_prereg.md` stage 1, `bench/sodium_store_stage1.jl`.
+ADR 0004's compartment turned on for the first time since it was written.
+
+### §2.1's PREDICTION WAS WRONG, AND IT WAS WRITTEN DOWN IN ADVANCE SO THAT WOULD SHOW
+
+The pre-registration said a store driven toward a fixed **fraction** of `Na_ecf` probably
+**could not buffer an acute load at all**. **It can.** The ratio crosses Drummer's 0.70 at
+`f_store` ≈ 0.40.
+
+| configuration | t½ volume | t½ sodium | **ratio** | salt sens | Jensen % |
+|---|---|---|---|---|---|
+| storage **OFF** (as merged) | 13.33 | 12.52 | **1.065** | 1.9707 | 110.2 |
+| storage ON, **ledger** f=0.15 τ=7 d | 13.15 | 12.57 | **1.046** | 1.9704 | 110.0 |
+| f=0.30, τ=0.05 d | 11.43 | 14.38 | 0.795 | 1.9707 | 92.2 |
+| **f=0.40, τ=0.05 d** | 10.52 | 14.92 | **0.705** | 1.9707 | 88.7 |
+| **f=0.40, τ=0.25 d** | 9.68 | 14.37 | **0.674** | 1.9707 | 99.9 |
+| f=0.70, τ=0.05 d | 7.50 | 16.30 | 0.460 | 1.9706 | 82.3 |
+| **Drummer** | **7.0** | **10.0** | **0.70** | — | 122 |
+
+### IT REPRODUCES THE ORDERING AND NOT THE SPEED, AND THAT IS THE RESULT
+
+**Drummer needs volume 7 h AND sodium 10 h — both FASTER than this model's 13.3 and 12.5.**
+The store **speeds volume and slows sodium**: it pivots the pair around roughly their
+common starting point rather than moving both down. At the crossing, volume is 10.5 h
+against 7 and sodium is 14.9 h against 10. **Neither half-life lands, and the ratio is
+right for the wrong reason.**
+
+**So the store is necessary and not sufficient.** Something else has to speed the whole
+clearance up, and the store then splits it. **This pass is not licensed to find out what** —
+§3 forbids moving any natriuretic gain, precisely because §3.49 withdrew a published
+conclusion for reading a water defect as a sodium one. **Naming the next question is
+allowed; answering it here is not.**
+
+### THREE THINGS THAT ARE CLEAN
+
+**The ledger values do nothing.** `f_store` = 0.15, `τ` = 7 d gives a ratio of 1.046
+against 1.065 switched off. The whole effect needs `f_store` ≈ **0.40**, which is **2.7×
+the assumed value** and is **not sourced**.
+
+**The store is chronically inert.** Chronic salt sensitivity is **1.9707 at every setting
+swept** — it costs the chronic constraint nothing, which is what makes it an attractive
+lever and is also why it was never noticed to be off.
+
+**Jensen degrades and it is reported rather than excused.** 110.2 → 88.7 at the crossing,
+against a measured 122. It stays inside the harness band of 60–250%, so branch **S1** is
+satisfied *on the letter*, but the number moves **away** from the measurement and the
+write-up says so.
+
+### WHAT HAPPENS NEXT, PER THE PRE-REGISTRATION
+
+**S1: report as a diagnostic, then SOURCE the two rows.** `f_store` ≈ 0.40 is a
+**diagnostic**, not a value. §3: *"a value fitted to the 0.70 and then cited to Titze would
+be the worst outcome available."* The rows need primary literature — Titze's balance and
+skin-sodium work, none of which has been opened in this repository — and ADR 0004 keeps
+`provisional` until they have it.
+
+**`storage` stays `false` by default.** §7: changing it is a structural decision needing its
+own record, not a side effect of a diagnostic sweep. The default build is 12 states.
+
+---
+
 ## 4. NEXT, IN ORDER
 
 **Rewritten 2026-09-03, and item 1 was discharged the same day.** The previous list's
