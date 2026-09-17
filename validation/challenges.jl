@@ -342,6 +342,76 @@ end
 
 println()
 println(repeat("=", 100))
+println("3c. THE LATE TIME COURSE OF AN ACUTE LOAD - AND THIS ONE FAILS")
+println(repeat("=", 100))
+# validation/late_time_course_prereg.md, branch L2. The source is the study
+# RN.ANP.TAU's own note asked for by name.
+#
+# Drummer C, Gerzer R, Heer M, Molz B, Bie P, Schlossberger M, Stadaeger C,
+# Roecker L, Strollo F, Heyduck B, et al. Effects of an acute saline infusion on
+# fluid and electrolyte metabolism in humans. Am J Physiol 1992;262(5 Pt 2):F744-54.
+# PMID 1590419. ABSTRACT READ IN FULL. Six healthy volunteers, SUPINE, strictly
+# controlled, 9 days, 2 L of 0.9% saline in 25 min, 48 h of collections AND a 48 h
+# control experiment.
+#
+# NOT PMID 1324562, which is the same group's head-down-tilt study. HDT is that
+# paper's experimental variable and the pre-registration admits only a control arm.
+println("  Drummer C et al. Am J Physiol 1992;262(5 Pt 2):F744-54. PMID 1590419.")
+println("  6 healthy supine volunteers, 2 L of 0.9% saline in 25 min, 48 h collections")
+println("  plus a 48 h control. Reported: elevated body weight returned to baseline")
+println("  with an approximate HALF-LIFE OF 7 h, and the largest increase in fluid and")
+println("  electrolyte excretion between 3 and 22 h postinfusion.")
+println()
+
+dur_d = (25/60)/24
+lt = run_phases(u0, basepm,
+                [(dur_d, Dict("H2O_intake" => 2.5 + 2.0/dur_d,
+                              "Na_intake"  => 205.0 + 154.0*2.0/dur_d)),
+                 (5.0 - dur_d, Dict())]; saveat = 1/24/60)
+vecf0 = final(slong, "V_ecf")
+lts = Float64[]; ldv = Float64[]; lna = Float64[]
+for sg in lt, i in 1:length(sg.t)
+    push!(lts, sg.t[i]); push!(ldv, val(sg, "V_ecf", i) - vecf0)
+    push!(lna, val(sg, "rn₊Na_excr", i))
+end
+ipk = argmax(ldv)
+ih  = findfirst(i -> i > ipk && ldv[i] <= ldv[ipk]/2, 1:length(ldv))
+thalf = ih === nothing ? Inf : (lts[ih] - lts[ipk])*24
+ipn = argmax(lna)
+
+check("largest sodium excretion, h postinfusion", (lts[ipn] - dur_d)*24, 3.0, 22.0, "h",
+      "Drummer 1992: largest increase in excretion between 3 and 22 h postinfusion.")
+
+# BAND: the abstract prints ONE figure, "approximate", n = 6, with no dispersion. The
+# band is 5-10 h, which is +/- 40% around 7 and is DELIBERATELY GENEROUS - it is set
+# so that only a failure the data can actually support will fire. The model is at
+# 13.10 h, outside even that.
+check("acute volume excursion half-life", thalf, 5.0, 10.0, "h",
+      "Drummer 1992: body weight returned to baseline with a half-life of about 7 h. " *
+      "BAND ASSUMED, +/-40% around one approximate figure with no published dispersion.")
+
+# WHY THIS FAILURE IS NOT A CALL TO MOVE RN.ANP.TAU, AND THE PROOF IS IN THE BENCH.
+# bench/late_time_course.jl sweeps the lag from 1.0 d down to 0.001 d - effectively
+# instantaneous - and the half-life bottoms out at 11.97 h. TWELVE HOURS IS A FLOOR
+# THE LAG CANNOT GO BELOW, and the measurement is 7. The tail is set by the
+# natriuretic GAINS. Scaling both by 3 reaches 6.98 h - and drops the chronic salt
+# sensitivity to 0.681 against the human 1.70-2.30 checked immediately above.
+println()
+println("  ^^ NOT A REASON TO MOVE RN.ANP.TAU. bench/late_time_course.jl sweeps the lag")
+println("     to 0.001 d - effectively instantaneous - and the half-life bottoms out at")
+println("     11.97 h. TWELVE HOURS IS A FLOOR THE LAG CANNOT PASS. The tail is set by")
+println("     the natriuretic GAINS: scaling both by 3 reaches 6.98 h and drops the")
+println("     chronic salt sensitivity to 0.681 against the 1.70-2.30 checked above.")
+println("     G_pn alone saturates at 11.12 h even tenfold; S_gfr_v saturates at 8.62.")
+println()
+println("     SO THE ACUTE RESPONSE NEEDS ABOUT THREE TIMES THE GAIN THE CHRONIC ONE")
+println("     PERMITS, AND NO SINGLE PARAMETER SATISFIES BOTH. That is evidence about")
+println("     the FORM of the volume-natriuresis path, not about any of its values, and")
+println("     it restores in stronger form the argument ADR 0010 made from a factor of")
+println("     two and HANDOVER section 3.45 withdrew. NOTHING WAS RE-SOLVED.")
+
+println()
+println(repeat("=", 100))
 println("4. TWENTY-FOUR HOUR FLUID DEPRIVATION")
 println(repeat("=", 100))
 PROSS = "Pross N, Demazieres A, Girard N, Barnouin R, Santoro F, Chevillotte E, Klein A, " *

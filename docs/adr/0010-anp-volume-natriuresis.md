@@ -777,3 +777,48 @@ model's maximum falls at 375 min after infusion start, beyond Jensen's protocol.
 area under the curve and not the peak time — so this record's lag is identified in one
 dimension and free in the other. **A human isotonic-saline study sampling past 6 h is what
 would test the form**, and Drummer 1992 (PMID 1324562) is the first place to look.
+
+---
+
+## Amendment, 2026-09-17 — the factor-of-two argument is restored from independent data, at a factor of three
+
+**HANDOVER §3.46, `validation/late_time_course_prereg.md` branch L2.** The addendum above
+withdrew this record's central argument — that *"the two limbs disagree by about a factor
+of two"* and therefore that a single linear, instantaneous, volume-keyed term cannot
+satisfy both — because the acute magnitude it rested on had been measured wrongly.
+
+**IT IS RESTORED HERE, FROM A DIFFERENT DATASET AND A DIFFERENT QUANTITY.**
+
+Drummer C, Gerzer R, Heer M, Molz B, **Bie P**, Schlossberger M, Stadaeger C, Röcker L,
+Strollo F, Heyduck B, et al. *Effects of an acute saline infusion on fluid and electrolyte
+metabolism in humans.* Am J Physiol 1992;262(5 Pt 2):F744–54. **PMID 1590419. ABSTRACT
+READ IN FULL.** Six healthy volunteers, supine, strictly controlled, nine days, 2 L of
+isotonic saline in 25 min, 48 h of collections **and a 48 h control experiment**. Elevated
+body weight returned to baseline with an **approximate half-life of 7 h**.
+
+**The model gives 13.10 h**, and the disagreement cannot be parameterised away:
+
+| lever | reaches a 7 h half-life? | chronic salt sensitivity there |
+|---|---|---|
+| `RN.ANP.TAU` | **no — floors at 11.97 h when made instantaneous** | 1.960 |
+| both gains ×3 | yes, 6.98 h | **0.681** |
+| `G_anp` alone ×3 | yes, 7.10 h | **0.766** |
+| `G_pn` alone ×10 | no — 11.12 h | 0.779 |
+| `S_gfr_v` ×4 | no — saturates at 8.62 h | 1.463 |
+
+**THE ACUTE RESPONSE NEEDS ABOUT THREE TIMES THE GAIN THE CHRONIC RESPONSE PERMITS**,
+against a human chronic window of 1.70–2.30 mmHg per 100 mmol/day.
+
+**THIS IS A BETTER VERSION OF THE ORIGINAL ARGUMENT AND THIS RECORD NOW CARRIES BOTH.** The
+original was made from the SIZE of the acute response and was vulnerable to that size being
+mismeasured — which is exactly how it fell. **This one is made from the SHAPE**, from a
+decay half-life, in a study with its own 48 h control, and from a parameter sweep showing
+every single-parameter route fails rather than from a single comparison.
+
+**WHAT IT LICENSES AND WHAT IT DOES NOT.** It is evidence that the **form** is wrong — the
+real path is saturating or multi-timescale, as this record proposed and never built. **It
+is not a licence to re-solve `G_anp`, `G_pn` or `RN.ANP.TAU`**, and the pass that found it
+moved none of them. A build of the saturating form needs its own pre-registration, and the
+two constraints it must satisfy **simultaneously** are the **7 h half-life** and the
+**1.70–2.30 chronic window**. Those are now this record's identifying experiment, replacing
+the acute-magnitude comparison the addendum retired.
