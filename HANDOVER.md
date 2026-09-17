@@ -3733,6 +3733,90 @@ of a document is not running anything, and this file is a document.
 
 ---
 
+### 3.46 THE ACUTE LOAD IS CLEARED TOO SLOWLY, AND NO PARAMETER CAN FIX IT
+
+**2026-09-17**, `validation/late_time_course_prereg.md`, branch **L2**. Written the same
+day as §3.45 and following directly from it: §3.45 established that the acute
+**magnitude** is fine and that the **late time course** was bounded by nothing.
+
+### The source was named on the row and nobody had fetched it
+
+`RN.ANP.TAU`'s own note: *"WHAT WOULD FALSIFY IT: a human isotonic-loading study reporting
+the full cumulative sodium excretion curve out to 72 h."*
+
+**Drummer C, Gerzer R, Heer M, Molz B, Bie P, Schlossberger M, Stadaeger C, Röcker L,
+Strollo F, Heyduck B, et al. Effects of an acute saline infusion on fluid and electrolyte
+metabolism in humans. Am J Physiol 1992;262(5 Pt 2):F744–54. PMID 1590419. ABSTRACT READ
+IN FULL**; the full text was not obtained, so the interval series is not in hand and
+nothing here depends on one. Six healthy volunteers, **supine**, strictly controlled, nine
+days, **2 L of isotonic saline in 25 min**, 48 h of collections **and a 48 h control
+experiment**.
+
+**THIS IS NOT THE DRUMMER 1992 ALREADY ON THE ROW.** PMID 1324562 is the same group's
+head-down-tilt study, and HDT is its experimental variable; the pre-registration admitted
+only a control arm. **This one has no tilt at all**, which makes it cleanly admissible
+where the other is admissible only in part.
+
+### One test passes, one fails
+
+| | model | Drummer |
+|---|---|---|
+| largest sodium excretion, h postinfusion | **5.9 h** | 3–22 h ✓ |
+| **volume excursion half-life** | **13.10 h** | **≈ 7 h** ✗ |
+
+**THE MODEL CLEARS AN ACUTE ISOTONIC LOAD 1.9× TOO SLOWLY.**
+
+### AND THAT REVERSES THE PRE-REGISTERED DIRECTION
+
+§1.1 of the pre-registration predicted the model would look **too fast** in the tail,
+reasoning from the HDT paper's qualitative *"still elevated beyond 48 h"* against a model
+home by 34 h. **With a number instead of a significance statement it is too SLOW.** The
+direction was fixed in advance precisely so that this would read as a reversal rather than
+be absorbed silently, and it is recorded as one.
+
+### The diagnosis was demonstrated, not asserted
+
+§7 item 6 required it. `bench/late_time_course.jl`:
+
+| lever | reaches a 7 h half-life? | chronic salt sensitivity there |
+|---|---|---|
+| `RN.ANP.TAU` | **no — floors at 11.97 h** | 1.960, unmoved |
+| both gains ×3 | yes, 6.98 h | **0.681** |
+| `G_anp` alone ×3 | yes, 7.10 h | **0.766** |
+| `G_pn` alone ×10 | no — 11.12 h | 0.779 |
+| `S_gfr_v` ×4 | no — saturates at 8.62 h | 1.463 |
+
+**THE LAG LIMIT IS THE ARGUMENT.** At `tau_anp` = 0.001 d the volume path is effectively
+**instantaneous** and the half-life is still **11.97 h**. Twelve hours is a **floor no
+value of the lag can pass**, and the measurement is 7. So this is not evidence that 0.15 d
+is wrong; it is evidence that **the lag is not what sets this quantity.** `G_pn` saturates
+because MAP barely moves on an acute load; `S_gfr_v` saturates because
+`RN.GFR.VOLUME_RANGE` clamps at 2.9% and an acute load moves ECF by about 14% — the
+censoring bound that row declares, doing its job.
+
+### THE RESULT IS ABOUT THE FORM, AND IT RESTORES AN ARGUMENT §3.45 HAD JUST WITHDRAWN
+
+**No single parameter in this model satisfies both constraints. The acute response needs
+about three times the gain the chronic response permits**, against a human chronic window
+of 1.70–2.30.
+
+ADR 0010 argued from a *"factor of two"* disagreement between the acute and chronic limbs
+that a single linear, instantaneous, volume-keyed term cannot satisfy both. **§3.45
+withdrew that argument earlier the same day**, because the acute magnitude it rested on had
+been measured wrongly. **This pass restores it from independent data, at a factor of
+three, and from the SHAPE of the response rather than its size.** That is a better version
+of the same claim, and ADR 0010 now carries both.
+
+**NOTHING WAS RE-SOLVED.** §4 of the pre-registration forbids moving `G_anp`, `G_pn` or
+`RN.ANP.TAU` in this pass and none moved. **The tension is the result.** A parameter chosen
+to hide it would not have been.
+
+`validation/challenges.jl` §3c now carries this as a **genuine failure**, with a
+deliberately generous ±40% band around one approximate figure, and the model outside even
+that.
+
+---
+
 ## 4. NEXT, IN ORDER
 
 **Rewritten 2026-09-03, and item 1 was discharged the same day.** The previous list's
@@ -3799,22 +3883,22 @@ were solved against that very target. And §5, which is how work goes wrong here
    and renal sympathetic traffic are absent. Both are E1, both are inside components
    that already exist, and neither needs a paper nobody can open.
 
-2. **~~THE ACUTE NATRIURESIS IS A THIRD LOW~~ IT IS NOT. CORRECTED 2026-09-17, §3.45.**
-   Measured like for like on Jensen's own 210–240 min window the model is at **+110.1%**
-   against a measured **+122%**, inside the reported dispersion. The +79.3% this file
-   carried was stale from 2026-09-05 (the macula densa arm) AND came from a comparison of
-   a model peak with a study's final sample, which are different quantities.
+2. **THE ACUTE LOAD IS CLEARED 1.9x TOO SLOWLY, AND NO PARAMETER CAN FIX IT — §3.46.**
+   Drummer 1992 (PMID **1590419**, not the HDT paper) measures a volume half-life of
+   **≈7 h** after 2 L of isotonic saline; the model gives **13.10 h**. The lag floors at
+   11.97 h even when made instantaneous, so it is not the lag; the gains reach 7 h at ×3
+   and take the chronic salt sensitivity to **0.681** against a human **1.70–2.30**.
+   **The acute response needs about three times the gain the chronic one permits.**
 
-   **WHAT IS ACTUALLY OPEN IS THE LATE TIME COURSE, AND NO PUBLISHED NUMBER BOUNDS IT.**
-   Jensen's protocol ends at 240 min with its series still rising, so it constrains the
-   model only to that point. The model's maximum falls at 375 min after infusion start and
-   **nothing measures whether that is right.** `RN.ANP.TAU` was estimated against Lobo's
-   6 h CUMULATIVE endpoints, which fix the area under the curve and leave the peak time
-   free, so the acute limb is unconstrained in exactly this dimension. **The pass worth
-   doing is a search for a human isotonic-saline study that samples past 6 h** — Drummer
-   1992 (PMID 1324562) reports excretion staying elevated beyond 48 h and is the first
-   place to look. It needs its own pre-registration, and it must not be closed by
-   refitting `RN.ANP.TAU` to Jensen.
+   **THIS IS NOW THE SHARPEST OPEN PROBLEM IN THE SODIUM LIMB, AND IT IS STRUCTURAL.** It
+   is not closed by re-solving anything — §3.46 shows every single-parameter route fails.
+   What it points at is the FORM of the volume–natriuresis path: a saturating or
+   multi-timescale term, which is what ADR 0010 proposed and never built. **Any such
+   build needs its own pre-registration**, and the two constraints it must satisfy
+   simultaneously are the 7 h half-life and the 1.70–2.30 chronic window.
+
+   *(The magnitude question that used to sit here is closed: measured like for like on
+   Jensen's own 210–240 min window the model is at +110.1% against +122%. §3.45.)*
 
 3. **`BF.ICF_ECF.OSMOTIC_TAU` BLOCKS EVERY ACUTE OSMOTIC MAGNITUDE.** `assumed` at 30 min.
    Near zero on multi-day runs and DOMINANT on acute ones: a 1.4 L water load moves peak

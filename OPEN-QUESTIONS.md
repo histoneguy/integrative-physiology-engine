@@ -95,13 +95,38 @@ protocol stopped. Measured on Jensen's own window, the model is at **+110.1%** a
 **The agreement is not accuracy.** Even the zero-correlation upper bound on Jensen's ratio
 is −18% to +502%.
 
-**WHAT IS GENUINELY OPEN: the model's maximum falls at 375 min after infusion start and no
-published number bounds it.** Jensen ends at 240 min with its series still climbing.
-`RN.ANP.TAU` was estimated against Lobo's 6 h CUMULATIVE endpoints, which fix the area
-under the curve and leave the peak time free. **What would resolve it:** a human isotonic
-saline study sampling past 6 h — Drummer 1992 (PMID 1324562) reports excretion elevated
-beyond 48 h and is the first place to look. **Do not close it by refitting `RN.ANP.TAU` to
-Jensen** — that spends the only out-of-sample datum this line has.
+**WHAT IS GENUINELY OPEN — AND IT WAS RESOLVED INTO SOMETHING SHARPER THE SAME DAY.**
+See B1b below and HANDOVER §3.46.
+
+### B1b. The acute load is cleared 1.9x too slowly, and no parameter can fix it
+
+**Drummer C et al., Am J Physiol 1992;262(5 Pt 2):F744–54, PMID 1590419** — six healthy
+supine volunteers, 2 L of 0.9% saline in 25 min, 48 h of collections plus a 48 h control.
+Elevated body weight returned to baseline with a **half-life of about 7 h**. **The model
+gives 13.10 h.**
+
+*(Not PMID 1324562, the same group's head-down-tilt study, whose experimental variable is
+the tilt.)*
+
+**It cannot be fixed by any single parameter, and that was demonstrated rather than
+argued** (`bench/late_time_course.jl`):
+
+| lever | reaches 7 h? | chronic salt sensitivity there |
+|---|---|---|
+| `RN.ANP.TAU` | **no — floors at 11.97 h even when instantaneous** | 1.960 |
+| both gains ×3 | yes | **0.681** |
+| `G_anp` alone ×3 | yes | **0.766** |
+| `G_pn` alone ×10 | no — 11.12 h | 0.779 |
+| `S_gfr_v` ×4 | no — saturates at 8.62 h | 1.463 |
+
+against a human chronic window of **1.70–2.30**. **The acute response needs about three
+times the gain the chronic one permits.**
+
+**WHAT WOULD RESOLVE IT:** a saturating or multi-timescale volume–natriuresis path — what
+ADR 0010 proposed and never built — which must satisfy the 7 h half-life and the
+1.70–2.30 window simultaneously. It needs its own pre-registration. **Do not close it by
+refitting `RN.ANP.TAU`**: §3.46 shows the lag cannot reach the target at any value, so
+moving it would be fitting the wrong parameter and would still fail.
 
 ### B2. Salt sensitivity is a fit, and the sex difference in it is a prediction nobody has checked
 

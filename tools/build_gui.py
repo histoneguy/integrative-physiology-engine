@@ -42,6 +42,14 @@ CAVEATS = [
      "unconstrained is after 240 min, where Jensen's protocol ends and the model has not yet "
      "peaked. Jensen was deliberately excluded from estimation, so it must not be closed by "
      "refitting."),
+    ("The acute load is cleared 1.9x too slowly, and no parameter fixes it (§3.46)",
+     "Drummer 1992 (PMID 1590419) measures a volume half-life of about 7 h after 2 L of "
+     "isotonic saline in six healthy supine volunteers. The model gives 13.10 h. The lag "
+     "floors at 11.97 h even when made instantaneous, so it is not the lag; the natriuretic "
+     "gains reach 7 h at three times their value and take the chronic salt sensitivity to "
+     "0.68 against a human 1.70–2.30. THE ACUTE RESPONSE NEEDS ABOUT THREE TIMES THE "
+     "GAIN THE CHRONIC ONE PERMITS, so this is evidence about the FORM of the "
+     "volume–natriuresis path and not about any of its values. Nothing was re-solved."),
     ("The thyroid axis is on ONE assay scale, and ADR 0019's test 2 is void (§3.26)",
      "It was reported here for a day that euthyroid thyrotropin came out 2.4× too high. That was "
      "a unit error, not a bad coefficient: a pituitary line measured on a free-thyroxine "
