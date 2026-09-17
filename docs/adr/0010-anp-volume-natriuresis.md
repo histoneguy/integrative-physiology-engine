@@ -710,7 +710,7 @@ puts `G_pn` at **11.4**, materially toward the Mizelle-consistent 5.43 and away 
 
 | | before | after | human |
 |---|---|---|---|
-| acute fractional Na excretion rise | +43% | **+79%** | +123% |
+| acute fractional Na excretion rise | +43% | **+79%** *(superseded — see addendum)* | +123% |
 | Lobo urinary Na, 6 h | 78.3 mmol | **96.3** | 95 |
 | Lobo urine, 6 h | 481 mL | **575** | 563 |
 | chronic salt sensitivity | 4.958 | **2.301** | 1.70–2.30 |
@@ -743,3 +743,37 @@ debt, it is asserted in the suite, and it is falsifiable.
 proposed. Blocker 4's wording — "IPE has no central compartment" — was stale: `V_central`
 has existed since ADR 0012. Immersion stays excluded, but because `V_central = f_c·V_blood`
 carries no independent information at stage 1, not because the compartment is absent.
+
+---
+
+## Addendum, 2026-09-17 — the acute deficit this record is built on no longer exists
+
+**HANDOVER §3.45.** Every acute figure in this record is a dated snapshot, and the
+comparison behind them was not like for like.
+
+**Measured on Jensen's own final sampling window** — 210–240 min on its clock — the model
+raises fractional sodium excretion by **+110.1%** against Jensen's measured **+122%**. The
+figures above compare a MODEL PEAK with a STUDY'S FINAL SAMPLE; Jensen's series is monotone
+rising to that sample, so the study never observed a peak and no peak comparison is
+available. The change came on **2026-09-05** with the macula densa arm (`be3691b`, ADR
+0021), which took the same window from **+48.7%** to **+110.1%**.
+
+**THIS RECORD'S CENTRAL ARGUMENT IS AFFECTED AND THE AFFECTED PART IS NAMED.** The section
+above concludes that *"the two limbs disagree by about a factor of two"* — that landing
+chronic salt sensitivity in the human window needs `G_anp` near 240–330 while matching
+Jensen's acute response needs roughly half that, and therefore that **a single linear,
+instantaneous, volume-keyed term cannot satisfy both.** That was measured at `G_pn = 20`,
+with no macula densa arm and no GFR volume response. **The model now satisfies both at
+once**: chronic salt sensitivity 1.96 inside 1.70–2.30, acute +110.1% against +122%.
+
+**That does NOT vindicate the linear instantaneous form**, and reading it that way is the
+error this addendum exists to prevent. What closed the gap was other paths being added,
+not this one being shown to be right. What it does mean is that **the factor-of-two
+argument can no longer be quoted as evidence about the FORM of the volume path.**
+
+**AND THE SUCCESSOR TEST IS THE LATE TIME COURSE, WHICH NOTHING CURRENTLY BOUNDS.** The
+model's maximum falls at 375 min after infusion start, beyond Jensen's protocol.
+`RN.ANP.TAU` was estimated against Lobo's 6 h cumulative endpoints, which constrain the
+area under the curve and not the peak time — so this record's lag is identified in one
+dimension and free in the other. **A human isotonic-saline study sampling past 6 h is what
+would test the form**, and Drummer 1992 (PMID 1324562) is the first place to look.

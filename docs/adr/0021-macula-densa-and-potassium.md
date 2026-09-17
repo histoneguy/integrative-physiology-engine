@@ -514,3 +514,33 @@ that would isolate the cardiopulmonary afferent does not isolate it.
 reports 5.74 and 2.10, three figures each, so their ratio is not known to four and a
 gain solved against it cannot be. Directive 1.13, applied to a row that was already
 violating it before this pass touched it.
+
+---
+
+## Amendment, 2026-09-17 — this record more than doubled the one out-of-sample endpoint and did not say so
+
+**HANDOVER §3.45.** Measured by running `validation/challenges.jl` at the commit before and
+the commit of this record's implementation, on Jensen's own final sampling window:
+
+    8ee4870  2026-09-05 21:05  this record, text only       +48.7 %
+    be3691b  2026-09-05 22:35  the macula densa arm built  +110.1 %     (Jensen +122 %)
+
+**Jensen 2013's acute fractional sodium excretion rise is the only number in the sodium
+limb held out of every estimation.** The repository recorded the model as **a third low**
+on it and navigated by that — in HANDOVER, `OPEN-QUESTIONS.md`, two ledger notes, ADR 0010
+and the GUI. **This change took the acute limb from less than half of Jensen's response to
+nine tenths of it, and the record was never updated. It stood stale for twelve days**, and
+two pre-registrations were written against it before anyone ran the model.
+
+**THE ACUTE CHALLENGE WAS RUN IN THIS PASS.** This record's own commit message says *"the
+acute challenge refuted the first form"*, and amendment A6 records that refutation in
+detail. **What was not recorded is what the SURVIVING form did to the headline endpoint.**
+A pass that reports what it refuted and not what it moved has told half the story.
+
+**NOTHING HERE IS WITHDRAWN.** The macula densa arm, the filtered-load path and A6's
+disqualification of the pressure and natriuretic-peptide terms all stand. The arm was not
+fitted to Jensen — `RN.MD.RENIN_GAIN` is solved against van den Bosch's salt–renin ratio —
+so moving Jensen was a consequence rather than a fit, which is what makes it worth
+recording. **The defect is in the reporting, and the fix is an automated pin on the
+endpoint** (`JENSEN_FINAL_WINDOW_RISE` in `test/runtests.jl`) rather than any change to
+this arm.

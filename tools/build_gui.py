@@ -32,11 +32,16 @@ CAVEATS = [
      "meta-analytic 1.70–2.30, and the pressure–volume ratio, 3.22 mmHg/L against a measured "
      "2.82–4.02. Two of the three parameters that make it do so were solved against those very "
      "targets. Quote neither to more than three significant figures."),
-    ("One number is genuinely held out, and the model is a third low (§4 item 2)",
-     "Predicted fractional sodium excretion after 23 mL/kg of isotonic saline is +79%, against "
-     "Jensen 2013's measured +123%. Jensen was deliberately excluded from estimation, so it is "
-     "the only place the parameterisation is tested rather than fitted. It is the sharpest "
-     "discrepancy in the sodium limb and it must not be closed by refitting."),
+    ("One number is genuinely held out, and what is open is the LATE time course (\u00a74 item 2)",
+     "Measured on Jensen 2013's own final sampling window, fractional sodium excretion after "
+     "23 mL/kg of isotonic saline rises +110% in the model against a measured +122%, inside a "
+     "reported 2.80 \u00b1 0.75. This panel said +79% and called it a third low; that was stale "
+     "from 2026-09-05 and compared a model peak with a study's final sample "
+     "(HANDOVER \u00a73.45). Read the agreement as uninformative rather than accurate \u2014 even "
+     "the zero-correlation bound on Jensen's ratio is \u221218% to +502%. What is genuinely "
+     "unconstrained is after 240 min, where Jensen's protocol ends and the model has not yet "
+     "peaked. Jensen was deliberately excluded from estimation, so it must not be closed by "
+     "refitting."),
     ("The thyroid axis is on ONE assay scale, and ADR 0019's test 2 is void (§3.26)",
      "It was reported here for a day that euthyroid thyrotropin came out 2.4× too high. That was "
      "a unit error, not a bad coefficient: a pituitary line measured on a free-thyroxine "

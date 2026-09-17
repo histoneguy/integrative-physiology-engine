@@ -267,10 +267,50 @@ fena_peak = maximum(val(jp, "rn₊Na_excr", i) /
 # +60% to +250%. The Jensen band was never too generous. It is TIGHTER than the
 # reported statistics can justify, and it is left alone because moving an undocumented
 # band is worse than leaving it.
-check("peak rise in fractional sodium excretion", (fena_peak/fena_base - 1)*100,
-      60.0, 250.0, "%",
-      "Jensen +123%, n=23. BAND ASSUMED: the ratio's dispersion needs a correlation " *
-      "the paper does not report. Even the rho=0 upper bound is far wider than this.")
+# THE COMPARISON THIS HARNESS MADE FOR THREE WEEKS WAS NOT LIKE FOR LIKE.
+# Corrected 2026-09-17, HANDOVER section 3.45.
+#
+# `fena_peak` is the MODEL'S PEAK. Jensen's +123% is the value in its LAST SAMPLING
+# PERIOD, 210-240 min. Those are different quantities, and Jensen's own series is
+# MONOTONE RISING to that period - 1.26, 1.93, 2.35, 2.67, 2.80 - so THE STUDY NEVER
+# OBSERVED A PEAK AT ALL. 210-240 is where the protocol stopped, not where excretion
+# turned. Comparing a model maximum with a study's final sample flatters or damns the
+# model depending only on where the model's maximum happens to fall.
+#
+# Jensen's clock: baseline 0-90, infusion 90-150, then 150-180, 180-210, 210-240.
+# This harness starts its infusion at t = 0, so model minutes = Jensen minutes - 90,
+# and Jensen's final window is model 120-150 min.
+jwin(a, b) = begin
+    acc = Float64[]
+    for s in (je[1], je[2]), i in 1:length(s.t)
+        t = s.t[i] * 24 * 60
+        a <= t <= b && push!(acc, val(s, "rn₊Na_excr", i) /
+                                  (val(s, "rn₊GFR", i) * val(s, "bf₊C_Na", i)))
+    end
+    isempty(acc) ? NaN : sum(acc) / length(acc)
+end
+
+check("FE_Na rise, Jensen's final window (210-240 min)",
+      (jwin(120.0, 150.0)/fena_base - 1)*100, 60.0, 250.0, "%",
+      "Jensen +122% (2.80 vs 1.26). LIKE FOR LIKE - same window, same quantity. " *
+      "BAND ASSUMED: the ratio's dispersion needs a correlation the paper omits.")
+
+# REPORTED, NOT CHECKED, AND THE REASON IS THAT NOTHING MEASURES IT. The model's peak
+# lands well after Jensen's protocol ends, so no published number bounds it. It is
+# printed because a model whose peak wandered would otherwise be invisible here, and
+# NOT checked because inventing a band for an unobserved quantity is worse than saying
+# it is unobserved.
+ipk = 0; tpk = 0.0; vpk = -Inf
+for s in (je[1], je[2]), i in 1:length(s.t)
+    f = val(s, "rn₊Na_excr", i) / (val(s, "rn₊GFR", i) * val(s, "bf₊C_Na", i))
+    if f > vpk; global vpk = f; global tpk = s.t[i]*24*60; end
+end
+@printf("  %-46s %10.3f   %s\n", "model FE_Na max in window (NOT a peak)",
+        (vpk/fena_base - 1)*100, "% - see note")
+@printf("  %-46s %s\n", "",
+        "at $(round(Int, tpk)) min, THE EDGE OF THIS HARNESS'S 5 h WINDOW - FE_Na is " *
+        "still rising when it stops. Over 24 h the true maximum is 128.3% at 375 min. " *
+        "NEITHER IS BOUNDED BY JENSEN, whose protocol ends at 150 min on this clock.")
 
 pra_base = final(slong, "ra₊pra")
 pra_min  = minimum(val(jp, "ra₊pra", i) for i in 1:length(jp.t))

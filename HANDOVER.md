@@ -28,14 +28,19 @@ targets, so they are fits. **The validations are the resting state, the 400-day 
 state, and Jensen. THE FOUR LOBO ENDPOINTS ARE NOT AMONG THEM** — that claim stood in
 this file for a day and was wrong; Lobo's 6 h time course is what fixed `RN.ANP.TAU`, so
 it is an ESTIMATION set. §3.15's correction says when it stopped being a validation and
-why nobody noticed. **Jensen, the only held-out number, is a third low.**
+why nobody noticed. **Jensen, the only held-out number, is NOT a third low. Measured on
+Jensen's own final window the model is at +110.1% against a measured +122%. The "third
+low" figure went stale on 2026-09-05 and stood here for twelve days, and the comparison
+behind it was never like for like. §3.45.**
 
 **FOUR PARAMETERS IN THE SODIUM–VOLUME LOOP NOW COME FROM HUMAN DATA.** The GFR response
 to extracellular volume was wired on 2026-09-03 (§3.22), which moved salt sensitivity
 2.000 → 1.849 and left the pressure–volume ratio untouched. **It is the only one of the
 four that was neither fitted to a target this harness reports nor solved against one** —
 it comes from a GFR and a volume, neither of which is a pressure. **It also moved Jensen
-from a third low to slightly worse**, and that is in §3.22 rather than buried.
+from a third low to slightly worse**, and that is in §3.22 rather than buried — **though
+both figures in that section are superseded, and the acute limb is no longer low in the
+way they describe. §3.45.**
 
 **This header deliberately names NO commit SHA and NO open PR.** Three consecutive
 handovers were wrong in their first line, each in a different way: two pinned a SHA that
@@ -1371,7 +1376,7 @@ that row's own note required once `G_vr` was sourced.
 | Lobo urinary sodium, 6 h | **95.1 mmol** | 95 |
 | **chronic salt sensitivity** | **2.000** | **1.70–2.30** |
 | **`dMAP/dV_ecf`** | **3.000 mmHg/L** | **2.97–4.16** |
-| acute fractional Na excretion rise | 82.5% | 123% |
+| acute fractional Na excretion rise | 82.5% *(dated, and not like for like — §3.45)* | 123% |
 
 **THE IDENTIFICATION IS CLEAN AND WAS MEASURED, NOT ASSUMED.** Two data, two
 parameters: the chronic salt-step response fixes the gain, Lobo's 6 h time course fixes
@@ -1387,9 +1392,13 @@ abstract gives bare means. There is no band to be inside of. Quoting a half-perc
 match against an unbounded target is the precision that does not exist, directive 1.9.
 
 **JENSEN 2013 WAS HELD OUT AND IS THE ONE OUT-OF-SAMPLE NUMBER.** It was not used in the
-estimation. The model predicts +82.5% against a reported +123% — inside the band, about a
-third low. **That is the honest standing of this parameterisation on data it was not
-fitted to, and it is the sharpest remaining discrepancy in the sodium limb.**
+estimation. ~~The model predicts +82.5% against a reported +123% — inside the band, about
+a third low.~~ **SUPERSEDED 2026-09-17, §3.45, twice over: the figure was stale from
+2026-09-05, and the comparison that produced it set a MODEL PEAK against a STUDY'S FINAL
+SAMPLE, which are not the same quantity.** Measured like for like on Jensen's 210–240 min
+window the model is at **+110.1%** against **+122%**. That Jensen was held out is
+unchanged and is still what makes it the one place this parameterisation is tested rather
+than fitted.
 
 **THE LAG MOVED BY 3.3× AND THE REASON IS NOT ANP.** `G_pn` fell 20 → 8.4 over the same
 period, so the pressure path contributes far less acutely and the volume path must
@@ -1450,7 +1459,7 @@ phenomenon defaults **ON** under ADR 0006, so **this term is not a flag.**
 | `dMAP/dV_ecf` | 3.0005 | **3.0005** | 2.97–4.16 |
 | Lobo urine, 6 h | 566 mL | **577** | 563 |
 | Lobo urinary sodium, 6 h | 95.1 mmol | **97.1** | 95 |
-| **acute fractional Na excretion rise** | **82.5%** | **79.3%** | **123%** |
+| **acute fractional Na excretion rise** | **82.5%** | **79.3%** *(both superseded — §3.45)* | **123%** |
 
 **READ THE MIDDLE COLUMN AS MODEL MOVEMENT, NOT AS CHANGED AGREEMENT.** The
 `dMAP/dV_ecf` row is carried to five figures because it is pinned there and the pin is
@@ -1478,7 +1487,10 @@ CALLS IT A DEFECT.** Jensen 2013 is the only out-of-sample number this parameter
 has **in the fitting sense — nothing was estimated against it — and NOT in the mechanism
 sense**, because it is the same intravenous saline bolus into healthy volunteers that
 Lobo is (§3.21, §7). The acute fractional sodium excretion rise falls 82.5% → 79.3%
-against a reported 123%. **Absolute excretion rose** — both Lobo endpoints moved toward their targets. The
+against a reported 123%. **BOTH FIGURES ARE SUPERSEDED — §3.45. The arithmetic below is
+still correct and describes what THIS change did; the standing it implies is not, because
+the macula densa arm moved the endpoint three weeks later and because the comparison was
+peak-against-final-sample throughout.** **Absolute excretion rose** — both Lobo endpoints moved toward their targets. The
 two are not in conflict:
 
     FENa = 1 - FR_effective = (1 - FR_Na)*renal_mod - fr_mod
@@ -3631,6 +3643,96 @@ rather than rewritten**, because re-running ADR 0013's test is not what this pas
 
 ---
 
+### 3.45 THE ACUTE NATRIURESIS: A STALE NUMBER, AND A COMPARISON THAT WAS NEVER LIKE FOR LIKE
+
+**2026-09-17.** Found by running the model before writing a pre-registration against a
+number read out of this file. **There are two separate defects and they point in opposite
+directions**, which is why neither was visible on its own.
+
+### DEFECT 1 — the recorded figure was twelve days stale
+
+`validation/challenges.jl` at six past commits:
+
+    8ee4870  09-05 21:05  ADR 0021, record only            79.293 %
+    be3691b  09-05 22:35  the macula densa arm BUILT      132.503 %   <- here
+    aca26bf  09-08 22:12  chronotropic baroreflex         129.032 %
+    560241f  09-10 05:16  red cell mass as a state        125.062 %
+    HEAD     09-17                                        127.005 %
+
+**One commit moved the only out-of-sample number in the sodium limb by 53 points and its
+message does not mention it.** That message says *"the acute challenge refuted the first
+form"* — the acute challenge WAS run that evening, and only the refuted variant was
+written down. Meanwhile this file, `OPEN-QUESTIONS.md`, two ledger notes, ADR 0010 and the
+GUI all went on saying **+79.3%, "a third low", "the sharpest remaining discrepancy in the
+sodium limb"**, and two pre-registrations were written against it.
+
+### DEFECT 2 — and the comparison was wrong in BOTH directions
+
+`challenges.jl` compared **the model's PEAK** with **Jensen's value in its LAST SAMPLING
+PERIOD**. Those are not the same quantity. Jensen's own series is **monotone rising to
+that period** — 1.26, 1.93, 2.35, 2.67, **2.80** — so **the study never observed a peak at
+all.** 210–240 min is where the protocol stopped, not where excretion turned. The model's
+maximum falls at 375 min after infusion start, hours after Jensen's last sample, and
+`challenges.jl`'s own 5 h window truncated even that.
+
+**So +127.0% was never the model's standing against Jensen, any more than +79.3% was.**
+
+### THE LIKE-FOR-LIKE COMPARISON, WHICH IS THE ONE THAT MEANS ANYTHING
+
+Jensen's clock: baseline 0–90, infusion 90–150, then 150–180, 180–210, 210–240. This
+harness starts its infusion at t = 0, so model minutes = Jensen minutes − 90.
+
+| Jensen period | model rise | Jensen rise |
+|---|---|---|
+| infusion, 90–150 | +64.0% | +53.2% |
+| post, 150–180 | +97.9% | +86.5% |
+| post, 180–210 | +104.1% | +111.9% |
+| **post, 210–240** | **+110.1%** | **+122.2%** |
+
+**The model tracks the whole observed time course**, running slightly high early and about
+a tenth low at the last window — against a reported 2.80 ± 0.75, so inside the dispersion
+everywhere. **And measured this way the macula densa arm's improvement is larger, not
+smaller**: at `8ee4870` the same window gave **+48.7%**, so `be3691b` took the acute limb
+from less than half of Jensen's response to nine tenths of it.
+
+### WHY NOTHING CAUGHT IT, AND THE ROOT CAUSE IS ONE LINE
+
+**`validation/challenges.jl` IS NOT RUN BY CI AND IS NOT RUN BY THE TEST SUITE.** It is a
+by-hand harness. The model's only out-of-sample number lived nowhere else, so no automated
+check could see it move. On top of that its band is 60–250%, deliberately wide because
+Jensen publishes no paired correlation and §3.23 refused to fabricate one — **a correct
+validity check and a useless change detector, which are different jobs.** §3.43 already
+taught this repository that distinction with the salt pin and it was not applied here.
+
+**Fixed in this change:** `JENSEN_FINAL_WINDOW_RISE` is pinned in `test/runtests.jl` at
+110.13 with a 0.5 tolerance, on the like-for-like window, labelled a drift pin and not a
+validity claim. `challenges.jl` now checks the same window and prints its window maximum
+explicitly as **not** a peak and **not** bounded by Jensen.
+
+### WHAT MUST NOT BE READ INTO THIS
+
+**The agreement is not accuracy.** The band's own note records that even the
+zero-correlation upper bound on Jensen's ratio is **−18% to +502%**. Agreement inside that
+interval is exactly as uninformative as disagreement inside it would have been —
+directive 1.13, and it cuts both ways.
+
+**And no timing claim can be made against Jensen either.** It was tempting to read the
+model's 375 min maximum against Jensen's "peak at 210–240" and call the model 1.6× slow.
+**That is not available**, because 210–240 is the end of the protocol and not a peak.
+Jensen bounds the model's trajectory up to 240 min and says nothing after it. **An
+experiment that would bound the late time course is a genuine gap and is now §4's item.**
+
+### THE COST, RECORDED
+
+Two pre-registrations were written against the stale number before the model was run —
+`validation/segmental_regulation_prereg.md` and `validation/oncotic_proximal_prereg.md`,
+both committed **VOIDED and UNEXECUTED** in this change, with their reasoning intact
+because Alexander 1972 and the collinearity algebra in them stay useful. The rule that
+should have caught it is directive 1.11: **connect it and run it.** Reading a number out
+of a document is not running anything, and this file is a document.
+
+---
+
 ## 4. NEXT, IN ORDER
 
 **Rewritten 2026-09-03, and item 1 was discharged the same day.** The previous list's
@@ -3697,15 +3799,22 @@ were solved against that very target. And §5, which is how work goes wrong here
    and renal sympathetic traffic are absent. Both are E1, both are inside components
    that already exist, and neither needs a paper nobody can open.
 
-2. **THE ACUTE NATRIURESIS IS A THIRD LOW, AND IT IS THE ONLY OUT-OF-SAMPLE NUMBER.**
-   The model predicts **+79.3%** fractional sodium excretion on 23 mL/kg of isotonic
-   saline against Jensen 2013's +123%. **It was +82.5% before the GFR volume response
-   was wired on 2026-09-03, so that change moved the one held-out number slightly the
-   WRONG way** while moving both Lobo endpoints closer — §3.22, where the arithmetic is
-   written down. The discrepancy is now the sharpest in the repo on either reading. **Jensen was deliberately held out of the estimation**, so
-   this is the one place the parameterisation is tested rather than fitted, and it is the
-   sharpest discrepancy left in the sodium limb. Do not close it by refitting `G_anp` to
-   Jensen — that would spend the only out-of-sample datum this line has.
+2. **~~THE ACUTE NATRIURESIS IS A THIRD LOW~~ IT IS NOT. CORRECTED 2026-09-17, §3.45.**
+   Measured like for like on Jensen's own 210–240 min window the model is at **+110.1%**
+   against a measured **+122%**, inside the reported dispersion. The +79.3% this file
+   carried was stale from 2026-09-05 (the macula densa arm) AND came from a comparison of
+   a model peak with a study's final sample, which are different quantities.
+
+   **WHAT IS ACTUALLY OPEN IS THE LATE TIME COURSE, AND NO PUBLISHED NUMBER BOUNDS IT.**
+   Jensen's protocol ends at 240 min with its series still rising, so it constrains the
+   model only to that point. The model's maximum falls at 375 min after infusion start and
+   **nothing measures whether that is right.** `RN.ANP.TAU` was estimated against Lobo's
+   6 h CUMULATIVE endpoints, which fix the area under the curve and leave the peak time
+   free, so the acute limb is unconstrained in exactly this dimension. **The pass worth
+   doing is a search for a human isotonic-saline study that samples past 6 h** — Drummer
+   1992 (PMID 1324562) reports excretion staying elevated beyond 48 h and is the first
+   place to look. It needs its own pre-registration, and it must not be closed by
+   refitting `RN.ANP.TAU` to Jensen.
 
 3. **`BF.ICF_ECF.OSMOTIC_TAU` BLOCKS EVERY ACUTE OSMOTIC MAGNITUDE.** `assumed` at 30 min.
    Near zero on multi-day runs and DOMINANT on acute ones: a 1.4 L water load moves peak
@@ -4166,9 +4275,12 @@ code, with 28-minute outliers in the run list.
   Anyone with institutional access should record which way the value pairs run — the
   abstract's own correlation coefficients suggest all three are printed in reverse order,
   and that is an observation, not a reading.
-- **THE ACUTE NATRIURESIS IS A THIRD LOW AND IT IS THE ONLY OUT-OF-SAMPLE NUMBER.**
-  +82.5% against Jensen 2013's +123%. Jensen was held out of the estimation deliberately,
-  so it is the one place this parameterisation is tested rather than fitted. §4 item 2.
+- **~~THE ACUTE NATRIURESIS IS A THIRD LOW~~ CORRECTED 2026-09-17, §3.45.** Like for like
+  on Jensen's final window the model is at **+110.1%** against **+122%**. The +82.5%/+79.3%
+  figures were stale from 2026-09-05 and were never a like-for-like comparison. Jensen was
+  held out of the estimation deliberately, so it is still the one place this
+  parameterisation is tested rather than fitted — **and what is now unconstrained is the
+  LATE time course, which no published number bounds.** §4 item 2.
 - **`RN.ANP.TAU` IS NOT IDENTIFIED BY ANP PHYSIOLOGY.** 0.15 d, tier C. It is identified by
   requiring the model to match one acute human dataset given everything else, and it moved
   by 3.3× when `G_pn` moved. **It will move again if anything upstream does.** Its note
