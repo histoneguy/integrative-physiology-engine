@@ -212,3 +212,5 @@ pressure — Hall 1980, and the human salt-step literature already in
   That is the change that would restore the disqualified evidence base above.
 - **Whether escape should apply to the aldosterone term at its current `tau_esc`.** The
   escape time constant is untouched here and unexamined.
+
+> **The human volume limb and the `dMAP/dV_ecf` band quoted in this record were corrected on 2026-09-16** — tracer limb 0.553 → 0.602 L/100 mmol, band 2.97–4.16 → 2.82–4.02 mmHg/L, because `ecf_salt_response_extract.py` de-indexed van den Bosch with one body surface area where each arm has its own. **See ADR 0013's addendum**, which owns the band, and `validation/ecf_deindex_extract.py`, which computes it.

@@ -937,12 +937,17 @@ descriptive-only in advance. The two eligible human sources disagree by hormonal
 **No human direction is established, so ADR 0015's efferent-arteriolar rows stand untested
 rather than confirmed.**
 
-**Found in passing and deliberately NOT fixed here.** `ecf_salt_response_extract.py`
+**Found in passing and deliberately NOT fixed here. ~~§4 item 6's business~~ —
+DISCHARGED 2026-09-16, §3.44.** `ecf_salt_response_extract.py`
 de-indexes van den Bosch by multiplying the indexed ECF *difference* by one body surface
 area, giving 1.061 L. Each arm has its own BSA, and BSA itself rose with the retained
 fluid, so the correct figure is **1.157 L, 9% larger.** That makes §3.7's within-subject
 ratio 1.73 rather than 1.885 mmHg/L and its failure 5.7× rather than 5.2× — same
-direction, slightly worse. It is **§4 item 6**'s business and one clean pass on its own.
+direction, slightly worse.
+
+> **Every number in that paragraph was right.** The correction was computed here, and in
+> `renal_hemodynamics_extract.py`, five days before it was applied. **The work was never
+> the arithmetic — it was the propagation**, into fourteen files. §3.44.
 
 ### 3.13 The renin gain was blocked by a sentence about a paper nobody had opened
 
@@ -3558,6 +3563,74 @@ review is how a real effect and an artefact get attributed to each other.**
 
 ---
 
+### 3.44 THE NUMBER WAS ALREADY RIGHT IN THREE PLACES. THE WORK WAS THE OTHER FOURTEEN
+
+**2026-09-16**, `validation/ecf_deindex_prereg.md`, §4 item 6 — **the first work-list item
+checked this week that was exactly right**, after 8, 9 and 10 were all stale or wrong.
+
+`ecf_salt_response_extract.py` de-indexed van den Bosch by multiplying the indexed ECFV
+**difference** by **one** body surface area. The arms differ in body weight, 80.6 against
+79.2 kg, and Table 1 prints a BSA for each — 2.04 and 2.03 — so the two indexed values
+were never on the same denominator.
+
+    as coded   (17.4 - 16.5) x 2.04 / 1.73             = 1.0613 L
+    correct    (17.4 x 2.04 - 16.5 x 2.03) / 1.73      = 1.1566 L    (+9.0%)
+
+**IT WAS ALREADY COMPUTED, IN THREE PLACES, FIVE DAYS BEFORE IT WAS APPLIED** — §3.12,
+§5, and `renal_hemodynamics_extract.py`, all carrying 1.157 L and the consequent 1.73
+mmHg/L, all marked *"found in passing and deliberately NOT fixed here"*. **That deferral
+was correct and it worked.** The alternative was smuggling a document correction into the
+renal haemodynamics change, which made no claim about it, and leaving neither testable.
+
+**MY OWN FIRST RE-DERIVATION SAID 14% AND WAS WRONG.** I computed the low-arm BSA from Du
+Bois at the arm weights and got 2.025 where the paper prints 2.03. At a 0.5% between-arm
+difference the second decimal decides the answer, so it had to be **read**, not computed —
+and the paper is open access, which is the only reason this is settled rather than
+estimated.
+
+### What it moves, and the ordering flips
+
+| | before | after |
+|---|---|---|
+| tracer limb | 0.553 L/100 mmol | **0.602** |
+| body-weight limb (n = 132, independent) | 0.572 | 0.572, untouched |
+| which limb is higher | **weight** | **tracer** |
+| the two agree to | 3.4% | 5.3% |
+| pooled volume | 0.553–0.572 | **0.572–0.602** |
+| human `dMAP/dV_ecf` | **2.97–4.16** mmHg/L | **2.82–4.02** |
+| within-subject | 1.885 mmHg/L | **1.729** |
+
+The pair is quoted as a **range**, so which limb is higher decides where the range sits.
+The two independent methods still agree, so the pre-registration's `1 kg = 1 L` conversion
+claim is corroborated either way.
+
+### It makes the model worse, and that was fixed in advance
+
+A larger human expansion means a smaller human ratio, so **the model is more too-stiff than
+this repository records, not less.** The pre-registration stated that direction *before*
+the propagation was run, precisely so that a result flattering the model would read as an
+error rather than a finding.
+
+**Measured: the model sits 33% up the corrected band against 21% up the old one** — inside
+both, stiffer relative to the human range.
+
+**`CV.VENOUS_RETURN.SENSITIVITY` WAS NOT REFITTED.** ADR 0013 sets its target *from* this
+band, so re-deriving it here would be fitting a parameter to a target the same pass moved —
+§5 item 22. The band moves; `G_vr` does not, and §4 item 1 still owns it.
+`RN.PRESSURE_NATRIURESIS.SLOPE` is likewise untouched: **no ledger VALUE moved in this
+pass, only note text.**
+
+### And a second staleness, in the same file, larger than the one being fixed
+
+`ecf_salt_response_extract.py` states `model dMAP/dV_ecf = 11.285 mmHg/L` and concludes
+*"Test B fails by a factor of 2.7 to 5.2 … `RN.PRESSURE_NATRIURESIS.SLOPE` stays at
+20.0"*. **The model's ratio is 3.2185 and that row is 8.4.** The verdict is a dated
+2026-08 snapshot of a model that no longer exists — and the model is now *inside* the
+band, because the model moved, not because this correction helped it. **Labelled as dated
+rather than rewritten**, because re-running ADR 0013's test is not what this pass is.
+
+---
+
 ## 4. NEXT, IN ORDER
 
 **Rewritten 2026-09-03, and item 1 was discharged the same day.** The previous list's
@@ -3654,10 +3727,17 @@ were solved against that very target. And §5, which is how work goes wrong here
    to `derived`, the ledger has no `calibrated` rows left**, which is worth doing properly
    rather than by accident.
 
-6. **The de-indexing correction owed to `ecf_salt_response_extract.py`** (§3.12). It
-   multiplies an indexed ECF *difference* by ONE body surface area where each arm has its
-   own, understating the expansion by 9%. One clean pass; it touches a document the renal
-   haemodynamics change made no claim about.
+6. **~~The de-indexing correction owed to `ecf_salt_response_extract.py`~~ DONE
+   2026-09-16, §3.44.** The 9% was exactly right and had already been computed in three
+   places; the work was propagating it into fourteen files. Tracer limb 0.553 → 0.602
+   L/100 mmol, the two limbs' **ordering flips**, and the human `dMAP/dV_ecf` band
+   2.97–4.16 → **2.82–4.02**. **The model is more too-stiff than recorded, not less** —
+   33% up the corrected band against 21% up the old one. No ledger value moved.
+
+   **What it left open:** that file's own verdict is a dated 2026-08 snapshot quoting a
+   model ratio of 11.285 against today's 3.2185 and a `G_pn` of 20.0 against today's 8.4.
+   **Re-running ADR 0013's test against the corrected band is its own pass**, and ADR
+   0013's `G_vr` target of 758–1062 moves with the band — §4 item 1.
 
 7. **The model predicts sex-dependent salt sensitivity, and ~~17.7%~~ **6.2%** of it
    survived de-indexing.** A pressure-only kidney had salt sensitivity `1/G_pn`, which
@@ -4050,13 +4130,15 @@ code, with 28-minute outliers in the run list.
   because ADR 0006 defaults an E1 phenomenon on — which the pre-registration fixed in
   advance so it could not be decided conveniently afterwards. **The named unblocking
   condition was `CV.VENOUS_RETURN.SENSITIVITY`, and it was discharged the day before.**
-- **`ecf_salt_response_extract.py` de-indexes van den Bosch with one body surface area
-  where each arm has its own.** 0.9 × 2.04/1.73 = 1.061 L against the correct
-  (17.4×2.04 − 16.5×2.03)/1.73 = **1.157 L**, because BSA itself rose with the retained
-  fluid. It makes §3.7's within-subject ratio 1.73 rather than 1.885 mmHg/L and the
-  failure 5.7× rather than 5.2×. **Deliberately not fixed inside the renal haemodynamics
-  change** — it touches a document that change made no claim about, and two changes at
-  once leaves neither testable. One clean pass — **§4 item 6**.
+- **~~`ecf_salt_response_extract.py` de-indexes van den Bosch with one body surface area
+  where each arm has its own.~~ FIXED 2026-09-16, §3.44.** 0.9 × 2.04/1.73 = 1.061 L
+  against the correct (17.4×2.04 − 16.5×2.03)/1.73 = **1.157 L**, because BSA itself rose
+  with the retained fluid. It makes §3.7's within-subject ratio 1.73 rather than 1.885
+  mmHg/L and the failure 5.7× rather than 5.2×. **Deliberately not fixed inside the renal
+  haemodynamics change** — it touches a document that change made no claim about, and two
+  changes at once leaves neither testable. **Deferring it was right and the deferral
+  worked**: the number sat correct and unapplied for five days and was then propagated in
+  one pass rather than smuggled into another.
 - **Krikken 2007's filtration-fraction sentence is still unread.** Struck under branch K2,
   not reinterpreted. Subscription-only, absent from PubMed Central, 403 on ScienceDirect.
   Anyone with institutional access should record which way the value pairs run — the

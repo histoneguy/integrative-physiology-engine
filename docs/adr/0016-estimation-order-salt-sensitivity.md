@@ -163,3 +163,5 @@ step 1 is the wrong first step, and this ordering is wrong at its root.
   proposal.
 - **Whether `G_pn` should be a distribution rather than a point value.** ADR 0013 calls
   that the strongest case in the repo for a posterior; it is untouched here.
+
+> **The human volume limb and the `dMAP/dV_ecf` band quoted in this record were corrected on 2026-09-16** — tracer limb 0.553 → 0.602 L/100 mmol, band 2.97–4.16 → 2.82–4.02 mmHg/L, because `ecf_salt_response_extract.py` de-indexed van den Bosch with one body surface area where each arm has its own. **See ADR 0013's addendum**, which owns the band, and `validation/ecf_deindex_extract.py`, which computes it.

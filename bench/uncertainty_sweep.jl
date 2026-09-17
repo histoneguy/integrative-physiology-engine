@@ -26,7 +26,14 @@ using OrdinaryDiffEq
 using Printf
 
 const HUMAN_SENS  = (1.70, 2.30)     # mmHg per 100 mmol/day
-const HUMAN_RATIO = (2.97, 4.16)     # mmHg/L
+# 2.97-4.16 -> 2.82-4.02 ON 2026-09-16, ecf_deindex_prereg.md. The band is the
+# meta-analytic pressure over the POOLED VOLUME, and the tracer limb of that pool
+# was de-indexed with one body surface area where van den Bosch prints one per arm.
+# Corrected it is 0.602 rather than 0.553 L/100 mmol, the pooled range becomes
+# 0.572-0.602, and the band falls. THE HUMAN IS LESS STIFF THAN RECORDED, SO THE
+# MODEL IS MORE TOO-STIFF - the correction makes this repo's headline discrepancy
+# worse, which is the direction the pre-registration fixed in advance.
+const HUMAN_RATIO = (2.82, 4.02)     # mmHg/L
 
 """Ledger rows that state an interval, as param_id => (lo, hi)."""
 function ledger_intervals()

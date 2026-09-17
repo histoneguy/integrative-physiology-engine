@@ -441,3 +441,48 @@ systemic filling pressure or resistance to venous return exists in this repo.
 the entered gain is 700, and the same constraint at 700 gives 8.4. So 11.4 and 700 are not
 the matched pair. Moving either number now, after seeing the result, is the circularity
 this row's own history is a warning about.
+
+---
+
+## Addendum, 2026-09-16 — the human volume limb was 9% low, and this record owns the band
+
+**`validation/ecf_deindex_prereg.md`, `HANDOVER` §4 item 6.**
+
+`ecf_salt_response_extract.py` de-indexed van den Bosch by multiplying the indexed ECFV
+**difference** by **one** body surface area. The arms differ in body weight (80.6 vs 79.2
+kg) and the paper prints a BSA for each — 2.04 and 2.03 — so the two indexed values were
+never on the same denominator.
+
+    as coded   (17.4 - 16.5) x 2.04 / 1.73                = 1.0613 L
+    correct    (17.4 x 2.04 - 16.5 x 2.03) / 1.73         = 1.1566 L    (+9.0%)
+
+**EVERY HUMAN VOLUME AND RATIO IN THIS RECORD IS SUPERSEDED BY THAT.** The tables below
+are left as the dated analysis they were; these are the corrected values:
+
+| | as recorded below | corrected |
+|---|---|---|
+| ΔECFV, van den Bosch | 1.061 L | **1.157 L** |
+| tracer limb | 0.553 L/100 mmol | **0.602** |
+| pooled volume | 0.553–0.572 | **0.572–0.602** |
+| `dMAP/dV_ecf`, human band | 2.97–4.16 mmHg/L | **2.82–4.02** |
+| within-subject | 1.885 mmHg/L | **1.729** |
+
+**THE ORDERING OF THE TWO LIMBS FLIPS.** The tracer limb was the lower of the pair and is
+now the higher, and the pool is quoted as a *range*, so the range moves. The two
+independent methods still agree — 5.3% apart against 3.4% — so the pre-registration's
+`1 kg = 1 L` conversion claim is corroborated either way.
+
+**IT MAKES THE MODEL WORSE, AND THAT WAS FIXED IN ADVANCE.** A larger human expansion
+means a smaller human ratio, so the model is *more* too-stiff than this record says. The
+pre-registration stated that direction before the propagation was run, precisely so a
+result flattering the model would read as an error. Measured: the model sits **33% up the
+corrected band against 21% up the old one** — inside both, stiffer relative to the human
+range.
+
+**`CV.VENOUS_RETURN.SENSITIVITY` WAS NOT REFITTED.** This record sets its target *from*
+the band the correction moves, so re-deriving it here would be fitting a parameter to a
+target the same pass shifted — §5 item 22. The band moves; `G_vr` does not, and §4 item 1
+still owns it.
+
+**The `G_vr` target stated below as 758–1062 moves with the band**; it is not recomputed
+here for the same reason.

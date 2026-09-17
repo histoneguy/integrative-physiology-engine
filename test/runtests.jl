@@ -336,19 +336,20 @@ end
         # IS WHAT ITS OWN COMMENT ASKED FOR - though not by the cause it predicted.
         # Cardiovascular.jl stopped letting red cell volume expand with plasma, so
         # dV_blood/dV_ecf fell by 1/(1-Hct) = 1.83 and this ratio fell with it.
-        # STILL 1.5-2.1x ABOVE THE HUMAN 2.97-4.16, and that residual is G_vr,
+        # STILL 1.5-2.1x ABOVE THE HUMAN 2.82-4.02 (corrected 2026-09-16, see
+        # ecf_deindex_prereg.md), and that residual is G_vr,
         # which is CALIBRATED and is section 4 item 1. When sourced venous
         # compliance lands this should fail again and move to about 3.0.
         ratio = v.map_shift_mmHg /
                 (r.levels[1].V_ecf_final - r.levels[end].V_ecf_final)
         # 3.0005 -> 2.9814 on 2026-09-09 with BR.OPEN_LOOP_GAIN. 0.6% against a
-        # human 2.97-4.16 that spans 40%, so the agreement is unchanged in any
+        # human 2.82-4.02 that spans 43%, so the agreement is unchanged in any
         # sense the data can resolve - directive 1.9. The pin is tight because a
         # loose pin catches nothing, NOT because the figure means anything.
         # 2.9814 -> 3.2185 on 2026-09-16, deindexing_prereg.md Stage 2. Same
         # cause as SALT_MAP_SHIFT above: de-indexing lowered male cardiac output at
         # an unchanged MAP, so TPR0 rose and dMAP/dV_ecf rose with it. THE MODEL
-        # MOVES FROM THE FLOOR OF THE HUMAN 2.97-4.16 INTO THE BAND, and it was not
+        # MOVES FROM THE FLOOR OF THE HUMAN BAND INTO IT, and it was not
         # fitted there - this test's own comment says "do not simply refit G_vr to
         # make it pass", and G_vr was not touched.
         @test isapprox(ratio, 3.2185; rtol = 1e-3)

@@ -29,8 +29,8 @@ OUT = ROOT / "gui" / "index.html"
 CAVEATS = [
     ("Salt sensitivity is a FIT, not a prediction (HANDOVER §3.21)",
      "The model reproduces human salt sensitivity, 1.85 mmHg per 100 mmol/day against a "
-     "meta-analytic 1.70–2.30, and the pressure–volume ratio, 3.00 mmHg/L against a measured "
-     "2.97–4.16. Two of the three parameters that make it do so were solved against those very "
+     "meta-analytic 1.70–2.30, and the pressure–volume ratio, 3.22 mmHg/L against a measured "
+     "2.82–4.02. Two of the three parameters that make it do so were solved against those very "
      "targets. Quote neither to more than three significant figures."),
     ("One number is genuinely held out, and the model is a third low (§4 item 2)",
      "Predicted fractional sodium excretion after 23 mL/kg of isotonic saline is +79%, against "

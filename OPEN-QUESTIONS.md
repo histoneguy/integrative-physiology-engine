@@ -91,7 +91,7 @@ arithmetic is in §3.22.
 ### B2. Salt sensitivity is a fit, and the sex difference in it is a prediction nobody has checked
 
 The model gives 1.85 mmHg per 100 mmol/day against a meta-analytic 1.70–2.30, and 3.00
-mmHg/L against a measured 2.97–4.16. **Two of the three parameters that make it do so
+mmHg/L against a measured **2.82–4.02** (corrected 2026-09-16 from 2.97–4.16; HANDOVER §3.44). **Two of the three parameters that make it do so
 were solved against those targets.** Quote neither beyond three significant figures.
 
 The model also predicts salt sensitivity **17.7% higher in women**, which nothing has

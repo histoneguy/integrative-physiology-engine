@@ -81,7 +81,7 @@ end
 println()
 println("""
 HOW TO READ THIS. Human salt sensitivity is 1.70-2.30 mmHg per 100 mmol/day and the
-pressure-volume ratio 2.97-4.16 mmHg/L - spans of 35% and 40%. If the whole +/-1 SD
+pressure-volume ratio 2.82-4.02 mmHg/L - spans of 35% and 43%. If the whole +/-1 SD
 sweep above stays inside those, then THE GAIN'S UNCERTAINTY IS NOT WHAT LIMITS THE
 MODEL'S AGREEMENT, and quoting either output beyond three significant figures asserts
 a precision neither the parameter nor the target possesses.
