@@ -2345,7 +2345,7 @@ end
         # only by editing its value, and no gate in this repository can see that.
         # This assertion is what stands in for one.
         let prob = ODEProblem(sys, Pair[], (0.0, 400.0), Pair[]),
-            fp = prob.ps[pget(sys, "rn₊FR_prox")]
+            fp = prob.ps[pget(sys, "rn₊f_md")]
             @test isapprox(nd,
                            fin(sys, sol, "rn₊Na_filtered") * (1.0 - fp) *
                            fin(sys, sol, "rn₊renal_mod"); rtol = 1e-12)
