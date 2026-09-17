@@ -77,16 +77,31 @@ about 10% by reporting its cohort's mean thyrotropin.
 
 ## B. Where the model is knowingly wrong, and I did not fix it
 
-### B1. The one genuinely held-out number is a third low
+### B1. The held-out number is not low — and what IS open is the LATE time course
 
-Predicted fractional sodium excretion after 23 mL/kg isotonic saline: **+79.3%** against
-Jensen 2013's measured **+123%**. Jensen was deliberately excluded from estimation, so it
-is the only place the parameterisation is tested rather than fitted.
+**CORRECTED 2026-09-17, HANDOVER §3.45.** This entry said the model predicted **+79.3%**
+against Jensen 2013's **+123%** and called it a third low. **Two things were wrong with
+that.**
 
-**Do not close it by refitting the ANP gain to Jensen** — that spends the only
-out-of-sample datum this line has. Wiring the GFR volume response moved it from 82.5% to
-79.3%, i.e. slightly the wrong way, while moving both Lobo endpoints closer; the
-arithmetic is in §3.22.
+**It was stale.** `be3691b` on 2026-09-05 — the macula densa arm — moved the endpoint and
+nothing recorded it. The claim stood here for twelve days.
+
+**And the comparison was not like for like.** It set a MODEL PEAK against Jensen's value
+in its FINAL SAMPLING PERIOD. Jensen's series is monotone rising to that period (1.26,
+1.93, 2.35, 2.67, 2.80), so the study never observed a peak; 210–240 min is where the
+protocol stopped. Measured on Jensen's own window, the model is at **+110.1%** against
+**+122%** — inside a reported 2.80 ± 0.75, and tracking the whole observed time course.
+
+**The agreement is not accuracy.** Even the zero-correlation upper bound on Jensen's ratio
+is −18% to +502%.
+
+**WHAT IS GENUINELY OPEN: the model's maximum falls at 375 min after infusion start and no
+published number bounds it.** Jensen ends at 240 min with its series still climbing.
+`RN.ANP.TAU` was estimated against Lobo's 6 h CUMULATIVE endpoints, which fix the area
+under the curve and leave the peak time free. **What would resolve it:** a human isotonic
+saline study sampling past 6 h — Drummer 1992 (PMID 1324562) reports excretion elevated
+beyond 48 h and is the first place to look. **Do not close it by refitting `RN.ANP.TAU` to
+Jensen** — that spends the only out-of-sample datum this line has.
 
 ### B2. Salt sensitivity is a fit, and the sex difference in it is a prediction nobody has checked
 

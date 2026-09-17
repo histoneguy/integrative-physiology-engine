@@ -20,6 +20,28 @@ using SciMLBase
 # moved.
 const SALT_MAP_SHIFT = 2.0042
 
+# THE ACUTE PIN, AND THE REASON IT DID NOT EXIST UNTIL 2026-09-17.
+#
+# Jensen 2013's acute fractional sodium excretion rise is the ONLY number in the
+# sodium limb held out of every estimation, and it lived exclusively in
+# validation/challenges.jl - WHICH NEITHER CI NOR THIS SUITE EVER RAN. So nothing
+# automated could see it move, and on 2026-09-05 it moved 53 points in one commit
+# and the repository went on quoting the old figure for twelve days. HANDOVER
+# section 3.45.
+#
+# THIS IS A DRIFT PIN, NOT A VALIDITY CLAIM. The comparison band in challenges.jl
+# is 60-250% because Jensen publishes no paired correlation and section 3.23
+# refused to fabricate one; a 53-point move fits inside that band comfortably. A
+# wide band is the right validity check and a useless change detector, and those
+# are different jobs. Same lesson as SALT_MAP_SHIFT above, learned again.
+#
+# MEASURED ON JENSEN'S OWN FINAL WINDOW, 210-240 min on its clock, which is
+# 120-150 min after infusion start on this one. NOT against a model peak: the
+# model's maximum falls hours after Jensen's protocol ends, and Jensen's series is
+# monotone rising to its last sample, so THE STUDY NEVER OBSERVED A PEAK. Against
+# Jensen's measured +122% (2.80 vs 1.26).
+const JENSEN_FINAL_WINDOW_RISE = 110.13
+
 # ---------------------------------------------------------------------------
 # RUN ONE TESTSET INSTEAD OF ALL 37. Directive 1.10, applied to the DEV LOOP
 # rather than to the model.
@@ -353,6 +375,50 @@ end
         # fitted there - this test's own comment says "do not simply refit G_vr to
         # make it pass", and G_vr was not touched.
         @test isapprox(ratio, 3.2185; rtol = 1e-3)
+    end
+
+    @tset "the acute natriuresis is pinned, because challenges.jl never runs in CI" begin
+        # See JENSEN_FINAL_WINDOW_RISE at the top of this file for why this exists.
+        # Jensen JM et al., BMC Nephrol 2013;14:202, PMID 24067081: 23 healthy
+        # subjects, 0.9% saline 23 mL/kg over 60 min, FE_Na 1.26 (0.53) -> 2.80
+        # (0.75) % in the 210-240 min period, +122%.
+        sys = build_model()
+        Uj = unknowns(sys); Oj = observed(sys)
+        pg(n) = (for p in parameters(sys); occursin(n, String(Symbol(p))) && return p; end;
+                 error(n))
+        vj(s, n, i) = begin
+            for u in Uj; occursin(n, String(Symbol(u))) && return s[u][i]; end
+            for o in Oj; occursin(n, String(Symbol(o.lhs))) && return s[o.lhs][i]; end
+            NaN
+        end
+
+        s0 = solve(ODEProblem(sys, Pair[], (0.0, 60.0), Pair[]), Rodas5P();
+                   abstol = 1e-10, reltol = 1e-10)
+        n0 = length(s0.t)
+        u0 = [u => s0[u][end] for u in Uj]
+        fena0 = vj(s0, "rn₊Na_excr", n0) /
+                (vj(s0, "rn₊GFR", n0) * vj(s0, "bf₊C_Na", n0))
+
+        vol = 0.023 * 70.0
+        pm = Dict{Any,Any}(pg("H2O_intake") => 2.5 + vol/(1/24),
+                           pg("Na_intake")  => 205.0 + 154.0*vol/(1/24))
+        s1 = solve(ODEProblem(sys, vcat(u0, collect(pm)), (0.0, 1/24), Pair[]),
+                   Rodas5P(); abstol = 1e-10, reltol = 1e-10, saveat = 1/24/60)
+        u1 = [x => s1[x][end] for x in Uj]
+        s2 = solve(ODEProblem(sys, vcat(u1, collect(Dict{Any,Any}())),
+                              (1/24, 1/24 + 4/24), Pair[]),
+                   Rodas5P(); abstol = 1e-10, reltol = 1e-10, saveat = 1/24/60)
+
+        acc = Float64[]
+        for s in (s1, s2), i in 1:length(s.t)
+            t = s.t[i] * 24 * 60
+            120.0 <= t <= 150.0 &&
+                push!(acc, vj(s, "rn₊Na_excr", i) /
+                           (vj(s, "rn₊GFR", i) * vj(s, "bf₊C_Na", i)))
+        end
+        @test !isempty(acc)
+        rise = (sum(acc)/length(acc) / fena0 - 1) * 100
+        @test isapprox(rise, JENSEN_FINAL_WINDOW_RISE; atol = 0.5)
     end
 
     @tset "ADR 0012 stage 1 is a change of variables, not of behaviour" begin
