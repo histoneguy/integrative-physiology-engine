@@ -588,7 +588,14 @@ than assumed: the cardiac change was run alone with the old ADH constants restor
 **And the sex pair now moves volumes while leaving pressure alone.** Cardiac output
 differs by 22% between the sexes; the salt-step shift differs at the eighth significant
 figure. Women reach the same pressure on a **6.9% smaller ECF excursion**, because
-`dMAP/dV_ecf` scales as `TPR0·BV0` and that product is 6.9% larger in women. ADR 0014's
+`dMAP/dV_ecf` scales as `TPR0·BV0` and that product is 6.9% larger in women.
+
+> **SUPERSEDED ON 2026-09-16 — THE SIGN REVERSED. See §3.43.** De-indexing
+> `CV.SV.NOMINAL` removed a body-size component it was carrying twice: the cardiac
+> output difference fell 22% → 7.5%, `TPR0·BV0` went female/male 1.069 → **0.941**, and
+> women now need a **LARGER** ECF excursion, not a smaller one. The paragraph above is
+> left as the dated record of what was true when it was written; **the number and the
+> direction in it are both stale.** ADR 0014's
 falsifiable test asked that a pair change a result — it does, and not where that record
 predicted. **"Results move" is the wrong test on its own in a regulated loop.**
 
