@@ -139,3 +139,52 @@ retuned.
 
 Note the prior objection stands independently: a first-order lag cannot generate
 rhythmicity at constant intake, so it cannot explain the observation that motivated it.
+
+---
+
+## Amendment, 2026-09-17 — the single compartment cannot carry three timescales
+
+**HANDOVER §3.51, `validation/sodium_store_sourcing_prereg.md` branch T4.** Rakova 2013 was
+finally opened — it is **Open Archive on cell.com** and had been cited in this record and on
+both parameter rows since 2026-08-08 **without ever being read here**.
+
+### What this record attributed to it, checked
+
+| claim above | verdict |
+|---|---|
+| stepped 12 → 9 → 6 g/day NaCl, 30–60 days per level | **verified** |
+| 24 h urine daily, ~95% recovery | **verified**, verbatim |
+| total-body Na⁺ not a simple function of salt intake | **verified** |
+| total-body Na⁺ and extracellular water not tightly coupled | **verified**, ±200–400 mmol |
+| **"12 men"** | **NOT CONFIRMED** in the abstract or the Results text read — the paper says only *"men participating in space flight simulations"*, and Mars105 and Mars520 are separate crews |
+| **"7-day … cycles"** | **IMPRECISE** — the paper reports *"peaks at about **6 days** period length"* |
+
+### Three timescales, and this record has one compartment
+
+| | timescale |
+|---|---|
+| Olde Engberink 2017 (PMID 28132715), acute inactivation in healthy men | **2–4 hours** |
+| Rakova, urinary Na⁺ excretion rhythm | **~6 days** |
+| Rakova, total-body Na⁺ rhythm | **monthly and longer** |
+
+**A single first-order compartment cannot produce all three**, and `storage = true` gives
+this model exactly one. That is a defect in this record's **structure**, not in its
+parameter values.
+
+### And `BF.NA.STORAGE_TAU` is wrong in kind, not only in value
+
+Its note says the 7 d was *"chosen to match the reported weekly infradian rhythm period
+rather than derived from it."* **A rhythm period is not a first-order relaxation time
+constant** — an oscillation against a relaxation — and nothing converts one into the other.
+The rounding from ~6 days is the smaller error.
+
+### Status is UNCHANGED and deliberately so
+
+**`Provisional` stands, tier E3 stands, `storage` stays `false` by default, and neither
+parameter row moved.** §3.2 of the pre-registration: *"osmotically inactive"* is inferred
+from a balance discrepancy in the sources too — Olde Engberink's own limitation is that they
+*"did not directly measure the amount of nonosmotic Na⁺ stored in the tissues"* — so E3 does
+not improve merely because two citations were finally read.
+
+**What this record needs next is a structural decision, not another citation**, and it needs
+its own pre-registration.

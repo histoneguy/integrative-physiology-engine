@@ -4163,6 +4163,94 @@ own record, not a side effect of a diagnostic sweep. The default build is 12 sta
 
 ---
 
+### 3.51 THE STORAGE TIME CONSTANT WAS SET FROM THE WRONG KIND OF QUANTITY
+
+**2026-09-17**, `validation/sodium_store_sourcing_prereg.md`, branch **T4**. Two primaries
+opened — one supplied by the owner, one free on the publisher's site and never opened here
+despite being cited on both rows since 2026-08-08. **No value was entered.**
+
+### §7 ITEM 1 — RAKOVA OPENED, AND ADR 0004's ATTRIBUTIONS CHECKED LINE BY LINE
+
+Rakova N, Jüttner K, Dahlmann A, … Luft FC, Titze J. *Long-Term Space Flight Simulation
+Reveals Infradian Rhythmicity in Human Na⁺ Balance.* Cell Metab 2013;17(1):125–131.
+**Open Archive on cell.com; read.**
+
+| what ADR 0004 attributes to it | verdict |
+|---|---|
+| stepped 12 → 9 → 6 g/day NaCl, 30–60 days per level, enclosed habitat | **verified** |
+| 24 h urine daily, ~95% recovery | **verified** — *"We achieved 95% recovery of dietary Na⁺ in UNaV over each dietary phase"* |
+| total-body Na⁺ is not a simple function of salt intake | **verified** — *"Total-body Na⁺ proceeded to decrease despite high-salt intake"* |
+| total-body Na⁺ and extracellular water not tightly coupled | **verified** — *"±200–400 mmol … without parallel changes in body weight and extracellular water"* |
+| **"12 men"** | **NOT CONFIRMED.** The abstract and the Results sections read say only *"men participating in space flight simulations"*. Mars105 and Mars520 are separate crews and the number was not found. |
+| **"7-day … cycles"** | **IMPRECISE.** The paper reports *"peaks at about **6 days** period length (circaseptan)"*. |
+
+### AND THE SECOND SOURCE PUTS THE SAME PHENOMENON ON A TIMESCALE OF HOURS
+
+Olde Engberink RHG, Rorije NMG, van den Born BJH, Vogt L. *Quantification of nonosmotic
+sodium storage capacity following acute hypertonic saline infusion in healthy individuals.*
+Kidney Int 2017;91(3):738–745. PMID 28132715. **Supplied by the owner; read.**
+
+12 healthy normotensive non-smoking men, **on a low-sodium diet**, 2.4% NaCl over 30 min
+dosed to 5 mmol Na⁺/L total body water, followed 4 h. **92 ± 26 mmol of Na⁺ or K⁺ should
+have been excreted; 51 mmol was.** Only **47% and 55%** of expected sodium and potassium
+excretion retrieved in urine; 45% and 50% on their sensitivity analysis. Postvoid retention
+excluded by MRI — a maximum of ~36 mL against the 324 mL that would be needed.
+
+### SO §0.1 IS ANSWERED, AND BOTH OF ITS LIVE OPTIONS ARE TRUE AT ONCE
+
+The pre-registration offered three readings. **Option 1 holds: there are multiple storage
+processes and the model has one.** Three timescales are now in evidence:
+
+| | timescale |
+|---|---|
+| Olde Engberink, acute inactivation | **2–4 hours** |
+| Rakova, urinary Na⁺ excretion rhythm | **~6 days** (circaseptan) |
+| Rakova, total-body Na⁺ rhythm | **monthly and longer** |
+
+**AND OPTION 3 HOLDS TOO, WHICH IS THE SHARPER FINDING.** `BF.NA.STORAGE_TAU`'s own note
+says the 7 d was *"chosen to match the reported weekly infradian rhythm period rather than
+derived from it."* **A rhythm PERIOD is not a first-order relaxation TIME CONSTANT.** They
+are different kinds of quantity — an oscillation against a relaxation — and no arithmetic
+converts one into the other.
+
+**So the row is not merely out by thirty to a hundred and forty fold. It was set from a
+measurement of the wrong kind**, and the value it was rounded from is itself ~6 days rather
+than 7. **Failure mode #11** — a name carrying a convention its value contradicts — in the
+one place nobody had looked.
+
+### NO VALUE WAS ENTERED, AND THE REASON IS §3.1's TRAP IN A NEW PLACE
+
+**Three quantities, and none of them is `f_store`:**
+
+| | what it is |
+|---|---|
+| model `f_store` | steady-state **`Na_store / Na_ecf`** |
+| Olde Engberink | fraction of cations **acutely cleared from body water** not retrieved in urine over 4 h |
+| Rakova | **swing amplitude** of total-body Na⁺ at fixed intake, ±200–400 mmol |
+
+A buffering fraction of a load, a swing amplitude, and a steady-state ratio. **Entering any
+of them on `BF.NA.OSMOTICALLY_INACTIVE_FRACTION` would be exactly what §3.1 was written to
+prevent**, and that section anticipated the ²³Na MRI version of the trap rather than this
+one.
+
+**And §3.2's caveat applies at full strength to both.** Olde Engberink's quantity is
+inferred from a mismatch between plasma [Na⁺] change and urinary excretion through the
+Adrogue-Madias and Nguyen-Kurtz formulas, and their own stated limitation is that *"we did
+not directly measure the amount of nonosmotic Na⁺ stored in the tissues."* Their subjects
+were **salt-depleted**, and the paper says the capacity may be large *because* of that.
+
+### BRANCH T4: THE STRUCTURE IS WRONG AND THIS PASS DOES NOT FIX IT
+
+ADR 0004's **single first-order compartment cannot carry three timescales.** T4 says report
+it and **do not build the second compartment in this pass**, which is what happened. Both
+rows stay `assumed`, `storage` stays `false`, ADR 0004 keeps `provisional`, and the default
+build is 12 states.
+
+**What the next pass needs is not another citation.** It is a decision about structure, and
+the evidence for it is now assembled rather than assumed.
+
+---
+
 ## 4. NEXT, IN ORDER
 
 **Rewritten 2026-09-03, and item 1 was discharged the same day.** The previous list's
@@ -4229,23 +4317,26 @@ were solved against that very target. And §5, which is how work goes wrong here
    and renal sympathetic traffic are absent. Both are E1, both are inside components
    that already exist, and neither needs a paper nobody can open.
 
-2. **~~THE TWO ACUTE HUMAN DATASETS DISAGREE BY TWOFOLD~~ THEY DO NOT — §3.49 WITHDRAWS
-   IT. THE SODIUM STORE IS THE OPEN PROBLEM.** With Drummer's full text the model is
-   **1.25× off on sodium** and **1.90× off on volume**: the sodium limb is roughly right
-   and the water limb is not, and §3.46's three-fold gain requirement was a water problem
-   being pushed through a sodium lever. Jensen agrees with Drummer once the right quantity
-   is compared.
+2. **THE SODIUM STORE NEEDS A STRUCTURE DECISION, NOT A CITATION — §3.49, §3.50, §3.51.**
+   Drummer's full text shows the model is **1.25× off on sodium** and **1.90× off on
+   volume**: the water limb is wrong, not the sodium limb, and §3.46's three-fold gain
+   requirement was a water problem pushed through a sodium lever. Weight returns before
+   sodium in people — half-life ratio **0.70** against the model's **1.065**.
 
-   **Drummer's weight half-life is 7 h against a sodium half-life of 10 h — a ratio of
-   0.70. The model's is 1.065**, because extracellular volume is tied to extracellular
-   sodium and water cannot leave ahead of salt. **Three independent human numbers now point
-   at an osmotically inactive sodium store**: that dissociation, Van Regenmortel's 171 mmol
-   → 590 mL (48% of the sodium appearing as fluid), and Drummer's 10.0% haematocrit fall
-   against the model's 6.4%.
+   **Stage 1 turned ADR 0004's compartment on for the first time. It produces the
+   dissociation and cannot produce the speed** — it pivots the two half-lives rather than
+   moving both down, and reaching the ratio costs Jensen (110.2 → 88.7 against 122).
 
-   **`BF.NA.OSMOTICALLY_INACTIVE_FRACTION` is `assumed` at 0.15 and ADR 0004 is PROVISIONAL
-   and switched off**, so the model represents none of it. **Pre-registered in
-   `validation/sodium_store_prereg.md`.**
+   **And the sourcing pass found the structure is wrong.** Three timescales are in
+   evidence — **2–4 hours** (Olde Engberink), **~6 days** and **monthly+** (Rakova) — and
+   a single first-order compartment carries one. **`BF.NA.STORAGE_TAU` = 7 d was set from
+   a rhythm PERIOD, which is not a relaxation TIME CONSTANT**, so it is wrong in kind and
+   not only in value.
+
+   **Both rows stay `assumed` and nothing was entered**, because the model's `f_store` is a
+   steady-state ratio while the sources give a buffering fraction and a swing amplitude —
+   three different quantities. **The next pass is a structural decision on ADR 0004**, and
+   it needs its own pre-registration.
 
 3. **`BF.ICF_ECF.OSMOTIC_TAU` BLOCKS EVERY ACUTE OSMOTIC MAGNITUDE.** `assumed` at 30 min.
    Near zero on multi-day runs and DOMINANT on acute ones: a 1.4 L water load moves peak
