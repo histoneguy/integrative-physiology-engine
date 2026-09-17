@@ -3439,6 +3439,118 @@ disabled branch got *more* accurate.
 
 ---
 
+### 3.43 A SEXED PREDICTION THIS MODEL MADE WAS SUBSTANTIALLY AN INDEXING ARTEFACT
+
+**2026-09-16**, `validation/deindexing_prereg.md`. §4 item 10 said body surface area
+*"needs a height row and one sourced BSA formula"*. **That was done on 2026-09-05** —
+the third stale entry found in this work list in two passes, after items 8 and 9. Two
+of its other claims are simply wrong: BSA does **not** unlock Zhan 2024 (reference
+limits, and `pooling.md` prohibits range-midpoint) and only half-unlocks Luu 2022
+(which contours papillary muscles into LV *mass*, so it cannot be pooled with Petersen
+whatever the indexing).
+
+**What was actually left is better.** `BF.BSA.REFERENCE` was sourced eleven days ago and
+**nothing in the model read it** — verified across every `.jl` and `.py` outside the
+generated `LedgerParams.jl`. An unconnected row is the failure ADR 0006 records for
+Circadian, and directive 1.11 is the guard.
+
+**And it had left an instruction nobody followed.** Its own note: *"any quantity
+de-indexed from a per-1.73-m² figure must be multiplied by 1.8545/1.73 and not taken
+as-is."* `RN.GFR.NOMINAL`'s note: *"106 mL/min/1.73 m² × 1440 / 1000 = 152.64"* —
+**taken as-is.** A 7% correction sat unapplied between two rows in the same ledger, one
+of which told the other what to do.
+
+### Stage 1 — the reference man was 175.8 cm at 70 kg, and a 70 kg man is 171.8
+
+`BF.HEIGHT.REFERENCE` was the mean height of **all** adults, who average 88.4 kg in men,
+paired with a 70 kg reference individual. Its own note already called that *"a known
+inconsistency"* that *"matters by a few per cent for de-indexing"* — and the correction
+this pass exists to make is 7%, in the same direction. **Using a mispaired BSA to fix an
+indexing error is failure mode 9.**
+
+No new source: the NHANES 2007–2012 `BMX` microdata is already in `validation/data`, and
+the quantity wanted is the weighted mean height **at** the reference mass. Band ±2 kg,
+n = 366 men and 445 women; across ±1, ±2, ±3 and ±5 kg the resulting BSA spans 0.17% in
+men and 0.22% in women, so the band is a tie-break and not a decision.
+
+**The asymmetry is the point.** NHANES women average 75.2 kg, so the all-adult mean was
+already nearly right for a 70 kg woman — 162.1 against 162.4, BSA +0.15%. NHANES men
+average 88.4 kg, so it described a man **4 cm taller than a 70 kg man really is**: 175.8
+against 171.8, BMI 22.6 against a measured 23.7, BSA −1.7%.
+
+**Measured: 772 tests pass and nothing moved.** Stage 1 was run and committed on its own
+precisely so that could be asserted.
+
+### Stage 2 — and the consequence is not the row
+
+Petersen reports the **same cohort both ways**: absolute 96 and 75 mL, indexed 49 ± 10
+and 45 ± 8 mL/m². So the implied cohort BSA is 1.959 m² in the men and 1.667 in the
+women, against the model's reference 1.824 and 1.751. De-indexing gives **96 → 89** and
+**75 → 79**.
+
+**The pre-registered prediction held and it could have failed.** §6 fixed in advance that
+the male value must move *down* and the female *up*, because the reference mass is 70 kg
+for both sexes — light for a man, heavy for a woman. Measured −6.9% and +5.0%.
+
+| | before | after |
+|---|---|---|
+| stroke-volume sex difference | 28% | **13%** |
+| cardiac-output sex difference | 22% | **7.5%** |
+| predicted salt-sensitivity ratio f/m | 1.172 | **1.062** |
+| `TPR0 × BV0`, female/male | 1.069 | **0.941** |
+
+**THE LAST LINE IS A REVERSAL.** The suite asserted, with the mechanism written out, that
+`dMAP/dV_ecf` scales as `TPR0·BV0`, that the product is 6.9% *larger* in women, and
+therefore that **women reach the same pressure shift on a smaller extracellular
+excursion**. De-indexing raised male `TPR0` and lowered female, and the ordering flipped.
+Women now need a **larger** excursion.
+
+`CV.SV.NOMINAL` was carrying Petersen's *cohort* body size — a 17% difference between his
+men and his women — on top of the model's own sexed mass sampling. **Its own note
+described exactly this** and said *"in the ensemble … that component is counted twice.
+Fixing it needs sex-stratified cohort mass or a BSA row."*
+
+**§4 item 7 records the 17.7% sexed salt sensitivity as debt and says "source it or
+falsify it". Two thirds of it is now falsified — and not by a source, but by a double
+count inside the model.** The direction survives; the magnitude did not. That is why the
+two were asserted separately, and the separation was written for exactly this case.
+
+### Nothing was fitted, and that had to be checked rather than assumed
+
+The pre-registration §4 forbids re-estimating `G_pn` and `G_anp`, and **neither moved**.
+Both failing regression pins moved **into** the middle of their human bands:
+
+- salt-sensitivity shift **1.886 → 2.004**, human **1.70–2.30**
+- `dMAP/dV_ecf` **2.98 → 3.22**, human **2.97–4.16**, where 2.98 sat on the floor
+
+Their own comments say to re-pin and *"do not simply refit G_vr to make it pass"*, and
+that is what was done.
+
+### The pin was written down three times
+
+`1.8858` appeared as **three separate assertions** — in `salt sensitivity pins G_pn`, in
+`ADH amplifies salt sensitivity`, and in `size scaling leaves the reference individual
+bit-identical`. §3.32 already recorded this failure at **two** copies: *"this is a VALUE
+written down twice, and the second copy was missed on the first pass."* It was three.
+Now one `const SALT_MAP_SHIFT` with three readers, and the four historical comments
+recording earlier re-pins were left alone.
+
+### Stage 3 is NOT taken, and the number is recorded unapplied
+
+De-indexed GFR would be **+5.4% male and +1.2% female**. It is not entered.
+
+`BF.NA.INTAKE_NOMINAL` is a single `both` row while a de-indexed GFR is a **pair**, so
+`FR_Na` would become sexed — and the model would assert a sex difference in tubular
+reabsorption that exists only because both sexes are fed the same absolute sodium.
+**Soares measured no sex difference in indexed GFR, p = 0.134.** And the *sensitivity*
+moves with the filtered load, so every natriuretic response would strengthen — against
+which §3.40 measured `G_anp`'s interval swinging salt sensitivity by 45%.
+
+**This pass already carries a reversed sexed prediction. Two structural changes and one
+review is how a real effect and an artefact get attributed to each other.**
+
+---
+
 ## 4. NEXT, IN ORDER
 
 **Rewritten 2026-09-03, and item 1 was discharged the same day.** The previous list's
@@ -3540,10 +3652,18 @@ were solved against that very target. And §5, which is how work goes wrong here
    own, understating the expansion by 9%. One clean pass; it touches a document the renal
    haemodynamics change made no claim about.
 
-7. **The model now PREDICTS sex-dependent salt sensitivity, women 17.7% higher, and nothing
-   here has sourced it.** A pressure-only kidney had salt sensitivity `1/G_pn`, which
-   carries no sex information; the volume path is keyed to a sexed volume, so it does. It
-   is asserted in the suite as a prediction. **Source it or falsify it.**
+7. **The model predicts sex-dependent salt sensitivity, and ~~17.7%~~ **6.2%** of it
+   survived de-indexing.** A pressure-only kidney had salt sensitivity `1/G_pn`, which
+   carries no sex information; the volume path is keyed to a sexed volume, so it does.
+
+   **TWO THIRDS OF THIS PREDICTION WAS AN ARTEFACT AND IT WAS FALSIFIED FROM INSIDE**
+   (§3.43): `CV.SV.NOMINAL` carried Petersen's cohort body size on top of the model's
+   own sexed mass sampling. The **direction** survives and is still unsourced. The
+   companion prediction that women need a SMALLER extracellular excursion **reversed**.
+
+   **Source it or falsify it — and the falsification is now partly done.** Schumann 2024
+   (*Am J Physiol Heart Circ Physiol* 326:H158–H165, n = 980 healthy) is about sex
+   differences in baroreflex sensitivity and would give it a second dimorphic pair.
 
 8. **~~`RN.URINE.SOLUTE_LOAD` is the load-bearing unsourced number on the water
    side.~~ DONE 2026-09-16 — and it was 702, not 600.** Sourced from Kitada 2017
@@ -3567,10 +3687,23 @@ were solved against that very target. And §5, which is how work goes wrong here
    healthy, and it is about sex differences in baroreflex sensitivity, so it would
    give the sex-dependent salt-sensitivity prediction a second dimorphic pair.
 
-10. **Body surface area.** GFR and cardiac output scale sub-linearly in mass, so
-    `scaling.jl` overstates their population spread. It also unlocks Luu 2022 (n = 3,206)
-    and Zhan 2024 (12,812), both rejected for reporting indexed volumes only, and it stops
-    a double count in `CV.SV.NOMINAL`. Needs a height row and one sourced BSA formula.
+10. **~~Body surface area.~~ MOSTLY DONE — the height row and the formula landed
+    2026-09-05, and the CONNECTION landed 2026-09-16 (§3.43).** `BF.BSA.REFERENCE` was
+    an unconnected row for eleven days; it is now re-paired to the reference mass and
+    `CV.SV.NOMINAL` is de-indexed through it, which removed a double count the row
+    itself had described and cut the model's sexed salt-sensitivity prediction from
+    17.2% to 6.2%.
+
+    **Two of this item's claims were wrong and are struck.** BSA does NOT unlock Zhan
+    2024 (reference limits; `pooling.md` prohibits range-midpoint) and only half-unlocks
+    Luu 2022 (papillary muscles contoured into LV *mass*, so unpoolable with Petersen
+    whatever the indexing).
+
+    **WHAT IS LEFT: de-index `RN.GFR.NOMINAL`.** +5.4% male, +1.2% female, measured and
+    unapplied. It forces `FR_Na` to become sexed — because `BF.NA.INTAKE_NOMINAL` is a
+    single `both` row — which would assert a sex difference in tubular reabsorption that
+    exists only because both sexes are fed the same absolute sodium. Needs either a
+    sexed sodium intake or a deliberate decision to accept that. §3.43.
 
 11. **`check_closure.py` is filling up** — 19 hand-coded relationships, does not scale past
     about twenty.
