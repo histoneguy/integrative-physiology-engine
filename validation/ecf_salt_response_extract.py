@@ -13,17 +13,39 @@ RN.PRESSURE_NATRIURESIS.SLOPE stays at 20.0, and ADR 0013 stays Proposed.
 
 THE EVIDENCE BASE IS SEVEN PRIMARIES ACROSS FOUR GROUPS AND TWO METHODS, not one study.
 The n-weighted body-weight limb (four groups, n = 132) gives 0.572 kg per 100 mmol/day
-and the iothalamate tracer limb gives 0.553 L - AGREEING TO 4%. The pre-registration
+and the iothalamate tracer limb gives 0.602 L - AGREEING TO 5%. The pre-registration
 declared 1 kg = 1 L in advance and said the conversion would be falsified if they
 diverged; it is corroborated instead.
+
+  CORRECTED 2026-09-16: the tracer limb was 0.553 and the two limbs agreed to 4% with
+  the TRACER BELOW. Per-arm de-indexing moves it to 0.602 and THE ORDERING FLIPS - the
+  tracer limb is now the HIGHER of the two. The agreement survives and is 5%, and the
+  pre-registration's conversion claim is corroborated either way. Saying which limb is
+  higher matters because the pair is quoted as a RANGE, and the range moves.
 
 THE FINDING IS ABOUT THE CIRCULATION, NOT THE KIDNEY, which is exactly what ADR 0013
 said its test would show if it failed: "the error has moved rather than been fixed -
 most likely into G_vr, f_pv, or the fractional reabsorption term".
 
-  human   dMAP / dV_ecf  =  1.885 mmHg/L   within-subject (van den Bosch, n = 70)
-                          =  2.97 - 4.16    meta-analytic pressure / pooled volume
+  human   dMAP / dV_ecf  =  1.729 mmHg/L   within-subject (van den Bosch, n = 70)
+                          =  2.82 - 4.02    meta-analytic pressure / pooled volume
   model   dMAP / dV_ecf  =  11.285 mmHg/L  at 70 kg, scaling as 1/mass
+                                           *** 2026-08 SNAPSHOT - SEE BELOW ***
+
+THE HUMAN FIGURES MOVED DOWN ON 2026-09-16 AND THAT MAKES THE MODEL WORSE, NOT BETTER.
+Per-arm de-indexing makes the human EXPANSION larger, so the human RATIO is smaller:
+1.885 -> 1.729 within-subject, and the pooled band 2.97-4.16 -> 2.82-4.02. The
+pre-registration fixed that direction in advance precisely so a result flattering the
+model would read as a propagation error.
+
+THE MODEL COLUMN IS A SNAPSHOT AND IS NOW BADLY STALE. 11.285 predates the 2026-09-02
+red cell correction and everything after it. The model's ratio is 3.2185 as of
+2026-09-16 (HANDOVER section 3.43), which is INSIDE the corrected band - but that is
+because the MODEL moved, not because this correction helped it. Measured against the
+corrected band the model sits 33% of the way up it, against 21% before, i.e. stiffer
+relative to the human range. THE VERDICT BELOW IS DATED 2026-08 AND IS NOT RE-RUN HERE:
+this pass corrects an arithmetic error in the human number, it does not re-execute
+ADR 0013's test. RN.PRESSURE_NATRIURESIS.SLOPE is 8.4 today, not the 20.0 named below.
 
 The within-subject figure is the tightest comparison and the harshest; the pooled figure
 is the most defensible, because the mechanistic volume studies are UNDERPOWERED for the
@@ -76,7 +98,11 @@ TEST_B = dict(
     na_high=230.0, na_low=38.0,              # mmol/24 h, MEASURED excretion
     map_high=88.0, map_low=86.0,             # mmHg
     ecfv_high=17.4, ecfv_low=16.5,           # L per 1.73 m2
-    bsa=2.04,                                # m2
+    # BSA IS REPORTED PER ARM AND THAT IS THE WHOLE OF THE 2026-09-16 CORRECTION.
+    # Body weight differs between arms (80.6 vs 79.2 kg), so the two indexed ECFV
+    # values do NOT share a denominator and their difference cannot be de-indexed
+    # by one of them. Table 1 prints both.
+    bsa_high=2.04, bsa_low=2.03,             # m2
     weight_high=80.6, weight_low=79.2,       # kg
 )
 
@@ -272,8 +298,20 @@ def main():
     b = TEST_B
     d_na = b["na_high"] - b["na_low"]
     d_map = b["map_high"] - b["map_low"]
-    # ECFV is reported INDEXED to 1.73 m2; de-index to the cohort's own BSA.
-    d_ecfv = (b["ecfv_high"] - b["ecfv_low"]) * b["bsa"] / 1.73
+    # ECFV is reported INDEXED to 1.73 m2; de-index EACH ARM at ITS OWN BSA.
+    #
+    # CORRECTED 2026-09-16, HANDOVER section 4 item 6, pre-registered in
+    # validation/ecf_deindex_prereg.md. This read
+    #
+    #     d_ecfv = (ecfv_high - ecfv_low) * bsa / 1.73
+    #
+    # which multiplies a DIFFERENCE OF TWO INDEXED NUMBERS by ONE surface area.
+    # The arms differ in body weight and van den Bosch prints a BSA for each, so
+    # the two indexed values were never on the same denominator.
+    #
+    #     as coded   (17.4 - 16.5) x 2.04 / 1.73          = 1.0613 L
+    #     correct    (17.4 x 2.04 - 16.5 x 2.03) / 1.73   = 1.1566 L   (+9.0%)
+    d_ecfv = (b["ecfv_high"] * b["bsa_high"] - b["ecfv_low"] * b["bsa_low"]) / 1.73
     d_wt = b["weight_high"] - b["weight_low"]
 
     print("\nTEST B - THE RATIO, WHICH DOES NOT INVOLVE G_pn AT ALL")
@@ -284,7 +322,7 @@ def main():
     print("     MAP      %.0f -> %.0f mmHg        (delta %.1f)"
           % (b["map_high"], b["map_low"], d_map))
     print("     ECFV     %.1f -> %.1f L/1.73 m2   (delta %.3f L at BSA %.2f)"
-          % (b["ecfv_high"], b["ecfv_low"], d_ecfv, b["bsa"]))
+          % (b["ecfv_high"], b["ecfv_low"], d_ecfv, b["bsa_high"]))
     print("     weight   %.1f -> %.1f kg          (delta %.1f)"
           % (b["weight_high"], b["weight_low"], d_wt))
 
@@ -391,7 +429,11 @@ def main():
 
     # Assertions, so this file fails rather than misleads if the numbers are edited.
     assert abs(d_na - 192.0) < 1e-9
-    assert abs(round(ecf100, 3) - 0.553) < 1e-9
+    # 0.553 -> 0.602 on 2026-09-16 with the per-arm de-indexing. The assert is
+    # UPDATED, not removed: it exists to catch this value drifting silently, and
+    # it did its job - it is what forced the correction to be propagated rather
+    # than left in one file.
+    assert abs(round(ecf100, 3) - 0.602) < 1e-9
     assert model_ratio_here / (d_map / d_ecfv) > 2.0
     assert gvol < 43.5
 
