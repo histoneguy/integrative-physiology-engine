@@ -63,7 +63,8 @@ using ..LedgerParams:
     RN_AUTOREG_LOWER, RN_AUTOREG_UPPER, ADH_URINE_OSM_MAX, RN_URINE_SOLUTE_LOAD,
     CV_MAP_SETPOINT, BF_H2O_INTAKE_NOMINAL, BF_H2O_INSENSIBLE_LOSS,
     BF_BODY_MASS_REFERENCE, BF_ECF_MASS_FRACTION, CV_ANP_NATRIURETIC_GAIN, RN_ANP_TAU,
-    RN_GFR_VOLUME_SENSITIVITY, RN_GFR_VOLUME_RANGE, RN_NA_PROXIMAL_FRACTION,
+    RN_GFR_VOLUME_SENSITIVITY, RN_GFR_VOLUME_RANGE, RN_NA_MACULA_DENSA_FRACTION,
+    RN_NA_PROXIMAL_DELIVERY,
     BF_NA_PLASMA_SETPOINT
 
 """
@@ -105,11 +106,16 @@ function Renal(; name, solute_tracking::Bool = true,
         # ADR 0021. INTENSIVE - a fraction. It sets the SCALE of distal delivery
         # and is NOT separately identifiable from the macula densa gain that
         # multiplies the fractional deviation; see its ledger note.
-        FR_prox  = RN_NA_PROXIMAL_FRACTION
+        f_md     = RN_NA_MACULA_DENSA_FRACTION
+        # SOURCED IN HEALTHY HUMANS, Shirley 2002, by lithium clearance. It is a
+        # DIFFERENT SEGMENT from f_md above: lithium stops at the end of the
+        # proximal tubule, the macula densa sits past the loop, and the loop takes
+        # most of what the proximal tubule passes on. 0.26 and 0.10 are both real.
+        f_prox   = RN_NA_PROXIMAL_DELIVERY
         # EXTENSIVE and SURFACE-like, exactly as GFR0 is: it is a filtered flux.
         # The ratio in md_drive is therefore size-free.
         Na_distal_ref = sz * RN_GFR_NOMINAL * BF_NA_PLASMA_SETPOINT *
-                        (1.0 - RN_NA_PROXIMAL_FRACTION)
+                        (1.0 - RN_NA_MACULA_DENSA_FRACTION)
         MAP_lo   = RN_AUTOREG_LOWER
         MAP_hi   = RN_AUTOREG_UPPER
         MAP_ref  = CV_MAP_SETPOINT
@@ -243,7 +249,8 @@ function Renal(; name, solute_tracking::Bool = true,
         gfr_vol_mod(t)      # unitless GFR multiplier from ECF volume
         Na_filtered(t)      # mEq/day
         Na_reabsorbed(t)    # mEq/day
-        Na_distal(t)        # mEq/day  distal sodium delivery, ADR 0021
+        Na_prox_out(t)      # mEq/day  END-PROXIMAL sodium delivery (Shirley 2002)
+        Na_distal(t)        # mEq/day  macula densa sodium delivery, ADR 0021
         md_drive(t)         # unitless OUTPUT to raas - the macula densa signal
         Na_excr(t)          # mEq/day  OUTPUT
         H2O_excr(t)         # L/day    OUTPUT
@@ -370,9 +377,17 @@ function Renal(; name, solute_tracking::Bool = true,
         # not against sodium excretion, so the loop does not re-use its own fit.
         #
         # IT CONTAINS NO NEW INFORMATION ABOUT SEGMENTAL HANDLING and ADR 0021's
-        # disqualification section says so. FR_prox is assumed and is not
+        # disqualification section says so. f_md is assumed and is not
         # separately identifiable from the gain that reads this signal.
-        Na_distal ~ Na_filtered * (1.0 - FR_prox) * renal_mod,
+        # END-PROXIMAL DELIVERY, REPORTED. This is what lithium clearance measures
+        # in humans and it is the one segmental quantity in this model with a human
+        # number behind it. It is an OBSERVABLE and nothing reads it: the tubule is
+        # still one lumped reabsorption, so a segmental delivery cannot yet do work.
+        # Wiring it as a reported quantity rather than leaving the row unconnected
+        # is the ADR 0006 rule - a row nothing reads is the Circadian failure.
+        Na_prox_out ~ Na_filtered * f_prox * renal_mod,
+
+        Na_distal ~ Na_filtered * (1.0 - f_md) * renal_mod,
 
         # THE MACULA DENSA SIGNAL, as a FRACTIONAL deficit of delivery below its
         # reference. Fractional on purpose: a dimensionless drive cannot inherit a

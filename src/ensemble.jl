@@ -212,7 +212,7 @@ function member_remake(prob, sys, member; sex::Symbol = :male)
              # assertion, which is the argument for checking the CLASS rather than
              # naming members.
              sys.rn.Na_distal_ref  => sz * RN_GFR_NOMINAL * BF_NA_PLASMA_SETPOINT *
-                                      (1.0 - RN_NA_PROXIMAL_FRACTION),
+                                      (1.0 - RN_NA_MACULA_DENSA_FRACTION),
              sys.kp.K_intake       => sz * K_INTAKE_NOMINAL,
              # EIGHTH MEMBER OF THE CLASS THIS LIST KEEPS LOSING - see section 3.24.
              # It scales exactly as K_intake does, on purpose: the ratio of the two
