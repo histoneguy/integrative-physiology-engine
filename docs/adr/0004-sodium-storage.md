@@ -188,3 +188,53 @@ not improve merely because two citations were finally read.
 
 **What this record needs next is a structural decision, not another citation**, and it needs
 its own pre-registration.
+
+---
+
+## Amendment, 2026-09-17 (second) — scoped to the acute process, structure (C) adopted
+
+**HANDOVER §3.52, `validation/sodium_store_structure_prereg.md` branch X1.**
+
+### The compartment is now explicitly scoped
+
+Three timescales are in evidence — **2–4 hours** (Olde Engberink 2017), **~6 days** and
+**monthly and longer** (Rakova 2013) — and one first-order compartment carries one.
+
+**THIS COMPARTMENT REPRESENTS THE ACUTE PROCESS. The circaseptan and monthly rhythms are
+OUT OF SCOPE**, declared rather than forgotten, and the reason is a property of this model
+rather than of the physiology: **it has no machinery to generate an infradian rhythm and no
+protocol longer than the 30-day salt step in which one would show.**
+
+**Structure (A) — two parallel compartments — was considered and NOT built.** §2.1 of the
+pre-registration fixed in advance that **nothing this model runs distinguishes it from the
+scoped single compartment**, and four parameters that nothing can test is what directive
+1.10 and this repository's own evidence tiers exist to prevent. *That is a statement about
+the model's reach, not about the body.*
+
+### `BF.NA.STORAGE_TAU`: 7 d → 0.1 d, and the old value was wrong in kind
+
+It came from Rakova's circaseptan rhythm, which that paper reports at *"about **6** days"*.
+**But a rhythm period is not a first-order relaxation time constant** — an oscillation
+against a relaxation — and the row's own note admitted it was *"chosen to match … rather
+than derived from it."*
+
+The new value is an **order of magnitude at one significant figure**, from Olde Engberink's
+measured 2–4 h inactivation. Range 0.05–0.2 d. It is **not** the best-performing value in
+the model's own sweep (0.25 d was), and the overlap with that sweep's 0.05–0.25 d is
+recorded on the row as two independent routes agreeing the process takes **hours**.
+
+### `BF.NA.OSMOTICALLY_INACTIVE_FRACTION` did NOT move
+
+The combined sweep needs ≈0.40 to reproduce Drummer's half-life ratio. **That is the
+model's requirement, not a measurement**, and §3.51 established that none of the available
+sources measures this row's quantity: Olde Engberink gives a buffering fraction of a load,
+Rakova a swing amplitude, and this row is a steady-state ratio. **It stays `assumed` at
+0.15.**
+
+### Status unchanged, and the reason is now sharper
+
+**`Provisional` and tier E3 stand. `storage` stays `false` by default.** The compartment is
+chronically inert — the sweep measured the chronic salt sensitivity as **identical to four
+figures at every store setting** — so switching it on changes nothing this model is
+currently judged on, and the acute behaviour it does change is entangled with the
+natriuretic gain question in §3.52 that this record cannot settle alone.

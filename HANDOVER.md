@@ -4251,6 +4251,86 @@ the evidence for it is now assembled rather than assumed.
 
 ---
 
+### 3.52 THE ACUTE AND CHRONIC LIMBS WANT NATRIURETIC GAINS A FACTOR OF TWO APART
+
+**2026-09-17**, `validation/sodium_store_structure_prereg.md`, branch **X1**,
+`bench/sodium_store_combined.jl`. Twenty-four configurations: store fraction × store time
+constant × natriuretic gain.
+
+**NO CONFIGURATION SATISFIES BOTH OF DRUMMER'S HALF-LIVES AND THE CHRONIC WINDOW.** §1
+declared that as the expected branch before the sweep ran.
+
+### The three things that came out cleanly
+
+**(1) THE CHRONIC SALT SENSITIVITY DEPENDS ONLY ON THE GAIN.** Across the whole grid it is
+**1.9707 at gain ×1.0, 1.3161 at ×1.5, 1.0059 at ×2.0** — *identical to four figures at
+every store setting.* The store is completely chronically inert, which is why nobody
+noticed it was switched off.
+
+**(2) THE ACUTE ENDPOINTS ARE REACHABLE, AND THEY COST THE CHRONIC ONE.**
+
+| f_store | τ (d) | gain | t½ volume | t½ sodium | salt sens | Jensen |
+|---|---|---|---|---|---|---|
+| — | — | — | **7.0** | **10.0** | **1.70–2.30** | **122** |
+| 0.40 | 0.25 | ×1.5 | **8.03** | **11.35** | **1.3161** | **118.5** |
+| 0.40 | 0.25 | ×2.0 | **6.98** | **9.52** | **1.0059** | 137.1 |
+
+**At f_store = 0.40, τ = 0.25 d and gain ×2.0 the model gives 6.98 h and 9.52 h against
+Drummer's 7.0 and 10.0.** Essentially exact. And the chronic salt sensitivity is **1.01**
+against a human floor of **1.70** — 41% below it.
+
+**(3) AND THIS IS NOT §3.47's WITHDRAWN CLAIM. IT IS THE OPPOSITE SHAPE AND BETTER
+SUPPORTED.** §3.47 said Drummer and Jensen disagree with *each other*; §3.49 withdrew that.
+**Here they agree.** At gain ×1.5 with the store on: volume 8.03 h, sodium 11.35 h, **Jensen
+118.5% against a measured 122%** — all three acute endpoints satisfied together. **It is the
+CHRONIC constraint that dissents**, alone, and it wants gain ×1.0.
+
+**Three acute human numbers against one chronic one, and they want gains differing by about
+1.5 to 2×.** That claim rests on more evidence than the one it replaces, and it is a claim
+**about the model**, not about the data disagreeing.
+
+### WHAT THIS DOES NOT LICENSE
+
+**No gain was adopted.** §3 granted the sweep and forbade the adoption, and that separation
+is the only reason the sweep was safe to run at all after §3.49. `CV.ANP.NATRIURETIC_GAIN`
+and `RN.PRESSURE_NATRIURESIS.SLOPE` end this pass exactly where they started.
+
+**And `f_store` = 0.40 was not entered.** It is the model's requirement, not a measurement —
+§4, and §3.51 established that none of the available sources measures the model's quantity.
+The row stays `assumed` at 0.15.
+
+### WHAT WAS ADOPTED: THE SCOPE DECISION, AND ONE ROW
+
+Branch **X1** licenses structure **(C)**: keep one first-order compartment, scope it to the
+**acute** process, and declare the rhythms out of scope.
+
+**`BF.NA.STORAGE_TAU`: 7 d → 0.1 d**, cited to Olde Engberink rather than to a rhythm
+period. A first-order store at 0.1 d is 57% loaded at 2 h and 81% at 4 h, which is what that
+study observes; the range 0.05–0.2 d is what the observation window supports and **one
+significant figure is what it justifies.**
+
+**The old value was wrong in kind, not just in size.** It came from Rakova's circaseptan
+rhythm — which the paper reports at *"about **6** days"*, not 7 — and **a rhythm period is
+not a first-order relaxation time constant.** The row's own previous note admitted it was
+*"chosen to match … rather than derived from it."*
+
+**THE OVERLAP WITH STAGE 1's DIAGNOSTIC IS DECLARED RATHER THAN HIDDEN.** Stage 1 wanted
+0.05–0.25 d. This row is sourced from a different study, manoeuvre and tonicity, and **0.1 d
+is not the best-performing value in the sweep — 0.25 d was.** Read it as two independent
+routes agreeing the process takes **hours**, not as confirmation of either.
+
+**The circaseptan and monthly rhythms are now explicitly out of scope**, with the reason on
+the record: this model has no machinery to generate an infradian rhythm and no protocol
+longer than the 30-day salt step in which one would show. **Structure (A), two parallel
+compartments, was not built** — §2.1 fixed in advance that nothing this model runs
+distinguishes it from (C), and four untestable parameters is what directive 1.10 exists to
+prevent.
+
+**`storage` stays `false`, ADR 0004 stays `Provisional` and tier E3, the default build is
+12 states.**
+
+---
+
 ## 4. NEXT, IN ORDER
 
 **Rewritten 2026-09-03, and item 1 was discharged the same day.** The previous list's
@@ -4317,26 +4397,24 @@ were solved against that very target. And §5, which is how work goes wrong here
    and renal sympathetic traffic are absent. Both are E1, both are inside components
    that already exist, and neither needs a paper nobody can open.
 
-2. **THE SODIUM STORE NEEDS A STRUCTURE DECISION, NOT A CITATION — §3.49, §3.50, §3.51.**
-   Drummer's full text shows the model is **1.25× off on sodium** and **1.90× off on
-   volume**: the water limb is wrong, not the sodium limb, and §3.46's three-fold gain
-   requirement was a water problem pushed through a sodium lever. Weight returns before
-   sodium in people — half-life ratio **0.70** against the model's **1.065**.
+2. **THE ACUTE AND CHRONIC LIMBS WANT NATRIURETIC GAINS A FACTOR OF TWO APART — §3.52.**
+   The combined sweep settles four passes of work. **All three acute human endpoints are
+   satisfiable together** — Drummer's volume 7 h and sodium 10 h, and Jensen's 122% — at a
+   natriuretic gain of ×1.5 to ×2.0 with the store on. **The chronic salt sensitivity
+   alone dissents**, and it wants ×1.0: at ×1.5 it is 1.32 and at ×2.0 it is 1.01, against
+   a human 1.70–2.30.
 
-   **Stage 1 turned ADR 0004's compartment on for the first time. It produces the
-   dissociation and cannot produce the speed** — it pivots the two half-lives rather than
-   moving both down, and reaching the ratio costs Jensen (110.2 → 88.7 against 122).
+   **Nothing was adopted.** The sweep was licensed as a diagnostic and the adoption
+   forbidden, which is the only reason it was safe to run after §3.49.
 
-   **And the sourcing pass found the structure is wrong.** Three timescales are in
-   evidence — **2–4 hours** (Olde Engberink), **~6 days** and **monthly+** (Rakova) — and
-   a single first-order compartment carries one. **`BF.NA.STORAGE_TAU` = 7 d was set from
-   a rhythm PERIOD, which is not a relaxation TIME CONSTANT**, so it is wrong in kind and
-   not only in value.
-
-   **Both rows stay `assumed` and nothing was entered**, because the model's `f_store` is a
-   steady-state ratio while the sources give a buffering fraction and a swing amplitude —
-   three different quantities. **The next pass is a structural decision on ADR 0004**, and
-   it needs its own pre-registration.
+   **THE OPEN QUESTION IS NOW WHICH SIDE IS WRONG, AND IT IS NOT A MODELLING QUESTION.**
+   Either the model's chronic limb is too sensitive by a factor of two, or the
+   meta-analytic 1.70–2.30 window is not the right comparator for a model whose acute
+   behaviour is pinned by three independent human studies. **`RN.PRESSURE_NATRIURESIS.SLOPE`
+   is the last `calibrated` row in the ledger and it is solved against that window** —
+   which makes the chronic side the less independently anchored of the two, and that is
+   worth saying plainly. **It needs its own pre-registration** and it must not be settled
+   by moving a gain.
 
 3. **`BF.ICF_ECF.OSMOTIC_TAU` BLOCKS EVERY ACUTE OSMOTIC MAGNITUDE.** `assumed` at 30 min.
    Near zero on multi-day runs and DOMINANT on acute ones: a 1.4 L water load moves peak
