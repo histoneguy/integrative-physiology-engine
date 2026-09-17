@@ -82,7 +82,8 @@ pressure self-regulating in the long run.
 function Renal(; name, solute_tracking::Bool = true,
                body_mass = BF_BODY_MASS_REFERENCE,
                sex::Symbol = :male,
-               anp_gain = CV_ANP_NATRIURETIC_GAIN)
+               anp_gain = CV_ANP_NATRIURETIC_GAIN,
+               anp_convexity = 0.0)
 
     # SURFACE-like for filtration, the pressure-natriuresis slope and the solute
     # load; MASS-like for the reference volumes. src/scaling.jl carries the
@@ -211,6 +212,54 @@ function Renal(; name, solute_tracking::Bool = true,
         # against 1.886 at the reference. The body-size testset's invariance
         # assertion is the only thing in the repository that could have seen it.
         G_anp      = anp_gain
+        # CONVEXITY OF THE VOLUME-NATRIURESIS RELATION. DIAGNOSTIC, DEFAULT ZERO,
+        # AND ZERO IS BIT-IDENTICAL TO THE LINEAR FORM. It exists on exactly the
+        # precedent G_anp itself was introduced on: so that a question can be
+        # ANSWERED rather than argued, without a ledger row and without a claim.
+        #
+        # THE QUESTION. HANDOVER section 3.46 measured that this model clears an
+        # acute isotonic load with a volume half-life of 13.10 h against a measured
+        # 7 h, and that no single parameter fixes it - the acute response needs
+        # about THREE TIMES the gain the chronic response permits. That requires a
+        # response per litre that is LARGER at a large excursion than at a small
+        # one, which is a CONVEX relation.
+        #
+        # AND IT IS THE OPPOSITE OF WHAT ADR 0010 SPECIFIES. That record says the
+        # real path is "lagged or SATURATING", and a saturating path delivers LESS
+        # per litre acutely. validation/volume_natriuresis_form_prereg.md section 1
+        # records the correction and why the record got it backwards.
+        #
+        # INTENSIVE, and it has to be: it multiplies a RATIO of a volume to a
+        # volume, and a ratio does not care how big you are. Getting this wrong is
+        # section 3.30's mistake, which the body-size testset caught once already.
+        #
+        # THIS IS NOT A PROPOSED MODEL TERM, AND IT WAS REFUTED THE DAY IT WAS
+        # WRITTEN. Section 6 branch F2: if the curvature it imposes on the chronic
+        # pressure-sodium relation would have been visible in the human data, the
+        # convex form is refuted. MEASURED, bench/volume_natriuresis_stage2.jl,
+        # with G_anp re-solved to hold the chronic anchor at every point:
+        #
+        #   c_anp     G_anp   t1/2 h   bend %   slope ratio 38-103 : 154-230
+        #   0         589.2   13.05      2.1%   1.11
+        #   50        272.4    8.93     12.2%   0.54
+        #   200       103.9    7.78     18.3%   0.41
+        #   400        56.8    7.55     19.8%   0.39
+        #
+        # It never reaches 7 h - it plateaus near 7.5 - and buying even 8.9 h costs
+        # a chronic relation whose slope at the top of the dietary range is TWICE
+        # its slope at the bottom. The human relation is quoted as ONE slope per
+        # 100 mmol/day by all three meta-analyses. REFUTED.
+        #
+        # THE PRE-REGISTRATION PREDICTED THE BEND AND GOT ITS DIRECTION WRONG.
+        # Section 3.1 said the relation would go CONCAVE; it goes CONVEX - the
+        # low-intake slope collapses 2.11 -> 1.05 while the high-intake slope rises
+        # 1.90 -> 2.72. The refutation stands on the SIZE of the bend, which is what
+        # the test was about; the mechanism of its sign is NOT established here and
+        # is not guessed at.
+        #
+        # KEPT AT DEFAULT ZERO so the refutation can be re-run, on the precedent
+        # G_anp itself was introduced on. It is not a candidate.
+        c_anp      = anp_convexity
         V_blood_ref = mz * LedgerParams.param(:CV_BLOOD_VOLUME_NOMINAL, sex)
         # THE LAG, AND IT IS WHY THE ALGEBRAIC FORM WAS REFUTED. A single
         # instantaneous gain cannot carry both limbs: the ACUTE natriuretic
@@ -401,7 +450,11 @@ function Renal(; name, solute_tracking::Bool = true,
         md_drive ~ (Na_distal_ref - Na_distal) / Na_distal_ref,
 
         # First-order approach to the volume-keyed natriuretic target.
-        D(anp_sig) ~ (G_anp * (V_blood - V_blood_ref) - anp_sig) / tau_anp,
+        # c_anp = 0.0 recovers (G_anp*(V_blood - V_blood_ref) - anp_sig)/tau_anp
+        # EXACTLY, so every existing result is bit-identical by construction.
+        D(anp_sig) ~ (G_anp * (V_blood - V_blood_ref) *
+                      (1.0 + c_anp * abs(V_blood - V_blood_ref) / V_blood_ref)
+                      - anp_sig) / tau_anp,
 
         Na_reabsorbed ~ FR_effective * Na_filtered,
         Na_excr       ~ Na_filtered - Na_reabsorbed,

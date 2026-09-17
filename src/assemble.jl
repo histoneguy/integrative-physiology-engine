@@ -63,7 +63,8 @@ function build_raw_model(; body_mass = 70.0, storage::Bool = false,
                          thyroid_metabolic::Bool = false,
                          thyroid_secretion = 1.0,
                          sex::Symbol = :male,
-                         anp_gain = IPE.LedgerParams.CV_ANP_NATRIURETIC_GAIN)
+                         anp_gain = IPE.LedgerParams.CV_ANP_NATRIURETIC_GAIN,
+                         anp_convexity = 0.0)
     @named bf = BodyFluids(; body_mass, storage)
     sex in (:male, :female) ||
         error("sex must be :male or :female, got :$sex. There is no :both " *
@@ -75,7 +76,7 @@ function build_raw_model(; body_mass = 70.0, storage::Bool = false,
     # post-placeholder water limb: with adh = false, u_osm is pinned at U_base
     # so that Osm_load/U_base reproduces the old constant 1.7 L/day, and a
     # varying Osm_load would break that recovery. See Renal.jl and ADR 0008.
-    @named rn = Renal(; solute_tracking = adh, body_mass, sex, anp_gain)
+    @named rn = Renal(; solute_tracking = adh, body_mass, sex, anp_gain, anp_convexity)
     # ADR 0022 makes this component SEX-DEPENDENT for the first time: the
     # chronotropic gain is a male/female pair. The vasomotor gain is not.
     @named br = Baroreflex(; enabled = baroreflex, chronotropic, sex)
