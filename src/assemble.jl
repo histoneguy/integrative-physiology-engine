@@ -386,7 +386,7 @@ function solve_individual(sys;
     # Empty Dict() rather than positional [] - the positional form is
     # deprecated and MTK now wants variable => value maps.
     prob = ODEProblem(sys, Dict(), (0.0, tspan_days);
-                      jac = true, sparse = use_sparse)
+                      sparse = use_sparse)
     # `autodiff` takes an ADTypes specifier now, not a Bool.
     alg = solver === nothing ? FBDF(autodiff = AutoForwardDiff()) : solver
     return solve(prob, alg;
@@ -469,7 +469,7 @@ function salt_step(; levels_mEq_day = (205.0, 154.0, 103.0),
             end
         end
 
-        prob = ODEProblem(sys, opmap, (t0, t0 + days_per_level); jac = true)
+        prob = ODEProblem(sys, opmap, (t0, t0 + days_per_level))
         alg  = solver === nothing ? FBDF(autodiff = AutoForwardDiff()) : solver
         sol  = solve(prob, alg; saveat, dense = false, abstol = 1e-8, reltol = 1e-6,
                      kwargs...)

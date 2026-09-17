@@ -20,6 +20,37 @@ using SciMLBase
 # moved.
 const SALT_MAP_SHIFT = 2.0042
 
+# ---------------------------------------------------------------------------
+# RUN ONE TESTSET INSTEAD OF ALL 37. Directive 1.10, applied to the DEV LOOP
+# rather than to the model.
+#
+#     IPE_TESTS="red cell" julia --project=. -e 'include("test/runtests.jl")'
+#
+# UNSET, EVERYTHING RUNS AND THE SUITE IS EXACTLY WHAT IT WAS. CI sets nothing,
+# so what CI checks is unchanged - this only exists so that a change touching two
+# assertions does not cost a full run to check.
+#
+# WHY IT IS WORTH TEN LINES. The suite's cost is COMPILATION, not integration:
+# `structural_simplify` plus codegen for each of the ~14 distinct model
+# configurations it exercises, at 20-47 s each. Running one testset pays for one
+# or two of those instead of all fourteen.
+#
+# AND IT IS THE MEASURING INSTRUMENT. Per-testset timings are only printed when a
+# testset fails, so before this there was no cheap way to ask what any one of them
+# costs. Now there is.
+#
+# USE Pkg.test() BEFORE COMMITTING, NOT THIS. Pkg.test runs with
+# --check-bounds=yes, which is slower and is the point - it catches indexing bugs
+# a plain include does not. This is for iterating; that is for believing.
+# ---------------------------------------------------------------------------
+const _ONLY = lowercase(get(ENV, "IPE_TESTS", ""))
+_want(name) = isempty(_ONLY) || occursin(_ONLY, lowercase(name))
+
+macro tset(name, body)
+    esc(:(_want($name) && @testset $name $body))
+end
+
+
 @testset "IPE" begin
 
     # TOLERANCES IN THIS FILE ARE PHYSICAL, NOT NUMERICAL.
@@ -38,7 +69,7 @@ const SALT_MAP_SHIFT = 2.0042
     # by percent, not by 1e-7. rtol = 1e-4 is four orders tighter than any real
     # breakage and immune to arithmetic noise.
 
-    @testset "ledger provenance" begin
+    @tset "ledger provenance" begin
         @test !isempty(IPE.LedgerParams.PARAM_PROVENANCE)
         for (sym, p) in IPE.LedgerParams.PARAM_PROVENANCE
             @test !isempty(p.units)
@@ -47,7 +78,7 @@ const SALT_MAP_SHIFT = 2.0042
         end
     end
 
-    @testset "weak-basis parameters are visible" begin
+    @tset "weak-basis parameters are visible" begin
         weak = IPE.LedgerParams.unledgered_check()
         @info "Parameters with weak basis (assumed or calibrated)" count=length(weak)
         for p in weak
@@ -56,12 +87,12 @@ const SALT_MAP_SHIFT = 2.0042
         @test true   # disclosure, not a failure
     end
 
-    @testset "model builds and simplifies" begin
+    @tset "model builds and simplifies" begin
         sys = build_model()
         @test sys isa ModelingToolkit.AbstractSystem
     end
 
-    @testset "loop reaches equilibrium at nominal intake" begin
+    @tset "loop reaches equilibrium at nominal intake" begin
         sys = build_model()
         sol = solve_individual(sys; tspan_days = 60.0, saveat = 1.0)
         @test SciMLBase.successful_retcode(sol)
@@ -70,7 +101,7 @@ const SALT_MAP_SHIFT = 2.0042
         # TODO: assert d(V_ecf)/dt -> 0 and MAP within reference range.
     end
 
-    @testset "THE test: salt step re-equilibrates at a NEW pressure" begin
+    @tset "THE test: salt step re-equilibrates at a NEW pressure" begin
         # ADR 0007 falsifiable test.
         r = salt_step()
         v = check_pressure_natriuresis(r)
@@ -86,7 +117,7 @@ const SALT_MAP_SHIFT = 2.0042
         @info "salt step" intakes=v.intakes maps=v.maps shift_mmHg=v.map_shift_mmHg
     end
 
-    @testset "states stay physiological through the salt step" begin
+    @tset "states stay physiological through the salt step" begin
         r = salt_step()
         for l in r.levels
             @test 10.0 <= l.V_ecf_final <= 20.0
@@ -95,7 +126,7 @@ const SALT_MAP_SHIFT = 2.0042
         end
     end
 
-    @testset "solver agreement substitutes for external reference" begin
+    @tset "solver agreement substitutes for external reference" begin
         sys = build_model()
         r = IPE.solver_agreement(sys; solvers = [FBDF(), Rodas5P()],
                                  tspan_days = 10.0, saveat = 1.0)
@@ -106,7 +137,7 @@ const SALT_MAP_SHIFT = 2.0042
         @test r.max_rel_deviation < 1.0
     end
 
-    @testset "coupling partition rules" begin
+    @tset "coupling partition rules" begin
         couplings = [
             Coupling(:cv, :renal, Neurohumoral; tau_seconds = 3.0, note = "sympathetic"),
             Coupling(:bodyfluids, :cv, Mechanical, note = "hydraulic"),
@@ -122,7 +153,7 @@ const SALT_MAP_SHIFT = 2.0042
         @test_throws ErrorException Coupling(:a, :b, Mechanical; tau_seconds = 1.0)
     end
 
-    @testset "ADR 0009: baroreflex does not change long-run pressure" begin
+    @tset "ADR 0009: baroreflex does not change long-run pressure" begin
         # The baroreflex RESETS, so it is a fast buffer and not a long-term
         # regulator. If it could set long-run pressure, the Guyton claim in
         # ADR 0007 would be false. This is a regression test on a physiological
@@ -238,7 +269,7 @@ const SALT_MAP_SHIFT = 2.0042
         @test 0.1 < G_m / LP.BR_OPEN_LOOP_GAIN < 1.0
     end
 
-    @testset "salt sensitivity pins G_pn" begin
+    @tset "salt sensitivity pins G_pn" begin
         # The steady-state salt sensitivity is set by RN.PRESSURE_NATRIURESIS.SLOPE
         # ALONE. Excretion must equal intake at steady state, so
         #   Na_excr = Na_filtered*(1 - FR_Na) + G_pn*(MAP - MAP_ref)
@@ -323,7 +354,7 @@ const SALT_MAP_SHIFT = 2.0042
         @test isapprox(ratio, 3.2185; rtol = 1e-3)
     end
 
-    @testset "ADR 0012 stage 1 is a change of variables, not of behaviour" begin
+    @tset "ADR 0012 stage 1 is a change of variables, not of behaviour" begin
         # The central/peripheral partition is introduced with f_central CONSTANT,
         # and VC0 = f_c*BV0 and G_vc = G_vr/f_c derived from it, so that
         #   G_vc*(V_central - VC0) == G_vr*(V_blood - BV0)
@@ -491,7 +522,7 @@ const SALT_MAP_SHIFT = 2.0042
                        # disabled-ADH branch moved with everything else.
     end
 
-    @testset "RAAS disabled branch is exactly inert (ADR 0008)" begin
+    @tset "RAAS disabled branch is exactly inert (ADR 0008)" begin
         # ADR 0008: the disabled branch is TESTED, not assumed. With raas=false
         # every RAAS state is held at zero and fr_mod is identically zero, so
         # Renal.FR_effective must reduce to its pre-RAAS form.
@@ -545,7 +576,7 @@ const SALT_MAP_SHIFT = 2.0042
         end
     end
 
-    @testset "RAAS escape leaves every steady state where it was" begin
+    @tset "RAAS escape leaves every steady state where it was" begin
         # THE DESIGN CLAIM OF THE COMPONENT. esc chases fr_raw, so fr_mod is full
         # on arrival and zero at steady state - aldosterone does not permanently
         # retain sodium in vivo and must not here. The salt-step levels are 30-day
@@ -579,7 +610,7 @@ const SALT_MAP_SHIFT = 2.0042
                        check_pressure_natriuresis(off).map_shift_mmHg; atol = 1e-2)
     end
 
-    @testset "RAAS still closes the loop" begin
+    @tset "RAAS still closes the loop" begin
         # Excretion must equal intake at every level with RAAS on. A component
         # that retained sodium indefinitely would show up here first.
         r = salt_step(raas = true)
@@ -588,7 +619,7 @@ const SALT_MAP_SHIFT = 2.0042
         end
     end
 
-    @testset "RAAS rectification is one-sided (van Ochten threshold)" begin
+    @tset "RAAS rectification is one-sided (van Ochten threshold)" begin
         # renin_drive ~ ifelse(MAP < P_thr, (P_thr - MAP)/MAP_ref, 0.0).
         # This asserts the SIGN of that asymmetry, which is the part the
         # meta-analysis actually supports.
@@ -647,7 +678,7 @@ const SALT_MAP_SHIFT = 2.0042
         @test (P - 86.0) / (P - 88.0) < 2.73
     end
 
-    @testset "the operating range sits INSIDE the autoregulation plateau" begin
+    @tset "the operating range sits INSIDE the autoregulation plateau" begin
         # ADDED 2026-08-27 with the RN.AUTOREG.LOWER sourcing pass. Nothing in
         # this suite asserted on either autoregulation breakpoint before, which
         # is the failure mode HANDOVER section 7.3 names: a passing suite is not
@@ -682,7 +713,7 @@ const SALT_MAP_SHIFT = 2.0042
         @test minimum(v.maps) - lo > 10.0
     end
 
-    @testset "the model reconstructs systolic and diastolic (ADR 0002)" begin
+    @tset "the model reconstructs systolic and diastolic (ADR 0002)" begin
         # CONNECTED 2026-08-27. reconstruct.jl existed from the first commit,
         # was included by IPE.jl, and was called and tested by NOTHING - it took
         # SV and C_art as arguments and neither existed. ADR 0011 created SV and
@@ -739,7 +770,7 @@ const SALT_MAP_SHIFT = 2.0042
         @info "reconstructed pressures" sbp=[l.SBP_reconstructed for l in r.levels] dbp=[l.DBP_reconstructed for l in r.levels] pp=pps
     end
 
-    @testset "ADH disabled branch recovers the placeholder (ADR 0008)" begin
+    @tset "ADH disabled branch recovers the placeholder (ADR 0008)" begin
         # ADR 0008: the disabled branch is TESTED, not assumed. With adh=false
         # u_osm is held at U_base, so Osm_load/u_osm returns exactly the old
         # placeholder value of intake minus insensible loss.
@@ -758,7 +789,7 @@ const SALT_MAP_SHIFT = 2.0042
         end
     end
 
-    @testset "osmoregulation responds in the right direction" begin
+    @tset "osmoregulation responds in the right direction" begin
         # The whole point of replacing the placeholder. Higher plasma osmolality
         # must give MORE antidiuretic activity, a MORE concentrated urine and a
         # SMALLER volume. Checked on the component algebra directly rather than
@@ -787,7 +818,7 @@ const SALT_MAP_SHIFT = 2.0042
                        L.BF_H2O_INTAKE_NOMINAL - L.BF_H2O_INSENSIBLE_LOSS; rtol = 1e-3)
     end
 
-    @testset "ADH sits mid-range at baseline, not against a limit" begin
+    @tset "ADH sits mid-range at baseline, not against a limit" begin
         # A component pinned against a saturation limit at its operating point
         # cannot regulate in one direction. Circadian and ANP both got parked for
         # being ahead of their dependencies; this checks the opposite failure -
@@ -798,7 +829,7 @@ const SALT_MAP_SHIFT = 2.0042
         @test 0.05 < a < 0.60
     end
 
-    @testset "the urine solute load is sourced, and the model rests on its setpoint" begin
+    @tset "the urine solute load is sourced, and the model rests on its setpoint" begin
         # The falsifiable tests urine_solute_prereg.md section 9 committed to
         # before any source was opened. Two halves, and they were measured apart:
         # HALF A fixed a reference point and needed no source, HALF B sourced the
@@ -897,7 +928,7 @@ const SALT_MAP_SHIFT = 2.0042
         @test abs(uosm - 508.0) < 170.0
     end
 
-    @testset "ADH amplifies salt sensitivity, and that direction is expected" begin
+    @tset "ADH amplifies salt sensitivity, and that direction is expected" begin
         # Water follows salt: at lower sodium intake plasma osmolality falls,
         # ADH is suppressed, water is excreted, and ECF volume falls FURTHER
         # than it would with a fixed water output. So enabling ADH must not
@@ -933,7 +964,7 @@ const SALT_MAP_SHIFT = 2.0042
         @test isapprox(on, SALT_MAP_SHIFT; atol = 0.02)
     end
 
-    @testset "the urine solute load tracks sodium (water limb responds to salt)" begin
+    @tset "the urine solute load tracks sodium (water limb responds to salt)" begin
         # WHAT THIS REPLACED. RN.URINE.SOLUTE_LOAD was a constant 600 mOsm/day
         # and its own ledger note called that the load-bearing assumption of the
         # ADH component: urine volume is solute load over urine osmolality, so a
@@ -989,7 +1020,7 @@ const SALT_MAP_SHIFT = 2.0042
         @info "solute load tracks sodium" loads=loads maps=[l.MAP_cycavg for l in r.levels]
     end
 
-    @testset "the declared coupling graph matches the model (ADR 0003)" begin
+    @tset "the declared coupling graph matches the model (ADR 0003)" begin
         # CONNECTED 2026-08-27. Every component has had a *_couplings() function
         # since it was written and NOTHING EVER CALLED ONE. Seven declaration
         # functions plus coupling_ledger_rows, suggest_boundary and partitionable,
@@ -1108,7 +1139,7 @@ const SALT_MAP_SHIFT = 2.0042
         @info "declared coupling timescales" taus=b.taus gap_ratio=b.gap[1] boundary_s=b.suggested_boundary_seconds
     end
 
-    @testset "member_remake re-sexes and re-sizes to match a natively built model" begin
+    @tset "member_remake re-sexes and re-sizes to match a natively built model" begin
         # THIS CHECKS THE CLASS, NOT ONE PARAMETER, and it exists because the same
         # defect has now happened three times. member_remake keeps a HAND-MAINTAINED
         # list that must mirror what the components do at build time:
@@ -1171,7 +1202,7 @@ const SALT_MAP_SHIFT = 2.0042
         worst >= 1e-9 && @warn "member_remake disagrees with a built model" worst_name worst
     end
 
-    @testset "the ensemble actually varies its members (and mostly cannot)" begin
+    @tset "the ensemble actually varies its members (and mostly cannot)" begin
         # CONNECTED 2026-08-27. HANDOVER calls ensembles "the primary workload".
         # run_population, sample_population, member_parameters, prob_func and
         # default_summary had never been called by anything.
@@ -1259,7 +1290,7 @@ const SALT_MAP_SHIFT = 2.0042
         @info "ensemble body-size scaling" masses=round.(masses, digits=1) V_ecf=round.(vecfs, digits=4) V_ecf_per_kg=round.(ratios, digits=6) MAP=round.(maps, digits=4)
     end
 
-    @testset "size scaling leaves the reference individual bit-identical" begin
+    @tset "size scaling leaves the reference individual bit-identical" begin
         # size_factor returns exactly 1.0 at BF.BODY_MASS.REFERENCE, so promoting
         # body mass to a ledger row and threading it through three components must
         # not move the default model at all. If this fails, the scaling has leaked
@@ -1319,7 +1350,7 @@ const SALT_MAP_SHIFT = 2.0042
         end
     end
 
-    @testset "recording and profiling paths run (ADR 0002, ADR 0003)" begin
+    @tset "recording and profiling paths run (ADR 0002, ADR 0003)" begin
         # All of recording.jl and profiling.jl was dead: update!, summarise,
         # save_grid, grid_size_report, streaming_output_func, projected_storage,
         # step_distribution, cost_profile, timescale_audit. Storage is the stated
@@ -1383,7 +1414,7 @@ const SALT_MAP_SHIFT = 2.0042
         @info "spectral vs declared" spectral_stiffness=ta.tau[end]/ta.tau[1] declared_gap=suggest_boundary(model_couplings()).gap[1]
     end
 
-    @testset "sex is a model dimension (ADR 0014)" begin
+    @tset "sex is a model dimension (ADR 0014)" begin
         L = IPE.LedgerParams
         # Nothing is dimorphic yet, so the accessor must FALL BACK to the shared
         # value for either sex. This is the "otherwise use the best data" half of
@@ -1445,7 +1476,7 @@ const SALT_MAP_SHIFT = 2.0042
         end
     end
 
-    @testset "ADR 0011: CO = HR x SV, and the first sex pair" begin
+    @tset "ADR 0011: CO = HR x SV, and the first sex pair" begin
         L = IPE.LedgerParams
         # A real male/female pair now exists.
         @test :CV_HR_NOMINAL in L.sex_specific_params()
@@ -1475,7 +1506,7 @@ const SALT_MAP_SHIFT = 2.0042
         end
     end
 
-    @testset "a 22% sex difference in cardiac output moves no pressure at all" begin
+    @tset "a 22% sex difference in cardiac output moves no pressure at all" begin
         L = IPE.LedgerParams
         # REPLACED 2026-09-01, and the old reason for this test is now FALSE.
         # It used to read "the HR/SV pair CANNOT move the model", because SV0 was
@@ -1608,7 +1639,7 @@ const SALT_MAP_SHIFT = 2.0042
         @test isapprox(em / ef, tpv(:female) / tpv(:male); rtol = 0.20)
     end
 
-    @testset "ADR 0017: respiration, and PCO2 is an INPUT not an output" begin
+    @tset "ADR 0017: respiration, and PCO2 is an INPUT not an output" begin
         L = IPE.LedgerParams
         sys = build_model()
         sol = IPE.solve_individual(sys; tspan_days = 60.0)
@@ -1739,7 +1770,7 @@ const SALT_MAP_SHIFT = 2.0042
         @info "respiration" PaCO2=fin("PaCO2") V_E=fin("rs₊V_E") H2O_resp=fin("H2O_resp")
     end
 
-    @testset "ADR 0018: blood oxygen transport, and this one IS a prediction" begin
+    @tset "ADR 0018: blood oxygen transport, and this one IS a prediction" begin
         L = IPE.LedgerParams
         function arterial(; sex = :male, body_mass = 70.0)
             s = build_model(; sex, body_mass)
@@ -1929,7 +1960,7 @@ const SALT_MAP_SHIFT = 2.0042
         @info "blood gas" SaO2=m.SaO2 CaO2=m.CaO2 DO2=m.DO2 VO2=m.VO2 avDO2=m.avDO2 SvO2=m.SvO2 ER=m.ER pH=m.pH
     end
 
-    @testset "ADR 0023: red cell mass is a state, and the bleed now unwinds" begin
+    @tset "ADR 0023: red cell mass is a state, and the bleed now unwinds" begin
         # The five falsifiable tests erythropoiesis_prereg.md committed to before
         # any source was opened. Test 5 - the coupling count rising 21 -> 22 with
         # the new edge outbound from blood - lives in the coupling testset above,
@@ -2061,7 +2092,7 @@ const SALT_MAP_SHIFT = 2.0042
         @test maximum(he) - minimum(he) > 0.005     # haematocrit: dilutes, as it should
     end
 
-    @testset "ADR 0019: the thyroid axis, on ONE free-thyroxine scale" begin
+    @tset "ADR 0019: the thyroid axis, on ONE free-thyroxine scale" begin
         L = IPE.LedgerParams
         sys = build_model()
         sol = IPE.solve_individual(sys; tspan_days = 60.0)
@@ -2254,7 +2285,7 @@ const SALT_MAP_SHIFT = 2.0042
         @info "thyroid" FT4=fin(sys, sol, "ty₊FT4") TSH=tsh th_mod=fin(sys, sol, "ty₊th_mod") tau_eff=tau_eff
     end
 
-    @testset "ADR 0021: macula densa renin, potassium, and the join at aldosterone" begin
+    @tset "ADR 0021: macula densa renin, potassium, and the join at aldosterone" begin
         L = IPE.LedgerParams
         sys = build_model()
         sol = IPE.solve_individual(sys; tspan_days = 400.0)
@@ -2488,7 +2519,7 @@ const SALT_MAP_SHIFT = 2.0042
         @info "macula densa and potassium" Na_distal=nd md_drive=fin(sys, sol, "rn₊md_drive") ratio_off=ratio_off ratio_on=ratio_on K_p=fin(sys, sol, "kp₊K_p") K_excr=fin(sys, sol, "kp₊K_excr")
     end
 
-    @testset "modulators are off by default" begin
+    @tset "modulators are off by default" begin
         # ADR 0006/0007: E3 and out-of-order components must not be on by default.
         sys = build_model()
         @test sys isa ModelingToolkit.AbstractSystem

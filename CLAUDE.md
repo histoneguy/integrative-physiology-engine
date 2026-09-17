@@ -17,10 +17,29 @@ claim the model exists to demonstrate rather than assert.
 
 ## The development loop
 
+    # iterating - fast, and you can run ONE testset
+    IPE_TESTS="red cell" julia --project=. -e 'include("test/runtests.jl")'
+
+    # before committing - slower on purpose, --check-bounds=yes catches indexing bugs
     julia --project=. -e "using Pkg; Pkg.test()"
 
-~40 s warm on this machine. **That is the loop.** CI is the receipt. Do not send
-untested code and do not wait on GitHub Actions to find out whether something works.
+**That is the loop.** CI is the receipt. Do not send untested code and do not wait on
+GitHub Actions to find out whether something works.
+
+**MEASURED 2026-09-16, because the old note here said "~40 s warm" and it has not been
+that for a long time.** Full suite 3m19s; one model testset about 2m; **a ledger-only
+change checked against `IPE_TESTS="ledger provenance"` costs 23 s.** Most edits in this
+repo are ledger edits, so use the filter - it is the difference between 23 seconds and
+four and a half minutes.
+
+**THE COST IS COMPILATION, NOT INTEGRATION.** `structural_simplify` plus codegen for each
+of the ~14 distinct model configurations the suite exercises. Repeated calls are already
+free - `build_model()` costs 47 s the first time and 0.03 s the second - so memoising
+identical calls buys nothing, and was tried and reverted. See HANDOVER §5.
+
+**A SINGLE WALL-CLOCK TIMING ON THIS MACHINE IS NOT EVIDENCE.** The same commit measured
+2m14s and 5m40s in one session. Compare paired runs taken back to back, or CI job
+durations.
 
 Rebuild the GUI after any ledger or model change — it ships the numbers AND the
 citations, so a stale one misquotes both:

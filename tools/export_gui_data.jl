@@ -157,7 +157,7 @@ thy_m  = sweep(SYS_T, "ty₊S_thy", THY_LEVELS)
 # is the single place that knows which - reusing it here rather than repeating
 # the list is the whole point of HANDOVER section 3.24's finding.
 function mass_sweep(sys)
-    prob = ODEProblem(sys, [], (0.0, 400.0), []; jac = true, sparse = true)
+    prob = ODEProblem(sys, [], (0.0, 400.0), []; sparse = true)
     out = Vector{Vector{Float64}}()
     for bm in BM_LEVELS
         sx = sys === SYS_F ? :female : :male

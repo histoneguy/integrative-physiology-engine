@@ -328,7 +328,7 @@ function new_session(; sex::Symbol = :male, body_mass = 70.0, mode = "individual
                      n_members = 8, duration = 0.0, chunk = 0.25, rate = 2.0,
                      warmup = 30.0)
     sys = build_model(; sex, body_mass)
-    prob = ODEProblem(sys, Dict(), (0.0, duration); jac = true)
+    prob = ODEProblem(sys, Dict(), (0.0, duration))
     pmap = Dict{String,Float64}()
     # GUARDED, AND THE REPO ALREADY RECORDS WHY. Section 3.24: `parameters()` on a
     # SIMPLIFIED system carries dummy-derivative symbols that have no default, and
@@ -443,7 +443,7 @@ function apply_pending!(s::Session)
         k = pname(p)
         haskey(s.pmap, k) && (opmap[p] = s.pmap[k])
     end
-    s.prob = ODEProblem(s.sys, opmap, (s.t, s.t + s.duration); jac = true)
+    s.prob = ODEProblem(s.sys, opmap, (s.t, s.t + s.duration))
     # Rebuild around the new parameters but keep the CURRENT state, so an edit
     # mid-run continues the simulation rather than restarting it.
     s.integ = init(remake(s.prob; u0 = s.u0,
