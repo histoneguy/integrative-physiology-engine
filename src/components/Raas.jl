@@ -138,7 +138,8 @@ using ModelingToolkit: t_nounits as t, D_nounits as D
 using ..LedgerParams:
     CV_MAP_SETPOINT, RAAS_RENIN_PRESSURE_THRESHOLD, RAAS_RENIN_PRESSURE_GAIN,
     RAAS_ALDO_PRA_LOG_SLOPE, RAAS_ALDO_REABSORPTION_GAIN, RAAS_PRA_TAU,
-    RAAS_ALDO_ESCAPE_TAU, RN_MD_RENIN_GAIN, RAAS_ALDO_K_GAIN, K_PLASMA_REFERENCE
+    RAAS_ALDO_ESCAPE_TAU, RN_MD_RENIN_GAIN, RAAS_ALDO_K_GAIN, K_PLASMA_REFERENCE,
+    RAAS_RENIN_SYMPATHETIC_THRESHOLD_SHIFT, BR_OPEN_LOOP_GAIN
 
 """
     Raas(; name, enabled = true)
@@ -162,6 +163,14 @@ function Raas(; name, enabled::Bool = true)
         g_md    = RN_MD_RENIN_GAIN                   # unitless CALIBRATED
         g_aldo_K = RAAS_ALDO_K_GAIN                  # 1/(mmol/L)
         K_p_ref = K_PLASMA_REFERENCE                 # mmol/L
+        # THE RENAL SYMPATHETIC ARM. Kirchheim 1985 in conscious dogs: carotid
+        # occlusion shifts the pressure-renin curve RIGHT by 17 mmHg and leaves
+        # the plateau and the slope alone. So sympathetic traffic moves the
+        # THRESHOLD, and this is the shift at saturating activity.
+        # dP_sym = 0 recovers the previous model EXACTLY - the precedent g_md
+        # was introduced on, and it costs no new structural variant.
+        dP_sym  = RAAS_RENIN_SYMPATHETIC_THRESHOLD_SHIFT   # mmHg
+        G_br    = BR_OPEN_LOOP_GAIN                  # unitless, REUSED
     end
 
     vars = @variables begin
@@ -174,6 +183,8 @@ function Raas(; name, enabled::Bool = true)
         fr_mod(t)                  # unitless OUTPUT to renal
         md_drive(t)                # unitless INPUT from renal - macula densa
         K_p(t)                     # mmol/L   INPUT from potassium
+        rsna(t)                    # unitless renal sympathetic activity, -1..1
+        P_thr_eff(t)               # mmHg     threshold after the sympathetic shift
     end
 
     eqs = if enabled
@@ -195,7 +206,33 @@ function Raas(; name, enabled::Bool = true)
             # ADR 0021's falsifiable test 1 declared it so before the fact. Those
             # data are an ESTIMATION SET and must never be reported as agreement -
             # section 3.15 records what happened the last time that was forgotten.
-            renin_drive ~ ifelse(MAP < P_thr, (P_thr - MAP) / MAP_ref, 0.0) +
+            # RENAL SYMPATHETIC ACTIVITY, AND IT DOES NOT RESET - THAT IS THE
+            # WHOLE CLAIM. The vasomotor arm in Baroreflex.jl carries a setpoint
+            # that drifts to prevailing pressure with BR.RESET.TAU = 1 day, so its
+            # drive is ZERO in every chronic steady state. Lohmeier 2001 measured
+            # the opposite for the RENAL arm: at day 10 of ANG II, MAP stable at
+            # +30 mmHg and sodium balance achieved, the denervated/innervated
+            # sodium ratio was 0.56 +/- 0.05 against a control of 0.99 +/- 0.05.
+            # Ten days is ten of those time constants; a completely reset arm would
+            # have returned the ratio to 1.0. It did not.
+            #
+            # SO THIS ERROR IS TAKEN AGAINST THE FIXED MAP_ref, NOT AGAINST THE
+            # RESETTING SETPOINT. It is a claim about the RENAL arm only and says
+            # nothing about the vasomotor one - Baroreflex.jl already cites Dutoit
+            # 2010 for the arms being independent within individuals, and
+            # differential resetting between arms is the ordinary case.
+            #
+            # The tanh and G_br are BORROWED from the vasomotor efferent, because
+            # Kirchheim measured two points and no submaximal curve. That
+            # interpolation is this model's assumption and the ledger row says so.
+            rsna ~ -tanh(G_br * (MAP - MAP_ref) / MAP_ref),
+
+            # Sympathetic activation RAISES the threshold, so renin is stimulated
+            # at a pressure that would otherwise be on the plateau. Zero at the
+            # operating point by construction: MAP = MAP_ref gives rsna = 0.
+            P_thr_eff ~ P_thr + dP_sym * rsna,
+
+            renin_drive ~ ifelse(MAP < P_thr_eff, (P_thr_eff - MAP) / MAP_ref, 0.0) +
                           g_md * md_drive,
 
             # First-order approach to the renin target. Written out here; the
@@ -243,6 +280,8 @@ function Raas(; name, enabled::Bool = true)
         ]
     else
         [
+            rsna        ~ 0.0,
+            P_thr_eff   ~ P_thr,
             renin_drive ~ 0.0,
             D(pra)      ~ 0.0,
             aldo        ~ 0.0,
