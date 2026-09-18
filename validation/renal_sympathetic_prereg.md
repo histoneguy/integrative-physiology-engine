@@ -296,3 +296,70 @@ returns **on the renin path this time**, against `RN.MD.RENIN_GAIN`, which is th
 quantity being used as the instrument. **If the threshold shift and the macula densa gain
 are not separable, that is S2 again and the arm is not built.** The separability must be
 demonstrated with numbers before anything is kept.
+
+---
+
+# AMENDMENT 2 — 2026-09-18, and it is a defect in an EXISTING row, not a gap
+
+**Still before anything is built.** Found by trying to wire the renin threshold to the
+sympathetic signal the model already has — directive 1.11, and it is the fourth time on
+this project that connecting something has found the real defect.
+
+## A2.1 THE COLLISION
+
+`Baroreflex.jl` carries `D(sp) ~ (MAP - sp) / tau_reset` with
+**`BR.RESET.TAU` = 1 day, `assumed`, tier B.** The setpoint drifts to prevailing pressure,
+so `err → 0` and the sympathetic `drive → 0` in any chronic steady state. **The model's
+baroreflex resets COMPLETELY.**
+
+**Lohmeier 2001 measured the opposite, in the preparation built to see it.** At **day 10**
+of ANG II infusion, with MAP stable at +30 ± 3 mmHg and **sodium balance achieved** — a
+steady state by the paper's own criterion — the Den/Inn sodium ratio was **0.56 ± 0.05**,
+against a control of 0.99 ± 0.05.
+
+**AT A RESETTING TIME CONSTANT OF ONE DAY, TEN DAYS IS TEN TIME CONSTANTS.** The drive
+would be ~5 × 10⁻⁵ of its initial value and the ratio would be back at 1.0. **It was 0.56.**
+The 2000 paper shows the same thing sustained through day 5 in a separate cohort.
+
+**THIS IS A SIGN-AND-KIND RESULT, NOT A MAGNITUDE ONE, SO DIRECTIVE 1.14 DOES NOT DISSOLVE
+IT.** Two cohorts, a within-animal control, and a ratio that must return to 1.0 under the
+model's assumption and does not go anywhere near it.
+
+## A2.2 WHAT IT DOES AND DOES NOT ESTABLISH
+
+**It establishes:** renal sympathetic outflow is **NOT completely reset** at 5–10 days of a
+sustained pressure elevation. Lohmeier's entire research programme is this point, and it is
+the reason directive 1.15 names him.
+
+**It does NOT establish** that `BR.RESET.TAU` is wrong *for the vasomotor arm*. Baroreflex.jl
+already cites Dutoit 2010 for cardiac and sympathetic arms being independent within
+individuals, and **differential resetting between arms is the ordinary case, not a special
+plea.** The renal arm may simply not be the vasomotor arm.
+
+**SO THE HONEST READING IS THAT THE MODEL HAS ONE RESETTING CONSTANT WHERE THE PHYSIOLOGY
+HAS AT LEAST TWO**, and the one it has is `assumed`.
+
+## A2.3 AND THIS IS WHY THE RENIN ARM COULD NOT HAVE BEEN BUILT FIRST
+
+Wiring `P_thr` to the existing `drive` would have produced **an arm that does nothing
+chronically**, because that drive is zero in every chronic steady state the model reaches.
+ADR 0021 A6.3's prediction would have come back **refuted for a reason that has nothing to
+do with tubuloglomerular feedback** — the instrument would have been reading the resetting
+assumption, not the renin physiology.
+
+**THAT IS THE FAILURE THIS AMENDMENT PREVENTS, AND IT WOULD HAVE BEEN INVISIBLE IN THE
+RESULT.** A refuted prediction with a plausible successor named is exactly the shape of a
+finding nobody re-examines.
+
+## A2.4 THE ORDER IS NOW FIXED, AND IT CHANGES
+
+1. **The renal sympathetic arm needs its own resetting behaviour**, bounded by Lohmeier at
+   **sustained to at least 10 days**. That is an ORDER, not a time constant — the data give
+   a lower bound and nothing more, and the row must say so.
+2. **Only then** can `P_thr` be wired to it and ADR 0021 A6.3 tested.
+3. **`BR.RESET.TAU` is not touched in this pass.** It is `assumed`, it is probably
+   under-sourced, and re-valuing the vasomotor arm's resetting on renal-nerve data would be
+   failure mode #11 — a name carrying a convention its value contradicts.
+
+**THE PROHIBITIONS IN §4 AND A1.4 ALL STAND**, including that `RN.MD.RENIN_GAIN` is the
+instrument and may not be re-solved.
