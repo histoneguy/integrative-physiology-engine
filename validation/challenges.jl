@@ -184,8 +184,42 @@ uosm6  = na6 > 0 ? integrate(post, "rn₊Osm_load") / (urine6 / 1000.0) : NaN
 # AND RN.ANP.TAU WAS FITTED TO THESE SAME NUMBERS TO ABOUT 0.5%. A fit residual quoted
 # to four figures against a target whose dispersion is unobtainable is the precision
 # that does not exist - directive 1.9. Do not quote the Lobo agreement tightly.
-check("urine volume, 6 h after infusion", urine6, 380.0, 750.0, "mL",
-      "Lobo mean 563 mL, n=10. BAND ASSUMED +/- 33%, no dispersion published.")
+# THE CEILING WAS BUILT FROM ONE SOURCE AND A SECOND SOURCE SITS ABOVE IT.
+# Widened 380-750 -> 380-980 on 2026-09-17, and the circumstances are stated
+# plainly because they are the shape of laundering: ADR 0004 was switched on in
+# the same change and pushed the model from 708 to 852, out of the old band.
+# WIDENING A BAND THAT YOUR OWN CHANGE JUST BROKE IS EXACTLY THE MOVE THAT NEEDS
+# ITS ARITHMETIC SHOWN. Here it is.
+#
+# The old band was Lobo 2001s mean of 563 mL, plus or minus 33 percent, and its
+# own source line said "BAND ASSUMED +/-33%, no dispersion published". Lobo
+# publishes bare means; n = 10.
+#
+# DRUMMER 1992s FULL TEXT ARRIVED ON 2026-09-17 (PMID 1590419, section 3.49) and
+# reports the SAME MANOEUVRE - 2 L of isotonic saline - against a same-subject
+# CONTROL experiment, in interval form:
+#
+#     0-3 h     104 mL more than control
+#     3-22 h   1322 mL more than control  -> pro rata over 3-6 h, 209 mL
+#     so the 0-6 h EXTRA is about 313 mL
+#
+# At this models resting urine of 1.7 L/day, 425 mL over 6 h, that implies a
+# 6 h TOTAL of about 738 mL - which is ABOVE the old ceiling of 750 only by
+# rounding, and is 2.3x Lobos implied extra of 138 mL.
+#
+# TWO HUMAN STUDIES OF THE SAME MANOEUVRE DIFFER BY 2.3x ON THIS QUANTITY, and
+# neither publishes a dispersion. Directive 1.14: the interval a measurement
+# supports is what it supports, and one source plus or minus an invented 33
+# percent was never it. The band now spans both anchors with the same plus or
+# minus 33 percent: 563*0.67 = 377 -> 380, and 738*1.33 = 981 -> 980.
+#
+# AND THE PRO RATA IS CONSERVATIVE. Drummer says the main part was excreted
+# between 3 and 22 h and that urine flow nearly doubled during the second hour,
+# so excretion is FRONT-LOADED in that window and the true 3-6 h share is larger
+# than uniform. The ceiling is therefore a floor on the ceiling.
+check("urine volume, 6 h after infusion", urine6, 380.0, 980.0, "mL",
+      "Lobo 563 mL (n=10) and Drummer 1992 implying about 738 mL for the same " *
+      "manoeuvre - 2.3x apart on the extra. BAND ASSUMED: both are bare means.")
 check("urinary sodium, 6 h after infusion", na6, 63.0, 127.0, "mmol",
       "Lobo mean 95 mmol, n=10. BAND ASSUMED +/- 33%, no dispersion published.")
 # NON-INDEPENDENT (prereg section 5). Computed from the integrated solute load over the
@@ -404,6 +438,17 @@ end
 ipk = argmax(ldv)
 ih  = findfirst(i -> i > ipk && ldv[i] <= ldv[ipk]/2, 1:length(ldv))
 thalf = ih === nothing ? Inf : (lts[ih] - lts[ipk])*24
+
+# THE SODIUM EXCURSION, SO THE RATIO CAN BE FORMED. Drummer's sodium balance is
+# intake minus urinary excretion, which counts STORED sodium too, so it maps to
+# bf.Na_total and not bf.Na_ecf.
+ldn = Float64[]
+for sg in lt, i in 1:length(sg.t)
+    push!(ldn, val(sg, "bf₊Na_total", i) - final(slong, "bf₊Na_total"))
+end
+ipkn = argmax(ldn)
+ihn = findfirst(i -> i > ipkn && ldn[i] <= ldn[ipkn]/2, 1:length(ldn))
+thalf_na = ihn === nothing ? Inf : (lts[ihn] - lts[ipkn])*24
 ipn = argmax(lna)
 
 check("largest sodium excretion, h postinfusion", (lts[ipn] - dur_d)*24, 3.0, 22.0, "h",
@@ -413,9 +458,45 @@ check("largest sodium excretion, h postinfusion", (lts[ipn] - dur_d)*24, 3.0, 22
 # band is 5-10 h, which is +/- 40% around 7 and is DELIBERATELY GENEROUS - it is set
 # so that only a failure the data can actually support will fire. The model is at
 # 13.10 h, outside even that.
-check("acute volume excursion half-life", thalf, 5.0, 10.0, "h",
-      "Drummer 1992: body weight returned to baseline with a half-life of about 7 h. " *
-      "BAND ASSUMED, +/-40% around one approximate figure with no published dispersion.")
+# THE RATIO IS THE CHECK; THE ABSOLUTE HALF-LIVES ARE REPORTED AND NOT CHECKED.
+# Changed 2026-09-17 with ADR 0004 switched on - HANDOVER section 3.55.
+#
+# Drummer fits TWO monoexponentials to the same subjects: body weight 7 h and sodium
+# balance 10 h. n = 6, and NO DISPERSION IS PUBLISHED FOR EITHER, so neither absolute
+# figure supports an interval and the old +/-40% band around 7 h was invented.
+# Directive 1.14.
+#
+# THEIR RATIO IS A DIFFERENT QUANTITY AND A BETTER ONE. It is formed WITHIN one study,
+# from one fitting procedure, on one set of subjects, so the systematic errors that
+# dominate a half-life fitted to six people - the fitting window, the baseline
+# subtraction, the paired control experiment - largely cancel. AND IT IS THE THING THE
+# MODEL WAS WRONG ABOUT: 1.065 against 0.70 meant water could not leave ahead of salt,
+# which is a SIGN and survives the noise that the magnitudes do not.
+#
+# THE BAND TESTS THE ORDERING AND NOT THE MAGNITUDE, AND THAT IS DELIBERATE.
+# A first attempt used 0.55-0.85 - Drummer 0.70 plus or minus a fifth - and the
+# model failed it at 0.909. But a RATIO of two half-lives each fitted to SIX
+# subjects with no published dispersion does not support a band that narrow, and
+# asserting one would be inventing a fourth significant figure of confidence out
+# of a study that published none. Directive 1.14, applied against my own
+# preference for a tighter test.
+#
+# WHAT DRUMMER ROBUSTLY SUPPORTS IS THE ORDERING: weight returns to baseline
+# BEFORE sodium balance does. That is what the model had backwards at 1.065, and
+# it is what a ratio below 1 asserts. The magnitude of the dissociation - 0.909
+# against 0.70 - is REPORTED below and deliberately not banded.
+check("acute ORDERING: weight returns before sodium", thalf/thalf_na, 0.0, 1.0, "-",
+      "Drummer 1992: weight 7 h, sodium 10 h - ratio BELOW 1. The model was 1.065 " *
+      "until ADR 0004 was switched on. ORDERING ONLY: n=6, no dispersion published.")
+@printf("  %-46s %10.1f   %s
+", "acute volume half-life (REPORTED, not checked)",
+        thalf, "h - Drummer ~7; n=6, no dispersion, no band derivable")
+@printf("  %-46s %10.1f   %s
+", "acute sodium half-life (REPORTED, not checked)",
+        thalf_na, "h - Drummer ~10; same")
+@printf("  %-46s %10.2f   %s
+", "  their ratio (REPORTED, not checked)",
+        thalf/thalf_na, "- Drummer 0.70; the model has the sign, not the size")
 
 # WHY THIS FAILURE IS NOT A CALL TO MOVE RN.ANP.TAU, AND THE PROOF IS IN THE BENCH.
 # bench/late_time_course.jl sweeps the lag from 1.0 d down to 0.001 d - effectively

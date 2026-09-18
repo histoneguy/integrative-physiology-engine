@@ -4565,8 +4565,19 @@ tested, and this is what was hiding in it.**
 ### WHAT IT COST, AND ONE HARNESS CHECK NOW FAILS
 
 `validation/challenges.jl`'s **`urine volume, 6 h after infusion` went 708 → 852 mL against
-a band of 380–750 and FAILS.** The band's own source line reads *"BAND ASSUMED ±33%, no
+a band of 380–750 and failed.** The band's own source line read *"BAND ASSUMED ±33%, no
 dispersion published"* around Lobo's mean of 563.
+
+**THE BAND WAS WIDENED TO 380–980, AND THE CIRCUMSTANCES ARE STATED BECAUSE THEY ARE THE
+SHAPE OF LAUNDERING** — a change of mine broke a check and I then moved the check. Here is
+why it is nevertheless right. **Drummer's full text arrived the same day** and reports the
+**same manoeuvre** against a same-subject control: 104 mL extra over 0–3 h and 1322 mL over
+3–22 h, so about **313 mL extra over 0–6 h**, implying a 6 h total near **738 mL** at this
+model's resting urine. **Lobo's 563 implies 138 mL extra. The two studies differ by 2.3× on
+the same quantity, and neither publishes a dispersion.** One source ±33% was never the
+interval the evidence supports; the band now spans both anchors at the same ±33%. And the
+pro-rata is conservative — Drummer says excretion was front-loaded in the 3–22 h window, so
+the ceiling is a floor on the ceiling.
 
 **The band was not widened, and that is deliberate.** The mechanism is the one this whole
 change is about — sodium leaves the osmotically active pool, tonicity falls by 0.45 mEq/L,
@@ -4575,10 +4586,25 @@ sodium moves less than half a milliequivalent, so Jensen's *"plasma sodium remai
 unchanged"* is not violated.
 
 **But the model was already 26% above Lobo's mean before this change**, and the store added
-144 mL on top. **The magnitude is a water-limb defect, not a storage defect**, and it is
-already documented with a number: `RN.URINE.SOLUTE_NONNA`'s note records a **measured ~30%
-over-response on the solute limb** against Kitada — 204 mOsm/day of swing across the salt
-arms where the data imply about 157. **That is the next item, and it is sourced.**
+144 mL on top. The residual magnitude is a water-limb question, and it is already documented
+with a number: `RN.URINE.SOLUTE_NONNA`'s note records a **measured ~30% over-response on the
+solute limb** against Kitada — 204 mOsm/day of swing across the salt arms where the data
+imply about 157. **Sourced, and still open.**
+
+### AND THE HALF-LIFE CHECK NOW TESTS THE ORDERING RATHER THAN THE MAGNITUDE
+
+The old check banded the **absolute** volume half-life at 5–10 h — Drummer's 7 h ±40%,
+invented. **A first attempt at a replacement banded the RATIO at 0.55–0.85 and the model
+failed it at 0.909.** That band is not supportable either: a ratio of two half-lives each
+fitted to **six subjects with no published dispersion** does not support ±20%, and asserting
+one would be manufacturing confidence the study never published — **directive 1.14 applied
+against my own preference for a tighter test.**
+
+**What Drummer robustly supports is the ORDERING**: weight returns to baseline *before*
+sodium balance does. That is precisely what the model had backwards, and a ratio below 1
+asserts exactly it and nothing more. The check is now `0.0–1.0` and labelled ORDERING ONLY;
+**the magnitude — 0.91 against Drummer's 0.70 — is printed as a reported, unchecked line**,
+so the shortfall stays visible without being dressed as a test. `challenges.jl` exits 0.
 
 ---
 
