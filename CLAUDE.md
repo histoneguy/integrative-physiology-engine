@@ -75,13 +75,20 @@ citations, so a stale one misquotes both:
     julia --project=. tools/export_gui_data.jl
     python tools/build_gui.py
 
-Run all five provenance gates before committing:
+Run all six provenance gates before committing:
 
     python tools/ledger_to_julia.py --check
     python tools/check_relations.py --repo .
     python tools/check_closure.py
     python tools/check_adrs.py
     python tools/fix_deps.py
+    python tools/check_tolerances.py
+
+**The sixth is the significant-figures rule made structural** — no comparison tolerance
+may be tighter than its target's printed precision. A tight comparison against a
+constant the model is *derived from* is legitimate and must declare itself with a
+`CLOSURE PIN` or `WIRING PIN` comment; the gate does not guess, because the version
+that guessed had a 100% false-positive rate.
 
 **Comprehensive, but super efficient** — HANDOVER directive 1.10, foundational.
 Coverage is not negotiable; cost is. A slow suite is paid on every future run.
@@ -110,6 +117,10 @@ found by connecting something, and none by any of the five gates.
   the three `*_prereg.md` files in `validation/`. It has caught something every time.
 - **Judge sources on study quality, not species.** Animal data is legitimate where the
   human experiment cannot ethically be performed. Record species, preparation and range.
+  **For neurogenic control of pressure through renal or baroreceptor mechanisms with no
+  usable human data, the default source is Lohmeier's conscious-dog work** — directive
+  1.15. It is a default for an empty slot, and it does **not** relax the rule above it:
+  never write a Lohmeier citation you have not opened.
 - **Check exit codes explicitly.** Piping into `tail` or `head` reports the pipe's
   status, not the command's.
 - **Do not add tooling** unless something breaks that cannot be worked around.
@@ -134,4 +145,4 @@ it. The file has not been rewritten yet.
 | `ledger/` | parameters and relations, with provenance |
 | `docs/adr/` | **A**rchitecture **D**ecision **R**ecords - structural decisions, each with an evidence tier and a falsifiable test; ADR 0006 defines the tiers |
 | `validation/` | targets, averaging and pooling policy, pre-registrations |
-| `tools/` | the five gates |
+| `tools/` | the six gates |

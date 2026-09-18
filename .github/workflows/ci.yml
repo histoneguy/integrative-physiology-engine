@@ -32,6 +32,12 @@ jobs:
       # that has gone stale. Landing it red would have deadlocked every merge,
       # since this job is the required status check.
       - run: python3 tools/check_relations.py --repo .
+      # A tolerance tighter than its target's significant figures tests digits
+      # nobody measured. Directives 1.9, 1.13 and 1.14 all say so and were all
+      # ignored, so this is the version that fails a build. A tight comparison
+      # against a constant the model is DERIVED from is legitimate and must say
+      # so with a CLOSURE PIN or WIRING PIN comment - the gate does not guess.
+      - run: python3 tools/check_tolerances.py
 
   test:
     name: Julia tests
