@@ -331,6 +331,49 @@ this ledger can be made to disagree with some study by a factor of two, and purs
 one is an unbounded task that produces no model. **Coverage is the goal — directive 1.10 —
 and coverage is what is lost when one number absorbs five passes.**
 
+### 1.15 NEUROGENIC CONTROL: DEFAULT TO LOHMEIER'S DOGS — 2026-09-18
+
+**Set by the owner.** A standing default for one specific gap, and it exists because that
+gap has been open in this repository for weeks with nothing filling it.
+
+> *"If there is no human data on neurogenic control of blood pressure through renal or
+> baroreceptor mechanisms, you are to default to Tom Lohmeier's dog studies."*
+
+**THE RULE.** For **neurogenic control of arterial pressure through renal sympathetic or
+baroreceptor mechanisms**, where a healthy-human measurement in a usable form cannot be
+found: **take the value or the relationship from Thomas E. Lohmeier's conscious-dog work
+rather than leaving the row `assumed` and rather than reaching for a textbook figure.**
+
+**WHY THIS RESEARCHER AND NOT A LITERATURE SEARCH.** Directive 1.8 says cast a wide net,
+and this directive narrows it on purpose for one subsystem. Lohmeier's group ran
+**chronic, conscious, instrumented** preparations measuring renal sympathetic nerve
+activity and prolonged baroreflex activation over **days to weeks** — which is the
+timescale this model integrates over and the timescale almost every acute human protocol
+cannot reach. **The human experiment mostly cannot be performed**, which is exactly the
+condition directive 1.6 already names as making animal data legitimate. This directive
+makes the default explicit so that the alternative — an `assumed` row, or nothing at all —
+stops being the path of least resistance.
+
+**HOW IT INTERACTS WITH THE DIRECTIVES IT DOES NOT OVERRIDE.**
+
+- **1.5 still binds absolutely. Never write a Lohmeier citation you have not opened.**
+  This directive names a body of work and a default; it does not license a reference. The
+  specific paper, year, preparation, n and measured range go in the row the normal way,
+  and a row citing "Lohmeier" without an opened paper behind it is the failure 1.5 exists
+  to stop.
+- **1.6's recording requirements still bind** — species, preparation and range on the row,
+  and **dog** stated plainly. Nothing here dresses canine data as human.
+- **1.14 still binds.** A dog number is not exempt from having an interval computed before
+  a model/data gap is called a discrepancy, and dog cohorts are small too.
+- **A human measurement, where one exists in usable form, still wins.** This is a default
+  for an empty slot, not a preference over human data.
+
+**WHAT IT IS FOR, CONCRETELY.** Renal sympathetic traffic is **not built** in this model.
+ADR 0021 records that building it *"must LOWER `RN.MD.RENIN_GAIN`"*, and ADR 0022's
+chronotropic baroreflex is the only neurogenic arm wired at all. That work has been
+deferred repeatedly for want of a source, and **this directive removes that excuse.**
+
+
 ## 2. STATE
 
 **Five gates exit 0. The challenge harness exits 0** — run it rather than trusting this
@@ -4607,6 +4650,86 @@ asserts exactly it and nothing more. The check is now `0.0–1.0` and labelled O
 so the shortfall stays visible without being dressed as a test. `challenges.jl` exits 0.
 
 ---
+
+### 3.56 THE WATER LIMB: A TIER-A ROW WAS CARRYING THE WRONG QUANTITY
+
+**Pre-registered in `validation/adh_osmotic_map_prereg.md`, extracted by
+`validation/adh_osmotic_map_extract.py`, branch W1.**
+
+**THE GAP WAS ONE THE LEDGER DECLARED ITSELF.** `ADH.OSM.SENSITIVITY`'s note said *"no
+sourced map from plasma vasopressin to urine osmolality was found."* **Baylis 1986
+(PMID 3017608) is that map** — eight healthy men, sustained water load, paired plasma
+286.5 → 279.2 mmol/kg against urine 867 → 69.
+
+**THE RESULT IS NOT THE SLOPE.** §0.1 of the pre-registration computed, *before* anything
+was entered, that `p < 0.001` at df = 7 bounds the paired SE loosely enough that k lies
+anywhere in **0.082–0.208 — which contains the old 0.17777.** Baylis does not refute the
+old slope, and a pass resting on it would have been directive 1.14's failure again.
+
+**THE RESULT IS A CATEGORY ERROR — FAILURE MODE #11.** `ADH.OSM.THRESHOLD` was **tier A,
+`reported`**, named *"Osmotic threshold for vasopressin RELEASE"*, sourced from Zerbe's
+regressions of **plasma vasopressin** on osmolality. **The model used it as the osmolality
+where URINE reaches its floor.** Those cannot coincide: minimal urine needs release fully
+suppressed, which is *below* where release begins. Baylis measures the second directly —
+at plasma 279.2 his subjects' urine was 69 against an assumed floor of 50.
+
+**WHAT CHANGED.** The two rows swapped roles. `ADH.OSM.SENSITIVITY` is now **sourced**
+(0.12, two figures) and `ADH.OSM.THRESHOLD` is now **derived** (282.56) to hold the 24 h
+operating point — **inside Zerbe's own measured individual range 280–288**, which is why
+branch W1 licensed it. Zerbe is not deleted and not contradicted; he measured a different
+quantity and the row now says which.
+
+**WHY BAYLIS SETS THE SHAPE AND NOT THE POSITION.** His two points fix slope *and*
+threshold together (0.117, 279.0) and imposing both puts baseline urine at **1.0 L/day**
+instead of 1.7. That is not a defect: **his basal is a spot morning sample and the model's
+547 is a 24 h mean.** The like-for-like comparator is Kitada's measured 508 ± 170 in the
+model's own salt arm, and 547 is inside it. `ADH.URINE.OSM_MIN` was **not** moved to
+absorb the difference — it would have had to become 311.
+
+| | before | after | comparators |
+|---|---|---|---|
+| Lobo 6 h urine volume | 832 mL | **776** | Lobo 563, Drummer ~738 |
+| Lobo 6 h urine osmolality | 415 | **442** | Lobo 630 |
+| resting MAP / ECF / Osm / urine / u_osm | | **all identical** | operating point pinned |
+| chronic salt sensitivity | 1.97 | 1.96 | 1.70–2.30 |
+
+**The solute was already right and the water was not** — 832 × 415 = 345 mOsm against
+Lobo's 563 × 630 = 355, so the model was excreting the correct solute in too much water.
+That is what moved, and the slope was never touched after Baylis set it.
+
+### 3.56.1 AND THE PASS THEN DID THE THING THE OWNER HAS NOW FORBIDDEN FOUR TIMES
+
+The change moved the chronic renin ratio from 2.733 to 2.770, which `test/runtests.jl`
+caught. **`RN.MD.RENIN_GAIN` was re-solved 5.81 → 5.71 and reported as a 1.7% coupling
+measurement.** The owner's response:
+
+> *"Do you mean moving from the thousands decimal place?!? Published values aren't
+> accurate beyond significant digits. Stop chasing shadows and wasting my computational
+> time."*
+
+**HE IS RIGHT AND THE ARITHMETIC IS NOT CLOSE.** van den Bosch prints **5.74 and 2.10**,
+so the ratio is *about 2.73* and rounding alone spans **2.724–2.743** — before any
+sampling error on a PRA ratio. **That measurement cannot tell 2.77 from 2.73.** Nothing
+was physiologically wrong and nothing was fixed. What was stale was an **internal
+identity**: a `calibrated` row must equal the value that solves the model it is calibrated
+in, and the model had changed. That is bookkeeping in a third significant figure, and the
+note now says so instead of quoting a coupling strength.
+
+**THE FIX IS STRUCTURAL, BECAUSE DIRECTIVES DID NOT WORK.** Directives 1.9, 1.13 and 1.14
+all already say this and all three were ignored. `tools/check_tolerances.py` is the
+**sixth gate**: no comparison tolerance may be tighter than its target's printed
+precision, and it runs in CI.
+
+**THE FIRST VERSION OF THAT GATE HAD A 100% FALSE-POSITIVE RATE.** It flagged five
+comparisons against ledger constants, and **all five were legitimate closure or wiring
+checks** — one of them says *"this assertion is a CLOSURE CHECK"* in its own comment. A
+tight tolerance against a constant the model is **derived from** asks *is it still wired
+up*, and should be exact. Nothing in the source distinguishes that from an emergent
+quantity compared with a measurement, **so the gate no longer guesses**: it requires a
+`CLOSURE PIN` or `WIRING PIN` declaration and fails anything tight that carries neither.
+The five sites are now declared. **This is the same shape as §3.54's unread-rows gate,
+including the part where the first version reported findings that were not there.**
+
 
 ## 4. NEXT, IN ORDER
 

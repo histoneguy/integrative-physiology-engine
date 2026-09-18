@@ -53,7 +53,23 @@ const SALT_MAP_SHIFT = 2.0042
 # disagreement inside the uncertainty is not a finding, and neither is an
 # agreement. What justifies the change is the ORDERING defect it fixes, which is
 # a sign and survives the noise - see HANDOVER section 3.55.
-const JENSEN_FINAL_WINDOW_RISE = 102.21
+#
+# MOVED AGAIN 2026-09-18, 102.21 -> 100.37, adh_osmotic_map_prereg.md. Two
+# deliberate changes, neither aimed at this number. (1) ADH.OSM.SENSITIVITY was
+# SOURCED from Baylis 1986 - the plasma-to-urine osmolality map the row's own
+# note recorded as missing - taking the slope 0.17777 -> 0.12, and the baseline
+# pin moved onto ADH.OSM.THRESHOLD, which had been tier A for the WRONG QUANTITY
+# (vasopressin release, where the model needs urinary dilution). (2) The
+# calibrated RN.MD.RENIN_GAIN was re-solved 5.81 -> 5.71 because its own
+# definition is the value that solves THIS model, and the model had changed.
+#
+# THE PHYSIOLOGICAL CLAIM HERE IS ZERO AND THAT IS THE POINT. 102 -> 100 against
+# Jensen's +122% is invisible to a measurement whose zero-correlation bound is
+# -18% to +502%. This constant is a DRIFT PIN compared with the model's own
+# previous value and nothing else - directive 1.14 says that is the only place
+# five-figure model numbers belong. It is not a validation claim and updating it
+# is not fitting.
+const JENSEN_FINAL_WINDOW_RISE = 100.37
 
 # ---------------------------------------------------------------------------
 # RUN ONE TESTSET INSTEAD OF ALL 37. Directive 1.10, applied to the DEV LOOP
@@ -961,6 +977,8 @@ end
         @test isapprox(load,
                        L.RN_URINE_SOLUTE_NONNA +
                        L.RN_URINE_OSM_PER_NA * L.BF_NA_INTAKE_NOMINAL; rtol = 1e-4)
+        # CLOSURE PIN: `load` is evaluated FROM this row's own parents, so this
+        # asks whether the identity still holds, not whether a measurement agrees.
         @test isapprox(load, L.RN_URINE_SOLUTE_LOAD; rtol = 1e-3)
 
         # ---- TEST 4: ANTIDIURETIC ACTIVITY STAYS MID-RANGE ------------------
@@ -1432,6 +1450,8 @@ end
             for o in observed(s)
                 occursin("PaCO2", String(Symbol(o.lhs))) && (pc = sl[o.lhs][end])
             end
+            # CLOSURE PIN: basal ventilation is DERIVED from resting PaCO2, so the
+            # model returning it is arithmetic - see the note at the 1e-4 assertion.
             @test isapprox(pc, IPE.LedgerParams.RESP_CO2_ARTERIAL_RESTING; rtol = 1e-3)
         end
     end
@@ -1775,6 +1795,7 @@ end
         #
         # So this assertion is a CLOSURE CHECK on that derivation, not evidence that
         # the model reproduces human PaCO2. It cannot be, and the ledger row says so.
+        # CLOSURE PIN - the six lines above say so in full.
         @test isapprox(fin("PaCO2"), L.RESP_CO2_ARTERIAL_RESTING; rtol = 1e-4)
 
         # AT REST THE MODEL SITS ON THE FLAT LIMB. Ventilation is basal and the
@@ -1851,6 +1872,9 @@ end
         for o in observed(off)
             occursin("rs₊V_E", String(Symbol(o.lhs))) && (voff = soff[o.lhs][end])
         end
+        # WIRING PIN: with the chemoreflex off the model must hand back the basal
+        # ventilation it was given. Exact to solver precision, and no claim about
+        # how well 8.9 L/min describes a human.
         @test isapprox(voff, L.RESP_VENTILATION_BASAL; rtol = 1e-9)
 
         @info "respiration" PaCO2=fin("PaCO2") V_E=fin("rs₊V_E") H2O_resp=fin("H2O_resp")
@@ -2258,6 +2282,8 @@ end
         # the rounding and nothing else - and the rounding is deliberate, because
         # entering more digits than a measurement carries is the error the owner
         # corrected on 2026-09-05 and pooling.md now records.
+        # CLOSURE PIN: the equilibrium is derived from this row; the 7e-5 offset
+        # discussed above IS the rounding, which is the point.
         @test isapprox(ft4_star(1.0), L.THY_FT4_EUTHYROID; rtol = 1e-4)
 
         # ADR 0019 FALSIFIABLE TEST 1. Raise thyroid secretory capacity: thyrotropin

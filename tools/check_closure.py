@@ -491,15 +491,21 @@ def _check_one(p: dict[str, float]) -> int:
           "disabled branch to reproduce the pre-ADH placeholder exactly.",
           errors)
 
-    check("ADH sensitivity closes at the setpoint",
-          p["ADH.OSM.SENSITIVITY"],
+    # INVERTED 2026-09-18, adh_osmotic_map_prereg.md. k_adh used to be the derived
+    # row and the threshold the sourced one. It is now the other way round, because
+    # ADH.OSM.SENSITIVITY is sourced from Baylis 1986 and ADH.OSM.THRESHOLD was tier
+    # A for the WRONG QUANTITY - vasopressin release, where the model needs urinary
+    # dilution. The identity is the same equation solved for the other unknown, so
+    # the operating point it pins is unchanged.
+    check("ADH dilution threshold closes at the setpoint",
+          p["ADH.OSM.THRESHOLD"],
+          p["BF.OSM.PLASMA_SETPOINT"] -
           ((solute / v_base) - u_min) /
-          ((p["ADH.URINE.OSM_MAX"] - u_min) *
-           (p["BF.OSM.PLASMA_SETPOINT"] - p["ADH.OSM.THRESHOLD"])),
-          "k_adh is DERIVED by requiring that at the plasma osmolality setpoint "
-          "the model excretes exactly intake minus insensible loss. If this "
-          "drifts the operating point moves and every salt-step level moves "
-          "with it.",
+          ((p["ADH.URINE.OSM_MAX"] - u_min) * p["ADH.OSM.SENSITIVITY"]),
+          "Osm_thr is DERIVED by requiring that at the plasma osmolality setpoint "
+          "the model excretes exactly intake minus insensible loss, GIVEN the "
+          "sourced slope. If this drifts the operating point moves and every "
+          "salt-step level moves with it.",
           errors)
 
     # And the thing all three exist to guarantee, checked directly.

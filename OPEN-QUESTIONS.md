@@ -289,6 +289,13 @@ sympathetic traffic lives. **Inside the band they bound nothing**, so ADR 0021's
 prediction — that building sympathetic traffic lowers `g_md` and brings the endpoints
 back — is no longer testable against Lobo.
 
+**AND THE SOURCE FOR IT IS NO LONGER OPEN — 2026-09-18.** The owner set directive 1.15:
+where no usable human data exists for neurogenic control of pressure through renal or
+baroreceptor mechanisms, **default to Lohmeier's conscious-dog work.** This item has
+been deferred for want of a source and that reason has now been withdrawn. What remains
+is the work, not the question. **Directive 1.5 still binds: open the papers before
+citing them, and record species and preparation as dog.**
+
 **The physiology B9 recorded is unchanged.** There is still no renal sympathetic arm and
 `RN.MD.RENIN_GAIN` still absorbs whatever it would contribute. What is gone is the
 measurement that made that absorption visible as a number. **A green harness is worth
