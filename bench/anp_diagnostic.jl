@@ -16,23 +16,23 @@
 # THE PREDICTION IS ALGEBRAIC AND IS WRITTEN DOWN BEFORE THE RUN. At steady state
 # excretion equals intake, so
 #
-#     d(intake) = G_pn*dMAP + G_anp*dV_ecf,   and   dMAP = ratio * dV_ecf
+#     d(intake) = G_pn*dMAP + G_vn*dV_ecf,   and   dMAP = ratio * dV_ecf
 #
 # with ratio = dMAP/dV_ecf = 6.173 mmHg/L measured. Therefore
 #
-#     dMAP/d(intake) = 1 / (G_pn + G_anp/ratio)
+#     dMAP/d(intake) = 1 / (G_pn + G_vn/ratio)
 #
 # So THE TWO ARE INTERCHANGEABLE AT STEADY STATE and only their ACUTE behaviour differs.
 # Three consequences, all falsifiable here:
 #
-#   P1  Chronic salt sensitivity depends only on the COMBINATION G_pn + G_anp/6.173.
+#   P1  Chronic salt sensitivity depends only on the COMBINATION G_pn + G_vn/6.173.
 #       Configurations with equal combinations must give the same salt-step shift.
 #   P2  G_pn can therefore fall to the measured animal value of 5.43 (Mizelle 1993)
-#       without changing chronic salt sensitivity, provided G_anp takes up the slack:
-#       G_anp = (20.0 - 5.43) * 6.173 = 89.9 (mEq/day)/L.
+#       without changing chronic salt sensitivity, provided G_vn takes up the slack:
+#       G_vn = (20.0 - 5.43) * 6.173 = 89.9 (mEq/day)/L.
 #   P3  To ALSO reach the human chronic salt sensitivity of 1.70-2.30 mmHg per 100
 #       mmol/day, the combination must reach 44-59, so with G_pn at 5.43 the required
-#       G_anp is (44 - 5.43)*6.173 = 238 to (59 - 5.43)*6.173 = 331.
+#       G_vn is (44 - 5.43)*6.173 = 238 to (59 - 5.43)*6.173 = 331.
 #
 # If P1 holds and the acute response ALSO improves, the two paths are distinguishable by
 # acute data and only by acute data - which would tell ADR 0010 exactly which experiment
@@ -46,7 +46,7 @@ using Printf
 const RATIO = 6.173
 
 function harness(; anp = 0.0, gpn = nothing)
-    sys = IPE.build_model(; anp_gain = anp)
+    sys = IPE.build_model(; vn_gain = anp)
     U = unknowns(sys); O = observed(sys)
     pget(n) = (for p in parameters(sys); occursin(n, String(Symbol(p))) && return p; end;
                error(n))
@@ -99,17 +99,17 @@ println("                acute FENa rise on 23 mL/kg isotonic saline +123%")
 println("                resting MAP 80-95, resting V_ecf 13-17 L")
 println()
 @printf("%-34s %8s %9s %9s %9s %9s\n",
-        "configuration", "G_pn+G_anp/r", "shift", "FENa%", "restMAP", "restVecf")
+        "configuration", "G_pn+G_vn/r", "shift", "FENa%", "restMAP", "restVecf")
 
 CONFIGS = [
     ("incumbent, no volume path",         0.0,    nothing),
-    ("P1a  G_pn 20.0, G_anp 0",           0.0,    20.0),
-    ("P1b  G_pn 10.0, G_anp 61.7",       61.73,   10.0),
-    ("P1c  G_pn  5.43, G_anp 89.9",      89.94,    5.43),
+    ("P1a  G_pn 20.0, G_vn 0",           0.0,    20.0),
+    ("P1b  G_pn 10.0, G_vn 61.7",       61.73,   10.0),
+    ("P1c  G_pn  5.43, G_vn 89.9",      89.94,    5.43),
     ("P2   measured animal G_pn only",    0.0,     5.43),
-    ("P3a  G_pn 5.43, G_anp 238",       238.0,     5.43),
-    ("P3b  G_pn 5.43, G_anp 331",       331.0,     5.43),
-    ("P3c  G_pn 5.43, G_anp 285",       285.0,     5.43),
+    ("P3a  G_pn 5.43, G_vn 238",       238.0,     5.43),
+    ("P3b  G_pn 5.43, G_vn 331",       331.0,     5.43),
+    ("P3c  G_pn 5.43, G_vn 285",       285.0,     5.43),
 ]
 for (lab, anp, gpn) in CONFIGS
     r = harness(; anp = anp, gpn = gpn)

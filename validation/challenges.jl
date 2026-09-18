@@ -663,7 +663,7 @@ println("     large while CV.VENOUS_RETURN.SENSITIVITY is calibrated. Part of 70
 println("     compensating for that and it must be re-estimated when G_vr is sourced.")
 println("     The human data alone give 750 at G_pn = 5.43 and 505 at G_pn = 20.0.")
 println("  2. RN.PRESSURE_NATRIURESIS.SLOPE is unchanged at 20.0 and is now")
-println("     OVER-DETERMINED - the human joint constraint is G_pn + 0.0594*G_anp = 50.")
+println("     OVER-DETERMINED - the human joint constraint is G_pn + 0.0594*G_vn = 50.")
 println("     The pre-registration fixed that before extraction and ADR 0016 sequences")
 println("     it last. So this model still double-counts the path, and the chronic")
 println("     agreement above is partly that double count.")

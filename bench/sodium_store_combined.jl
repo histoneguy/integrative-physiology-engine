@@ -43,7 +43,7 @@ end
 
 function probe(f, tau, k)
     base = Dict{Any,Any}(pget("f_store") => f, pget("tau_store") => tau,
-                         pget("G_pn") => G_PN0*k, pget("G_anp") => G_ANP0*k)
+                         pget("G_pn") => G_PN0*k, pget("G_vn") => G_ANP0*k)
     s0 = solve(ODEProblem(sys, collect(base), (0.0, 120.0), Pair[]), Rodas5P();
                abstol = 1e-10, reltol = 1e-10)
     n0 = length(s0.t); u0 = [u => s0[u][end] for u in U]

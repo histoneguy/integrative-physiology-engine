@@ -161,7 +161,7 @@ function Potassium(; name, body_mass = BF_BODY_MASS_REFERENCE, enabled::Bool = t
         # THE REFERENCE INTAKE SCALES EXACTLY AS THE INTAKE DOES, so the ratio in
         # f_renal below is SIZE-FREE and the fraction cannot inherit a body-size
         # dependence it has no evidence for. Same construction as md_drive, and the
-        # mistake section 3.30 records making with G_anp, avoided by shape.
+        # mistake section 3.30 records making with G_vn, avoided by shape.
         K_intake_ref = sz * K_INTAKE_NOMINAL
         f_renal_0  = K_RENAL_FRACTION        # INTENSIVE, the fraction AT K_intake_ref
         f_renal_max = K_RENAL_FRACTION_MAX   # INTENSIVE, the limit at large intake

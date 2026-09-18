@@ -48,8 +48,8 @@ const G_ANP0 = 585.0
 const TAU0   = 0.15
 
 function run(; gpn = G_PN0, ganp = G_ANP0, tau = TAU0, sgfr = nothing)
-    base = Dict{Any,Any}(pget("G_pn") => gpn, pget("G_anp") => ganp,
-                         pget("tau_anp") => tau)
+    base = Dict{Any,Any}(pget("G_pn") => gpn, pget("G_vn") => ganp,
+                         pget("tau_vn") => tau)
     sgfr === nothing || (base[pget("S_gfr_v")] = sgfr)
     s0 = solve(ODEProblem(sys, collect(base), (0.0, 60.0), Pair[]), Rodas5P();
                abstol=1e-10, reltol=1e-10)
@@ -95,12 +95,12 @@ println("="^80)
 @printf("%-42s %12s %14s\n", "configuration", "t1/2 (h)", "salt sens")
 println("-"^80)
 
-r = run(); @printf("%-42s %12.2f %14.4f\n", "AS MERGED  G_pn 8.4, G_anp 585, tau 0.15", r.thalf, r.shift)
+r = run(); @printf("%-42s %12.2f %14.4f\n", "AS MERGED  G_pn 8.4, G_vn 585, tau 0.15", r.thalf, r.shift)
 
 println("\n  LAG SWEEP - gains fixed:")
 for tau in (0.05, 0.15, 0.50, 1.00)
     r = run(tau = tau)
-    @printf("%-42s %12.2f %14.4f\n", "    tau_anp = $tau d", r.thalf, r.shift)
+    @printf("%-42s %12.2f %14.4f\n", "    tau_vn = $tau d", r.thalf, r.shift)
 end
 
 println("\n  GAIN SWEEP - lag fixed, BOTH natriuretic gains scaled together:")
@@ -115,7 +115,7 @@ println("
 for k in (2.0, 3.0, 4.0)
     r = run(ganp = G_ANP0*k)
     @printf("%-42s %12.2f %14.4f
-", "    G_anp x $k only", r.thalf, r.shift)
+", "    G_vn x $k only", r.thalf, r.shift)
 end
 for k in (3.0, 6.0, 10.0)
     r = run(gpn = G_PN0*k)

@@ -163,7 +163,7 @@ def validate(rows: list[dict]) -> None:
         "K.INTAKE.NOMINAL": "range is the population percentile of 8893 dietary recalls",
         "BF.SIZE.EXPONENT": "range is the choice between BSA formulas, not a fit error",
         "BF.OSM.PLASMA_SETPOINT": "range is the clinical reference interval, not an error bar",
-        "CV.ANP.NATRIURETIC_GAIN":
+        "CV.VOLUME.NATRIURETIC_GAIN":
             "SOLVED, not measured - it is the gain that reproduces a chronic salt "
             "sensitivity of 2.00, so its digits are reproducible while its "
             "confidence is only the 500-900 the target window permits",

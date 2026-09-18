@@ -109,3 +109,38 @@ are also mislabelled. They are, and they are the next items. One rename per pass
 trap in §4.5 — the next person who sources an ANP dose-response will look at
 `CV.ANP.NATRIURETIC_GAIN` and reasonably conclude it is the ANP gain. **It is not, and it
 never was.**
+
+---
+
+# AMENDMENT 1 — 2026-09-18, the output is NOT bit-identical and the difference is named
+
+**§1 and falsifiable test 1 demanded BIT-IDENTICAL output. That is not what was obtained**,
+and recording it is cheaper than defending a claim that is one digit wrong.
+
+**WHAT ACTUALLY CHANGED, IN FULL.** `validation/challenges.jl` output before and after
+differs in exactly three places:
+
+1. **Julia precompilation timings.** Not model output.
+2. **A comment string** in the harness that names the renamed identifier. The rename.
+3. **`relative drift, day 200 to day 400`: 2.687e-10 -> 2.686e-10.** Band 0 to 1e-9,
+   PASS on both sides.
+
+**EVERY PHYSIOLOGICAL OUTPUT IS IDENTICAL.** All 24 challenge lines, every reported value,
+every band. The full suite is green with no pin, band or tolerance touched.
+
+**THE CAUSE IS FLOATING-POINT REASSOCIATION AND IT IS ALREADY DOCUMENTED IN THIS
+REPOSITORY.** `structural_simplify` orders terms by variable name; `anp_sig` and `vn_sig`
+sort differently, so the emitted code sums the same terms in a different order and the last
+bits differ. `test/runtests.jl` names the same mechanism for the RAAS escape check: *"the
+extra states change what structural_simplify emits and hence the solver trajectory."* The
+absolute difference here is **1e-13 on a quantity of 3e-10.**
+
+**THIS IS L1, NOT L2.** §3's L2 branch is for a model output that *changes*; a drift
+diagnostic moving in its fourth significant figure at the 1e-13 level is the arithmetic
+noise directive 1.9 was written about, not a number. **But the pass may not claim
+bit-identity, so it does not**, and the wording "identical to within floating-point
+reassociation, with the one difference quoted" is what goes in the write-up.
+
+**WHAT WOULD HAVE MADE THIS L2:** any challenge line changing, any band or pin needing to
+move, or a difference in a quantity whose own magnitude is not at solver tolerance. None
+occurred.
