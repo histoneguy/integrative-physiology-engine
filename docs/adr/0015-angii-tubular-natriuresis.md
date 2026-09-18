@@ -214,3 +214,71 @@ pressure — Hall 1980, and the human salt-step literature already in
   escape time constant is untouched here and unexamined.
 
 > **The human volume limb and the `dMAP/dV_ecf` band quoted in this record were corrected on 2026-09-16** — tracer limb 0.553 → 0.602 L/100 mmol, band 2.97–4.16 → 2.82–4.02 mmHg/L, because `ecf_salt_response_extract.py` de-indexed van den Bosch with one body surface area where each arm has its own. **See ADR 0013's addendum**, which owns the band, and `validation/ecf_deindex_extract.py`, which computes it.
+
+---
+
+## Status review — 2026-09-18. THE BLOCKER IS DISCHARGED; THE RECORD STAYS `Proposed`
+
+**No parameter moved. No code changed. `fr_angii` is still not built.**
+
+### This record named its own blocker, and both halves are now built
+
+Its Consequences say:
+
+> *"**The tubular term this record proposes is driven by that same renin signal**, so
+> whatever `fr_angii` ends up representing is being driven by an input that is known to be
+> incomplete … Human renin answers to **macula densa sodium delivery and renal sympathetic
+> traffic**, and this component has neither."*
+
+**It has both now.**
+
+- **Macula densa sodium delivery — ADR 0021**, 2026-09-05. `RN.MD.RENIN_GAIN` = 4.99.
+- **Renal sympathetic traffic — ADR 0024**, 2026-09-18. Kirchheim's measured threshold
+  shift, `RAAS.RENIN.SYMPATHETIC_THRESHOLD_SHIFT` = 17 mmHg, and the arm is ON.
+
+**So the renin signal that would drive `fr_angii` is no longer the rectified pressure-only
+form whose ceiling this record flagged.** The structural limit it recorded — *"cannot
+reproduce the human salt-induced renin response at any gain … ceiling is 1.40"* — has been
+lifted by the two arms it named. **The reason this record gave for distrusting its own
+input no longer applies.**
+
+### But its arithmetic is stale, and that is why this is a review rather than an adoption
+
+The Consequences reason throughout about **`G_pn` = 51**. That value came from **ADR 0013,
+which is now `Superseded`** (2026-09-18): its implied slopes are `100 / sensitivity` from
+the same three meta-analyses the model is validated against, computed under a
+**pressure-only** assumption that ADR 0010's volume path replaced. **`G_pn` is 8.4.**
+
+The human comparator it quotes is also stale: **`dMAP/dV_ecf` against 2.97–4.16** became
+**2.82–4.02** on 2026-09-16, when `ecf_salt_response_extract.py` was found de-indexing van
+den Bosch's extracellular volume with one body surface area where the paper prints one per
+arm.
+
+**Every bracket in the Consequences — 3.409–3.634, 1.536–1.639, 32.3–49.0, 21.5%, 50.7% —
+was computed against a parameterisation that no longer exists**, and none of them is
+re-computed here. **Re-running them is the adoption pass, not this one.**
+
+### Why it stays `Proposed`, and the reason is now precise
+
+**What it needs is a SOURCED MAGNITUDE for `fr_angii`, and this record forbids fitting
+one.** Its own falsifiable-test section says so: *"Reproducing the human salt sensitivity
+is not a test — the term would be sized to do that,"* and its Consequences add that the
+magnitude *"must never be fitted to salt data."*
+
+**That is a LITERATURE problem, not a code problem**, and it is the honest one-line reason
+this record has stood open since 2026-09-02. What would move it: a human study giving the
+**direct tubular sodium effect of angiotensin II at fixed renal perfusion pressure** —
+the magnitude, separated from the haemodynamic and aldosterone routes. **Hall 1980's clamp
+contrast, already named here as the falsifiable test, is the right shape of experiment and
+is a dog preparation**; directive 1.15's reasoning about ethically-unperformable human
+experiments may apply to it, and that has never been assessed for this record.
+
+### What has NOT changed
+
+- **The falsifiable test stands unchanged.** With `fr_angii` built and enabled, pinning it
+  must increase the salt-step pressure shift by **at least 2×**. It is a manipulation the
+  magnitude would not be set from, which is what makes it a test.
+- **ADR 0016's ordering stands.** This record is still second and the fitted constant last.
+- **The E1/E3 tiering stands**, including the declared conflict that the E1 claim is
+  male-specific where it is quantified — Pechère-Bertschi 2002 finds no renal haemodynamic
+  change in healthy women in the follicular phase.
