@@ -4948,6 +4948,83 @@ both the repository had already written down half the truth somewhere else — A
 sees said something different.**
 
 
+### 3.60 ADR 0013 RESOLVED: ITS EVIDENCE WAS ALREADY ADOPTED, AND THE MODEL IS SCORED ON WHAT IT WAS FITTED TO
+
+**Pre-registered in `validation/adr0013_resolution_prereg.md`. No parameter moved.**
+ADR 0013 is **Superseded**, not Rejected, and the distinction is the point.
+
+#### The proposal was the validation band, inverted
+
+ADR 0013's own Context states its relation: **`dMAP ~ d(intake)/G_pn`**. Invert its Evidence
+table and that is precisely its "implied `G_pn`" column:
+
+    Cutler 1997    1.70 mmHg/100mmol  ->  100/1.70 = 58.8   ADR says 58.8
+    He 2013        1.96               ->  100/1.96 = 51.0   ADR says 50.9
+    He 2002        2.30               ->  100/2.30 = 43.5   ADR says 43.5
+    Graudal 2019   0.53               ->            188.7   ADR says 187.5
+    Graudal 2017   0.25               ->            400.0   ADR says 393.2
+
+**The proposed 51.0 IS `100 / 1.96`**, and Cutler, He and He are **the same three
+meta-analyses that form the chronic salt-sensitivity band in `challenges.jl`.** The record
+contains **no pressure-natriuresis measurement independent of the salt-sensitivity evidence
+the model already rests on.**
+
+#### And its relation assumed a model that no longer exists
+
+`dMAP ~ d(intake)/G_pn` holds **only if pressure natriuresis is the sole route from intake
+to excretion.** It was, on 2026-08-25. **ADR 0010 then landed the volume-keyed path**, which
+§3.57 measured at **77% of the chronic swing.** So the human evidence constrains the
+COMBINATION — which is exactly what the joint constraint says, and `100/2.00 = 50`:
+
+    G_pn + 0.0594 * G_vn = 50      ->  the 8.4 the row already holds
+
+**ADOPTING 51.0 WOULD DOUBLE-COUNT.** At `G_pn` = 51 the constraint leaves
+`0.0594 * G_vn = −1` — a **negative** volume gain, asserting that the independently sourced
+volume path contributes less than nothing.
+
+#### What ADR 0013 got right, and it was the important part
+
+**The model WAS calibrated to hypertensives and this record is why that stopped.** Its
+central claim — 20.0 was hypertensive-range and `G_pn` had to move a long way — was correct
+and was acted on: **20.0 → 11.4 → 8.4**, and the chronic salt sensitivity came from 4.84
+mmHg/100 mmol into the normotensive band. **The direction was right; only the single-path
+arithmetic was superseded.**
+
+#### The finding this turned up is not about `G_pn`
+
+`CV.VOLUME.NATRIURETIC_GAIN`'s own note: *"Solved for a chronic salt sensitivity of 2.00
+mmHg per 100 mmol/day, the CENTRE of the meta-analytic human 1.70-2.30 (Cutler 1997, He
+2013, He 2002; k = 3)."*
+
+**`challenges.jl` then checks chronic salt sensitivity against 1.70–2.30 and prints PASS.**
+The harness corrected the band's *nature* — "SPREAD of 3 meta-analytic estimates, not a CI"
+— and never said **the model was fitted to its centre.** That is an estimation set reported
+as a validation, §3.15's named error, **and it has been printing as a PASS since the gain
+was solved.**
+
+**The check is now labelled `ESTIMATION SET`.** The band is unchanged and the check still
+runs: it is a genuine drift detector and several passes have been stopped by it. **What it
+is not is evidence that this model reproduces a human measurement. It cannot be — it was
+fitted to it.**
+
+#### What remains open
+
+**The two camps still disagree by a factor of eight and argue in print** — Cutler/He at
+1.70–2.30 against Graudal at 0.25–0.53. The model sits with the first because the joint
+constraint was built from it. **Nothing here resolves that**, a `G_pn` consistent with
+Graudal would be four to eight times larger, and the row's recorded uncertainty of
+5.43–20.0 **does not span the disagreement.**
+
+**ADR 0015 remains `Proposed` and untouched.**
+
+#### And the sodium–pressure loop's provenance is now as good as it gets without new data
+
+Four passes — §3.57 through §3.60 — moved **one** number, `RN.MD.RENIN_GAIN` 5.71 → 4.99,
+and that one was a prediction ADR 0021 wrote in advance. Everything else was a label, a
+citation, an attribution or a record. **The loop's numbers were right; what was wrong was
+what they claimed to be.**
+
+
 ## 4. NEXT, IN ORDER
 
 **Rewritten 2026-09-03, and item 1 was discharged the same day.** The previous list's
