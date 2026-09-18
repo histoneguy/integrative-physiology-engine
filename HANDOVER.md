@@ -4886,6 +4886,68 @@ difference quoted", and that is what is used.** A pass that claimed bit-identity
 have been wrong by one digit and nobody would ever have checked.
 
 
+### 3.59 THE LAST `calibrated` ROW: THE CITATION DESCRIBED A NUMBER IT NO LONGER HELD
+
+**Pre-registered in `validation/gpn_label_prereg.md`. No value moved.** The third and last
+of the label passes.
+
+**DEFECT 1 — GUYTON WAS CITED FOR A NUMBER THAT IS NOT HIS.**
+`RN.PRESSURE_NATRIURESIS.SLOPE` carried `citation` = Guyton 1972 with
+`extraction_method` = `calibrated`, which `SOURCES.md` defines as *a value lifted from
+another model's fitted parameters*. **8.4 is not Guyton's number.** The row's own note
+already said what it is — *"the CONSTRAINT-CONSISTENT partner of the sourced volume gain"*,
+solved inside **this** model against human data. **Guyton is the origin of the ROW, the
+FORM, and the 20.0 that stood until 2026-09-03. He is not the source of the value.** The
+citation now says which. `extraction_method` stays `calibrated` on the precedent
+`RN.MD.RENIN_GAIN` set, and the count of calibrated rows is unchanged at two.
+
+**DEFECT 2 — THE ROW'S OWN JOINT CONSTRAINT IS NO LONGER SATISFIED.**
+
+    the note says:  G_pn + 0.0594*G_anp = 50,  with the partner at 700
+    8.4 + 0.0594*700 = 49.98    satisfied as written
+    8.4 + 0.0594*585 = 43.15    SHORT BY 6.85, about 14 percent
+
+The partner was re-estimated 700 → 585 and **nothing on this row was updated.**
+
+#### And defect 2 is NOT a value defect — checked before chasing
+
+**Directive 1.14, applied first rather than last.** The model's chronic salt sensitivity at
+the current pair is **1.96, inside the human 1.70–2.30.** The pair works.
+
+`CV.VOLUME.NATRIURETIC_GAIN` was re-solved 700 → 585 **against the nonlinear model outcome
+with `G_pn` held at 8.4**, targeting a chronic salt sensitivity of 2.00.
+`G_pn + 0.0594*G_anp = 50` is a **LINEARISATION of that same target.** The solved pair
+satisfies the outcome and not the linearisation, and **the outcome is the thing that was
+ever meant to hold.**
+
+**SO THE DEFECT IS THE NOTE, NOT THE NUMBER** — a constraint left stated as if binding when
+the model deliberately does not satisfy it. Two copies of a fact drifting apart, which
+`CLAUDE.md` names as the failure this repository exists to prevent. **What would make it
+real:** the chronic salt sensitivity leaving its band, or a demonstration that the
+linearisation is exact. Neither holds. **8.4 was not moved to the 15.25 the linearisation
+wants**, because restoring a linearisation by moving a parameter off a target it currently
+hits is a re-estimation wearing a relabelling's clothes.
+
+#### Reported and deliberately not resolved
+
+**ADR 0013 proposes 51.0 on the human PRESSURE evidence alone and is still `Proposed`.
+ADR 0015 is also `Proposed`.** The model runs on rows those records discuss while neither
+has been accepted. Adopting either inside a relabelling pass is precisely what the
+pre-registration forbade.
+
+**No value moved anywhere in the ledger — 142 keys compared, zero changes — model output
+unaffected, all six gates and the full suite green.**
+
+#### The three label passes, together
+
+§3.58 and §3.59 were the same defect twice: **a provenance field asserting a mechanism or a
+source that the value contradicts.** Failure mode #11, found in the ledger's own metadata
+rather than in its numbers. In both cases the value was correct and was left alone, and in
+both the repository had already written down half the truth somewhere else — ADR 0010's
+"lumped", this row's "constraint-consistent partner" — **while the field a reader actually
+sees said something different.**
+
+
 ## 4. NEXT, IN ORDER
 
 **Rewritten 2026-09-03, and item 1 was discharged the same day.** The previous list's
