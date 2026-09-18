@@ -36,10 +36,34 @@ from 2m13s to 6m30s for code that differed by nothing. The 23 s figure is quotab
 because it is dominated by Julia startup rather than by the machine's mood; a whole-suite
 number is not.
 
-**THE COST IS COMPILATION, NOT INTEGRATION.** `structural_simplify` plus codegen for each
-of the ~14 distinct model configurations the suite exercises. Repeated calls are already
-free - `build_model()` costs 47 s the first time and 0.03 s the second - so memoising
-identical calls buys nothing, and was tried and reverted. See HANDOVER §5.
+**THE COST IS COMPILATION, NOT INTEGRATION, AND IT IS PER JULIA PROCESS.** Measured
+2026-09-18:
+
+| | |
+|---|---|
+| `using IPE` | **7.7 s** |
+| first `build_raw_model()` — Julia compiling MTK's machinery for our types | **18.3 s** |
+| second call, *any* configuration | **0.0 s** |
+| first full `structural_simplify` + `ODEProblem` + `solve` | **14.0 s** |
+| another config, same structure, different parameters | **0.06 s** |
+| another config, **different structure** (`adh=false`, `storage=false` …) | **1.2–1.9 s** |
+| **400-day closed-loop solve, warm** | **0.000 s**, 414 steps |
+
+**So roughly 40 s is paid ONCE PER PROCESS and almost nothing after that.** A 400-day
+integration of the whole loop is free; `salt_step()` is 0.112 s warm.
+
+**THE PRACTICAL CONSEQUENCE, AND IT IS THE BIGGEST SINGLE DEV-LOOP LEVER: BATCH YOUR
+CHECKS INTO ONE `julia -e`.** Twenty small invocations cost twenty × 40 s of identical
+recompilation and produce nothing the one invocation would not. On 2026-09-17 that pattern
+burned roughly fifteen minutes on its own.
+
+**`PrecompileTools` was considered and NOT added.** It would cache the 18.3 s into the
+package image, but the workload re-runs whenever `src/` changes — which is every edit
+during development — so it moves the cost rather than removing it. Do not add tooling for
+this.
+
+Repeated identical calls are already free, so memoising them buys nothing; it was tried and
+reverted. See HANDOVER §5.
 
 **A SINGLE WALL-CLOCK TIMING ON THIS MACHINE IS NOT EVIDENCE.** The same commit measured
 2m14s and 5m40s in one session. Compare paired runs taken back to back, or CI job
