@@ -271,6 +271,49 @@ each. The gate is the limit; this directive is why it exists.
 
 ---
 
+### 1.14 THE MODEL WILL NEVER MATCH INDIVIDUAL STUDIES EXACTLY — FOUNDATIONAL — 2026-09-17
+
+**Set by the owner after five consecutive passes chased a factor of two that was inside
+the measurement error of every endpoint on both sides.** §3.53 has the arithmetic.
+
+> *"Individual studies won't give identical numbers. Most human studies are small. If we
+> keep trying to parse every parameter to match identically to one or two studies, this
+> will never be finished."*
+
+**THE RULE, AND IT IS A PRECONDITION RATHER THAN A PREFERENCE.**
+
+**Before comparing a model output to a measurement, compute what interval the measurement
+supports. If the discrepancy lies inside it, there is nothing to explain — stop, record
+that it is inside, and move on.**
+
+**HOW TO COMPUTE IT, IN ORDER OF WHAT USUALLY DOMINATES:**
+
+1. **Rounding of the printed inputs.** A difference of two two-figure numbers has at best
+   one figure. van den Bosch's 88 − 86 mmHg is anywhere in 1–3 mmHg — a **three-fold**
+   range in the derived slope before any statistics.
+2. **Sampling error, and whether it can be computed at all.** A within-subject difference
+   needs the pairing or the correlation. Per-arm SDs will not give it, and most papers do
+   not print what is needed. **When it cannot be computed, say so — do not substitute a
+   point estimate's tidiness for an interval.**
+3. **n.** Most human physiology is n = 6 to 25. A half-life fitted to six subjects with no
+   published dispersion supports no interval whatsoever.
+4. **Whether the "band" is a band.** Three point estimates from three meta-analyses are not
+   a confidence interval. Taking their min and max as one is range-midpoint's sibling and
+   this repository has done it.
+
+**WHAT THIS DOES NOT LICENCE.** It is not permission to stop checking, and it is not a
+defence for a model that is wrong. **Directions, signs, orderings and category errors
+survive measurement noise and must still be chased** — the model having Drummer's
+weight/sodium ordering backwards is a defect at any precision; a parameter set from a
+rhythm period when a relaxation time constant was needed is wrong in kind; a proposed
+mechanism whose sign is inverted is wrong whatever its magnitude. **§3.53's table of what
+survived and what did not is the worked example.**
+
+**THE FAILURE THIS PREVENTS IS NOT INACCURACY, IT IS NEVER FINISHING.** Every parameter in
+this ledger can be made to disagree with some study by a factor of two, and pursuing each
+one is an unbounded task that produces no model. **Coverage is the goal — directive 1.10 —
+and coverage is what is lost when one number absorbs five passes.**
+
 ## 2. STATE
 
 **Five gates exit 0. The challenge harness exits 0** — run it rather than trusting this
