@@ -979,7 +979,13 @@ end
         loads = [lv.sol[sys.rn.Osm_load][end] for lv in r.levels]
         nas   = [lv.sol[obs("rn₊Na_excr(t)")][end] for lv in r.levels]
         slope = (loads[1] - loads[3]) / (nas[1] - nas[3])
-        @test isapprox(slope, 2.0; rtol = 1e-3)
+        # 2.0 -> 1.657 ON 2026-09-17, AND THE DROP IS THE POINT OF THE CHANGE.
+        # RN.URINE.SOLUTE_NONNA_SLOPE was sourced from Kitada 2017 and wired: the
+        # NON-sodium remainder falls as salt intake rises, so the NET slope of total
+        # osmolar excretion against sodium is 2.0 - 0.343 = 1.657.
+        # RN.URINE.OSM_PER_NA IS STILL 2.0 - that is charge balance and it did not
+        # move. What moved is that the remainder is no longer held constant.
+        @test isapprox(slope, 1.657; rtol = 2e-3)
 
         # ---- TEST 6: BOTH LIMITS STAY PHYSIOLOGICAL -------------------------
         #

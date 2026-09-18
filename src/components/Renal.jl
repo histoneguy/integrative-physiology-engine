@@ -59,13 +59,13 @@ using ModelingToolkit: t_nounits as t, D_nounits as D
 using ..LedgerParams
 using ..LedgerParams:
     RN_GFR_NOMINAL, RN_NA_FRACTIONAL_REABSORPTION, RN_PRESSURE_NATRIURESIS_SLOPE,
-    RN_URINE_SOLUTE_LOAD, RN_URINE_SOLUTE_NONNA, RN_URINE_OSM_PER_NA,
+    RN_URINE_SOLUTE_LOAD, RN_URINE_SOLUTE_NONNA, RN_URINE_OSM_PER_NA, RN_URINE_SOLUTE_NONNA_SLOPE,
     RN_AUTOREG_LOWER, RN_AUTOREG_UPPER, ADH_URINE_OSM_MAX, RN_URINE_SOLUTE_LOAD,
     CV_MAP_SETPOINT, BF_H2O_INTAKE_NOMINAL, BF_H2O_INSENSIBLE_LOSS,
     BF_BODY_MASS_REFERENCE, BF_ECF_MASS_FRACTION, CV_ANP_NATRIURETIC_GAIN, RN_ANP_TAU,
     RN_GFR_VOLUME_SENSITIVITY, RN_GFR_VOLUME_RANGE, RN_NA_MACULA_DENSA_FRACTION,
     RN_NA_PROXIMAL_DELIVERY,
-    BF_NA_PLASMA_SETPOINT
+    BF_NA_PLASMA_SETPOINT, BF_NA_INTAKE_NOMINAL
 
 """
     Renal(; name)
@@ -171,6 +171,23 @@ function Renal(; name, solute_tracking::Bool = true,
         Osm_ref   = sz * RN_URINE_SOLUTE_LOAD   # reference load, disabled branch
         Osm_nonNa = sz * RN_URINE_SOLUTE_NONNA  # urea + K salts + rest
         osm_Na    = RN_URINE_OSM_PER_NA         # INTENSIVE - charge balance
+        # THE NON-SODIUM REMAINDER RESPONDS TO SODIUM. Sourced 2026-09-17 from
+        # Kitada 2017 (PMC5409074, read in full), validation/solute_limb_prereg.md.
+        # EXTENSIVE and per kilogram, because urea production tracks lean mass -
+        # exactly as Osm_nonNa above scales, and for the same reason.
+        #
+        # RN.URINE.SOLUTE_NONNA's note has said since 2026-09-16 that holding this
+        # remainder CONSTANT makes the model over-respond on the solute limb by
+        # about 30 percent, and that the fix was 'not built'. This is it, as the
+        # measured SLOPE and not as the urea-recycling mechanism, which stays
+        # unsourced and is said so on the row.
+        k_nonNa   = mz * RN_URINE_SOLUTE_NONNA_SLOPE * BF_BODY_MASS_REFERENCE
+        # The reference excretion the deviation is taken from. At steady state
+        # excretion equals intake, so this is the nominal intake and the new term
+        # is IDENTICALLY ZERO at the operating point - which is what keeps
+        # RN.URINE.SOLUTE_LOAD at exactly 930 and leaves every ADH constant
+        # derived from it untouched. Branch U2: if one moves, THIS is wrong.
+        Na_excr_ref = sz * BF_NA_INTAKE_NOMINAL
         H2O_in   = BF_H2O_INTAKE_NOMINAL
         H2O_ins  = BF_H2O_INSENSIBLE_LOSS
         # VOLUME-KEYED NATRIURESIS - ADR 0010, DIAGNOSTIC, DEFAULT ZERO.
@@ -531,7 +548,9 @@ function Renal(; name, solute_tracking::Bool = true,
         # solute_tracking is a build-time Bool, so this resolves to ONE concrete
         # equation at model construction - not a runtime branch in the compiled
         # system. Same pattern as the enabled/disabled branches elsewhere.
-        Osm_load ~ solute_tracking ? Osm_nonNa + osm_Na * Na_excr : Osm_ref,
+        Osm_load ~ solute_tracking ?
+                   Osm_nonNa + osm_Na * Na_excr +
+                   k_nonNa * (Na_excr - Na_excr_ref) : Osm_ref,
 
         # Urine volume is solute excretion divided by urine concentration, and
         # ADH sets the concentration. That is where the nonlinearity lives: the
