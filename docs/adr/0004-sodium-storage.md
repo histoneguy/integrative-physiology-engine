@@ -238,3 +238,31 @@ chronically inert — the sweep measured the chronic salt sensitivity as **ident
 figures at every store setting** — so switching it on changes nothing this model is
 currently judged on, and the acute behaviour it does change is entangled with the
 natriuretic gain question in §3.52 that this record cannot settle alone.
+
+---
+
+## Evidence moved out of `ledger/parameters.csv`, 2026-09-17
+
+**"No more unreferenced rows. Make that a structural change."** — the owner. A row nothing
+reads cannot be contradicted by anything, so it is not evidence *about the model*; and a
+row that no equation and no gate can read is **not a parameter**. The entries below were
+marker rows in the parameter ledger. Their evidence is real and is kept here, where
+evidence belongs; the CSV rows are gone and `check_relations.py` now fails on any
+replacement.
+
+### `BF.ECW.QUANTILE_REFERENCE`
+
+**Extracellular water reference distribution source** — recorded value 1 unitless, tier A, reported.
+
+**Source.** Extracellular water across the adult lifespan: reference values for adults. Physiol Meas 2007;28(5).
+
+**Why it was in the ledger, and why it is not a parameter.** MARKER ROW - not a value. n=1538 multi-ethnic adults, ECW from isotope dilution and whole-body 40K counting, conditional quantile equations by weight height age sex race. This is the better source for a POPULATION DISTRIBUTION than any point estimate and should replace the BIA-derived fractions above once the equations are extracted. Extraction blocked: full text not retrieved. || ROUNDED 2026-09-09 TO MEASUREMENT PRECISION at the owner's instruction. Nothing physiological in this model is measured to more than four significant figures, and trailing zeros on a whole number read as precision that is not there. The discarded digits were floating-point residue from the derivation, not information. Directive 1.13.
+
+### `BF.NA.SKIN_ACCUMULATION_RATE`
+
+**Skin sodium accumulation with age** — recorded value 0.34 mmol/(L*year), tier A, reported.
+
+**Source.** Titze J et al, 23Na MRI at 7.0 Tesla, n=17 men. Reported in Rakova N, Sodium Balance (dissertation), Freie Universitaet Berlin.
+
+**Why it was in the ledger, and why it is not a parameter.** Described by the source as preliminary in vivo data. Not used in the current model - recorded because it constrains the storage compartment on long horizons and will matter if the model is ever run across decades. || CITATION FLAGGED 2026-08-25 BY AUDIT. This is a SECONDARY CITATION: the value is attributed to Titze et al but the stated source is 'Reported in Rakova N, Sodium Balance (dissertation)'. The primary was never opened. Directive 1.5 forbids writing a citation nobody has read, and a dissertation reporting another group's MRI data is two removes from the measurement. Obtain the Titze primary or downgrade the row.
+

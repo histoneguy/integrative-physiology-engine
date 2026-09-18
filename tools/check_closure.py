@@ -102,6 +102,45 @@ def _check_one(p: dict[str, float]) -> int:
 
     print("Closure checks at the nominal operating point (70 kg adult):\n")
 
+    # --- IDENTITIES THAT EXIST BECAUSE THE ROWS EXIST -------------------
+    #
+    # DIRECTIVE 1.11, AND THESE THREE ROWS WERE READ BY NOTHING UNTIL
+    # 2026-09-17. They were sourced, correct, and connected to no equation and
+    # no check, so nothing could ever have contradicted them. The owner's rule:
+    # if we take the time to find a value, it is IN the model.
+    #
+    # Each of these is an identity between rows the model already uses, so the
+    # natural reader is this gate rather than a component. All three hold
+    # EXACTLY on entry, which is the point - they are now capable of failing.
+    # TOTAL BODY WATER is already asserted below as "ICF + ECF = TBW". A
+    # duplicate was nearly added here on 2026-09-17 because the unread-row
+    # gate matched only the Julia constant and not the dotted param_id.
+    # Failure mode 21, caught by READING the gate output rather than
+    # trusting it.
+
+    check("central pulse pressure closes",
+          p["CV.SBP.CENTRAL_NOMINAL"] - p["CV.DBP.CENTRAL_NOMINAL"],
+          p["CV.PP.CENTRAL_NOMINAL"],
+          "Pulse pressure must be systolic minus diastolic. ADR 0002 "
+          "reconstructs all three and they cannot be independently valued.",
+          errors)
+
+    # RESP.METABOLIC_RATE and RESP.O2.CONSUMPTION are the same quantity in two
+    # units, related by the energy equivalent of oxygen. That constant is NOT a
+    # ledger row and is not being added as one - the check is that the implied
+    # value lands in the physiological 4.69-5.05 kcal/L, which is the range set
+    # by the respiratory exchange ratio between pure fat and pure carbohydrate.
+    kcal_per_L_O2 = (p["RESP.METABOLIC_RATE"] * body_mass) /                     (p["RESP.O2.CONSUMPTION"] * 60.0)
+    print(f"  ---- {'energy equivalent of O2 implied':<34} "
+          f"{kcal_per_L_O2:.4g} kcal/L")
+    if not (4.69 <= kcal_per_L_O2 <= 5.05):
+        errors.append(
+            f"RESP.METABOLIC_RATE and RESP.O2.CONSUMPTION imply "
+            f"{kcal_per_L_O2:.4g} kcal/L of oxygen, outside the physiological "
+            f"4.69-5.05 set by the respiratory exchange ratio. One of the two "
+            f"rows is wrong, or they are not the same subject's metabolism.")
+
+
     # --- osmolality -------------------------------------------------------
     check("plasma osmolality closes",
           2 * p["BF.NA.PLASMA_SETPOINT"] + p["BF.OSM.NONSODIUM"],

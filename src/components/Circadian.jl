@@ -63,7 +63,8 @@ using ModelingToolkit: t_nounits as t, D_nounits as D
 
 using ..LedgerParams:
     CIRC_PERIOD, CIRC_RENAL_NA_AMPLITUDE, CIRC_RENAL_NA_ACROPHASE,
-    CIRC_CV_MAP_AMPLITUDE, CIRC_CV_ACROPHASE
+    CIRC_CV_MAP_AMPLITUDE, CIRC_CV_ACROPHASE,
+    CIRC_EFFECTOR_TAU
 
 """
     CircadianClock(; name, phase0 = 0.0, renal_gain = 1.0, cv_gain = 1.0)
@@ -129,8 +130,17 @@ a free partition boundary.
 """
 function circadian_couplings()
     return [
+        # tau_seconds READS THE LEDGER. It was hardcoded as 3600.0 in both
+        # couplings while CIRC.EFFECTOR.TAU sat in the ledger read by NOTHING -
+        # directive 1.11, caught by check_relations.py on 2026-09-17. That row
+        # IS this number: 'Clock to effector transcriptional delay', assumed at
+        # 1 h as an order-of-magnitude placeholder. Bit-identical.
+        #
+        # AND IT IS NOW CAPABLE OF BEING WRONG, which it was not before. The row
+        # is tier C and `assumed`; wiring it means a future correction to it
+        # reaches the model instead of sitting in a CSV nobody reads.
         Coupling(:circadian, :renal, Neurohumoral;
-                 tau_seconds = 3600.0,
+                 tau_seconds = CIRC_EFFECTOR_TAU,
                  gain_param = :CIRC_RENAL_NA_AMPLITUDE,
                  note = "aldosterone-Per1-ENaC path; tau is transcriptional-effector " *
                         "delay and is ASSUMED - see ledger"),
@@ -145,7 +155,7 @@ function circadian_couplings()
         #     precisely to catch a dangling provenance pointer and had never
         #     been called. The row is CIRC.CV_MAP.AMPLITUDE.
         Coupling(:circadian, :baroreflex, Neurohumoral;
-                 tau_seconds = 3600.0,
+                 tau_seconds = CIRC_EFFECTOR_TAU,
                  gain_param = :CIRC_CV_MAP_AMPLITUDE,
                  note = "independent path - Bmal1-/- rats lose renal rhythm while " *
                         "MAP rhythm persists, so these must not share a route"),

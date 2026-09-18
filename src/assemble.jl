@@ -434,7 +434,18 @@ Returns a NamedTuple per level with the solution and the summary quantities the
 test needs, plus a combined trajectory.
 """
 
-function salt_step(; levels_mEq_day = (205.0, 154.0, 103.0),
+function salt_step(; 
+                   # THE THREE LEVELS COME FROM THE LEDGER, NOT FROM THIS LINE.
+                   # They were hardcoded here as (205.0, 154.0, 103.0) while
+                   # BF.NA.INTAKE_MID and BF.NA.INTAKE_LOW sat in the ledger read by
+                   # NOTHING - directive 1.11, caught by check_relations.py on
+                   # 2026-09-17. BF.NA.INTAKE_NOMINAL's own note says in terms: 'Use
+                   # these three as the validation step inputs, not a free parameter.'
+                   # All three are Rakova's Mars500 protocol levels, 12/9/6 g/day NaCl.
+                   # Bit-identical: the constants ARE 205.0, 154.0 and 103.0.
+                   levels_mEq_day = (LedgerParams.BF_NA_INTAKE_NOMINAL,
+                                     LedgerParams.BF_NA_INTAKE_MID,
+                                     LedgerParams.BF_NA_INTAKE_LOW),
                    # 30 days per arm. A 90-day arm changes the salt-step shift by
                    # 0.5% and dMAP/dV_ecf by 0.6% - below the resolution of every
                    # target either is judged against (1.70-2.30 and 2.82-4.02, spans

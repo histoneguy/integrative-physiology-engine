@@ -84,6 +84,59 @@ def extract_relations(component: Path):
     return out
 
 
+
+# ---------------------------------------------------------------------------
+# DIRECTIVE 1.11 MADE MECHANICAL: a ledger row that nothing reads is not
+# evidence about anything.
+#
+# This is the Circadian failure the handover names, and on 2026-09-17 a manual
+# sweep found SIXTEEN rows in that state, several tier A. Directive 1.11 has been
+# FOUNDATIONAL since 2026-08-27 and was checked by nothing - the same shape as
+# 1.13 being written down and violated for a week. RULES THAT LIVE ONLY IN PROSE
+# DO NOT HOLD HERE; gates do.
+#
+# The exemptions are rows that RECORD EVIDENCE rather than feed an equation.
+# Each must say why. A new row that nothing reads FAILS, which is the point.
+# NO EXEMPTION LIST, BY INSTRUCTION. "No more unreferenced rows. Make that a
+# structural change." - the owner, 2026-09-17. A row that nothing reads cannot
+# be contradicted by anything, so it is not evidence about the model; if a value
+# was worth finding it is worth wiring, and if wiring it breaks something then
+# the breakage is the work. A row that genuinely cannot be read by an equation
+# or a gate is not a PARAMETER and does not belong in parameters.csv - its
+# evidence belongs in the ADR that needs it.
+
+
+def check_unread(repo, prows):
+    """Ledger parameter rows that no source file reads. Directive 1.11."""
+    texts = []
+    # .py AS WELL AS .jl, AND OMITTING IT WAS THE SECOND FALSE-POSITIVE BUG IN
+    # THIS GATE IN ONE SITTING. The closure and ledger gates are PYTHON and they
+    # read rows by their dotted param_id, so a row asserted only by
+    # check_closure.py looked unread. Both bugs had the same shape: the gate
+    # knew about one way of reading a row and there were two.
+    for pat in ("src/**/*.jl", "tools/*.jl", "bench/*.jl", "validation/*.jl",
+                "test/*.jl", "tools/*.py", "validation/*.py"):
+        for f in Path(repo).glob(pat):
+            if f.as_posix().endswith("src/LedgerParams.jl"):
+                continue
+            texts.append(f.read_text(encoding="utf-8", errors="ignore"))
+    unread = []
+    for pid in sorted({r["param_id"] for r in prows}):
+        const = pid.replace(".", "_").replace("-", "_").upper()
+        rx = re.compile(r"\b" + re.escape(const) + r"\b")
+        # TWO SPELLINGS, AND MISSING THE SECOND MADE THIS GATE OVER-REPORT ON
+        # THE DAY IT WAS WRITTEN. Julia reads the generated constant
+        # BF_TBW_MASS_FRACTION; the Python gates read the dotted param_id
+        # straight out of the CSV. Checking only the first called a row unread
+        # that check_closure.py had been asserting for weeks, and the "fix" was
+        # nearly a duplicate check. A GATE THAT CRIES WOLF GETS IGNORED, which
+        # is the failure this gate exists to prevent.
+        rx_id = re.compile(re.escape(pid))
+        if not any(rx.search(t) or rx_id.search(t) for t in texts):
+            unread.append(pid)
+    return unread
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--repo", default=".")
@@ -151,6 +204,20 @@ def main() -> int:
         for rid in sorted(debt):
             print(f"  DEBT          {rid}")
         print()
+
+    ppath = Path(args.repo) / "ledger" / "parameters.csv"
+    with open(ppath, newline="", encoding="utf-8") as fh:
+        prows = list(csv.DictReader(fh))
+    unread = check_unread(args.repo, prows)
+    ids = {r["param_id"] for r in prows}
+    unread = sorted(unread)
+    print(f"parameter rows:      {len(ids)}")
+    for p in unread:
+        failures.append(
+            f"UNREAD ROW    {p:<34} nothing reads it - directive 1.11. Wire it "
+            "into a component or a gate, or it is not a parameter and belongs in "
+            "an ADR instead.")
+
 
     if failures:
         print(f"FAILED -- {len(failures)} problem(s):\n")

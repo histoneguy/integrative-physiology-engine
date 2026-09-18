@@ -4463,6 +4463,64 @@ six. **The model will never line up exactly with measured values, and it does no
 
 ---
 
+### 3.54 EVERY LEDGER ROW IS NOW READ BY SOMETHING, AND THE GATE SAYS SO
+
+**2026-09-17, at the owner's instruction:** *"No more unreferenced rows. Make that a
+structural change."* And: *"If we take the time to find a value or relationship, it's in
+the model. If it fails, then we work on it till it's fixed."*
+
+**The prose already said this.** Directive 1.11 has been FOUNDATIONAL since 2026-08-27 and
+was checked by nothing, exactly as 1.13 was written down on 2026-09-09 and violated all
+through 2026-09-17. **Rules that live only in prose do not hold in this repository. Gates
+do.** So both became gates rather than another directive.
+
+### WHAT WAS WIRED
+
+| row | was | now |
+|---|---|---|
+| `BF.NA.INTAKE_MID`, `BF.NA.INTAKE_LOW` | hardcoded in `salt_step` as 154.0 and 103.0 | read from the ledger. `BF.NA.INTAKE_NOMINAL`'s own note says *"Use these three as the validation step inputs, not a free parameter"* |
+| `CIRC.EFFECTOR.TAU` | hardcoded twice in `Circadian.jl` as `tau_seconds = 3600.0` | read. The coupling note already described it as the transcriptional-effector delay — it **was** this row |
+| `CV.PP.CENTRAL_NOMINAL` | unread | closure identity: **SBP − DBP = PP**, 109 − 76 = 33, exact |
+| `RESP.METABOLIC_RATE`, `RESP.O2.CONSUMPTION` | unread | closure: their ratio implies **4.825 kcal/L** of oxygen, inside the physiological 4.69–5.05 set by the respiratory exchange ratio |
+
+**All bit-identical.** And the model's resting `VO2` is **228.0 mL/min** against
+`RESP.O2.CONSUMPTION` = 228.0 — a row that had never been compared with the value the model
+computes.
+
+### AND FIVE ROWS WERE NOT PARAMETERS
+
+`CIRC.PER1.MECHANISM_MARKER`, `CIRC.BMAL1.DISSOCIATION_MARKER`,
+`CIRC.RENAL_NA.ENDOGENEITY_MARKER`, `BF.NA.SKIN_ACCUMULATION_RATE` and
+`BF.ECW.QUANTILE_REFERENCE`. One of them says so in its own note — *"MARKER ROW - not a
+value"*. **Their evidence is real and is kept**, moved into ADR 0004 and ADR 0005 where
+evidence belongs. `ledger/parameters.csv` went **145 → 140 rows**, and it now contains only
+things the model or a gate reads.
+
+### THE GATE HAD TWO FALSE-POSITIVE BUGS AND BOTH HAD THE SAME SHAPE
+
+**It first reported SIXTEEN unread rows. The true number was three.**
+
+1. It matched only the Julia constant `BF_TBW_MASS_FRACTION`, not the dotted `param_id` the
+   **Python** gates read out of the CSV.
+2. Its file glob covered `*.jl` and **not `*.py`**, so `check_closure.py` and
+   `ledger_to_julia.py` were never searched at all.
+
+**The gate knew about one way of reading a row and there were two.** The near-consequence
+was a *duplicate* closure check — failure mode #21 — which was caught only by reading the
+gate's output instead of trusting it. **A gate that cries wolf gets ignored, which is the
+failure the gate exists to prevent**, and both bugs are recorded in its source.
+
+### WHAT THE OTHER GATE DOES NOW
+
+`validation/challenges.jl`'s `check()` **derives its print precision from the band**, so a
+model value can no longer be quoted more precisely than the measurement it is compared
+with. 110.126 → **110** against 60–250; 1.965 → **1.96**; 87.006 → **87**. Directives 1.13
+and 1.14, made mechanical: the precision comes from `lo` and `hi`, so no judgement is
+exercised and none can be. **Drift pins in `test/runtests.jl` are the deliberate exception**
+— they compare the model with its own previous value and nothing else.
+
+---
+
 ## 4. NEXT, IN ORDER
 
 **Rewritten 2026-09-03, and item 1 was discharged the same day.** The previous list's

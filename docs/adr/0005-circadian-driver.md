@@ -159,3 +159,39 @@ The structure-only exemption this ADR previously claimed for the mechanism row i
 unnecessary, since the row is no longer E3. The claim still contributes no numeric
 value - the cosinor implementation takes nothing from Per1 - so the practical position
 is unchanged.
+
+---
+
+## Evidence moved out of `ledger/parameters.csv`, 2026-09-17
+
+**"No more unreferenced rows. Make that a structural change."** — the owner. A row nothing
+reads cannot be contradicted by anything, so it is not evidence *about the model*; and a
+row that no equation and no gate can read is **not a parameter**. The entries below were
+marker rows in the parameter ledger. Their evidence is real and is kept here, where
+evidence belongs; the CSV rows are gone and `check_relations.py` now fails on any
+replacement.
+
+### `CIRC.PER1.MECHANISM_MARKER`
+
+**Clock gene mechanism evidence marker** — recorded value 1 unitless, tier C, reported.
+
+**Source.** Recent advances in understanding the circadian clock in renal physiology. PMC6350809.
+
+**Why it was in the ledger, and why it is not a parameter.** MARKER ROW - not a value. SPECIES: mouse. Per1 knockout mice under high salt plus DOCP lose the night/day difference in sodium excretion and the inactive-period BP dip. Recorded because the clock-gene MECHANISM is rodent-derived while the human circadian sodium rhythm and BP dipping are separately documented in humans. No scaling is applied because no numeric value is taken from this - the mechanism informs structure only. || CITATION FLAGGED 2026-08-25 BY AUDIT. This row cites a title and a PMC identifier with NO AUTHOR LIST and no DOI, and the title does not resolve on a PubMed title search. It must be replaced with a full citation - authors, journal, year, volume, pages - or removed. Until then the parameter should be treated as uncited, not as tier-supported. || ROUNDED 2026-09-09 TO MEASUREMENT PRECISION at the owner's instruction. Nothing physiological in this model is measured to more than four significant figures, and trailing zeros on a whole number read as precision that is not there. The discarded digits were floating-point residue from the derivation, not information. Directive 1.13.
+
+### `CIRC.BMAL1.DISSOCIATION_MARKER`
+
+**BP and sodium rhythm dissociation marker** — recorded value 1 unitless, tier A, reported.
+
+**Source.** Johnston JG, Speed JS, Becker BK, Kasztan M, Soliman RH, Rhoads MK, Tao B, Jin C, et al. Diurnal control of blood pressure is uncoupled from sodium excretion. Hypertension 2020;75(6):1624-1634.
+
+**Why it was in the ledger, and why it is not a parameter.** MARKER ROW - not a value. SPECIES: rat, whole-body Bmal1 knockout. Male knockouts showed no significant difference in baseline sodium excretion between 12-h active and inactive periods while circadian MAP rhythm remained intact. This is the evidence for independent renal and cardiovascular clock arms in Circadian.jl. No scaling applied - structural evidence only, no numeric value taken. || CITATION CORRECTED 2026-08-25 BY AUDIT. The row carried the title and journal with NO AUTHOR LIST, which is the exact shape that let a misattribution survive two sessions on PMID 2966064. Resolved via Crossref on the recorded DOI: first author Johnston JG, and the year is 2020, NOT 2019 - the .119. in the DOI is the submission-year convention and is misleading. || ROUNDED 2026-09-09 TO MEASUREMENT PRECISION at the owner's instruction. Nothing physiological in this model is measured to more than four significant figures, and trailing zeros on a whole number read as precision that is not there. The discarded digits were floating-point residue from the derivation, not information. Directive 1.13.
+
+### `CIRC.RENAL_NA.ENDOGENEITY_MARKER`
+
+**Marker: the urinary sodium rhythm persists under constant routine** — recorded value 1 unitless, tier A, reported.
+
+**Source.** el-Hajj Fuleihan G, Klerman EB, Brown EN, Choe Y, Brown EM, Czeisler CA. The parathyroid hormone circadian rhythm is truly endogenous - a general clinical research center study. J Clin Endocrinol Metab 1997;82(1):281-286.
+
+**Why it was in the ledger, and why it is not a parameter.** STRUCTURE MARKER, contributes no numeric value to any equation - it records WHY the renal arm is modelled as an endogenous driver at all, which is the claim ADR 0005 rests on. el-Hajj Fuleihan 1997: 11 healthy male volunteers, 36 h baseline followed by 28-40 h of constant routine - enforced wakefulness, strict semirecumbent posture, hourly snacks. Urinary calcium/creatinine, phosphate/creatinine and sodium/creatinine all showed a diurnal rhythm at baseline; the calcium and phosphate rhythms changed character under constant routine WHEREAS THAT OF URINARY SODIUM/CREATININE WAS UNCHANGED. An unmasked rhythm that survives removal of sleep, posture and meal timing is endogenous. CONTRAST WITH THE CARDIOVASCULAR ARM, where the same class of experiment is in open disagreement - see CIRC.CV_MAP.AMPLITUDE. The renal arm's premise is on firmer ground than the cardiovascular arm's, which is the reverse of what the placeholder parameters implied. || ROUNDED 2026-09-09 TO MEASUREMENT PRECISION at the owner's instruction. Nothing physiological in this model is measured to more than four significant figures, and trailing zeros on a whole number read as precision that is not there. The discarded digits were floating-point residue from the derivation, not information. Directive 1.13.
+

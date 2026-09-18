@@ -62,12 +62,39 @@ function run_phases(u0, basepm, phases; saveat = 0.002)
     segs
 end
 
+"""
+Decimals to print, DERIVED FROM THE BAND rather than chosen.
+
+DIRECTIVES 1.13 AND 1.14, MADE MECHANICAL. This printed every number to three decimals
+for weeks, so a model value sat at 110.126 against a band of 60-250 and a chronic salt
+sensitivity at 1.965 against three meta-analytic point estimates. Both assert a
+resolution nothing in the comparison supports, and writing the rule into HANDOVER did
+not stop it - section 3.53, where five passes chased a factor of two that was inside
+the measurement error of every endpoint.
+
+THE RULE: you may not claim to resolve better than about a twentieth of the interval
+the measurement supports. It is derived from lo and hi, which are the measurement's own
+statement of its precision, so NO JUDGEMENT IS EXERCISED HERE and none can be.
+
+Drift pins are the deliberate exception and they live in test/runtests.jl, where a
+model value is compared with the MODEL'S OWN previous value and nothing else.
+"""
+band_decimals(lo, hi) = begin
+    w = abs(hi - lo)
+    w <= 0 && return 3
+    clamp(ceil(Int, -log10(w / 20.0)), 0, 4)
+end
+
 function check(label, model, lo, hi, units, source)
     ok = lo <= model <= hi
     ok || push!(FAILURES, label)
-    @printf("  %-46s %10.3f   [%7.3f - %7.3f] %-9s %s\n",
-            label, model, lo, hi, units, ok ? "PASS" : "**FAIL**")
-    @printf("  %-46s %s\n", "", source)
+    d = band_decimals(lo, hi)
+    fmt = Printf.Format("  %-46s %10." * string(d) * "f   [%7." * string(d) *
+                        "f - %7." * string(d) * "f] %-9s %s
+")
+    Printf.format(stdout, fmt, label, model, lo, hi, units, ok ? "PASS" : "**FAIL**")
+    @printf("  %-46s %s
+", "", source)
     ok
 end
 
