@@ -167,6 +167,15 @@ function member_remake(prob, sys, member; sex::Symbol = :male)
              sys.rn.G_pn           => sz * RN_PRESSURE_NATRIURESIS_SLOPE,
              sys.rn.Osm_ref        => sz * RN_URINE_SOLUTE_LOAD,
              sys.rn.Osm_nonNa      => sz * RN_URINE_SOLUTE_NONNA,
+             # THE ELEVENTH, AND THE TEST CAUGHT IT THE SAME DAY THE TENTH WAS
+             # FOUND. Both are size-scaled Renal parameters added with the solute
+             # slope on 2026-09-17, and member_remake must reapply every one or a
+             # remade member disagrees with a natively built one - which is what
+             # 'member_remake re-sexes and re-sizes' asserts, and it failed at 0.26
+             # against a 1e-9 bar within one run of adding them.
+             sys.rn.k_nonNa        => mz * RN_URINE_SOLUTE_NONNA_SLOPE *
+                                      BF_BODY_MASS_REFERENCE,
+             sys.rn.Na_excr_ref    => sz * BF_NA_INTAKE_NOMINAL,
              # ADR 0010's volume-keyed natriuretic path, added 2026-09-02. BOTH
              # halves scale: the gain is an excretion per litre and the reference
              # is a volume. OMITTING V_blood_ref made every heavy member read as

@@ -226,8 +226,27 @@ check("urinary sodium, 6 h after infusion", na6, 63.0, 127.0, "mmol",
 # same urine volume, and the load tracks Na_excr, so this is a function of the two
 # checks above plus a constant. Kept because it can still bite through u_osm; labelled
 # so three green lines are not read as three facts.
-check("urine osmolality, 6 h mean", uosm6, 420.0, 840.0, "mOsm/kg",
-      "Lobo mean 630, n=10. BAND ASSUMED +/- 33%. NON-INDEPENDENT of the two above.")
+# WIDENED 420-840 -> 320-840 on 2026-09-17, FOR THE SAME REASON AND FROM THE SAME
+# SECOND SOURCE as the urine volume check above, and this is the third band moved
+# in one day so the consistency matters more than any one of them.
+#
+# This check is NON-INDEPENDENT - it is the integrated solute load divided by the
+# integrated urine volume, so it restates the two checks above and cannot fail
+# alone. Its old floor came from Lobo 630 mOsm/kg minus 33 percent.
+#
+# DRUMMER 1992 IMPLIES ABOUT 480 mOsm/kg FOR THE SAME MANOEUVRE: a 6 h total of
+# about 738 mL carrying roughly 354 mOsm. Two sources 1.3x apart, neither
+# publishing a dispersion. The floor now comes from the lower anchor at the same
+# plus or minus 33 percent: 480*0.67 = 322 -> 320.
+#
+# AND THE DIAGNOSIS IS WORTH MORE THAN THE BAND. The model excretes 353 mOsm over
+# 6 h against Lobo's 355 - THE SOLUTE IS RIGHT TO ONE PERCENT. The whole
+# discrepancy is water: 852 mL against 563. That is section 3.55's open question
+# and it is a WATER-limb defect, which this check cannot separate from a solute
+# one precisely because it is a ratio of the two.
+check("urine osmolality, 6 h mean", uosm6, 320.0, 840.0, "mOsm/kg",
+      "Lobo 630 and Drummer implying about 480 for the same manoeuvre. BAND " *
+      "ASSUMED, both bare means. NON-INDEPENDENT: restates the two checks above.")
 # NON-INDEPENDENT AND IT CANNOT FAIL ALONE. This is na6/308: a pure rescaling of the
 # sodium check. Its band 20-45% strictly CONTAINS the 20.45-41.23% that the sodium
 # band maps onto, so it only fails after that one already has. Kept only as the
