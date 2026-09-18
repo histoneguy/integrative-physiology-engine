@@ -4251,7 +4251,12 @@ the evidence for it is now assembled rather than assumed.
 
 ---
 
-### 3.52 THE ACUTE AND CHRONIC LIMBS WANT NATRIURETIC GAINS A FACTOR OF TWO APART
+### 3.52 ~~THE ACUTE AND CHRONIC LIMBS WANT NATRIURETIC GAINS A FACTOR OF TWO APART~~
+
+> **HEADLINE WITHDRAWN 2026-09-17 — §3.53.** The factor of two is inside the measurement
+> error of every endpoint on both sides. The sweep's numbers below are correct as
+> measurements OF THE MODEL; what is withdrawn is reading their disagreement with the data
+> as a finding. Directive 1.13, failure mode #9.
 
 **2026-09-17**, `validation/sodium_store_structure_prereg.md`, branch **X1**,
 `bench/sodium_store_combined.jl`. Twenty-four configurations: store fraction × store time
@@ -4328,6 +4333,73 @@ prevent.
 
 **`storage` stays `false`, ADR 0004 stays `Provisional` and tier E3, the default build is
 12 states.**
+
+---
+
+### 3.53 THE FACTOR OF TWO IS INSIDE THE MEASUREMENT ERROR, AND FIVE PASSES CHASED IT
+
+**2026-09-17, at the owner's instruction, and it withdraws §3.52's headline.**
+
+§3.52 reported that *"the acute and chronic limbs want natriuretic gains a factor of two
+apart."* **That is not a finding.** Directive 1.13: *"a disagreement inside that uncertainty
+is not a finding."* **Failure mode #9 — chasing precision that does not exist.**
+
+### WHAT INTERVAL EACH ENDPOINT ACTUALLY SUPPORTS
+
+| endpoint | point estimate | interval that can be COMPUTED |
+|---|---|---|
+| Jensen, FE_Na rise | +122% | **−18% to +502%** — the repository's own ρ = 0 bound |
+| Drummer, volume half-life | 7 h | **none.** n = 6, no dispersion published |
+| Drummer, sodium half-life | 10 h | **none.** Same |
+| van den Bosch, chronic | 1.042 | **0.17 to 1.91**, back-derived from p = 0.02 |
+| the meta-analytic "window" | 1.70–2.30 | **not an interval at all** — the spread of three point estimates, which this repository already flagged as *"range-midpoint's sibling"* |
+
+**Of five endpoints, two have no computable interval, one is not an interval, and the two
+that can be computed span eleven-fold and six-fold. A factor of two is inside every one of
+them.**
+
+### AND THE SAMPLING ERROR IS THE SMALL PROBLEM
+
+**van den Bosch prints MAP as integers: 88 and 86 mmHg.** A difference of two
+two-significant-figure numbers does not have three significant figures.
+
+    true difference, from ROUNDING ALONE:      1.00 to 3.00 mmHg
+    per 100 mmol/day:                          0.52 to 1.56      A THREE-FOLD RANGE
+
+And the denominator is a point estimate too — intake was **230 ± 67 against 38 ± 26**
+mmol/24 h. **So 1.042 should never have been quoted to four figures.** What that study
+supports is *about 1, within a factor of two or so*, and §3.52's 1.97-against-1.01 sits
+inside it.
+
+### SO SEVERAL THINGS PUBLISHED THIS SESSION ARE WITHDRAWN
+
+- **"The acute and chronic limbs want gains a factor of two apart"** (§3.52). Withdrawn.
+- **"No configuration satisfies both half-lives and the chronic window."** It was true only
+  because 1.70–2.30 was treated as a hard band. **It is a spread of three point estimates**,
+  and the sweep's ×1.5 row at 1.32 is not distinguishable from it by anything published.
+- **The chronic comparator investigation.** §3's estimand question is **not worth running**:
+  it would refine a comparator whose own point estimate spans three-fold from rounding.
+
+### WHAT SURVIVES, AND THE DIVIDING LINE IS SIGNS AGAINST MAGNITUDES
+
+**Directions and category errors survive measurement noise. Factor-of-two magnitude
+comparisons between small studies do not.** Still standing:
+
+| | why it survives |
+|---|---|
+| Jensen's +79.3% was stale, and the comparison set a model **peak** against a study's **final sample** (§3.45) | a record defect and a definitional one, verified by re-running |
+| `validation/challenges.jl` is run by neither CI nor the suite (§3.45) | structural |
+| `BF.NA.STORAGE_TAU` was set from a **rhythm period**, which is not a relaxation time constant (§3.51) | a category error, not a magnitude |
+| ADR 0010 specifies a **saturating** path and the requirement is the opposite sign (§3.47) | a direction |
+| the model has Drummer's weight/sodium **ordering backwards** — 1.065 against 0.70 (§3.49) | a sign, and signs are robust to scale |
+| a static convex gain bends the chronic relation **12–20%** against 2.1% (§3.47) | a large structural contrast, not a factor of two |
+
+### THE RULE THIS SHOULD HAVE BEEN RUN UNDER
+
+**Before comparing a model output to a measurement, compute what interval the measurement
+supports. If the discrepancy is inside it, stop.** Five passes were spent on a 2 mmHg
+difference measured with a ±7 mmHg per-arm SD in 70 subjects, against half-lives fitted to
+six. **The model will never line up exactly with measured values, and it does not need to.**
 
 ---
 

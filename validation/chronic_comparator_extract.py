@@ -165,6 +165,27 @@ def main() -> int:
             ("model at the acute-satisfying gain", MODEL_ACUTE)]
     for lbl, v in rows:
         print("  %-34s %8.2f   %s" % (lbl, v, "YES" if lo <= v <= hi else "no"))
+    print("")
+    print("4b. AND THE SAMPLING INTERVAL IS THE SMALL PROBLEM - DIRECTIVE 1.13")
+    print("-" * W)
+    print("  THE PAPER PRINTS MAP AS INTEGERS: 88 and 86 mmHg. A difference of two")
+    print("  two-significant-figure numbers does not have three significant figures.")
+    lo_r = (87.5 - 86.5) / d_na * 100.0
+    hi_r = (88.5 - 85.5) / d_na * 100.0
+    print("    true difference lies in [1.00, 3.00] mmHg from ROUNDING ALONE")
+    print("    per 100 mmol/day that is [%.2f, %.2f] - A THREE-FOLD RANGE" % (lo_r, hi_r))
+    print()
+    print("  AND THE DENOMINATOR IS UNCERTAIN TOO: the intake difference is")
+    print("  230 +/- 67 against 38 +/- 26 mmol/24 h, so 192 is itself a point estimate.")
+    print()
+    print("  SO 1.042 SHOULD NEVER HAVE BEEN QUOTED TO FOUR FIGURES. What this study")
+    print("  supports is about 1, within a factor of two or so. Directive 1.13: a")
+    print("  derived number cannot be more precise than what it came from.")
+    print()
+    print("  %-34s %8s   %s" % ("", "value", "inside the ROUNDING range alone?"))
+    for lbl, v in rows:
+        print("  %-34s %8.2f   %s" % (lbl, v, "YES" if lo_r <= v <= hi_r else "no"))
+
 
     print("\n5. THE VERDICT, AND IT IS NOT THE CONVENIENT ONE")
     print("-" * W)
@@ -185,9 +206,14 @@ def main() -> int:
     print("      state, and the model's own step runs 30-40 days.")
     print()
     print("  SO THE HONEST READING IS THAT VAN DEN BOSCH LOWERS THE PLAUSIBLE RANGE")
-    print("  WITHOUT SETTLING IT, and section 3's estimand question - what population")
-    print("  each meta-analysis actually measured - is still what decides this.")
-    print("=" * W)
+    print("  WITHOUT SETTLING IT.")
+    print()
+    print("  AND SECTION 4b IS WHY SECTION 3's ESTIMAND QUESTION IS NOT WORTH RUNNING.")
+    print("  Establishing which population each meta-analysis measured would refine a")
+    print("  comparator whose own point estimate spans THREE-FOLD from rounding. THE")
+    print("  DISCREPANCY BEING CHASED IS A FACTOR OF TWO. It is inside the uncertainty")
+    print("  of every endpoint on both sides, and directive 1.13 says a disagreement")
+    print("  inside that uncertainty IS NOT A FINDING. HANDOVER section 3.53.")
     return 0
 
 
