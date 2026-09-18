@@ -766,3 +766,19 @@ withdrew a published conclusion for reading a water defect as a sodium one.
 **What it needs now is sourcing, not fitting.** `f_store` ≈ 0.40 is a **diagnostic**.
 Titze's balance and skin-sodium work has never been opened in this repository, and ADR 0004
 keeps `provisional` until it has been. `storage` stays `false` by default.
+
+### B1f. The sodium-limb discrepancies are inside the measurement error — CLOSED 2026-09-17
+
+**HANDOVER §3.53.** Of the five endpoints the acute/chronic tension was built on, **two have
+no computable interval at all** (Drummer's half-lives, n = 6, no dispersion published),
+**one is not an interval** (the meta-analytic 1.70–2.30 is a spread of three point
+estimates), and the two that can be computed span **eleven-fold** (Jensen, −18% to +502%)
+and **three-fold from rounding alone** (van den Bosch: MAP printed as integers, so the
+difference is 1–3 mmHg).
+
+**A factor of two is inside every one of them.** Directive 1.13 and failure mode #9.
+
+**What stays open is not a number.** The direction results survive — the model has
+Drummer's weight/sodium ordering backwards, ADR 0010's saturating specification points the
+wrong way, and `BF.NA.STORAGE_TAU` was set from a rhythm period. **Those are signs and
+category errors, and they do not depend on the magnitudes.**
