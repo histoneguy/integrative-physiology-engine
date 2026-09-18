@@ -4731,6 +4731,97 @@ The five sites are now declared. **This is the same shape as §3.54's unread-row
 including the part where the first version reported findings that were not there.**
 
 
+### 3.57 THE RENAL SYMPATHETIC ARM, AND A PREDICTION MADE BEFORE THE ANSWER WAS VISIBLE
+
+**Pre-registered in `validation/renal_sympathetic_prereg.md`, with TWO amendments written
+before anything was built, both recording that the pre-registration had guessed wrong.**
+ADR 0024. Sources supplied by directive 1.15, which removed this item's only stated blocker.
+
+**ADR 0021 A6.3 IS CONFIRMED, AND THE INSTRUMENT READ TRUE ON ITS CONTROL ARM.**
+
+| | `g_md` that reproduces van den Bosch's 2.73 |
+|---|---|
+| arm OFF | **5.713** — reproduces the 5.71 that stood |
+| arm ON | **4.99** |
+
+The control arm reproducing the standing value is what makes the 13% fall a result rather
+than an artefact of re-solving. Had the gain **not** fallen, A6.3 named tubuloglomerular
+feedback as the successor in advance, and that branch was live until this ran.
+
+#### The pre-registration was wrong twice, and both were caught before building
+
+**AMENDMENT 1 — the effect is a THRESHOLD SHIFT, not a gain.** Kirchheim 1985, seven
+conscious foxhounds on a renal artery cuff: carotid occlusion shifted the pressure–renin
+curve right, **threshold 92.7 ± 2.8 → 109.7 ± 4.1 mmHg**, while the **plateau** (0.98 vs
+0.99) and the **slope** (−0.379 vs −0.416) were both unchanged. §3 of the pre-registration
+had assumed a gain. **Opening the source is the only thing that caught it**, and a
+sympathetic renin gain would have contradicted the one paper that measured the effect.
+
+**AMENDMENT 2 — the model's baroreflex resets completely and Lohmeier's dogs do not.**
+Found by trying to wire the new threshold to the sympathetic signal the model **already
+had** — directive 1.11 again. `Baroreflex.jl` drifts its setpoint to prevailing pressure
+with `BR.RESET.TAU` = 1 day, **`assumed`**, so that drive is **zero in every chronic steady
+state**. Lohmeier 2001 measured the opposite for the renal arm: at **day 10** of ANG II,
+MAP stable at +30 ± 3 and sodium balance achieved, the denervated/innervated sodium ratio
+was **0.56 ± 0.05** against a control of 0.99 ± 0.05. Ten days is ten time constants; a
+fully reset arm returns the ratio to 1.0.
+
+**AND THAT IS WHY THE ARM COULD NOT HAVE BEEN BUILT NAIVELY.** Wiring `P_thr` to the
+existing drive would have produced an arm that does nothing chronically, and **A6.3 would
+have come back REFUTED, with a plausible successor mechanism already named**, when the
+instrument was reading the resetting assumption. A refuted prediction with a tidy successor
+attached is exactly the shape of a result nobody re-examines.
+
+#### The sodium arm was NOT built, and the reason is the finding
+
+Branch **S2**. Measured before anything was written: at the chronic salt step the
+volume-keyed `anp_sig` term carries **77% of the 192 mEq/day swing**, and it is keyed to
+`V_blood` because *"atrial stretch is intravascular"* — **cardiopulmonary receptors ARE
+atrial stretch receptors.** Lohmeier's Den/Inn ratio of ~1.9 says roughly half of such a
+response is nerve traffic. **The path labelled ANP already carries an unlabelled
+sympathetic component.** That is a criticism of `CV.ANP.NATRIURETIC_GAIN`'s label and it is
+**left on the record rather than fixed here** — re-estimating it in the pass that found the
+problem would be changing a target and refitting to it in one step.
+
+#### Two things arrived free
+
+**KIRCHHEIM INDEPENDENTLY CONFIRMS THE RENIN THRESHOLD.** `RAAS.RENIN.PRESSURE_THRESHOLD`
+is **93 ± 2** from van Ochten's meta-analysis of 30 mostly-rodent studies whose own
+limitations report high risk of bias. Kirchheim's conscious dogs give **92.7 ± 2.8** by a
+different method in a different species. **Nobody arranged that**, and ADR 0024 forbids
+spending it by adopting Kirchheim's value.
+
+**AND THE RECTIFIED FORM TURNS OUT TO HAVE BEEN MEASURED.** §7 describes this model's renin
+as *a pressure-only rectified relation* — flat above a threshold, steep below — adopted on
+general grounds. Kirchheim reports exactly that: **two linear sections with a distinct
+threshold.** A structural choice nobody had checked, and it holds.
+
+#### What it cost and what it did not
+
+| | before | after | band |
+|---|---|---|---|
+| chronic salt sensitivity | 1.96 | **1.96** | 1.70–2.30 |
+| Lobo 6 h urine volume | 776 mL | **761** | Lobo 563, Drummer ~738 |
+| Jensen final window | 100 % | **94** | +122%, bound −18% to +502% |
+| acute ordering ratio | 0.948 | **0.943** | must stay < 1 |
+| resting MAP / `Na_excr` | 87.0056 / 205.000 | **unchanged** | |
+| states after `structural_simplify` | 13 | **13** | `rsna` and `P_thr_eff` are observables |
+
+**`ALL CHALLENGES PASS`, full suite green, and the arm adds NO state and no new compilation
+configuration** — `dP_sym = 0` recovers the previous model exactly, the precedent `g_md`
+was introduced on.
+
+**TWO E3 CLAIMS DEFAULT ON AND ADR 0024 STATES THEIR FALSIFIERS.** The efferent is keyed to
+**arterial** pressure while Lohmeier's chronic afferent is **cardiopulmonary**; and the
+`tanh` between Kirchheim's two points is this model's interpolation, not his measurement.
+
+**ALL FOUR SOURCES ARE ABSTRACT ONLY.** Both AJP-Regu papers are paywalled with only citing
+articles in PMC; Pflügers Archiv 1985 has no PMC record; Gross 1981 is free to read at
+PMC1274447 but the publisher blocks XML retrieval and the page is behind a CAPTCHA, which
+was not worked around. **The abstracts carry the numbers with dispersion, which is the only
+reason these rows are possible**, and every row says so.
+
+
 ## 4. NEXT, IN ORDER
 
 **Rewritten 2026-09-03, and item 1 was discharged the same day.** The previous list's

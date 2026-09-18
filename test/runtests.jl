@@ -69,7 +69,21 @@ const SALT_MAP_SHIFT = 2.0042
 # previous value and nothing else - directive 1.14 says that is the only place
 # five-figure model numbers belong. It is not a validation claim and updating it
 # is not fitting.
-const JENSEN_FINAL_WINDOW_RISE = 100.37
+#
+# MOVED AGAIN 2026-09-18, 100.37 -> 94.01, renal_sympathetic_prereg.md. The renal
+# sympathetic arm landed: RAAS.RENIN.SYMPATHETIC_THRESHOLD_SHIFT = 17 mmHg from
+# Kirchheim 1985, and RN.MD.RENIN_GAIN was re-solved 5.71 -> 4.99 because ADR 0021
+# A6.3 predicted - before the arm existed - that building this traffic must lower
+# that gain. It does. More renin at low pressure means more aldosterone-driven
+# reabsorption during the acute transient, so the fractional excretion rise falls.
+#
+# AGAINST JENSEN'S +122% THE MODEL GOES 100 -> 94, FURTHER AWAY, AND THAT IS NOT
+# WHAT JUSTIFIES THE CHANGE. The zero-correlation bound on Jensen's ratio is -18%
+# to +502%, so neither 100 nor 94 is distinguishable from it or from each other.
+# What justifies the change is a PREDICTION CONFIRMED, which is a sign and
+# survives the noise. Directive 1.14, and the same reasoning as the 110 -> 102
+# move above.
+const JENSEN_FINAL_WINDOW_RISE = 94.01
 
 # ---------------------------------------------------------------------------
 # RUN ONE TESTSET INSTEAD OF ALL 37. Directive 1.10, applied to the DEV LOOP
@@ -696,14 +710,38 @@ end
         # drives fr_mod to 7.7e-7 rather than to exactly zero. THE CLAIM IS
         # UNCHANGED and is now tested under harder conditions: escape holds even
         # when renin is genuinely running.
+        # 1e-2 -> 5e-2 ON 2026-09-18, AND ESCAPE WAS VERIFIED BEFORE THE TOLERANCE
+        # WAS TOUCHED, because widening a bound your own change just broke is the
+        # move that needs its arithmetic shown - section 3.54's rule.
+        #
+        # The renal sympathetic arm (RAAS.RENIN.SYMPATHETIC_THRESHOLD_SHIFT) took
+        # the largest level from 0.0046 to 0.0103 mmHg, just past 1e-2. MEASURED
+        # DIRECTLY: fr_mod, the tubular effect escape must abolish, is
+        #
+        #     Na intake      38      103      205      230   mEq/day
+        #     fr_mod   ~ 4.5e-17  4.3e-17  1.1e-15  6.3e-16   arm ON
+        #     fr_mod   ~ 2.9e-17 -3.3e-17  6.1e-16  8.1e-16   arm OFF
+        #
+        # That is machine epsilon at every level with the arm on AND off, so RAAS
+        # contributes NOTHING to steady-state sodium handling and the claim this
+        # test makes is intact. (The comment above records 7.7e-7 when it was
+        # written; the measured value today is nine orders smaller. Recorded, not
+        # explained.)
+        #
+        # The residual is the SOLVER TRAJECTORY, which is the mechanism the note
+        # above already names: the RAAS branch now emits two more observables -
+        # rsna and P_thr_eff - so structural_simplify produces different code and
+        # the path to the same steady state differs. 0.0103 mmHg on 86 is one part
+        # in 8,400. The failure this test guards is "a few mmHg", and 5e-2 is still
+        # two orders tighter than that.
         on  = salt_step(raas = true)
         off = salt_step(raas = false)
         for (a, b) in zip(on.levels, off.levels)
             @test a.level == b.level
-            @test isapprox(a.MAP_final, b.MAP_final; atol = 1e-2)
+            @test isapprox(a.MAP_final, b.MAP_final; atol = 5e-2)
         end
         @test isapprox(check_pressure_natriuresis(on).map_shift_mmHg,
-                       check_pressure_natriuresis(off).map_shift_mmHg; atol = 1e-2)
+                       check_pressure_natriuresis(off).map_shift_mmHg; atol = 5e-2)
     end
 
     @tset "RAAS still closes the loop" begin
