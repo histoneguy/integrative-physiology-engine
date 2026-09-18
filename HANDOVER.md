@@ -286,6 +286,23 @@ the measurement error of every endpoint on both sides.** §3.53 has the arithmet
 supports. If the discrepancy lies inside it, there is nothing to explain — stop, record
 that it is inside, and move on.**
 
+**AND IT IS DIRECTIVE 1.13 APPLIED TO COMPARISONS, ON BOTH SIDES.** 1.13 already says *"no
+model output may be quoted beyond what its weakest input supports."* It was written for
+derived ledger rows and it binds just as hard on a comparison:
+
+- **The measurement's precision is set by its printed figures, not by its mean.** 88 − 86
+  is **2 mmHg to one significant figure at best**, so the slope derived from it is
+  **"about 1"**, not 1.042. Quoting 1.042 asserted four figures from two integers.
+- **The model output is quoted to the precision of the thing it is being compared with.**
+  A chronic salt sensitivity of **1.9707** against a comparator good to one figure is
+  **2**, and the extra digits are the same error in the other direction. Five-figure model
+  numbers belong in a **drift pin**, where they are compared with the model's own previous
+  value and nothing else — that is what `SALT_MAP_SHIFT` and `JENSEN_FINAL_WINDOW_RISE`
+  are for, and they are **not** validation claims.
+- **A discrepancy is only real at the precision both sides survive.** 1.97 against 1.01 is
+  **2 against 1** — and at one significant figure, on a measurement whose own rounding
+  spans three-fold, that is not a discrepancy at all.
+
 **HOW TO COMPUTE IT, IN ORDER OF WHAT USUALLY DOMINATES:**
 
 1. **Rounding of the printed inputs.** A difference of two two-figure numbers has at best
