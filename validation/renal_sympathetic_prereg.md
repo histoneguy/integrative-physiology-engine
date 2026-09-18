@@ -197,3 +197,102 @@ a denervation artifact the authors name themselves.
 falls. **If it does not, that is the more valuable result**, because it promotes
 tubuloglomerular feedback from a guess to the indicated mechanism — and it is the outcome a
 pass that wants its own arm to matter will be least inclined to look for.
+
+---
+
+# AMENDMENT 1 — 2026-09-18, after the sources were opened and before anything was built
+
+**Written because §3 guessed the wrong FORM, and the honest thing is to record that rather
+than to quietly redesign.** Nothing had been built when this was written; the decomposition
+in §A1.1 is a diagnostic run, not a change.
+
+## A1.1 S2 IS CONFIRMED FOR THE SODIUM OUTPUT, WITH NUMBERS
+
+Test 5 was run before any term was written. At the chronic salt step, 38 → 230 mEq/day:
+
+    Na_excr swing                                192.0 mEq/day
+    volume-keyed anp_sig term                    147.8  -> 77 %
+    pressure natriuresis + GFR + filtration       44.2  -> 23 %
+
+**The term labelled ANP carries 77% of the chronic sodium response**, it is keyed to
+`V_blood` because *"atrial stretch is intravascular"* (Renal.jl line 332) — **and
+cardiopulmonary receptors ARE atrial stretch receptors.** Lohmeier's Den/Inn ratio says
+roughly half of a volume-driven natriuretic response of this kind is renal nerve traffic.
+
+**SO THE VOLUME PATH ALREADY CARRIES AN UNLABELLED SYMPATHETIC COMPONENT AND A THIRD GAIN
+ON THE SAME AFFERENT IS FAILURE MODE #22.** Branch **S2 applies to the sodium output** and
+that arm is **not built.**
+
+## A1.2 AND A NEUTRAL RELABELLING WOULD NOT TEST ADR 0021 A6.3
+
+Splitting `anp_sig` into an ANP share and a nerve share on Lohmeier's ratio is available,
+has precedent (ADR 0021 decision 1's observational split), and **changes nothing** — which
+is exactly why it **cannot move `RN.MD.RENIN_GAIN`** and therefore cannot test the
+prediction this pass exists to test. It is not a substitute for the arm and must not be
+presented as one.
+
+## A1.3 THE ARM THAT TESTS A6.3 IS THE RENIN ARM, AND ITS FORM IS NOT A GAIN
+
+Renal sympathetic traffic stimulates renin release **directly, via β1 receptors on the
+juxtaglomerular cells** — the third classical pathway beside perfusion pressure and macula
+densa delivery. **That is the path ADR 0021 A6.3 predicts will lower `g_md`**, and §3 of
+this document wrongly assumed the sodium arm was it.
+
+**Kirchheim HR, Finke R, Hackenthal E, Löwe W, Persson P.** *Baroreflex sympathetic
+activation increases threshold pressure for the pressure-dependent renin release in
+conscious dogs.* Pflugers Arch 1985;405(2):127-35. **PMID 3903653. ABSTRACT ONLY.**
+Seven chronically instrumented conscious foxhounds, sodium intake 6.1 mmol/kg/day, renal
+artery cuff with a pressure control system, pressure stepped and held 5 min.
+
+| | control | carotid occlusion |
+|---|---|---|
+| threshold pressure | **92.7 ± 2.8 mmHg** | **109.7 ± 4.1** (P < 0.05) |
+| plateau P.R.A.-difference | 0.98 ± 0.14 | 0.99 ± 0.14 — **unchanged** |
+| slope below threshold | −0.379 ± 0.041 | −0.416 ± 0.082 — **unchanged** |
+
+*(ng AI · ml⁻¹ · h⁻¹, and per mmHg for the slope.)*
+
+**THE MEASURED CURVE IS THE MODEL'S OWN FUNCTIONAL FORM.** HANDOVER §7 describes this
+model's renin as *a pressure-only rectified relation* — flat above a threshold, steep
+below. **Kirchheim measured that rectification in conscious dogs and it is two linear
+sections with a distinct threshold**, which is a stronger result for this repository than
+the sympathetic finding itself: the form was adopted here on Robertson-style general
+grounds and it turns out to have been measured.
+
+**AND THE SYMPATHETIC EFFECT IS A THRESHOLD SHIFT, NOT A GAIN CHANGE.** Plateau unchanged,
+slope unchanged, threshold **+17 mmHg**. A pass that added a sympathetic *gain* to renin
+would have contradicted the only source that measured it.
+
+**Gross R, Hackenberg HM, Hackenthal E, Kirchheim H.** *Interaction between perfusion
+pressure and sympathetic nerves in renin release by carotid baroreflex in conscious dogs.*
+J Physiol 1981;313:237-50. **PMID 7024507, PMCID PMC1274447 — free to read but the
+publisher blocks XML retrieval and the page is behind a CAPTCHA. ABSTRACT ONLY.**
+Twelve trained conscious foxhounds, sodium 4.7 mmol/kg/day. **Mechanism control:** with
+renal perfusion pressure held at control, carotid occlusion changed renin release in
+**neither the surgically denervated kidney (n = 3) nor the intact kidney after
+β-adrenergic blockade (n = 4)** — so the effect is **direct β-adrenergic**, with no
+vasomotor component and no change in renal blood flow.
+
+## A1.4 WHAT THIS AMENDMENT CHANGES IN THE RULES ABOVE
+
+- **§3's form is withdrawn.** The arm to build is the **renin threshold**, not a sodium
+  gain. §4's prohibitions all stand unchanged, **including that `RN.MD.RENIN_GAIN` is the
+  instrument and may not be re-solved here.**
+- **§6 gains a branch. S6 — the renin arm is built as a threshold shift, and A6.3 is then
+  tested by whether the salt-driven threshold movement supplies renin the macula densa gain
+  currently absorbs.** S3 and S4 apply to its outcome unchanged.
+- **§5's interval discipline binds harder, not less.** Threshold 92.7 ± 2.8 against
+  109.7 ± 4.1 is a **17 mmHg shift with a pooled SE near 5** — real, signed, and known to
+  **two significant figures at best.** n = 7 dogs. **Nothing derived from it may carry
+  three.**
+- **DOG, CONSCIOUS, ABSTRACT ONLY, ANG II or carotid occlusion as the manipulation** goes
+  on every row, per directive 1.6 and 1.15.
+
+## A1.5 THE NEW HAZARD THIS AMENDMENT CREATES
+
+**The model's renin threshold is currently a fixed parameter.** Making it a function of
+sympathetic activity makes it a function of volume — and §2.1's double-count question
+returns **on the renin path this time**, against `RN.MD.RENIN_GAIN`, which is the very
+quantity being used as the instrument. **If the threshold shift and the macula densa gain
+are not separable, that is S2 again and the arm is not built.** The separability must be
+demonstrated with numbers before anything is kept.
