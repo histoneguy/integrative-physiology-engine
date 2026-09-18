@@ -5025,6 +5025,69 @@ citation, an attribution or a record. **The loop's numbers were right; what was 
 what they claimed to be.**
 
 
+### 3.61 THE THYROID METABOLIC ARM IS ON, AND ITS ADR'S STATED REASON WAS WRONG
+
+**At the owner's instruction. Pre-registered in `validation/thyroid_metabolic_on_prereg.md`.
+No parameter moved.** ADR 0019 carries the amendment.
+
+#### Decision 4's condition was met, and my pre-registration overstated the reversal
+
+**ADR 0019 decision 4 reads: "with the metabolic arm defaulting OFF *until it is
+sourced*."** It was sourced on 2026-09-05 — `THY.METABOLIC_GAIN` = 0.211, **tier A**,
+human, from Maushart 2022's paired hyperthyroid → euthyroid measurements, with the CO2 link
+**tested in the same paper** rather than assumed.
+
+**So switching it on SATISFIES decision 4 rather than reversing it.** The pre-registration
+for this pass described the flip as removing what made the disease-preparation relaxation
+safe. **That is true of `thyroid_prereg.md` §8.3's argument and false of decision 4**, whose
+condition was conditional and has been discharged. Recorded because the pre-registration was
+written before decision 4's exact wording was re-read.
+
+#### And decision 4's stated REASON is refuted by measurement
+
+It justified the default with *"it moves ventilation and therefore water balance."*
+
+    ventilation V_E     5.621        ->  5.621          IDENTICAL
+    urine L/day         1.69998677   ->  1.69998674     11th digit
+    resting PaCO2       40.00126     ->  40.00068       -1.46e-5 relative
+    th_mod              1.0          ->  0.99998543
+    SvO2                0.78726851   ->  0.78727207
+
+**It does not move either.** ADR 0019's own later A-note already said why — resting PaCO2
+is 40 against a ventilatory recruitment threshold of 45.28, so the chemoreflex is on its
+**flat limb** and a metabolic perturbation reaches PaCO2 and stops. **The record
+contradicted itself**, and running it settles the contradiction in favour of the A-note.
+Directive 1.11 again: the defect was found by connecting the thing and looking, not by a
+gate.
+
+#### The resting shift IS the arm being inert, measured
+
+**1.46e-5 relative is exactly the axis's own FT4 equilibrium offset.** The model settles
+6.9e-5 below `FT4_ref`, so `th_mod = 1 + 0.211*(−6.9e-5) = 0.9999854` rather than exactly 1.
+**That is what "inert at euthyroid by construction" looks like when you measure it instead
+of asserting it**, and it is what now carries §8.3's safety in place of the default being
+off: the disease-derived gain multiplies a deviation that is zero at the operating point.
+
+#### What is retired, deliberately
+
+**The bit-identity claim** in decision 4 and `thyroid_prereg.md` §6. `test/runtests.jl`
+asserted `th_mod == 1.0` exactly on that basis. It now asserts the **identity**
+`th_mod == 1 + G_met*(FT4/FT4_ref − 1)` to `rtol = 1e-10`, plus inertness to 1e-4 — **a
+CLOSURE PIN, declared**, so it fails if the arm ever stops being a pure multiplier on the
+FT4 deviation. **The premise changed; the tolerance was not loosened for any other reason.**
+
+#### What it buys
+
+The model's first **disease state** is now live end to end. `thyroid_secretion` below or
+above 1 propagates **thyroid → respiratory → blood → venous oxygen**, the model's only
+three-hop coupling, and the hyperthyroid chain is asserted: FT4 up, TSH down, `th_mod` above
+1, PaCO2 up, mixed venous saturation down.
+
+**Still open:** the euthyroid thyrotropin discrepancy — A5 records it as an **ill-posed
+test rather than a failure** — and `THY.TSH.INTERCEPT` is still the one row of three with no
+second source.
+
+
 ## 4. NEXT, IN ORDER
 
 **Rewritten 2026-09-03, and item 1 was discharged the same day.** The previous list's

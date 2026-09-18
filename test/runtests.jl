@@ -2286,11 +2286,31 @@ end
                        rtol = 1e-3)
         @test 1.7 < L.THY_LOOP_GAIN < 2.9
 
-        # THE METABOLIC ARM IS OFF AND IT IS OFF EXACTLY. ADR 0019 decision 4 and
-        # thyroid_prereg.md section 6 require bit-identity, not closeness, so this
-        # is == and not isapprox. Every pinned pressure, PaCO2 and water number
-        # elsewhere in this file is the rest of that assertion.
-        @test fin(sys, sol, "ty₊th_mod") == 1.0
+        # THE METABOLIC ARM IS NOW ON BY DEFAULT - 2026-09-18, at the owner's
+        # instruction, thyroid_metabolic_on_prereg.md. THIS TEST'S PREMISE IS WHAT
+        # CHANGED, not its tolerance.
+        #
+        # It used to read `== 1.0` and cite ADR 0019 decision 4 and
+        # thyroid_prereg.md section 6 for bit-identity. Decision 4 is amended and
+        # that bit-identity claim is RETIRED, deliberately and on the record. It is
+        # not loosened for any other reason.
+        #
+        # WHAT CARRIES THE SAFETY NOW IS A DIFFERENT ARGUMENT: the arm is inert at
+        # euthyroid BY CONSTRUCTION, because the disease-derived gain multiplies a
+        # deviation that is zero when FT4 = FT4_ref. The axis settles 6.9e-5 below
+        # its own reference, so th_mod sits 1.46e-5 BELOW 1 rather than at it, and
+        # resting PaCO2 moves by exactly that fraction: 40.00126 -> 40.00068.
+        #
+        # CLOSURE PIN: asserted as the IDENTITY rather than as a tolerance, so this
+        # fails if the arm ever stops being a pure multiplier on the FT4 deviation.
+        let thm  = fin(sys, sol, "ty₊th_mod"),
+            ft4  = fin(sys, sol, "ty₊FT4")
+            @test isapprox(thm,
+                           1.0 + L.THY_METABOLIC_GAIN * (ft4 / L.THY_FT4_EUTHYROID - 1.0);
+                           rtol = 1e-10)
+            # and it is inert to the precision anything downstream can resolve
+            @test abs(thm - 1.0) < 1e-4
+        end
 
         # THE RESPONSE, DONE ALGEBRAICALLY. The loop is a scalar fixed point,
         # FT4 = G_T*S*exp(a - b*FT4), so its equilibrium and its gain can be

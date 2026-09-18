@@ -63,7 +63,7 @@ physiology**: an axis whose response takes weeks cannot be represented by an alg
 relation on a model that runs for four hundred days.
 
 **4. The thyrotropin-thyroxine feedback and the metabolic effect are SEPARATELY
-switchable**, with the metabolic arm defaulting OFF until it is sourced. The feedback
+switchable**, with the metabolic arm defaulting OFF until it is sourced. **AMENDED 2026-09-18: it was sourced on 2026-09-05 and the arm is now ON by default - see the amendment at the foot of this record, which also records that this decision's stated reason (that it moves ventilation and therefore water balance) is REFUTED by measurement.** The feedback
 loop is E1 and defaults on; the quantitative effect on CO2 production is the part most
 likely to be wrong, and it moves ventilation and therefore water balance.
 
@@ -231,3 +231,77 @@ before. What changed is that the numbers are now composable.
   only human preparation that measures the real curve uses recombinant
   thyrotropin at roughly a hundred times the physiological range, and
   extrapolating that down is the error amendment A2 records.
+
+---
+
+## Amendment 2026-09-18 — the metabolic arm is ON by default
+
+**At the owner's instruction. Pre-registered in `validation/thyroid_metabolic_on_prereg.md`.
+No parameter moved.**
+
+### Decision 4's condition was met, and the pre-registration overstated the reversal
+
+**Decision 4 reads: "with the metabolic arm defaulting OFF *until it is sourced*."** It was
+sourced on 2026-09-05 — `THY.METABOLIC_GAIN` = 0.211, **tier A**, `derived`, human, from
+Maushart 2022's paired hyperthyroid → euthyroid measurements, with the CO2 link **tested in
+the same paper** rather than assumed (*"RQ was not significantly affected by thyroid hormone
+state"*).
+
+**So switching it on SATISFIES decision 4 rather than reversing it.** The pre-registration
+for this pass described the flip as removing what made §8.3's relaxation safe; that is true
+of §8.3's argument and **not** of decision 4, whose condition was conditional and has been
+discharged. Recorded because the pre-registration was written before decision 4's exact
+wording was re-read.
+
+### What now carries §8.3's safety, because §8.3's own argument does not
+
+`thyroid_prereg.md` §8.3 relaxed §2's exclusion of thyroid disease for this one row and
+leaned on the default: *"the relaxation changes no default behaviour."* **That sentence no
+longer holds.**
+
+**What carries it instead is inertness at euthyroid, by construction.**
+`th_mod = 1 + G_met*(FT4/FT4_ref − 1)` is exactly 1.0 when `FT4 = FT4_ref`, so the
+disease-derived gain multiplies a deviation that is **zero at the operating point**. It is a
+different argument and it is written down as one.
+
+### Decision 4's stated REASON is refuted by measurement
+
+Decision 4 justified the default with: *"the quantitative effect on CO2 production is the
+part most likely to be wrong, and **it moves ventilation and therefore water balance**."*
+
+**It does not.** Measured, arm off against arm on:
+
+    ventilation V_E     5.621        ->  5.621          IDENTICAL
+    urine L/day         1.69998677   ->  1.69998674     11th digit
+    resting PaCO2       40.00126     ->  40.00068       -1.46e-5 relative
+    th_mod              1.0          ->  0.99998543
+    SvO2                0.78726851   ->  0.78727207
+
+**ADR 0019's own later A-note already explained why** — resting PaCO2 is 40 against a
+ventilatory recruitment threshold of 45.28, so the chemoreflex sits on its **flat limb** and
+a metabolic perturbation reaches PaCO2 and stops. **The record contradicted itself**, and
+the measurement settles it in favour of the A-note.
+
+**The resting shift is 1.46e-5 relative, which is exactly the axis's own FT4 equilibrium
+offset** — the model settles 6.9e-5 below `FT4_ref`, so `th_mod` sits 1.46e-5 below 1
+rather than at it. **That is the arm being inert at euthyroid, measured rather than
+asserted.**
+
+### What this buys
+
+The arm was **sourced, wired, tested and switched off**. It is now live, and the model's
+first disease state — `thyroid_secretion` below or above 1 — propagates through
+**thyroid → respiratory → blood → venous oxygen**, the model's only three-hop coupling.
+The hyperthyroid chain is still asserted in `test/runtests.jl`: FT4 up, TSH down, `th_mod`
+above 1, PaCO2 up, mixed venous saturation down.
+
+### What is retired
+
+**The bit-identity claim in decision 4 and `thyroid_prereg.md` §6.** `test/runtests.jl`
+asserted `th_mod == 1.0` exactly on that basis; it now asserts the **identity**
+`th_mod == 1 + G_met*(FT4/FT4_ref − 1)` to `rtol = 1e-10`, plus inertness to 1e-4. **The
+premise changed; the tolerance was not loosened for any other reason.**
+
+**Still open and untouched:** the euthyroid thyrotropin discrepancy, which A5 records as an
+**ill-posed test rather than a failure**, and `THY.TSH.INTERCEPT` remains the one row of
+three with no second source.
