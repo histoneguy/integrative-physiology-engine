@@ -416,8 +416,29 @@ let r = IPE.check_pressure_natriuresis(IPE.salt_step())
     # meta-analyses that share primary trials is the silent re-pooling pooling.md
     # prohibits, and taking their min and max as an interval is range-midpoint's
     # sibling. Only the label is corrected.
+    # RELABELLED 2026-09-18, ADR 0013's resolution. THIS IS AN ESTIMATION SET AND HAS
+    # BEEN PRINTING AS A PASS SINCE THE GAIN WAS SOLVED.
+    #
+    # CV.VOLUME.NATRIURETIC_GAIN's own note: "Solved for a chronic salt sensitivity of
+    # 2.00 mmHg per 100 mmol/day, the CENTRE of the meta-analytic human 1.70-2.30
+    # (Cutler 1997, He 2013, He 2002; k = 3)." The model was FITTED TO THE CENTRE OF
+    # THE BAND IT IS HERE CHECKED AGAINST.
+    #
+    # The label used to correct the band's NATURE - a spread of three point estimates
+    # is not a confidence interval - and that was right as far as it went. It never
+    # said the model had been fitted to it. Section 3.15 is the record of what happens
+    # when an estimation set is quoted back as agreement.
+    #
+    # THE CHECK STAYS AND THE BAND IS UNCHANGED. It is a useful drift detector: a
+    # configuration that leaves 1.70-2.30 is telling you something, and several passes
+    # have been stopped by exactly that. What it is NOT is evidence that this model
+    # reproduces a human measurement. It cannot be. Directive 1.12's sibling: a number
+    # you fitted to is not a number you predicted.
     check("chronic salt sensitivity", r.map_shift_mmHg / 102 * 100, 1.70, 2.30,
-          "mmHg/100mmol", "SPREAD of 3 meta-analytic estimates (1.70/1.96/2.30), not a CI")
+          "mmHg/100mmol",
+          "ESTIMATION SET - the volume gain was SOLVED to 2.00, this band's centre. " *
+          "Drift detector, NOT a validation. Band is the SPREAD of 3 meta-analytic " *
+          "estimates (1.70/1.96/2.30), not a CI")
 end
 
 println()

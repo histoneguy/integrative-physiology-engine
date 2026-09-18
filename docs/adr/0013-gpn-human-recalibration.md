@@ -1,6 +1,6 @@
 # ADR 0013: Re-estimate `G_pn` against human data. The model is calibrated to hypertensives
 
-**Status:** Proposed
+**Status:** Superseded — by ADR 0010 and the joint constraint; see the Resolution at the foot of this record (2026-09-18). **Its evidence is adopted; its proposed VALUE is not.**
 **Date:** 2026-08-25
 **Evidence tier:** MIXED - E1, E2.
 
@@ -486,3 +486,85 @@ still owns it.
 
 **The `G_vr` target stated below as 758–1062 moves with the band**; it is not recomputed
 here for the same reason.
+
+
+---
+
+## Resolution — 2026-09-18. SUPERSEDED, and the evidence was already adopted
+
+**Pre-registered in `validation/adr0013_resolution_prereg.md`. No parameter moved.**
+
+### The proposal is arithmetically the same three numbers the model is validated against
+
+This record's own Context states the relation it uses: **`dMAP ~ d(intake)/G_pn`**. Invert
+the Evidence table and that is exactly what its "implied `G_pn`" column is:
+
+| Source | MAP mmHg/100 mmol | 100 / that | this record's implied `G_pn` |
+|---|---|---|---|
+| Cutler 1997 | 1.70 | **58.8** | 58.8 |
+| He 2013 | 1.96 | **51.0** | 50.9 |
+| He 2002 | 2.30 | **43.5** | 43.5 |
+| Graudal 2019 | 0.53 | 188.7 | 187.5 |
+| Graudal 2017 | 0.25 | 400.0 | 393.2 |
+
+**The proposed 51.0 IS `100 / 1.96`.** And Cutler's 1.70, He's 1.96 and He's 2.30 are
+**the same three meta-analyses that form the chronic salt-sensitivity band in
+`validation/challenges.jl`.** This record contains no pressure-natriuresis measurement
+independent of the salt-sensitivity evidence the model is already built on.
+
+### And `dMAP ~ d(intake)/G_pn` assumed a model that no longer exists
+
+That relation holds **only if pressure natriuresis is the sole route from sodium intake to
+excretion.** It was, on 2026-08-25 when this record was written. **ADR 0010 then landed the
+volume-keyed path**, and HANDOVER §3.57 measured that it now carries **77% of the chronic
+sodium excretion swing**. Pressure natriuresis, GFR and filtration carry 23%.
+
+**So the human evidence constrains the COMBINATION, not this row alone**, which is what the
+joint constraint records:
+
+    G_pn + 0.0594 * G_vn = 50          and   100 / 2.00 = 50
+
+**The constraint is this record's own evidence, correctly applied to a two-path model.** The
+value it yields is the 8.4 the row holds.
+
+**ADOPTING 51.0 WOULD DOUBLE-COUNT.** At `G_pn` = 51 the constraint leaves
+`0.0594 * G_vn = −1`, requiring a **negative** volume gain — i.e. it would assert that the
+volume path, sourced independently from acute expansion studies in ADR 0010, contributes
+nothing or less than nothing.
+
+### What this record got right, and it was the important part
+
+**The model WAS calibrated to hypertensives, and this record is why that stopped.** Its
+central claim — that 20.0 was hypertensive-range and `G_pn` should move a long way — was
+correct and acted on: the row went **20.0 → 11.4 → 8.4**, and the model's chronic salt
+sensitivity moved from 4.84 mmHg/100 mmol into the normotensive band. **The direction was
+right; only the single-path arithmetic was superseded.** It is marked Superseded rather
+than Rejected for that reason.
+
+### The finding this resolution turned up, and it is not about `G_pn`
+
+**`CV.VOLUME.NATRIURETIC_GAIN`'s own note:** *"Solved for a chronic salt sensitivity of
+2.00 mmHg per 100 mmol/day, the CENTRE of the meta-analytic human 1.70-2.30 (Cutler 1997,
+He 2013, He 2002; k = 3)."*
+
+**`validation/challenges.jl` then checks chronic salt sensitivity against 1.70–2.30 and
+prints PASS.** The harness labelled the band's *nature* — "SPREAD of 3 meta-analytic
+estimates, not a CI" — but never that **the model was fitted to its centre.** That is an
+estimation set reported as a validation, which is the error §3.15 exists to record, and it
+has been printing as a PASS since the gain was solved.
+
+**The check is now labelled ESTIMATION SET.** The band is unchanged and the check still
+runs — it remains a useful drift detector, and a configuration that leaves 1.70–2.30 is
+still telling you something — but it is no longer presented as evidence the model
+reproduces a human measurement. **It cannot be: it was fitted to it.**
+
+### What remains genuinely open, and this record does not close it
+
+**The two camps still disagree by a factor of eight and argue in print** — Cutler/He at
+1.70–2.30 against Graudal at 0.25–0.53 — and the model sits with the first camp because
+the joint constraint was built from it. **Nothing here resolves that**, and a `G_pn`
+consistent with Graudal would be four to eight times larger. The uncertainty on the row
+spans 5.43–20.0 and **does not cover that disagreement**; the honest range is far wider and
+the row says so in its notes rather than in its interval.
+
+**ADR 0015 remains `Proposed`** and is untouched by this resolution.
