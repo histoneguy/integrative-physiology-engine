@@ -23,7 +23,7 @@ an interpreted graph-walking engine at all.
 """
 
 """
-    build_model(; body_mass = 70.0, storage = false, circadian = false)
+    build_model(; body_mass = 70.0, storage = true, circadian = false)
 
 Construct and structurally simplify the closed loop.
 
@@ -45,7 +45,7 @@ function build_model(; kwargs...)
 end
 
 """
-    build_raw_model(; body_mass = 70.0, storage = false, circadian = false)
+    build_raw_model(; body_mass = 70.0, storage = true, circadian = false)
 
 The composed system BEFORE structural simplification.
 
@@ -53,7 +53,7 @@ Exposed so diagnostics can count how many states simplification removes - the
 figure that justifies the symbolic layer in ADR 0001. Not for general use;
 call `build_model`.
 """
-function build_raw_model(; body_mass = 70.0, storage::Bool = false,
+function build_raw_model(; body_mass = 70.0, storage::Bool = true,
                          circadian::Bool = false, baroreflex::Bool = true,
                          chronotropic::Bool = true,
                          raas::Bool = true, adh::Bool = true,

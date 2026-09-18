@@ -1,8 +1,8 @@
 # ADR 0004: Osmotically inactive sodium storage
 
-**Status:** Provisional
-**Evidence tier:** E3 - single group, small-n 23Na MRI, compartment inferred not measured, limited independent uptake
-**Default:** `storage = false` (default OFF, required for E3 per ADR 0006)
+**Status:** Accepted (was Provisional; see the 2026-09-17 re-tiering amendment)
+**Evidence tier:** E2 - replicated in humans by three independent groups; compartment still inferred rather than measured (was E3)
+**Default:** `storage = true` (default ON, permitted for E2 per ADR 0006)
 **Date:** 2026-08-08
 
 ## Context
@@ -266,3 +266,64 @@ replacement.
 
 **Why it was in the ledger, and why it is not a parameter.** Described by the source as preliminary in vivo data. Not used in the current model - recorded because it constrains the storage compartment on long horizons and will matter if the model is ever run across decades. || CITATION FLAGGED 2026-08-25 BY AUDIT. This is a SECONDARY CITATION: the value is attributed to Titze et al but the stated source is 'Reported in Rakova N, Sodium Balance (dissertation)'. The primary was never opened. Directive 1.5 forbids writing a citation nobody has read, and a dissertation reporting another group's MRI data is two removes from the measurement. Obtain the Titze primary or downgrade the row.
 
+---
+
+## Amendment, 2026-09-17 (third) — re-tiered E3 to E2, and switched on
+
+**The tier moved because the evidence moved, and the default follows the tier.**
+
+ADR 0006's amendment of 2026-08-21 pinned this record at E3 in these words: *"Its weakness
+is single-group small-n with the compartment inferred rather than measured, in human
+subjects."* **The first half of that is no longer true.**
+
+| group | study | what it contributes |
+|---|---|---|
+| Erlangen / Berlin (Titze, Rakova) | Cell Metab 2013;17:125–131, **read 2026-09-17** | total-body Na⁺ varies ±200–400 mmol at fixed intake without parallel changes in body weight or extracellular water |
+| **Amsterdam** (Olde Engberink, Vogt) | Kidney Int 2017;91:738–745, **read 2026-09-17** | 12 healthy men; only 47% and 55% of expected Na⁺ and K⁺ excretion retrievable in urine after an acute load |
+| **Antwerp** (Van Regenmortel, Jorens) | J Crit Care 2022;67:157–165, **read 2026-09-17** | 12 healthy volunteers; ΔNa 171 mmol → Δfluid 590 mL, about half what plasma tonicity implies |
+
+**Three independent groups, all human. E3's "single group" criterion is not met; E2's
+"replicated in humans with … mechanism partly inferred" is met exactly.** The second half
+of ADR 0006's objection stands and is *why this is E2 and not E1*: Olde Engberink's own
+limitation is that they *"did not directly measure the amount of nonosmotic Na⁺ stored in
+the tissues."*
+
+### THE FALSIFIABLE TEST THIS RECORD NOW PASSES, AND IT IS A SIGN
+
+Drummer 1992 fits **two** half-lives to an acute isotonic load: body weight **7 h**, sodium
+balance **10 h**. **Weight returns first — ratio 0.70.** With the compartment off the model
+gave **1.065**: water could not leave ahead of salt, because extracellular volume is tied
+to extracellular sodium and there was nowhere to put sodium that did not carry water.
+
+**Switched on at the ledger values, the ratio is 0.910.** The ordering is correct. The
+magnitudes are not, and per directive 1.14 they are not chased: Drummer's half-lives are
+fitted to **n = 6 with no published dispersion** and support no interval at all. **What is
+claimed here is the sign, and a sign survives the noise.**
+
+### WHAT IT COST, REPORTED RATHER THAN ABSORBED
+
+- **Chronic salt sensitivity: unchanged at 1.96.** The compartment is chronically inert —
+  measured identical to four figures at every store setting swept.
+- **Jensen's final window: 110 → 102** against a measured 122. Further away, and inside
+  what that measurement resolves. The drift pin was **re-pinned with the reason on it**.
+- **`urine volume, 6 h after infusion`: 708 → 852 mL, and `validation/challenges.jl` now
+  FAILS it.** The band is 380–750 and is labelled in its own source line as *"BAND ASSUMED
+  ±33%, no dispersion published"* around Lobo's mean of 563. **The band was not widened.**
+  The model was already 26% above Lobo's mean before this change and the store added a
+  further 144 mL, by the mechanism this record is about: sodium leaves the osmotically
+  active pool, tonicity falls slightly, vasopressin is suppressed and the water that sodium
+  would have held is excreted. **That is the dissociation working, and the magnitude is a
+  separate defect in the water limb** — `RN.URINE.SOLUTE_NONNA`'s own note already records a
+  measured ~30% over-response on the solute limb against Kitada. Named, not absorbed.
+
+### AND TURNING IT ON FOUND A BUG THAT COULD NOT HAVE BEEN FOUND WITH IT OFF
+
+`src/ensemble.jl`'s `member_remake` re-sizes every extensive state when an ensemble member's
+body mass changes — and **`bf.Na_store` was missing from that list from the day this record
+was written**, because `structural_simplify` eliminated it while the branch was off, so
+nothing could fail. A 90 kg member started with a 70 kg store, which equilibrated over
+`tau_store` and left a **mass-dependent residue in arterial pressure**: MAP invariance went
+to 2.7e-4 against a 1e-4 bar and the body-size testset caught it on the first run. The list's
+own comment said adding a state *"silently creates an obligation here … so the tenth one is
+looked for rather than found."* **It was found.** A disabled branch cannot be tested, and
+this is what was hiding in it.

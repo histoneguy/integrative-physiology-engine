@@ -169,3 +169,23 @@ homologue. Rule 4 above requires the reason the human study is absent to be stat
 evidence block in `src/components/Renal.jl`, are reworded to match: rat provenance
 under an ethical ceiling is provenance, not debt. What remains genuine debt there is
 the uncited piecewise FORM and the unsourced lower breakpoint.
+
+---
+
+## Amendment, 2026-09-17 — ADR 0004 re-tiered E3 to E2
+
+The 2026-08-21 amendment ruled: *"ADR 0004 (sodium storage) stays E3 and stays default OFF.
+Its weakness is single-group small-n with the compartment inferred rather than measured, in
+human subjects. Species was never the issue."*
+
+**The single-group half of that has since become false**, and it became false by the
+mechanism E3 itself names — *limited independent uptake* — ceasing to apply.
+
+| record | was | now | why |
+|---|---|---|---|
+| 0004 | E3, default OFF | **E2, default ON** | replicated in humans by **three independent groups** — Erlangen/Berlin (Rakova 2013), Amsterdam (Olde Engberink 2017), Antwerp (Van Regenmortel 2022), all read 2026-09-17. The compartment is still **inferred rather than measured**, which is why it is E2 and not E1 |
+
+**This is not a relaxation of the rule.** E3 required default OFF and ADR 0004 obeyed it for
+forty days. The tier moved when the evidence did, the default followed the tier, and the
+record carries a falsifiable test it now passes — Drummer's weight-before-sodium ordering,
+which the model previously had backwards.
