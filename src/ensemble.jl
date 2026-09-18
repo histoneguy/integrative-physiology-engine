@@ -300,7 +300,22 @@ function member_remake(prob, sys, member; sex::Symbol = :male)
               sys.bf.V_ecf  => bm * BF_ECF_MASS_FRACTION,
               sys.bf.Na_ecf => bm * BF_ECF_MASS_FRACTION * BF_NA_PLASMA_SETPOINT,
               sys.cv.V_rbc  => LedgerParams.param(:CV_HEMATOCRIT_NOMINAL, sex) *
-                               mz * LedgerParams.param(:CV_BLOOD_VOLUME_NOMINAL, sex)])
+                               mz * LedgerParams.param(:CV_BLOOD_VOLUME_NOMINAL, sex),
+              # AND HERE IS THE TENTH, FOUND THE WAY THE NOTE ABOVE HOPED IT WOULD
+              # NOT BE. bf.Na_store is an EXTENSIVE state and it was absent from
+              # this list from the day ADR 0004 was written, because storage
+              # defaulted OFF and structural_simplify eliminated it - so nothing
+              # could fail. Turning the compartment on (ADR 0004, 2026-09-17) made
+              # a 90 kg member start with a 70 kg store, which equilibrates over
+              # tau_store and leaves a MASS-DEPENDENT RESIDUE IN ARTERIAL PRESSURE.
+              # The body-size testset caught it immediately: MAP invariance went to
+              # 2.7e-4 against a 1e-4 bar. A disabled branch cannot be tested, and
+              # this is what was hiding in it.
+              #
+              # It must match BodyFluids.jl's inline default exactly, or the member
+              # starts off its own steady state - which is the bug, not the fix.
+              sys.bf.Na_store => BF_NA_OSMOTICALLY_INACTIVE_FRACTION * bm *
+                                 BF_ECF_MASS_FRACTION * BF_NA_PLASMA_SETPOINT])
 end
 
 """

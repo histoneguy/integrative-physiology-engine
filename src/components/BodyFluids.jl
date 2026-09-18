@@ -38,7 +38,7 @@ using ..LedgerParams:
     BF_BODY_MASS_REFERENCE
 
 """
-    BodyFluids(; name, body_mass = 70.0, storage = false)
+    BodyFluids(; name, body_mass = 70.0, storage = true)
 
 Fluid and sodium balance with optional osmotically inactive sodium storage.
 
@@ -52,7 +52,7 @@ Interface (see src/coupling.jl):
   out  V_ecf, C_Na, Osm_ecf      to cardiovascular, renal, endocrine
 """
 function BodyFluids(; name, body_mass = BF_BODY_MASS_REFERENCE,
-                    storage::Bool = false)
+                    storage::Bool = true)
 
     # TWO FACTORS SINCE 2026-09-05. `sz` is SURFACE-like, (m/m_ref)^0.5083, for
     # the metabolic and dietary quantities; `mz` is MASS-like for the fluid

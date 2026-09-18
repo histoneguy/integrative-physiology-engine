@@ -40,7 +40,20 @@ const SALT_MAP_SHIFT = 2.0042
 # model's maximum falls hours after Jensen's protocol ends, and Jensen's series is
 # monotone rising to its last sample, so THE STUDY NEVER OBSERVED A PEAK. Against
 # Jensen's measured +122% (2.80 vs 1.26).
-const JENSEN_FINAL_WINDOW_RISE = 110.13
+# REPINNED 2026-09-17, 110.13 -> 102.21, AND THE PIN DID EXACTLY ITS JOB.
+# ADR 0004's osmotically inactive sodium store was turned ON by default in the
+# same change (E3 -> E2, see that record). Sodium parked in the store is not in
+# the extracellular compartment, so less of an acute load is available to be
+# filtered and excreted, and the fractional excretion rise falls.
+#
+# THE MOVE IS DELIBERATE, NOT DRIFT, AND THIS COMMENT IS WHAT DISTINGUISHES THEM.
+# Against Jensen's measured +122% the model goes 110 -> 102, which is FURTHER
+# from the measurement and well inside what that measurement resolves - the
+# zero-correlation bound on Jensen's ratio is -18% to +502%. Directive 1.14: a
+# disagreement inside the uncertainty is not a finding, and neither is an
+# agreement. What justifies the change is the ORDERING defect it fixes, which is
+# a sign and survives the noise - see HANDOVER section 3.55.
+const JENSEN_FINAL_WINDOW_RISE = 102.21
 
 # ---------------------------------------------------------------------------
 # RUN ONE TESTSET INSTEAD OF ALL 37. Directive 1.10, applied to the DEV LOOP
@@ -1744,7 +1757,7 @@ end
         # structural_simplify resolved it by promoting Blood.CO to a state. The
         # state is paid either way; with the sourced vagal lag it is paid on a
         # variable that means something. See ADR 0022 and BR.CARDIAC.TAU.
-        @test length(IPE.mtk_unknowns(sys)) == 12   # 11 -> 12, ADR 0023: cv.V_rbc
+        @test length(IPE.mtk_unknowns(sys)) == 13   # 12 -> 13, ADR 0004: bf.Na_store on by default
 
         # RESTING PaCO2 RETURNS THE SOURCED INPUT, AND THIS IS NOT A PREDICTION.
         # ADR 0017's ORIGINAL decision 1 made PaCO2 an output of the chemoreflex, as
@@ -1915,7 +1928,7 @@ end
         # enter through a differential equation somewhere, and there are still ten
         # - eight plus thyroxine plus potassium, and none of them is an oxygen
         # state.
-        @test length(IPE.mtk_unknowns(build_model())) == 12   # 11 -> 12, ADR 0023: cv.V_rbc
+        @test length(IPE.mtk_unknowns(build_model())) == 13   # 12 -> 13, ADR 0004: bf.Na_store on by default
 
         # ------------------------------------------------------------------
         # THE FICK ARM, ADDED 2026-09-05. ADR 0018 deferred venous content, the

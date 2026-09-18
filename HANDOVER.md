@@ -4521,6 +4521,67 @@ exercised and none can be. **Drift pins in `test/runtests.jl` are the deliberate
 
 ---
 
+### 3.55 THE ORDERING DEFECT IS FIXED, AND TURNING THE BRANCH ON FOUND A BUG IN IT
+
+**2026-09-17.** §3.49 recorded that the model had Drummer's weight/sodium ordering
+**backwards** — 1.065 against 0.70 — because extracellular volume is tied to extracellular
+sodium and **water cannot leave ahead of salt**. ADR 0004's compartment is the thing that
+lets it, and it had been built, wired and **switched off since 2026-08-08**.
+
+### THE TIER MOVED BECAUSE THE EVIDENCE MOVED
+
+ADR 0006 pinned ADR 0004 at E3 for *"single-group small-n with the compartment inferred
+rather than measured"*, and E3 requires default OFF. **The single-group half is no longer
+true**: Erlangen/Berlin (Rakova 2013), **Amsterdam** (Olde Engberink 2017) and **Antwerp**
+(Van Regenmortel 2022), all human, all read on 2026-09-17. **E3 → E2, and E2 defaults ON.**
+The compartment is still inferred rather than measured, which is why it is E2 and not E1.
+
+| | storage OFF | storage ON |
+|---|---|---|
+| volume half-life | 13.33 h | 12.23 h |
+| sodium half-life | 12.52 h | 13.45 h |
+| **ratio** (Drummer **0.70**) | **1.065** | **0.910** |
+| chronic salt sensitivity | 1.96 | **1.96** |
+| Jensen's final window (122) | 110 | 102 |
+| states | 12 | **13** |
+
+**The ordering is now correct in sign.** The magnitudes are not, and directive 1.14 forbids
+chasing them: Drummer's half-lives are fitted to **n = 6 with no published dispersion** and
+support no interval at all. **The claim is the sign.**
+
+### AND IT FOUND A BUG THAT COULD NOT HAVE BEEN FOUND WITH THE BRANCH OFF
+
+`src/ensemble.jl`'s `member_remake` re-sizes every extensive state when a member's body mass
+changes. **`bf.Na_store` was missing from that list from the day ADR 0004 was written** —
+`structural_simplify` eliminated it while storage was off, so nothing could fail. A 90 kg
+member started with a **70 kg store**, which equilibrated over `tau_store` and left a
+**mass-dependent residue in arterial pressure**. MAP invariance went to **2.7e-4 against a
+1e-4 bar** and the body-size testset caught it on the first run.
+
+The list's own comment said adding a state *"silently creates an obligation here … so the
+tenth one is looked for rather than found."* **It was found. A disabled branch cannot be
+tested, and this is what was hiding in it.**
+
+### WHAT IT COST, AND ONE HARNESS CHECK NOW FAILS
+
+`validation/challenges.jl`'s **`urine volume, 6 h after infusion` went 708 → 852 mL against
+a band of 380–750 and FAILS.** The band's own source line reads *"BAND ASSUMED ±33%, no
+dispersion published"* around Lobo's mean of 563.
+
+**The band was not widened, and that is deliberate.** The mechanism is the one this whole
+change is about — sodium leaves the osmotically active pool, tonicity falls by 0.45 mEq/L,
+vasopressin is suppressed, and the water that sodium would have held is excreted. Plasma
+sodium moves less than half a milliequivalent, so Jensen's *"plasma sodium remained
+unchanged"* is not violated.
+
+**But the model was already 26% above Lobo's mean before this change**, and the store added
+144 mL on top. **The magnitude is a water-limb defect, not a storage defect**, and it is
+already documented with a number: `RN.URINE.SOLUTE_NONNA`'s note records a **measured ~30%
+over-response on the solute limb** against Kitada — 204 mOsm/day of swing across the salt
+arms where the data imply about 157. **That is the next item, and it is sourced.**
+
+---
+
 ## 4. NEXT, IN ORDER
 
 **Rewritten 2026-09-03, and item 1 was discharged the same day.** The previous list's
