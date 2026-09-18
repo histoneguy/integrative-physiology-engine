@@ -63,7 +63,7 @@ function build_raw_model(; body_mass = 70.0, storage::Bool = true,
                          thyroid_metabolic::Bool = false,
                          thyroid_secretion = 1.0,
                          sex::Symbol = :male,
-                         anp_gain = IPE.LedgerParams.CV_ANP_NATRIURETIC_GAIN,
+                         vn_gain = IPE.LedgerParams.CV_VOLUME_NATRIURETIC_GAIN,
                          anp_convexity = 0.0,
                          anp_adaptation::Bool = false,
                          anp_adapt_fraction = 0.0, anp_adapt_tau = 1.0)
@@ -78,7 +78,7 @@ function build_raw_model(; body_mass = 70.0, storage::Bool = true,
     # post-placeholder water limb: with adh = false, u_osm is pinned at U_base
     # so that Osm_load/U_base reproduces the old constant 1.7 L/day, and a
     # varying Osm_load would break that recovery. See Renal.jl and ADR 0008.
-    @named rn = Renal(; solute_tracking = adh, body_mass, sex, anp_gain,
+    @named rn = Renal(; solute_tracking = adh, body_mass, sex, vn_gain,
                       anp_convexity, anp_adaptation, anp_adapt_fraction,
                       anp_adapt_tau)
     # ADR 0022 makes this component SEX-DEPENDENT for the first time: the

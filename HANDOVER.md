@@ -4822,6 +4822,70 @@ was not worked around. **The abstracts carry the numbers with dispersion, which 
 reason these rows are possible**, and every row says so.
 
 
+### 3.58 THE ANP LABEL: THE GAIN WAS RIGHT AND THE ATTRIBUTION WAS NOT
+
+**Pre-registered in `validation/anp_label_prereg.md`. No number moved.** ADR 0010 carries
+the amendment.
+
+**§3.57 SAID "THE PATH LABELLED ANP CARRIES AN UNLABELLED SYMPATHETIC COMPONENT". THAT WAS
+TOO BROAD AND THIS PASS NARROWED IT.** ADR 0010's own Decision already said *"a lumped
+volume-keyed natriuretic term, algebraic in `V_blood`, with ANP as its named evidence base
+rather than as a state"*, and the ledger's `name` field already read **"Volume-keyed
+natriuretic gain"**. **The repository already knew it was a lump.**
+
+**WHAT IT DID NOT KNOW IS THAT "ANP AS ITS NAMED EVIDENCE BASE" IS WRONG.** The gain was
+estimated from **whole-body isotonic expansion** — Lobo 2001 and Jensen 2013 — which
+measures the **TOTAL** natriuretic response to a volume load. **ANP was the mechanism
+assumed to carry that total, never the thing measured.** §3.57's Lohmeier evidence is what
+makes the difference matter: renal sympathetic withdrawal carries a substantial share of
+exactly the response this gain was fitted to. **The gain is not wrong. The attribution
+was.**
+
+**AND THE `param_id` SAID ANP, WHICH IS WHAT APPEARS IN CODE.** Renamed:
+
+    CV.ANP.NATRIURETIC_GAIN  ->  CV.VOLUME.NATRIURETIC_GAIN      (585, unchanged)
+    RN.ANP.TAU               ->  RN.VOLUME_NATRIURESIS.TAU       (unchanged)
+    G_anp -> G_vn,  anp_sig -> vn_sig,  anp_gain -> vn_gain,  tau_anp -> tau_vn
+
+**NOTE PROSE AND PRIOR RECORDS WERE NOT REWRITTEN.** This ledger's notes are append-only;
+rewriting `G_anp` inside a note dated 2026-09-03 would falsify what was written then.
+Searching the old identifier still finds the history, and every renamed row says so.
+
+#### The share is deliberately NOT quantified
+
+Lohmeier's Den/Inn ratio of ~1.9 implies a nerve share near **47%** — but the authors
+report *"a latent impairment in sodium excretion from Den kidneys"*, so that is an **upper
+bound, not an estimate**; the protocol is ANG II hypertension and not a salt step; n = 5,
+abstract only. **The supportable statement is "between zero and about a half, biased
+high", and a parameter with that interval buys nothing.** Directive 1.14. The components
+are **named** — ANP, renal sympathetic withdrawal via cardiopulmonary receptors, and
+whatever else volume expansion does to tubular sodium handling — and left unsplit.
+
+#### The trap this exists to prevent
+
+**A future ANP infusion dose-response MUST NOT be added on top of this gain.** It already
+contains ANP's contribution together with the neural one. Sourcing an ANP-specific gain
+requires **splitting** this row, not supplementing it. That is now on the row, on ADR 0010
+and here.
+
+#### The output is NOT bit-identical, and the pre-registration demanded that it be
+
+**Recorded rather than defended.** `challenges.jl` differs in exactly three places:
+precompilation timings; one comment string carrying the rename; and **`relative drift, day
+200 to day 400`, 2.687e-10 -> 2.686e-10**, band 0 to 1e-9, PASS both sides.
+
+**Every physiological output is identical** — all 24 challenge lines, every value, every
+band — and the suite is green with no pin, band or tolerance touched. **The cause is
+floating-point reassociation**: `structural_simplify` orders terms by variable name, and
+`anp_sig` and `vn_sig` sort differently, so the same terms sum in a different order. The
+absolute difference is **1e-13 on a quantity of 3e-10**. `test/runtests.jl` already names
+this mechanism for the RAAS escape check.
+
+**The honest wording is "identical to within floating-point reassociation, with the one
+difference quoted", and that is what is used.** A pass that claimed bit-identity here would
+have been wrong by one digit and nobody would ever have checked.
+
+
 ## 4. NEXT, IN ORDER
 
 **Rewritten 2026-09-03, and item 1 was discharged the same day.** The previous list's

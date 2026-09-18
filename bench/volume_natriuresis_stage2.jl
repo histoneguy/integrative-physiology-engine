@@ -20,7 +20,7 @@
 # curvature it imposes. The pre-registration records in advance the expectation that
 # (A) WILL BE REFUTED, so that agreeing with that is not evidence.
 #
-# G_anp IS RE-SOLVED FOR EVERY c_anp, AGAINST THE CHRONIC ANCHOR AND NOTHING ELSE.
+# G_vn IS RE-SOLVED FOR EVERY c_anp, AGAINST THE CHRONIC ANCHOR AND NOTHING ELSE.
 # Section 4 permits exactly that and forbids solving anything against the 7 h
 # half-life. Without the re-solve, a convex term would be testing a model whose
 # chronic behaviour had silently moved.
@@ -49,7 +49,7 @@ function harness(c::Float64, gain::Float64)
         for o in O; occursin(n, String(Symbol(o.lhs))) && return s[o.lhs][i]; end
         NaN
     end
-    base = Dict{Any,Any}(pget("G_anp") => gain)
+    base = Dict{Any,Any}(pget("G_vn") => gain)
 
     s0 = solve(ODEProblem(sys, collect(base), (0.0, 60.0), Pair[]), Rodas5P();
                abstol = 1e-10, reltol = 1e-10)
@@ -89,7 +89,7 @@ function harness(c::Float64, gain::Float64)
 end
 
 """
-Solve G_anp so the chronic anchor is reproduced. Section 4's only licensed fit.
+Solve G_vn so the chronic anchor is reproduced. Section 4's only licensed fit.
 
 BISECTION, NOT SECANT, AND THE FIRST VERSION OF THIS FILE USED A SECANT THAT DID NOT
 CONVERGE. At c_anp = 100 and 200 it left the anchor at 1.887 against 1.9604 - 3.6%
@@ -125,12 +125,12 @@ end
 println("="^92)
 println("STAGE 2 - FORM (A), THE STATIC CONVEX NONLINEARITY, AND SECTION 3.1's TEST")
 println("="^92)
-@printf("  anchor: chronic salt sensitivity held at %.4f by re-solving G_anp\n", ANCHOR)
+@printf("  anchor: chronic salt sensitivity held at %.4f by re-solving G_vn\n", ANCHOR)
 @printf("  target: acute volume half-life %.0f h (Drummer 1992, PMID 1590419)\n", TARGET_H)
 println("  chronic relation sampled at 38, 68, 103, 154, 205, 230 mmol/day")
 println()
 @printf("  %-10s %9s %8s %9s %10s %10s\n",
-        "c_anp", "G_anp", "t1/2 h", "salt sens", "bend mmHg", "bend %")
+        "c_anp", "G_vn", "t1/2 h", "salt sens", "bend mmHg", "bend %")
 println("  " * "-"^88)
 
 results = []

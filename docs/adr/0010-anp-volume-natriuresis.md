@@ -864,3 +864,50 @@ gain**, and no adapting fraction satisfies both.
 is unchanged at 12 states. **This record's identifying experiment is now the conflict
 itself**: a study reporting both cumulative volume and fractional sodium excretion in the
 same subjects, or Drummer's full text in place of one half-life read from an abstract.
+---
+
+## Amendment 2026-09-18 — the identifier, and "ANP as its named evidence base"
+
+**Pre-registered in `validation/anp_label_prereg.md`. No number moved.**
+
+**THIS RECORD WAS ALREADY HALF RIGHT, WHICH IS WHY THE DEFECT SURVIVED.** The Decision
+above says, in its own words, that the component is *"a lumped volume-keyed natriuretic
+term, algebraic in `V_blood`, with ANP as its named evidence base rather than as a state"*,
+and the ledger's `name` field already read **"Volume-keyed natriuretic gain"**. A reader
+who got that far was correctly warned.
+
+**THE `param_id` DID NOT SAY IT, AND THE `param_id` IS WHAT APPEARS IN CODE.**
+`CV.ANP.NATRIURETIC_GAIN` and `RN.ANP.TAU` named one mechanism for a lumped quantity, in
+`LedgerParams.jl`, in every component that consumed them, and in the GUI. Renamed to
+**`CV.VOLUME.NATRIURETIC_GAIN`** and **`RN.VOLUME_NATRIURESIS.TAU`**; symbol `G_anp` ->
+`G_vn`; the `.jl` identifiers `anp_sig`, `anp_gain`, `tau_anp` -> `vn_sig`, `vn_gain`,
+`tau_vn`. **Note prose and prior records were NOT rewritten** — this ledger's notes are
+append-only and searching the old name still finds the history.
+
+**AND "ANP AS ITS NAMED EVIDENCE BASE" WAS ITSELF WRONG.** This gain was estimated from
+**whole-body isotonic expansion** — Lobo 2001 and Jensen 2013 — which measures the **total**
+natriuretic response to a volume load. **ANP was the mechanism assumed to carry that total,
+not the thing measured.** HANDOVER §3.57 supplied the counter-evidence: Lohmeier's
+split-bladder dogs give a denervated/innervated sodium ratio near **0.56** at sustained
+elevated pressure, so **renal sympathetic withdrawal carries a substantial share of exactly
+the response this gain was fitted to.** The gain is not wrong. The attribution was.
+
+**WHAT THE LUMP CONTAINS, NAMED AND NOT QUANTIFIED:** atrial natriuretic peptide; renal
+sympathetic withdrawal via cardiopulmonary volume receptors (ADR 0024); and whatever else
+volume expansion does to tubular sodium handling that neither covers.
+
+**THE SHARE IS DELIBERATELY NOT SPLIT.** Lohmeier's ratio implies a nerve share near 47%,
+but the authors report *"a latent impairment in sodium excretion from Den kidneys"*, making
+that an **upper bound rather than an estimate**; the protocol is ANG II hypertension and not
+a salt step; n = 5, abstract only. The supportable statement is **"between zero and about a
+half, biased high"**, and a parameter with that interval buys nothing. Directive 1.14.
+
+**THE TRAP THIS EXISTS TO PREVENT.** A future ANP infusion dose-response **must not be
+added on top of this gain.** It already contains ANP's contribution together with the
+neural one. Sourcing an ANP-specific gain requires **splitting** this row, not
+supplementing it.
+
+**Output is identical to within floating-point reassociation** — one drift diagnostic moved
+2.687e-10 to 2.686e-10 because renaming changes `structural_simplify`'s term ordering. Every
+challenge line, band and pin is untouched. Amendment 1 of the pre-registration has the full
+accounting.

@@ -16,7 +16,7 @@ using SciMLBase
 # stroke volume raised male TPR0 (CO fell at unchanged MAP), and dMAP/dV_ecf scales
 # with it. THE MODEL STAYS INSIDE THE HUMAN 1.70-2.30 mmHg per 100 mmol/day and
 # moves from near the floor toward the middle. NOTHING WAS FITTED TO PUT IT THERE -
-# deindexing_prereg.md section 4 forbids re-estimating G_pn or G_anp, and neither
+# deindexing_prereg.md section 4 forbids re-estimating G_pn or G_vn, and neither
 # moved.
 const SALT_MAP_SHIFT = 2.0042
 

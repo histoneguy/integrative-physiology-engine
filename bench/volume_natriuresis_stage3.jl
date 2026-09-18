@@ -51,7 +51,7 @@ function harness(k, tau, gain)
         for o in O; occursin(n, String(Symbol(o.lhs))) && return s[o.lhs][i]; end
         NaN
     end
-    base = Dict{Any,Any}(pget("G_anp") => gain)
+    base = Dict{Any,Any}(pget("G_vn") => gain)
 
     s0 = solve(ODEProblem(sys, collect(base), (0.0, 90.0), Pair[]), Rodas5P();
                abstol = 1e-10, reltol = 1e-10)
@@ -133,12 +133,12 @@ sloperatio(m) = ((m[3]-m[1])/(LEVELS[3]-LEVELS[1])) / ((m[6]-m[4])/(LEVELS[6]-LE
 println("="^100)
 println("STAGE 3 - FORM (B), THE ADAPTING TERM, AGAINST THE SAME DISCRIMINATOR")
 println("="^100)
-@printf("  anchor %.4f held by re-solving G_anp;  target half-life %.0f h\n", ANCHOR, TARGET_H)
+@printf("  anchor %.4f held by re-solving G_vn;  target half-life %.0f h\n", ANCHOR, TARGET_H)
 println("  form (A) for comparison: reached 7.55 h only at bend 19.8% and slope ratio 0.39")
 println("  the LINEAR form sits at bend 2.1% and slope ratio 1.11 - that is 'straight'")
 println()
 @printf("  %-26s %9s %8s %9s %8s %8s %9s\n",
-        "configuration", "G_anp", "t1/2 h", "salt sens", "bend %", "slope r", "Jensen %")
+        "configuration", "G_vn", "t1/2 h", "salt sens", "bend %", "slope r", "Jensen %")
 println("  " * "-"^96)
 
 for (k, tau) in ((0.0, 1.0), (1/3, 1.0), (0.5, 1.0), (2/3, 1.0), (0.75, 1.0),
@@ -154,7 +154,7 @@ println()
 println("  SECTION 8's DECOMPOSITION - the FORM at the OLD gain, before any re-solve:")
 r_old = harness(2/3, 1.0, G_OLD)
 @printf("  %-26s %9.1f %8.2f %9.4f %28.1f\n",
-        "k=0.667 at G_anp = 585", G_OLD, r_old.thalf, r_old.shift, r_old.jensen)
+        "k=0.667 at G_vn = 585", G_OLD, r_old.thalf, r_old.shift, r_old.jensen)
 println("  ^^ If the half-life improves HERE, the structure did it. If it only improves")
 println("     after the re-solve, the gain did it and the form is decoration.")
 println("="^100)

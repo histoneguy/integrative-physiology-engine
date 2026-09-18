@@ -61,13 +61,13 @@ state:
   FR_effective   G_pn*(MAP-MAP_ref)/Na_filtered is INVARIANT, because G_pn ~ s
                  and Na_filtered ~ s. So the reabsorbed fraction is intensive,
                  which is what makes the pressure-natriuresis loop size-free.
-  ANP term       anp_sig/Na_filtered must also be invariant, and the argument
+  ANP term       vn_sig/Na_filtered must also be invariant, and the argument
                  for it is the subtle one in this list. Its target is
-                 G_anp*(V_blood - V_blood_ref). Both volumes are mass-like and
+                 G_vn*(V_blood - V_blood_ref). Both volumes are mass-like and
                  CANCEL at the operating point for any body size, so what the
                  gain multiplies is a DEVIATION - and the deviation a salt step
                  produces is sodium-driven and therefore SURFACE-like, matching
-                 the Na_filtered underneath it. G_anp stays INTENSIVE.
+                 the Na_filtered underneath it. G_vn stays INTENSIVE.
                  Reasoning from the volumes instead of the deviation gives s/m,
                  which leaves every resting state exactly right and moves the
                  salt-step response by 8 percent at 85 kg. That mistake was made

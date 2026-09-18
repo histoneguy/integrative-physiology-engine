@@ -189,7 +189,7 @@ function member_remake(prob, sys, member; sex::Symbol = :male)
              # sodium-driven and therefore surface-like, matching the Na_filtered
              # it is divided by. Renal.jl carries the argument and the record of
              # getting it wrong first.
-             sys.rn.G_anp          => CV_ANP_NATRIURETIC_GAIN,
+             sys.rn.G_vn          => CV_VOLUME_NATRIURETIC_GAIN,
              sys.rn.V_blood_ref    => mz * LedgerParams.param(:CV_BLOOD_VOLUME_NOMINAL, sex),
              # RN.GFR.VOLUME_SENSITIVITY's reference volume, added 2026-09-03.
              # S_gfr_v and dV_gfr_max are both INTENSIVE - a fractional GFR change

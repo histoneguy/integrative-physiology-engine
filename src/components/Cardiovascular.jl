@@ -119,7 +119,7 @@ function Cardiovascular(; name, sex::Symbol = :male,
         # dimensionless, so neither scales with body mass. The extensive part of
         # erythropoiesis is the reference red cell volume Hct*BV0, which scales
         # through BV0 as it already did - the mistake HANDOVER section 3.30
-        # records for G_anp, avoided here by construction because the gain is
+        # records for G_vn, avoided here by construction because the gain is
         # stated as a fractional response to a fractional signal.
         tau_life = RBC_LIFESPAN            # day; the model's time base IS days
         G_epo    = RBC_PRODUCTION_GAIN     # dimensionless

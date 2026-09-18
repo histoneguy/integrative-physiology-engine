@@ -62,7 +62,7 @@ using ..LedgerParams:
     RN_URINE_SOLUTE_LOAD, RN_URINE_SOLUTE_NONNA, RN_URINE_OSM_PER_NA, RN_URINE_SOLUTE_NONNA_SLOPE,
     RN_AUTOREG_LOWER, RN_AUTOREG_UPPER, ADH_URINE_OSM_MAX, RN_URINE_SOLUTE_LOAD,
     CV_MAP_SETPOINT, BF_H2O_INTAKE_NOMINAL, BF_H2O_INSENSIBLE_LOSS,
-    BF_BODY_MASS_REFERENCE, BF_ECF_MASS_FRACTION, CV_ANP_NATRIURETIC_GAIN, RN_ANP_TAU,
+    BF_BODY_MASS_REFERENCE, BF_ECF_MASS_FRACTION, CV_VOLUME_NATRIURETIC_GAIN, RN_VOLUME_NATRIURESIS_TAU,
     RN_GFR_VOLUME_SENSITIVITY, RN_GFR_VOLUME_RANGE, RN_NA_MACULA_DENSA_FRACTION,
     RN_NA_PROXIMAL_DELIVERY,
     BF_NA_PLASMA_SETPOINT, BF_NA_INTAKE_NOMINAL
@@ -82,14 +82,14 @@ pressure self-regulating in the long run.
 function Renal(; name, solute_tracking::Bool = true,
                body_mass = BF_BODY_MASS_REFERENCE,
                sex::Symbol = :male,
-               anp_gain = CV_ANP_NATRIURETIC_GAIN,
+               vn_gain = CV_VOLUME_NATRIURETIC_GAIN,
                anp_convexity = 0.0,
                anp_adaptation::Bool = false,
                anp_adapt_fraction = 0.0, anp_adapt_tau = 1.0)
 
     # SURFACE-like for filtration, the pressure-natriuresis slope and the solute
     # load; MASS-like for the reference volumes. src/scaling.jl carries the
-    # closure argument, and G_anp below is the one parameter that needs both.
+    # closure argument, and G_vn below is the one parameter that needs both.
     sz = size_factor(body_mass)
     mz = mass_factor(body_mass)
 
@@ -193,7 +193,7 @@ function Renal(; name, solute_tracking::Bool = true,
         # VOLUME-KEYED NATRIURESIS - ADR 0010, DIAGNOSTIC, DEFAULT ZERO.
         #
         # EXTENSIVE, in (mEq/day)/L, and it scales exactly as G_pn does and for the
-        # same reason. G_anp = 0.0 recovers the pressure-only equation identically,
+        # same reason. G_vn = 0.0 recovers the pressure-only equation identically,
         # so every existing result is bit-identical unless this is passed a value.
         #
         # THIS IS NOT ADR 0010'S PROPOSED COMPONENT. It has no ANP state, no
@@ -204,7 +204,7 @@ function Renal(; name, solute_tracking::Bool = true,
         # validation/challenges.jl section 3 is the deficit it was built to test.
         # INTENSIVE, AND THAT IS NOT THE OBVIOUS CHOICE. G_pn multiplies a
         # PRESSURE, which is intensive, so G_pn must scale for the product to be
-        # a flow. G_anp multiplies a VOLUME, which already scales, so G_anp must
+        # a flow. G_vn multiplies a VOLUME, which already scales, so G_vn must
         # NOT scale or the term comes out as size squared. It was written
         # extensive first and the body-size testset caught it within one run:
         # the salt-step shift stopped being mass-invariant, 2.30 against 2.06
@@ -213,7 +213,7 @@ function Renal(; name, solute_tracking::Bool = true,
         # STILL INTENSIVE UNDER TWO-FACTOR SCALING, AND THE ARGUMENT FOR IT WAS
         # GOT WRONG ONCE ON 2026-09-05 BEFORE THE SUITE CAUGHT IT.
         #
-        # The tempting reasoning: G_anp turns a blood VOLUME excess into a sodium
+        # The tempting reasoning: G_vn turns a blood VOLUME excess into a sodium
         # EXCRETION, volume is mass-like and excretion is surface-like, so the
         # gain should carry sz/mz. That is wrong, and it is wrong because what
         # this gain multiplies is not a volume but a DEVIATION.
@@ -230,10 +230,10 @@ function Renal(; name, solute_tracking::Bool = true,
         # exactly right and only the salt-step RESPONSE moves - 2.040 mmHg at 85 kg
         # against 1.886 at the reference. The body-size testset's invariance
         # assertion is the only thing in the repository that could have seen it.
-        G_anp      = anp_gain
+        G_vn      = vn_gain
         # CONVEXITY OF THE VOLUME-NATRIURESIS RELATION. DIAGNOSTIC, DEFAULT ZERO,
         # AND ZERO IS BIT-IDENTICAL TO THE LINEAR FORM. It exists on exactly the
-        # precedent G_anp itself was introduced on: so that a question can be
+        # precedent G_vn itself was introduced on: so that a question can be
         # ANSWERED rather than argued, without a ledger row and without a claim.
         #
         # THE QUESTION. HANDOVER section 3.46 measured that this model clears an
@@ -256,9 +256,9 @@ function Renal(; name, solute_tracking::Bool = true,
         # WRITTEN. Section 6 branch F2: if the curvature it imposes on the chronic
         # pressure-sodium relation would have been visible in the human data, the
         # convex form is refuted. MEASURED, bench/volume_natriuresis_stage2.jl,
-        # with G_anp re-solved to hold the chronic anchor at every point:
+        # with G_vn re-solved to hold the chronic anchor at every point:
         #
-        #   c_anp     G_anp   t1/2 h   bend %   slope ratio 38-103 : 154-230
+        #   c_anp     G_vn   t1/2 h   bend %   slope ratio 38-103 : 154-230
         #   0         589.2   13.05      2.1%   1.11
         #   50        272.4    8.93     12.2%   0.54
         #   200       103.9    7.78     18.3%   0.41
@@ -277,7 +277,7 @@ function Renal(; name, solute_tracking::Bool = true,
         # is not guessed at.
         #
         # KEPT AT DEFAULT ZERO so the refutation can be re-run, on the precedent
-        # G_anp itself was introduced on. It is not a candidate.
+        # G_vn itself was introduced on. It is not a candidate.
         c_anp      = anp_convexity
         # FORM (B), THE ADAPTING TERM. DIAGNOSTIC, BEHIND anp_adaptation, AND THE
         # DEFAULT BUILD IS BIT-IDENTICAL - with the flag off the extra state is
@@ -305,7 +305,7 @@ function Renal(; name, solute_tracking::Bool = true,
         # the same device. This is that mechanism on the volume-keyed path.
         #
         # BOTH ROWS ARE INTENSIVE. k_adapt is a fraction; tau_adapt is a time. And
-        # NEITHER HAS A LEDGER ROW, on the precedent G_anp itself was introduced on:
+        # NEITHER HAS A LEDGER ROW, on the precedent G_vn itself was introduced on:
         # a diagnostic may exist without one, and must not acquire one until it is
         # sourced rather than solved.
         k_adapt    = anp_adapt_fraction
@@ -319,7 +319,7 @@ function Renal(; name, solute_tracking::Bool = true,
         # load takes DAYS, and sodium excretion is still elevated beyond 48 h.
         # A first-order lag makes the transient response SMALLER than the
         # steady-state gain, which is exactly the observed direction.
-        tau_anp    = RN_ANP_TAU
+        tau_vn    = RN_VOLUME_NATRIURESIS_TAU
     end
 
     vars = @variables begin
@@ -356,9 +356,9 @@ function Renal(; name, solute_tracking::Bool = true,
         FR_effective(t)     # unitless
         Osm_load(t)         # mOsm/day urinary solute load - NOW TRACKS SODIUM
         # STATE, added 2026-09-02. The lagged volume-keyed natriuretic signal, in
-        # mEq/day. Its steady-state value is G_anp*(V_blood - V_blood_ref), so the
-        # CHRONIC gain is G_anp exactly and the ACUTE gain is smaller by the lag.
-        anp_sig(t) = 0.0
+        # mEq/day. Its steady-state value is G_vn*(V_blood - V_blood_ref), so the
+        # CHRONIC gain is G_vn exactly and the ACUTE gain is smaller by the lag.
+        vn_sig(t) = 0.0
         anp_adapt(t) = 0.0   # FORM (B) - zero and inert unless anp_adaptation
     end
 
@@ -427,13 +427,13 @@ function Renal(; name, solute_tracking::Bool = true,
         # (1 - FR_Na), which is 0.0081. A 25% swing there is a 25% swing in
         # excretion and a 0.2% swing in reabsorption, which is the physiological
         # reading. renal_mod = 1.0 recovers the previous equation exactly.
-        # The anp_sig term is the volume-keyed natriuresis of ADR 0010. It enters
+        # The vn_sig term is the volume-keyed natriuresis of ADR 0010. It enters
         # with the same sign and the same normalisation as the pressure term:
-        # Na_excr gains anp_sig, whose target is G_anp*(V_blood - V_blood_ref), so
+        # Na_excr gains vn_sig, whose target is G_vn*(V_blood - V_blood_ref), so
         # sodium excretion rises when BLOOD volume is above its reference,
-        # independently of pressure. G_anp = 0 recovers the pressure-only form.
+        # independently of pressure. G_vn = 0 recovers the pressure-only form.
         #
-        # CORRECTED 2026-09-03. This comment read "G_anp*(V_ecf - V_ecf_ref)" and
+        # CORRECTED 2026-09-03. This comment read "G_vn*(V_ecf - V_ecf_ref)" and
         # said "extracellular volume". The path was RE-KEYED to V_blood on
         # 2026-09-02, because atrial stretch is intravascular, and the comment was
         # not carried over. It was harmless while no V_ecf_ref existed and stopped
@@ -443,7 +443,7 @@ function Renal(; name, solute_tracking::Bool = true,
         # contradicts, twice recorded, and no gate sees it.
         FR_effective ~ clamp(1.0 - (1.0 - FR_Na) * renal_mod + fr_mod -
                              G_pn * (MAP - MAP_ref) / Na_filtered -
-                             anp_sig / Na_filtered, 0.0, 1.0),
+                             vn_sig / Na_filtered, 0.0, 1.0),
 
         # DISTAL SODIUM DELIVERY, ADR 0021. THE SODIUM EQUATION ABOVE IS UNTOUCHED
         # AND THAT IS THE POINT: this defines a VARIABLE, it does not restructure
@@ -460,7 +460,7 @@ function Renal(; name, solute_tracking::Bool = true,
         # amendment A6 and HANDOVER section 3.32 record it in full.
         #
         # The argument is a priori and the run is only how it was noticed. G_pn and
-        # G_anp are CALIBRATED AGAINST SODIUM EXCRETION - the chronic salt step and
+        # G_vn are CALIBRATED AGAINST SODIUM EXCRETION - the chronic salt step and
         # Lobo's six-hour time course. The macula densa arm returns to sodium
         # excretion through renin, aldosterone and fr_mod. Feeding a gain that was
         # fitted to an excretion into a loop that produces that same excretion
@@ -492,7 +492,7 @@ function Renal(; name, solute_tracking::Bool = true,
         # THE MACULA DENSA SIGNAL, as a FRACTIONAL deficit of delivery below its
         # reference. Fractional on purpose: a dimensionless drive cannot inherit a
         # body-size scaling, which is the mistake section 3.30 records making with
-        # G_anp and which is avoided here by construction rather than by care.
+        # G_vn and which is avoided here by construction rather than by care.
         #
         # SIGNED, NOT RECTIFIED, unlike the pressure arm. The pressure relation is
         # rectified because renin plateaus above a measured threshold; nothing
@@ -501,11 +501,11 @@ function Renal(; name, solute_tracking::Bool = true,
         md_drive ~ (Na_distal_ref - Na_distal) / Na_distal_ref,
 
         # First-order approach to the volume-keyed natriuretic target.
-        # c_anp = 0.0 recovers (G_anp*(V_blood - V_blood_ref) - anp_sig)/tau_anp
+        # c_anp = 0.0 recovers (G_vn*(V_blood - V_blood_ref) - vn_sig)/tau_vn
         # EXACTLY, so every existing result is bit-identical by construction.
-        D(anp_sig) ~ (G_anp * (V_blood - V_blood_ref) *
+        D(vn_sig) ~ (G_vn * (V_blood - V_blood_ref) *
                       (1.0 + c_anp * abs(V_blood - V_blood_ref) / V_blood_ref)
-                      - anp_adapt - anp_sig) / tau_anp,
+                      - anp_adapt - vn_sig) / tau_vn,
 
         Na_reabsorbed ~ FR_effective * Na_filtered,
         Na_excr       ~ Na_filtered - Na_reabsorbed,
@@ -572,7 +572,7 @@ function Renal(; name, solute_tracking::Bool = true,
     # zero, which structural_simplify eliminates - the default build stays at 12
     # states and every existing result is bit-identical by construction.
     append!(eqs, anp_adaptation ?
-            [D(anp_adapt) ~ (k_adapt * G_anp * (V_blood - V_blood_ref) - anp_adapt) /
+            [D(anp_adapt) ~ (k_adapt * G_vn * (V_blood - V_blood_ref) - anp_adapt) /
                             tau_adapt] :
             [D(anp_adapt) ~ 0.0])
 
