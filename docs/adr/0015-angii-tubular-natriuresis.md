@@ -282,3 +282,95 @@ experiments may apply to it, and that has never been assessed for this record.
 - **The E1/E3 tiering stands**, including the declared conflict that the E1 claim is
   male-specific where it is quantified — Pechère-Bertschi 2002 finds no renal haemodynamic
   change in healthy women in the follicular phase.
+
+---
+
+## Source search — 2026-09-19. No human source exists; Hall 1984 supplies the magnitude
+
+**At the owner's instruction: look for a human source, and if none exists go with Hall.**
+**No parameter entered, no code changed.** This records what the search found.
+
+### 1. NO HUMAN SOURCE EXISTS, AND THE REASON IS STRUCTURAL
+
+Searched for the direct tubular sodium effect of angiotensin II **separated from the
+haemodynamic route**. The best human candidate is **Eiskjaer H, Nielsen CB, Sørensen SS,
+Pedersen EB. Eur J Clin Invest 1996;26(7):584-95, PMID 8864421** — **69 healthy subjects**,
+ANG II at 1.5 ng·kg⁻¹·min⁻¹, **lithium clearance to resolve segmental tubular
+reabsorption**, which is exactly the right instrument.
+
+**It still does not isolate the quantity.** Its own abstract: ANG II alone *"caused a
+decrease in glomerular filtration rate (GFR), renal plasma flow, urinary absolute and
+fractional excretion of sodium…"* Every human ANG II infusion moves GFR and renal plasma
+flow together with tubular handling — Eadington 1991 (PMID 1832351) measures the same
+pattern, ERPF 665 → 498 and GFR 113 → 100 — so the tubular and haemodynamic routes stay
+**confounded in every human preparation.**
+
+**The manoeuvre that separates them is servo-control of renal perfusion pressure, and it is
+not performable in a human.** That is the same ethical ceiling already recorded for
+`RN.PRESSURE_NATRIURESIS.SLOPE` and for `RAAS.RENIN.PRESSURE_THRESHOLD`. **Directive 1.15
+applies and Hall is the source.**
+
+### 2. AND HALL 1984 IS A BETTER PAPER THAN THE HALL 1980 THIS RECORD NAMES
+
+**Hall JE, Granger JP, Hester RL, Coleman TG, Smith MJ Jr, Cross RB.** *Mechanisms of
+escape from sodium retention during angiotensin II hypertension.* Am J Physiol
+1984;246(5 Pt 2):F627-34. **PMID 6720967. ABSTRACT ONLY — closed, no PMC record.**
+
+Eight conscious dogs, ANG II at 5 ng·kg⁻¹·min⁻¹, renal arterial pressure either free or
+**held by a servo-controlled aortic occluder**:
+
+| | RAP free | RAP servo-controlled |
+|---|---|---|
+| cumulative Na balance, 6 days | no significant change | **+210 ± 37 mEq** |
+| Na iothalamate space | no significant change | **+1,158 ± 244 mL** |
+| MAP | 100 ± 3 → 132 ± 2, plateaus by day 3 | keeps rising, **157 ± 3** at day 6 |
+
+Three of the eight servo-controlled dogs developed **pulmonary oedema** within 4–6 days.
+
+**THE MAGNITUDE THIS RECORD ASKED FOR: 210/6 = 35 ± 6 mEq/day** of ANG II-driven sodium
+retention **at fixed renal perfusion pressure.** Two significant figures, directive 1.13.
+It is a **measurement, not a fit**, and it is not derived from any salt-sensitivity data —
+which is what §"What is NOT decided" required.
+
+**AND IT INDEPENDENTLY CONFIRMS THIS RECORD'S STRUCTURAL CHOICE.** Hall's conclusion is
+that *"a rise in RAP is essential in allowing the kidneys to escape from the chronic
+Na-retaining actions of ANG II."* **Escape is PRESSURE-mediated, not intrinsic to the
+tubular effect** — which is exactly why this record specifies `fr_angii` as **not subject
+to `esc`**. The design was right before the source was found.
+
+**Hall 1980 (PMID 6254369 / 7004743) remains the FALSIFIABLE TEST and is untouched by
+this**, so the test stays independent of the magnitude: control dogs take **< 7 mmHg**
+across 5 → 500 meq/day, AngII-clamped dogs take **+42%**, about a six-fold amplification
+against this record's ≥ 2× threshold.
+
+### 3. THE BLOCKER HAS MOVED, AND THE NEW ONE IS PRECISE
+
+**It is no longer "needs a magnitude."** It is:
+
+> **The model has no absolute angiotensin II scale.** `pra` is normalised so that 1.0 is
+> the rectified plateau, and resting `pra` is about 1.30. Hall's magnitude is stated at a
+> specific **exogenous dose**, 5 ng·kg⁻¹·min⁻¹. Placing that dose on the model's `pra` axis
+> needs a **dose → plasma concentration → normalised activity** chain, and no source for it
+> was found.
+
+**This is ADR 0010's obstacle in a different subsystem**, and that record solved it by
+refusing to carry an absolute hormone concentration: *"carrying an explicit ANP
+concentration state would add a variable the model cannot use correctly."* The same
+reasoning applies here and the same answer may be right.
+
+**WHAT WOULD CLOSE IT**, in order of preference:
+
+1. **Hall 1984's full text**, which likely reports plasma ANG II for both arms — that would
+   give the dose-to-concentration anchor directly. Am J Physiol 1984;246:F627-34, closed.
+2. **Any conscious-dog study reporting plasma ANG II during a 5 ng·kg⁻¹·min⁻¹ infusion
+   against its own control.** One number.
+3. **A reformulation that avoids the absolute scale entirely** — expressing `fr_angii`
+   against the model's own `pra` excursion. **That must not be calibrated against Hall
+   1980's clamp contrast**, which is this record's test.
+
+### 4. STATUS
+
+**Still `Proposed`.** The magnitude is now **sourced and recorded**; what is missing is the
+mapping, not the measurement. Nothing was entered, because entering 35 mEq/day without the
+`pra` anchor would mean choosing the anchor to make the arithmetic work — a fit wearing a
+citation.
