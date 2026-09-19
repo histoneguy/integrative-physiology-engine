@@ -1,6 +1,6 @@
 # ADR 0015: A non-escaping AngII tubular term, so sodium balance is not reached by pressure alone
 
-**Status:** Proposed
+**Status:** Provisional — **built and sourced 2026-09-19, and REFUTED BY ITS OWN FALSIFIABLE TEST.** The term exists, its magnitude comes from Hall 1984, and it is **off by default** because pinning it amplifies the salt-step shift 1.2× against the ≥ 2× this record requires. See the Result at the foot.
 **Date:** 2026-09-02
 **Evidence tier:** MIXED — E1, E3.
 
@@ -374,3 +374,78 @@ reasoning applies here and the same answer may be right.
 mapping, not the measurement. Nothing was entered, because entering 35 mEq/day without the
 `pra` anchor would mean choosing the anchor to make the arithmetic work — a fit wearing a
 citation.
+
+---
+
+## Result — 2026-09-19. Built, sourced, and REFUTED by this record's own test
+
+**Pre-registered in `validation/angii_tubular_prereg.md`, before the term was written.**
+Branches **A3 and A4 both fired.** Nothing was re-solved to rescue it.
+
+### What was built
+
+    fr_angii ~ k_angii * (pra - pra_ref)          zero at the operating point
+    fr_mod   ~ (fr_raw - esc) + fr_angii          OUTSIDE esc, as this record specified
+
+`RAAS.ANGII.TUBULAR_GAIN` = **0.0011** per unit `pra`, from Hall 1984's servo-controlled
+arm: 24 ± 5 mEq/day of retention at **fixed renal perfusion pressure with plasma
+aldosterone already back at control**, expressed as a fraction of the filtered load and
+anchored on Hall's own statement that his dose reached sodium-deprivation ANG II levels.
+
+**The operating point does not move.** MAP 87.0, `Na_excr` 205.0, urine 1.7 L/day, identical
+with the term on and off, and the model is still 13 states.
+
+### The refutation
+
+| | required | measured |
+|---|---|---|
+| **pinning the term amplifies the salt-step shift** | **≥ 2×** (this record) | **1.2×** |
+| Hall 1980's own clamp contrast | — | **about 6×** |
+
+| chronic salt sensitivity | |
+|---|---|
+| term OFF | **2.0** |
+| term ON | **1.6** — outside the human 1.70–2.30 |
+
+**The term is roughly three to five times too weak to carry what Hall's clamp shows**, and
+it takes the chronic sensitivity out of the human band on the way. **A3 says report and
+leave it off; A4 says report the refutation regardless of how well the magnitude was
+sourced.** Both were followed.
+
+### The sign and the direction are RIGHT, which is what makes this a magnitude result
+
+Switching the term on **lowers** salt sensitivity, because angiotensin II falling on high
+salt **substitutes for a pressure rise**. That is Hall 1980's own conclusion — that ANG II
+allows sodium balance *"without large fluctuations in glomerular filtration rate or arterial
+pressure."* Pinning it removes the substitution and the sensitivity rises. **Everything
+qualitative this record predicted is reproduced. Only the size fails.**
+
+So this is **not** a refutation of the structure. It is a refutation of the claim that a
+term of this magnitude accounts for the clamp contrast.
+
+### What the failure most likely means, and none of it was acted on
+
+1. **The dog → human fractional transfer** is the weakest link the pre-registration named,
+   and it is the obvious suspect for a factor of three.
+2. **The `pra` anchor.** Mapping "sodium deprivation" onto this model's 38 mEq/day arm is
+   this repository's judgement, not Hall's. A more extreme anchor gives a larger `k_angii`.
+3. **Hall's clamp is not the model's clamp.** He infused exogenous ANG II with endogenous
+   renin *suppressed* (PRA 0.27 → 0.04); the model's `pra` conflates the two and cannot
+   represent that dissociation. This is the deepest of the three and the hardest to fix.
+4. **The term may not be the whole mechanism.** ADR 0015's own Consequences already said
+   this record is *"necessary and nowhere near sufficient."* The measured 1.2× is that
+   sentence with a number attached.
+
+**None of these was pursued**, because pursuing them in the pass that found the failure is
+choosing the anchor that makes the arithmetic work.
+
+### What is now true that was not
+
+- **The magnitude is sourced**, from the only preparation that can isolate it, with the
+  full text read.
+- **The structure is confirmed by the source** — escape is pressure-mediated, so the term
+  belongs outside `esc`.
+- **The record's falsifiable test has been RUN**, which it never had been. It was written to
+  be able to fail and it failed.
+- **`RAAS.PRA.REFERENCE`** was added so the term is zero at the operating point; it is a
+  model-internal quantity and carries no claim about human plasma renin activity.

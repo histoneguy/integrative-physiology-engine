@@ -61,6 +61,7 @@ function build_raw_model(; body_mass = 70.0, storage::Bool = true,
                          thyroid::Bool = true,
                          potassium::Bool = true,
                          thyroid_metabolic::Bool = true,
+                         angii_tubular::Bool = false,
                          thyroid_secretion = 1.0,
                          sex::Symbol = :male,
                          vn_gain = IPE.LedgerParams.CV_VOLUME_NATRIURETIC_GAIN,
@@ -84,7 +85,14 @@ function build_raw_model(; body_mass = 70.0, storage::Bool = true,
     # ADR 0022 makes this component SEX-DEPENDENT for the first time: the
     # chronotropic gain is a male/female pair. The vasomotor gain is not.
     @named br = Baroreflex(; enabled = baroreflex, chronotropic, sex)
-    @named ra = Raas(; enabled = raas)
+    # ADR 0015'S TERM IS BUILT, SOURCED AND OFF. angii_tubular_prereg.md branches
+    # A3 and A4 both fired: with Hall 1984's magnitude the chronic salt sensitivity
+    # leaves 1.70-2.30, and ADR 0015's own falsifiable test - pinning the term must
+    # amplify the salt-step shift at least 2x - gives 1.2x against Hall's own ~6x.
+    # The pre-registration forbids re-solving anything to rescue it, so the row
+    # keeps its sourced value and the term defaults OFF.
+    @named ra = Raas(; enabled = raas,
+                     k_angii_override = angii_tubular ? -1.0 : 0.0)
     @named ad = Adh(; enabled = adh)
     # ADR 0017. Quasi-static, no state, and its only outward flux is water.
     @named rs = Respiratory(; body_mass, enabled = respiration)
