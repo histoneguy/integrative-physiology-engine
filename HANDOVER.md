@@ -5088,6 +5088,81 @@ test rather than a failure** — and `THY.TSH.INTERCEPT` is still the one row of
 second source.
 
 
+### 3.62 ADR 0015 IS BUILT, SOURCED, AND REFUTED BY ITS OWN TEST
+
+**Pre-registered in `validation/angii_tubular_prereg.md`. ADR 0015 is `Provisional` and the
+term is OFF.** Nothing was re-solved.
+
+#### The owner supplied the paper and it cleared the blocker in Hall's own words
+
+§3.61's search recorded that **no human source exists** — every human ANG II infusion moves
+GFR and renal plasma flow with tubular handling, and servo-controlling renal perfusion
+pressure cannot be done in a person. The precise blocker was the **mapping**: the model has
+no absolute ANG II scale.
+
+**Hall 1984's full text supplies it as a physiological state rather than a concentration:**
+the 5 ng·kg⁻¹·min⁻¹ dose was *"calculated to increase plasma ANG II concentration to levels
+similar to those found during sodium deprivation."* That is expressible on the `pra` axis.
+
+#### And it corrected the magnitude I had quoted the day before
+
+**The +210 meq/6 days = 35 meq/day figure is a FRONT-LOADED AVERAGE** over a transient
+Table 1's free arm shows directly. The day-6 rate is **80 − 56 = 24 ± 5 mEq/day**, and that
+is what a non-escaping steady term represents, because at day 6:
+
+- renal perfusion pressure is **still clamped** — the pressure route excluded by the
+  preparation;
+- plasma aldosterone has **returned to control**, 4.9 ± 0.8 against 4.6 ± 1.0 — the
+  aldosterone route excluded **by measurement**;
+- retention continues anyway.
+
+**Both competing routes excluded, one by construction and one by measurement.** That is
+`fr_angii` exactly as ADR 0015 defines it.
+
+#### The refutation
+
+| | required | measured |
+|---|---|---|
+| pinning the term amplifies the salt-step shift | **≥ 2×** (ADR 0015) | **1.2×** |
+| Hall 1980's own clamp contrast | — | about **6×** |
+
+| chronic salt sensitivity | |
+|---|---|
+| term OFF | **2.0** |
+| term ON | **1.6** — outside 1.70–2.30 |
+
+**Branches A3 and A4 both fired**, and §8 of the pre-registration had named burying A4 as
+the quiet failure. The term is about **three to five times too weak** to carry what the
+clamp shows.
+
+#### The sign and direction are RIGHT, so this is a magnitude result and not a structural one
+
+Switching the term on **lowers** salt sensitivity, because ANG II falling on high salt
+**substitutes for a pressure rise** — which is Hall 1980's own conclusion. Pinning it
+removes the substitution and sensitivity rises. **Everything ADR 0015 predicted
+qualitatively is reproduced; only the size fails.**
+
+**Hall also confirmed the structure independently:** escape is pressure-mediated — releasing
+the occluder took urinary sodium 56 → 322 mEq/day in a day — so the term belongs **outside**
+`esc`, which ADR 0015 specified in 2026-09-02 before any source existed.
+
+#### Four candidate explanations, none pursued
+
+The dog → human fractional transfer; the `pra` anchor, which is this repository's judgement
+and not Hall's; **Hall's clamp is not the model's clamp**, since he suppressed endogenous
+renin while the model's `pra` conflates renin with ANG II; and ADR 0015's own admission that
+the record is *"necessary and nowhere near sufficient"* — the 1.2× is that sentence with a
+number attached. **Pursuing any of them in the pass that found the failure is choosing the
+anchor that makes the arithmetic work.**
+
+#### And a directive was enforced against me rather than by me
+
+The owner stopped this pass to point out that reporting MAP to nine decimal places is
+meaningless. **`tools/check_tolerances.py` enforces exactly that rule on tests — I built it
+on 2026-09-18 and then kept breaking it in prose.** A gate that binds the code and not the
+write-up leaves the same error in the place people actually read. Resting MAP is **87.0**.
+
+
 ## 4. NEXT, IN ORDER
 
 **Rewritten 2026-09-03, and item 1 was discharged the same day.** The previous list's

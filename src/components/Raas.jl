@@ -139,14 +139,15 @@ using ..LedgerParams:
     CV_MAP_SETPOINT, RAAS_RENIN_PRESSURE_THRESHOLD, RAAS_RENIN_PRESSURE_GAIN,
     RAAS_ALDO_PRA_LOG_SLOPE, RAAS_ALDO_REABSORPTION_GAIN, RAAS_PRA_TAU,
     RAAS_ALDO_ESCAPE_TAU, RN_MD_RENIN_GAIN, RAAS_ALDO_K_GAIN, K_PLASMA_REFERENCE,
-    RAAS_RENIN_SYMPATHETIC_THRESHOLD_SHIFT, BR_OPEN_LOOP_GAIN
+    RAAS_RENIN_SYMPATHETIC_THRESHOLD_SHIFT, BR_OPEN_LOOP_GAIN,
+    RAAS_ANGII_TUBULAR_GAIN, RAAS_PRA_REFERENCE
 
 """
     Raas(; name, enabled = true)
 
 Lumped renin-angiotensin-aldosterone system. See the module docstring.
 """
-function Raas(; name, enabled::Bool = true)
+function Raas(; name, enabled::Bool = true, pra_clamp = 0.0, k_angii_override = 0.0)
 
     pars = @parameters begin
         MAP_ref = CV_MAP_SETPOINT                    # mmHg
@@ -171,6 +172,22 @@ function Raas(; name, enabled::Bool = true)
         # was introduced on, and it costs no new structural variant.
         dP_sym  = RAAS_RENIN_SYMPATHETIC_THRESHOLD_SHIFT   # mmHg
         G_br    = BR_OPEN_LOOP_GAIN                  # unitless, REUSED
+        # ADR 0015'S TERM, BUILT 2026-09-19. Hall 1984 servo-controlled dogs:
+        # at FIXED renal perfusion pressure, with plasma aldosterone back at
+        # control, angiotensin II still retains 24 mEq/day. Escape is
+        # PRESSURE-mediated, so this term sits OUTSIDE esc by construction.
+        # k_angii = 0 recovers the previous model exactly.
+        # k_angii_override < 0 means USE THE LEDGER VALUE; 0 means the term is
+        # OFF. Default OFF - see the note in assemble.jl and ADR 0015.
+        k_angii = k_angii_override < 0.0 ? RAAS_ANGII_TUBULAR_GAIN : k_angii_override
+        pra_ref = RAAS_PRA_REFERENCE                 # unitless
+        # DIAGNOSTIC, DEFAULT 0 = OFF, and it has NO LEDGER ROW - the precedent
+        # anp_convexity and anp_adaptation were introduced on. It exists so that
+        # ADR 0015's falsifiable test can be RUN rather than argued: Hall 1980
+        # clamped angiotensin II so it could not fall as sodium intake rose, and
+        # this pins the pra that fr_angii sees to do the same. It is not a
+        # physiological parameter and must never be given one.
+        p_clamp = pra_clamp                          # unitless, 0 = free
     end
 
     vars = @variables begin
@@ -185,6 +202,7 @@ function Raas(; name, enabled::Bool = true)
         K_p(t)                     # mmol/L   INPUT from potassium
         rsna(t)                    # unitless renal sympathetic activity, -1..1
         P_thr_eff(t)               # mmHg     threshold after the sympathetic shift
+        fr_angii(t)                # unitless NON-ESCAPING AngII tubular term
     end
 
     eqs = if enabled
@@ -276,12 +294,33 @@ function Raas(; name, enabled::Bool = true)
             # is full on arrival and zero at steady state. This is the whole
             # reason aldosterone does not permanently retain sodium in vivo.
             D(esc) ~ (fr_raw - esc) / tau_esc,
-            fr_mod ~ fr_raw - esc,
+
+            # ADR 0015. THE DIRECT ANGIOTENSIN II TUBULAR TERM, AND IT DOES NOT
+            # ESCAPE. Hall 1984 (PMID 6720967) servo-controlled the renal perfusion
+            # pressure of eight conscious dogs during ANG II infusion. At day 6 the
+            # pressure was still clamped, plasma aldosterone had RETURNED TO CONTROL
+            # (4.9 +/- 0.8 vs 4.6 +/- 1.0), and they were still retaining 24 +/- 5
+            # mEq/day. Both competing routes excluded - one by the preparation, one
+            # by measurement - so what remains is the direct tubular action.
+            #
+            # IT SITS OUTSIDE esc BECAUSE HALL SHOWED ESCAPE IS PRESSURE-MEDIATED:
+            # releasing the occluder took urinary sodium from 56 to 322 mEq/day in a
+            # day. ADR 0015 specified this structure in 2026-09-02, before the source
+            # was found, and the source confirms it.
+            #
+            # ZERO AT THE OPERATING POINT by construction, so nothing pinned moves.
+            # k_angii = 0 recovers the previous model exactly - the precedent g_md
+            # and dP_sym were introduced on.
+            fr_angii ~ k_angii *
+                       (ifelse(p_clamp > 0.0, p_clamp, pra) - pra_ref),
+
+            fr_mod ~ (fr_raw - esc) + fr_angii,
         ]
     else
         [
             rsna        ~ 0.0,
             P_thr_eff   ~ P_thr,
+            fr_angii    ~ 0.0,
             renin_drive ~ 0.0,
             D(pra)      ~ 0.0,
             aldo        ~ 0.0,
