@@ -449,3 +449,73 @@ choosing the anchor that makes the arithmetic work.
   be able to fail and it failed.
 - **`RAAS.PRA.REFERENCE`** was added so the term is zero at the operating point; it is a
   model-internal quantity and carries no claim about human plasma renin activity.
+
+---
+
+## Corroboration — 2026-09-19. Hall 1977 says the relation SATURATES, which is why the term is weak
+
+**Full text supplied by the owner and read. No value changed, no code changed.**
+
+**Hall JE, Guyton AC, Trippodo NC, Lohmeier TE, McCaa RE, Cowley AW Jr.** *Intrarenal
+control of electrolyte excretion by angiotensin II.* Am J Physiol 1977;232(6):F538-F544.
+**PMID 879288.**
+
+### It is the endogenous version of the same experiment, and it needs no dose mapping
+
+Instead of infusing exogenous angiotensin II, Hall **blocked the endogenous hormone**
+with intrarenal [Sar¹,Ile⁸]angiotensin II — so the contrast is a dog's own angiotensin II
+acting, against the same dog with it blocked, in the same kidney. **The anchor problem that
+the 2026-09-19 search recorded as the precise blocker does not arise at all here.**
+
+### The normal-sodium arm sits at this model's own operating point
+
+Five normal dogs, Table 1, 90 min of blockade:
+
+| | control | AngII blocked |
+|---|---|---|
+| **FE_Na** | **1.23 ± 0.19 %** | **1.74 ± 0.28 %** |
+| GFR, ml/min per g | 0.83 ± 0.08 | 0.86 ± 0.11 — n.s. |
+| MAP, mmHg | 128.2 ± 7.2 | 131.6 ± 5.8 |
+
+**GFR and pressure unchanged, so the 0.51 percentage-point change is very nearly purely
+tubular.** Endogenous angiotensin II accounts for **0.0051 of the filtered load** at normal
+sodium status. And in four sodium-depleted dogs the blocker produced *"no consistent changes
+in plasma aldosterone concentration"* — **the same exclusion Hall 1984 reaches by a
+different design.**
+
+### The two studies together say the relation SATURATES
+
+| | fraction of filtered load |
+|---|---|
+| **total** AngII-dependent reabsorption at normal sodium (1977) | **0.0051** |
+| **marginal** increment on raising AngII to sodium-deprivation levels (1984) | **0.00144** |
+| ratio | **0.28** |
+
+**Roughly a quarter of the resting effect is added by taking angiotensin II to
+sodium-deprivation levels.** The tubular action is largely **saturated at normal
+angiotensin II**.
+
+### Which explains the refutation rather than overturning it
+
+**The marginal slope really is small — that is physiology, not a sourcing error** — so the
+measured **1.2× against the required 2× stands**. What this indicts is the **FORM**:
+`fr_angii` linear in `pra` cannot represent a relation that is mostly saturated at rest with
+a small marginal slope.
+
+### A falsifiable prediction, recorded before it is tried
+
+**A saturating form has a LARGER LOCAL SLOPE AT REST** than a straight line fitted across
+`pra` 1.296 → 2.58, because the line averages over a range the curve flattens across. **So
+replacing the linear term with a saturating one should RAISE the amplification above 1.2×.**
+
+**If it does not, the form is not what is wrong**, and ADR 0015's own suspicion — that this
+record is *"necessary and nowhere near sufficient"* — is the answer.
+
+### What these numbers do NOT support
+
+**Two points do not establish a saturation curve; they are consistent with one.** The
+preparations differ: 1977 is intrarenal blockade in dogs whose kidneys averaged 59.5 ± 4.1 g;
+1984 is systemic infusion with servo-controlled pressure. **And the sodium-depleted arm of
+1977 is NOT usable for the tubular effect** — glomerular filtration rate rose 22% in it, and
+the paper says that accounts for an important part of the natriuresis. **Only the
+normal-sodium arm is clean.**
