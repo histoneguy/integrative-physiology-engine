@@ -65,6 +65,18 @@ this.
 Repeated identical calls are already free, so memoising them buys nothing; it was tried and
 reverted. See HANDOVER §5.
 
+**CI's Julia job varied 3 min to 23 min and it was NOT the suite — MEASURED 2026-09-20.**
+Step timings on two runs of an identical tree: cache restore 17 s both, `buildpkg` 3 s
+both, **`julia-runtest` 1233 s against 186 s**, and the suite itself **2m33.4s against
+2m31.7s**. The suite is constant; the variance was **entirely Julia precompilation**.
+
+The cause was `on: [push, pull_request]` in both workflows, which ran everything **twice
+per push on a PR branch**. Each `Julia tests` run saves a **988 MiB** depot cache and each
+Diagnostics run **418 MiB**, so one push wrote about **2.8 GB against GitHub's 10 GB
+per-repository limit** — roughly three pushes evicted everything, the restore key missed,
+and the next run recompiled all 322 dependencies. Both workflows now take `push` on `main`
+only, plus `pull_request`. **Job names were not touched.**
+
 **A SINGLE WALL-CLOCK TIMING ON THIS MACHINE IS NOT EVIDENCE.** The same commit measured
 2m14s and 5m40s in one session. Compare paired runs taken back to back, or CI job
 durations.
