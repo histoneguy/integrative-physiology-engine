@@ -494,10 +494,37 @@ function Renal(; name, solute_tracking::Bool = true,
         # body-size scaling, which is the mistake section 3.30 records making with
         # G_vn and which is avoided here by construction rather than by care.
         #
-        # SIGNED, NOT RECTIFIED, unlike the pressure arm. The pressure relation is
-        # rectified because renin plateaus above a measured threshold; nothing
-        # found says the macula densa arm does, and inventing a threshold to match
-        # the other arm's shape would be a functional form chosen here.
+        # SIGNED, NOT RECTIFIED, unlike the pressure arm - AND THAT IS NOW KNOWN
+        # TO BE WRONG. This comment used to read "nothing found says the macula
+        # densa arm does [plateau], and inventing a threshold to match the other
+        # arm's shape would be a functional form chosen here."
+        #
+        # LORENZ 1990 IS THE SOMETHING FOUND (PMID 2197878, full text read,
+        # macula_densa_lorenz_prereg.md). Isolated perfused rabbit juxtaglomerular
+        # apparatus, pressure and renal nerves physically absent. Renin secretion
+        # was 2.2 nGU/min at 141 mM Na+ and 1.9 at 80 mM - NO EFFECT - while the
+        # whole 5.2-fold response ran between 80 and 24 mM. THE ARM PLATEAUS ABOVE
+        # A MEASURED THRESHOLD, exactly as the pressure arm does.
+        #
+        # IT IS NOT RECTIFIED HERE ANYWAY, AND THE REASON IS NOT INERTIA. Lorenz's
+        # threshold is a CONCENTRATION, 80 mM, and he reports the full response
+        # occurring "within the concentration range normally occurring at the
+        # macula densa" - so the normal operating point sits BELOW the threshold on
+        # the steep limb. md_drive is zero at ITS reference by construction, and
+        # where that reference lies against 80 mM is unknowable without a macula
+        # densa concentration. Rectifying at md_drive = 0 would put the threshold
+        # at the operating point, which is the wrong place, and would be precisely
+        # the invented form the old comment warned against.
+        #
+        # AND THE DEEPER PROBLEM IS THE VARIABLE, NOT THE SHAPE. Lorenz's series 3
+        # dissociated them: from period 2 to 3 sodium DELIVERY ROSE 51 percent
+        # (1,197 -> 1,811 peq/min) and renin rose 3.2-fold anyway, because
+        # concentration fell 54 mM. His conclusion is that renin "responds with a
+        # larger change to alterations in NaCl concentration than in NaCl delivery
+        # or fluid flow rate." THIS SIGNAL IS KEYED TO DELIVERY. Concentration is
+        # delivery over distal flow, and this model lumps water reabsorption and
+        # has no distal flow, so the right variable cannot be computed from what
+        # exists. That is the structural requirement, recorded rather than faked.
         md_drive ~ (Na_distal_ref - Na_distal) / Na_distal_ref,
 
         # First-order approach to the volume-keyed natriuretic target.
