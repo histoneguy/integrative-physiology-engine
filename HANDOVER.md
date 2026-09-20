@@ -5236,6 +5236,88 @@ does not build, and the **sympathetic effects on tubular reabsorption and affere
 tone** that ADR 0024 records as still absent.
 
 
+### 3.64 THE MACULA DENSA ARM IS KEYED TO THE WRONG VARIABLE, AND THE SOURCE SAYS SO
+
+**Pre-registered in `validation/macula_densa_lorenz_prereg.md`, branch M1. No parameter
+moved and no equation changed.** The owner supplied the paper.
+
+**Lorenz JN, Weihprecht H, Schnermann J, Skøtt O, Briggs JP.** *Characterization of the
+macula densa stimulus for renin secretion.* Am J Physiol 1990;259(1 Pt 2):F186–F193.
+**PMID 2197878, full text read.**
+
+#### Why this preparation settles it
+
+An **isolated perfused rabbit juxtaglomerular apparatus**, studied in the paper's own words
+*"in the absence of the confounding influences of intravascular pressure and renal nerve
+activity."* **Both of the model's other renin arms are physically removed**, so what is left
+is the macula densa gain alone. It is precisely the independent measurement
+`RN.NA.MACULA_DENSA_FRACTION`'s note said was required.
+
+#### Finding 1 — there IS a threshold, and a code comment said there wasn't
+
+| perfusate | Na⁺ | renin |
+|---|---|---|
+| high | 141 mM | 2.2 nGU/min |
+| medium | 80 mM | **1.9 — no effect**, n = 8 |
+| medium | 80 mM | 3.2 nGU/min |
+| low | 24 mM | **16.6, P < 0.007**, n = 8 |
+
+**Nothing between 141 and 80; the whole 5.2-fold response lives below 80 mM.**
+`Renal.jl` carried *"nothing found says the macula densa arm does [plateau], and inventing a
+threshold … would be a functional form chosen here."* **Lorenz is the something found, and
+that comment has been corrected.**
+
+#### Finding 2 — delivery is NOT the stimulus, and this is the stronger one
+
+Series 3, n = 7, concentration and flow manipulated independently:
+
+| period | Na⁺ delivery | renin |
+|---|---|---|
+| 1 — medium NaCl, high flow | 5,572 ± 924 peq/min | 3.4 nGU/min |
+| 2 — flow reduced | 1,197 ± 276 | 8.1, P < 0.014 |
+| 3 — flow restored, concentration cut 54 mM | **1,811 ± 300** | **26.3, P < 0.011** |
+
+**Delivery ROSE 51% from period 2 to 3 and renin rose 3.2-fold anyway.** Lorenz: renin
+*"responds with a larger change to alterations in NaCl concentration than in NaCl delivery
+or fluid flow rate."*
+
+**`md_drive` is keyed to DELIVERY.** So the arm is wrong in kind on both counts — wrong
+variable, and no threshold where one is measured.
+
+#### Neither was repaired, and the pre-registration said so before running
+
+**The threshold is a CONCENTRATION** and Lorenz reports the full response occurring *"within
+the concentration range normally occurring at the macula densa"* — so the operating point
+sits **below** it, on the steep limb. `md_drive` is zero at its own reference by
+construction, and where that reference lies against 80 mM is unknowable. **Rectifying at
+`md_drive` = 0 would put the threshold at the operating point, which is the wrong place**,
+and would be exactly the invented form the old comment warned against.
+
+**And the concentration cannot be computed.** It is distal delivery over **distal flow**,
+and this model lumps water reabsorption and has no distal flow.
+
+#### What changed, and it is the reason rather than the row
+
+`RN.MD.RENIN_GAIN` **stays `calibrated` at 4.99** — but no longer because no independent
+measurement exists. **One does, in the cleanest preparation available, and the model cannot
+consume it.** That is a specific structural requirement in place of a vague debt.
+
+**And `RN.NA.MACULA_DENSA_FRACTION` turns out to be INERT.** Its note argues it is not
+separately identifiable from the gain; it is stronger than that. `md_drive` is a ratio in
+which `Na_distal = Na_filtered·(1 − f_md)·renal_mod` appears in both numerator and
+reference, so **(1 − f_md) divides out exactly and the row has no effect on the model at
+all** through that path. Recorded on the row.
+
+#### The prediction left behind
+
+**Build a macula densa NaCl concentration — which needs the lumped water reabsorption split
+to give distal flow — and `RN.MD.RENIN_GAIN` becomes sourceable from Lorenz, retiring the
+second of this ledger's two `calibrated` rows.**
+
+**And van den Bosch's 2.73-fold renin ratio becomes a TEST rather than the estimation set it
+has always been.** That is worth more than the gain.
+
+
 ## 4. NEXT, IN ORDER
 
 **Rewritten 2026-09-03, and item 1 was discharged the same day.** The previous list's
