@@ -5318,6 +5318,76 @@ second of this ledger's two `calibrated` rows.**
 has always been.** That is worth more than the gain.
 
 
+### 3.65 THE MACULA DENSA ARM IS SALT-INDEPENDENT, AND §3.64 READ THE SIGNAL BACKWARDS
+
+**Pre-registered in `validation/md_salt_independence_prereg.md`, branch V1. No parameter
+moved.** ADR 0021 carries the amendment.
+
+#### §3.64's conclusion is corrected
+
+§3.64 measured `md_drive` spanning only **5.7%** across the salt step and called it the
+defect — the thing to fix by building a macula densa concentration. **That was backwards.**
+
+**Vallon V, Huang DY, Deng A, Richter K, Blantz RC, Thomson S.** J Am Soc Nephrol
+2002;13(7):1865-71, **PMID 12089382.** Micropuncture in rats after a week of different NaCl
+diets, collecting early distal tubular Na⁺, Cl⁻ and K⁺ — *"representing the TGF signal"*:
+
+> **"In nondiabetics, dietary salt did not affect SNGFR or the TGF signal."**
+>
+> **"normal rats acclimate to dietary NaCl by primarily adjusting transport DOWNSTREAM of
+> the macula densa."**
+
+**A near-constant macula densa signal is the CORRECT behaviour.** The model's 5.7% is not
+the problem. **`RN.MD.RENIN_GAIN` = 4.99 is** — calibrated to turn that near-constant signal
+into the whole chronic salt–renin response.
+
+*(The paper's headline is the DIABETIC arm, which is the opposite result and does not apply
+here. The normal arm is the control.)*
+
+#### What the model rests on, measured
+
+| `g_md` | chronic renin ratio | chronic salt sensitivity |
+|---|---|---|
+| **4.99** (ledger) | **2.733** — van den Bosch | 2.02 |
+| 2.0 | 1.796 | 2.02 |
+| 1.0 | 1.547 | 2.02 |
+| **0** | **1.323** | 2.02 |
+
+**The arm carries 1.41 of the 1.58 gap — about 89% of the renin response.** So the model's
+agreement with van den Bosch rests almost entirely on an arm primary micropuncture says does
+not respond to dietary salt.
+
+**And chronic salt sensitivity is 2.02 at every gain.** The arm has **no effect on the
+pressure limb at all**. The renin ratio and the blood-pressure response are decoupled in
+this model — which means **fixing the renin ratio honestly cannot break the pressure limb**,
+and removes the usual reason to leave it alone.
+
+#### §7's ceiling is lower than recorded, not higher
+
+§7 recorded the pressure-only renin ceiling as **1.40**, before ADR 0024's sympathetic arm
+existed. Re-measured at `g_md` = 0: **1.323 with the sympathetic arm on, 1.152 with it
+off.** The sympathetic arm lifts the floor by **0.17 and no more**, so the gap ADR 0021 was
+built to close is **larger** than §7 stated.
+
+#### What is not claimed
+
+**The arm is real.** Lorenz 1990 measured its gain directly with pressure and nerves
+physically absent. Nothing here questions that the macula densa controls renin — only
+whether it carries the response to **dietary salt**.
+
+**And the conflict is not settled.** Vallon is **rat micropuncture**; van den Bosch is
+**human plasma renin activity**. Those are not the same measurement and no human
+micropuncture exists here to put beside either. **What is established is that the model
+resolves the tension by assuming this arm does the work, and that assumption now has a
+primary source against it.**
+
+#### Nothing was changed, deliberately
+
+`RN.MD.RENIN_GAIN` stays 4.99; the sympathetic arm stays as ADR 0024 left it. Re-tuning the
+sympathetic arm to absorb what the macula densa arm gives up, **inside the pass that took it
+away**, is what the pre-registration forbade.
+
+
 ## 4. NEXT, IN ORDER
 
 **Rewritten 2026-09-03, and item 1 was discharged the same day.** The previous list's
