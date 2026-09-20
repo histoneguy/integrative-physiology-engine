@@ -5388,6 +5388,80 @@ sympathetic arm to absorb what the macula densa arm gives up, **inside the pass 
 away**, is what the pre-registration forbade.
 
 
+### 3.66 PROXIMAL DELIVERY NOW RESPONDS TO SALT, AND THE MACULA DENSA STILL DOES NOT
+
+**Pre-registered in `validation/proximal_salt_prereg.md`, branch P1.** Suite, six gates and
+`ALL CHALLENGES PASS`.
+
+#### The defect
+
+`RN.NA.PROXIMAL_DELIVERY` was a **constant 0.26**, sourced from Shirley 2002 at one salt
+state, and `Na_prox_out` — the lithium-clearance quantity — was an observable `Renal.jl`
+itself described as read by nothing. **An observable that cannot be wrong.**
+
+**In humans it more than doubles.** Folkerd 1995 (PMID 7733329), six normal subjects, five
+days per diet:
+
+| sodium intake | FE_Li |
+|---|---|
+| 31 ± 10 mmol/day | **8.3 ± 2.9 %** |
+| 357 ± 78 mmol/day | **18.0 ± 5.1 %**, P < 0.05 |
+
+Chiolero 2000 (PMID 11040249) confirms the direction independently in **27 normotensives**.
+
+#### And it reconciles with §3.65 rather than contradicting it
+
+§3.65 recorded Vallon: in normal rats **dietary salt does not affect the TGF signal**, and
+they adapt *"downstream of the macula densa."* Folkerd says proximal delivery rises steeply
+with salt. **Both hold together only if the thick ascending limb absorbs the difference** —
+so `f_prox_eff` feeds `Na_prox_out` and **not** `Na_distal`, and `f_md` remains a separate
+fraction of the *filtered* load.
+
+**`md_drive` was verified bit-identical after the change** — 0.0427 at 38 mEq/day, −0.0141
+at 230, exactly as before. That was a falsifiable test, not a side effect.
+
+#### What was built
+
+    f_prox_eff ~ clamp(f_prox * (1 + k_prox * (pra_ref - pra)), 0.02, 0.60)
+
+**Keyed to `pra`, not to sodium intake.** Angiotensin II stimulates proximal reabsorption —
+what Hall 1977 and Hall 1984 measured — so the mechanism is already in the model, and keying
+to the intake parameter would make the tubule respond to a number the body cannot see.
+
+`RN.NA.PROXIMAL_SALT_SENSITIVITY` = **0.29**, two figures, from Folkerd's exponent
+ln(18.0/8.3)/ln(357/31) = 0.317 applied across this model's own arms.
+
+| Na intake | `f_prox_eff` | `md_drive` |
+|---|---|---|
+| 38 | 0.163 | +0.0427 |
+| **205** | **0.260** | −0.0002 |
+| 230 | 0.287 | −0.0141 |
+
+**FE_Li ratio 1.756 against the 1.77 Folkerd predicts.** Operating point exact — MAP 87.0,
+`Na_excr` 205.0, urine 1.7 L/day, `f_prox_eff` 0.2600, so Shirley's value still holds at
+rest.
+
+#### Only the relative response crossed, and that is the subtle part
+
+**Folkerd's own headline is that endogenous and exogenous lithium clearance DIFFER** — 16.4
+± 2.1 % against 27.9 ± 2.1 % in the same subjects. His salt-step numbers are **endogenous**;
+this model's 0.26 reference is Shirley's **exogenous** value. **Transferring his absolutes
+would have mixed two methods he shows disagree by nearly twofold.** Only the ratio was
+taken, and `RN.NA.PROXIMAL_DELIVERY` keeps its value and its citation.
+
+#### What it buys, and what it does not
+
+**A previously inert observable is now correct and testable.** `Na_prox_out` can be compared
+with a human measurement across salt intakes, which it could not before. Directive 1.11.
+
+**It does NOT change any model behaviour.** `Na_prox_out` is still read by nothing — the
+tubule is one lumped reabsorption, so a segmental delivery cannot yet do work. **The renin
+problem in §3.65 is untouched and `RN.MD.RENIN_GAIN` is still `calibrated` at 4.99.**
+
+**The power law is an interpolation.** Two points fix one exponent and say nothing about
+curvature; a linear-in-intake reading of the same two points is equally admissible.
+
+
 ## 4. NEXT, IN ORDER
 
 **Rewritten 2026-09-03, and item 1 was discharged the same day.** The previous list's

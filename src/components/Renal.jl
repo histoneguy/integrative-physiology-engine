@@ -64,6 +64,7 @@ using ..LedgerParams:
     CV_MAP_SETPOINT, BF_H2O_INTAKE_NOMINAL, BF_H2O_INSENSIBLE_LOSS,
     BF_BODY_MASS_REFERENCE, BF_ECF_MASS_FRACTION, CV_VOLUME_NATRIURETIC_GAIN, RN_VOLUME_NATRIURESIS_TAU,
     RN_GFR_VOLUME_SENSITIVITY, RN_GFR_VOLUME_RANGE, RN_NA_MACULA_DENSA_FRACTION,
+    RN_NA_PROXIMAL_SALT_SENSITIVITY, RAAS_PRA_REFERENCE,
     RN_NA_PROXIMAL_DELIVERY,
     BF_NA_PLASMA_SETPOINT, BF_NA_INTAKE_NOMINAL
 
@@ -115,6 +116,8 @@ function Renal(; name, solute_tracking::Bool = true,
         # proximal tubule, the macula densa sits past the loop, and the loop takes
         # most of what the proximal tubule passes on. 0.26 and 0.10 are both real.
         f_prox   = RN_NA_PROXIMAL_DELIVERY
+        k_prox   = RN_NA_PROXIMAL_SALT_SENSITIVITY
+        pra_ref_p = RAAS_PRA_REFERENCE
         # EXTENSIVE and SURFACE-like, exactly as GFR0 is: it is a filtered flux.
         # The ratio in md_drive is therefore size-free.
         Na_distal_ref = sz * RN_GFR_NOMINAL * BF_NA_PLASMA_SETPOINT *
@@ -351,6 +354,8 @@ function Renal(; name, solute_tracking::Bool = true,
         Na_prox_out(t)      # mEq/day  END-PROXIMAL sodium delivery (Shirley 2002)
         Na_distal(t)        # mEq/day  macula densa sodium delivery, ADR 0021
         md_drive(t)         # unitless OUTPUT to raas - the macula densa signal
+        pra(t)              # unitless INPUT from raas - normalised renin activity
+        f_prox_eff(t)       # unitless end-proximal delivery fraction, salt-responsive
         Na_excr(t)          # mEq/day  OUTPUT
         H2O_excr(t)         # L/day    OUTPUT
         FR_effective(t)     # unitless
@@ -485,7 +490,30 @@ function Renal(; name, solute_tracking::Bool = true,
         # still one lumped reabsorption, so a segmental delivery cannot yet do work.
         # Wiring it as a reported quantity rather than leaving the row unconnected
         # is the ADR 0006 rule - a row nothing reads is the Circadian failure.
-        Na_prox_out ~ Na_filtered * f_prox * renal_mod,
+        # END-PROXIMAL DELIVERY RESPONDS TO SALT, 2026-09-20, and until now it did
+        # not. Folkerd 1995 (PMID 7733329), six normal subjects, five days per diet:
+        # fractional lithium excretion 8.3 +/- 2.9 percent on 31 mmol/day of sodium
+        # against 18.0 +/- 5.1 on 357, P < 0.05. Chiolero 2000 (PMID 11040249)
+        # confirmed the direction in 27 normotensives. This quantity MORE THAN
+        # DOUBLES across the human dietary range and the model had it constant.
+        #
+        # KEYED TO pra AND NOT TO SODIUM INTAKE. Angiotensin II stimulates proximal
+        # reabsorption - what Hall 1977 and Hall 1984 measured - so the mechanism is
+        # already here, and keying to the intake parameter would have the tubule
+        # respond to a number the body cannot see.
+        #
+        # ZERO DEVIATION AT THE OPERATING POINT by construction, so Shirley 2002's
+        # 0.26 still holds exactly at rest and nothing pinned moves.
+        #
+        # AND IT MUST LEAVE md_drive ALONE. Vallon 2002 (PMID 12089382): in normal
+        # rats dietary salt does not affect the tubuloglomerular feedback signal.
+        # Both results hold together only if the thick ascending limb absorbs the
+        # extra proximal delivery - which is why f_prox_eff feeds Na_prox_out and
+        # NOT Na_distal. f_md is a separate fraction of the FILTERED load, so the
+        # macula densa signal is untouched by construction.
+        f_prox_eff ~ clamp(f_prox * (1.0 + k_prox * (pra_ref_p - pra)), 0.02, 0.60),
+
+        Na_prox_out ~ Na_filtered * f_prox_eff * renal_mod,
 
         Na_distal ~ Na_filtered * (1.0 - f_md) * renal_mod,
 

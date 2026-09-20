@@ -142,6 +142,12 @@ function build_raw_model(; body_mass = 70.0, storage::Bool = true,
         # cardiovascular -> raas -> renal
         ra.MAP          ~ cv.MAP,
         rn.fr_mod       ~ ra.fr_mod,
+        # PROXIMAL DELIVERY RESPONDS TO ANGIOTENSIN II, 2026-09-20. Folkerd 1995
+        # measures end-proximal delivery more than doubling across the human
+        # dietary salt range; the mechanism is the AngII effect on proximal
+        # reabsorption that Hall 1977 and Hall 1984 measured, so it is keyed to
+        # renin activity rather than to the sodium intake parameter.
+        rn.pra          ~ ra.pra,
         # body fluids -> adh -> renal (osmoregulation)
         ad.Osm_ecf      ~ bf.Osm_ecf,
         rn.u_osm        ~ ad.u_osm,
@@ -302,7 +308,7 @@ model_edges() = Set([
     (:baroreflex, :cardiovascular),   # cv.tpr_mod ~ br.tpr_mod
     (:baroreflex, :cardiovascular),   # cv.hr_mod ~ br.hr_mod - ADR 0022
     (:cardiovascular, :raas),         # ra.MAP ~ cv.MAP
-    (:raas, :renal),                  # rn.fr_mod ~ ra.fr_mod
+    (:raas, :renal),                  # rn.fr_mod ~ ra.fr_mod, and rn.pra ~ ra.pra
     (:bodyfluids, :adh),              # ad.Osm_ecf ~ bf.Osm_ecf
     (:adh, :renal),                   # rn.u_osm ~ ad.u_osm
     (:circadian, :renal),             # rn.renal_mod ~ clk.renal_mod
