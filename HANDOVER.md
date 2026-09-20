@@ -5163,6 +5163,79 @@ on 2026-09-18 and then kept breaking it in prose.** A gate that binds the code a
 write-up leaves the same error in the place people actually read. Resting MAP is **87.0**.
 
 
+### 3.63 THE SATURATING FORM: MY OWN PREDICTION, REFUTED
+
+**Pre-registered in `validation/angii_saturating_prereg.md`, branch S3.** The form changed;
+**no other parameter, band or threshold moved.** Suite and six gates green.
+
+#### Hall 1977 arrived and said the relation saturates
+
+The owner supplied two papers. **Hall 1977 (PMID 879288) was the better one and not for the
+reason I asked for it**: he **blocked endogenous angiotensin II** with intrarenal saralasin
+rather than infusing exogenous hormone, so the dose-to-concentration anchor I had gone
+looking for is not needed at all. Its normal-sodium arm sits at this model's own operating
+point — `FE_Na` **1.23 → 1.74%** with GFR and MAP unchanged, so **0.0051 of the filtered
+load**, very nearly purely tubular, aldosterone excluded by a second design.
+
+Beside Hall 1984's marginal **0.00144**, that says the tubular action is **more than half
+spent at resting angiotensin II**. A term linear in `pra` cannot represent that, so the
+form was rebuilt: Michaelis-Menten through the two points and the origin, **Km = 1.0,
+Vmax = 0.0091**, derived and not fitted.
+
+#### And the prediction it generated is refuted
+
+Written into ADR 0015 **before** it was tried: *"replacing the linear term with a saturating
+one SHOULD RAISE the amplification above 1.2×."*
+
+| | linear | saturating |
+|---|---|---|
+| local slope at rest | 0.0011 | **0.00173** — 58% steeper |
+| **amplification on pinning** | 1.225× | **1.254× — 2%** |
+| chronic salt sensitivity, term ON | 1.60 | **1.61** |
+| operating point | MAP 87.0, Na_excr 205.0 | **identical** |
+
+**A 58% steeper local slope bought 2%.** ADR 0015 requires ≥ 2×.
+
+#### Why, and the second reason is the one that matters
+
+1. **A saturating curve is steeper at rest and SHALLOWER above it.** Across the salt step's
+   `pra` range the term's excursion grew **16%**, not 58% — the extra steepness near the
+   reference is spent again at the high-renin end.
+2. **The term is too small a share of the system for its shape to matter.** §3.57 measured
+   the volume path at **77% of the chronic sodium swing**. A term of this magnitude cannot
+   move a system-level ratio whatever its shape.
+
+#### My branch threshold was badly written, and that is recorded rather than glossed
+
+S3 reads *"amplification does NOT rise above 1.2×"* — but the linear baseline was **already
+1.225×**, so read literally every outcome passes. **That is a badly specified decision rule
+and it is my error.** The substantive prediction was a rise **toward 2×**; against that, 2%
+is a refutation and is scored as one.
+
+#### What it settles
+
+**The form is not what is wrong.** ADR 0015's own 2026-09-02 verdict — *"necessary and
+nowhere near sufficient"* — is now the standing answer **with a number: 1.25× against a
+required 2×, and insensitive to both the magnitude and the shape of the term.**
+
+**The saturating form is KEPT although it changed nothing**, because it is the better-sourced
+shape — two Hall studies rather than one, and it respects the measured saturation instead of
+contradicting it. `RAAS.ANGII.TUBULAR_GAIN` was **deleted** and its provenance carried onto
+`RAAS.ANGII.TUBULAR_VMAX` verbatim, because an unread row fails the unread-rows gate and a
+superseded row beside its replacement is the two-copies-of-a-fact failure.
+
+**The term stays OFF**, and the chronic band is still left with it on — 1.61 against a 1.70
+floor.
+
+#### And the next candidate is no longer a parameter
+
+Nothing about `fr_angii` itself will move this. **If the salt–renin response is to be
+reproduced, the missing contribution is elsewhere** — the candidates this repository already
+names are **tubuloglomerular feedback on the afferent arteriole**, which ADR 0021 explicitly
+does not build, and the **sympathetic effects on tubular reabsorption and afferent arteriolar
+tone** that ADR 0024 records as still absent.
+
+
 ## 4. NEXT, IN ORDER
 
 **Rewritten 2026-09-03, and item 1 was discharged the same day.** The previous list's

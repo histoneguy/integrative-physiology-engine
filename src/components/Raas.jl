@@ -140,7 +140,7 @@ using ..LedgerParams:
     RAAS_ALDO_PRA_LOG_SLOPE, RAAS_ALDO_REABSORPTION_GAIN, RAAS_PRA_TAU,
     RAAS_ALDO_ESCAPE_TAU, RN_MD_RENIN_GAIN, RAAS_ALDO_K_GAIN, K_PLASMA_REFERENCE,
     RAAS_RENIN_SYMPATHETIC_THRESHOLD_SHIFT, BR_OPEN_LOOP_GAIN,
-    RAAS_ANGII_TUBULAR_GAIN, RAAS_PRA_REFERENCE
+    RAAS_ANGII_TUBULAR_VMAX, RAAS_ANGII_TUBULAR_KM, RAAS_PRA_REFERENCE
 
 """
     Raas(; name, enabled = true)
@@ -177,9 +177,14 @@ function Raas(; name, enabled::Bool = true, pra_clamp = 0.0, k_angii_override = 
         # control, angiotensin II still retains 24 mEq/day. Escape is
         # PRESSURE-mediated, so this term sits OUTSIDE esc by construction.
         # k_angii = 0 recovers the previous model exactly.
-        # k_angii_override < 0 means USE THE LEDGER VALUE; 0 means the term is
-        # OFF. Default OFF - see the note in assemble.jl and ADR 0015.
-        k_angii = k_angii_override < 0.0 ? RAAS_ANGII_TUBULAR_GAIN : k_angii_override
+        # SATURATING, 2026-09-19. Hall 1977 and Hall 1984 together say the tubular
+        # action is MORE THAN HALF SPENT at resting angiotensin II: a total of
+        # 0.0051 of the filtered load against a marginal 0.00144 on roughly
+        # doubling it. Km = 1.0 on this axis is the rectified renin plateau, so the
+        # resting pra of 1.2956 is already past half-maximal.
+        # k_angii_override < 0 means USE THE LEDGER VALUES; 0 means OFF (default).
+        V_angii = k_angii_override < 0.0 ? RAAS_ANGII_TUBULAR_VMAX : 0.0
+        Km_angii = RAAS_ANGII_TUBULAR_KM
         pra_ref = RAAS_PRA_REFERENCE                 # unitless
         # DIAGNOSTIC, DEFAULT 0 = OFF, and it has NO LEDGER ROW - the precedent
         # anp_convexity and anp_adaptation were introduced on. It exists so that
@@ -311,8 +316,13 @@ function Raas(; name, enabled::Bool = true, pra_clamp = 0.0, k_angii_override = 
             # ZERO AT THE OPERATING POINT by construction, so nothing pinned moves.
             # k_angii = 0 recovers the previous model exactly - the precedent g_md
             # and dP_sym were introduced on.
-            fr_angii ~ k_angii *
-                       (ifelse(p_clamp > 0.0, p_clamp, pra) - pra_ref),
+            # A DEVIATION, not a level: the baseline fractional reabsorption already
+            # contains angiotensin II's resting contribution, so only departures
+            # from the operating point may act. Identically zero at pra_ref.
+            fr_angii ~ V_angii *
+                       (ifelse(p_clamp > 0.0, p_clamp, pra) /
+                        (Km_angii + ifelse(p_clamp > 0.0, p_clamp, pra))
+                        - pra_ref / (Km_angii + pra_ref)),
 
             fr_mod ~ (fr_raw - esc) + fr_angii,
         ]
