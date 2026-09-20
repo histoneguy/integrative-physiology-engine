@@ -519,3 +519,73 @@ preparations differ: 1977 is intrarenal blockade in dogs whose kidneys averaged 
 1977 is NOT usable for the tubular effect** — glomerular filtration rate rose 22% in it, and
 the paper says that accounts for an important part of the natriuresis. **Only the
 normal-sodium arm is clean.**
+
+---
+
+## The saturating form — 2026-09-19. My own prediction, REFUTED
+
+**Pre-registered in `validation/angii_saturating_prereg.md`. Branch S3.** The form was
+changed; **no other parameter moved, no band and no threshold moved.**
+
+### What was predicted, and by whom
+
+The prediction was written into this record on 2026-09-19, before it was tried:
+
+> *"A saturating form has a LARGER LOCAL SLOPE AT REST … So replacing the linear term with
+> a saturating one SHOULD RAISE the amplification above 1.2×. If it does not, the form is
+> not what is wrong."*
+
+**It does not.**
+
+| | linear | saturating |
+|---|---|---|
+| local slope at `pra_ref` | 0.0011 | **0.00173** — 58% steeper |
+| **amplification on pinning** | 1.225× | **1.254× — a 2% change** |
+| chronic salt sensitivity, term ON | 1.60 | **1.61** |
+| operating point | MAP 87.0, Na_excr 205.0 | **identical** |
+
+**A 58% steeper local slope bought a 2% change in the quantity it was supposed to move.**
+ADR 0015's threshold is ≥ 2×.
+
+### Why the local slope did not translate
+
+Two reasons, and the second is the important one.
+
+1. **A saturating curve is steeper at rest and SHALLOWER above it.** Across the salt step's
+   `pra` range of 1.03 → 2.52 the term's excursion grew only **16%**, not 58% — the extra
+   steepness near the reference is spent again at the high-renin end.
+2. **The term is too small a share of the system for its shape to matter.** §3.57 measured
+   the volume-keyed path carrying **77% of the chronic sodium swing**, with pressure
+   natriuresis, GFR and filtration carrying the remaining 23%. **A term of this magnitude
+   cannot move a system-level ratio whatever its shape.**
+
+### And my branch threshold was badly specified — recorded rather than glossed
+
+§4's S3 reads *"amplification does NOT rise above 1.2×"*, but the linear baseline was
+**already 1.225×**, so read literally every outcome satisfies S1 or S2. **That is a badly
+written decision rule and it is my error.** The substantive prediction, quoted above, was a
+rise **toward the ≥ 2× this record requires**. Against that reading, **2% is a refutation**
+and it is scored as one.
+
+### What this settles
+
+**The form is not what is wrong.** This record's own Consequences said in 2026-09-02 that it
+is *"necessary and nowhere near sufficient"* — **that is now the standing answer, with a
+number attached: 1.25× against a required 2×, and insensitive to both the magnitude and the
+shape of the term.**
+
+**The saturating form is KEPT** even though it changed nothing, because it is the
+better-sourced shape: it uses both Hall studies rather than one, and it respects the
+measured saturation instead of contradicting it. `RAAS.ANGII.TUBULAR_GAIN` was deleted and
+its provenance carried onto `RAAS.ANGII.TUBULAR_VMAX` verbatim.
+
+**The term remains OFF**, and the chronic band is still left with it on (1.61 against a
+1.70 floor).
+
+### What would move this record next, and it is no longer a parameter
+
+Nothing about `fr_angii` itself. **If the salt–renin response is to be reproduced, the
+missing contribution is somewhere other than this term** — the candidates this repository
+already names are tubuloglomerular feedback on the afferent arteriole, which ADR 0021
+explicitly does not build, and the sympathetic effects on tubular reabsorption and afferent
+arteriolar tone that ADR 0024 records as still absent.
