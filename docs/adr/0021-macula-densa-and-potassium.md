@@ -544,3 +544,85 @@ so moving Jensen was a consequence rather than a fit, which is what makes it wor
 recording. **The defect is in the reporting, and the fix is an automated pin on the
 endpoint** (`JENSEN_FINAL_WINDOW_RISE` in `test/runtests.jl`) rather than any change to
 this arm.
+
+---
+
+## Amendment 2026-09-20 — the arm this record built is salt-independent in the normal animal
+
+**Pre-registered in `validation/md_salt_independence_prereg.md`, branch V1. No parameter
+moved.** This record's macula densa renin arm is not withdrawn; **what it is used for is.**
+
+### The source
+
+**Vallon V, Huang DY, Deng A, Richter K, Blantz RC, Thomson S.** *Salt-sensitivity of
+proximal reabsorption alters macula densa salt and explains the paradoxical effect of
+dietary salt on glomerular filtration rate in diabetes mellitus.* J Am Soc Nephrol
+2002;13(7):1865-71. **PMID 12089382.**
+
+Micropuncture in rats after a week of different NaCl diets, collecting from early distal
+nephrons to measure **"early distal tubular Na+, Cl- and K+ concentration (representing the
+TGF signal)"**:
+
+> **"In nondiabetics, dietary salt did not affect SNGFR or the TGF signal."**
+>
+> **"normal rats acclimate to dietary NaCl by primarily adjusting transport DOWNSTREAM of
+> the macula densa."**
+
+**THE DIABETIC ARM IS THE PAPER'S HEADLINE AND IS THE OPPOSITE RESULT.** It does not apply
+to this model. The normal arm is the control and it is the one that does.
+
+### What the model actually rests on, measured
+
+Sweeping `RN.MD.RENIN_GAIN` with everything else held:
+
+| `g_md` | chronic renin ratio | chronic salt sensitivity |
+|---|---|---|
+| **4.99** (ledger) | **2.733** — van den Bosch | 2.02 |
+| 2.0 | 1.796 | 2.02 |
+| 1.0 | 1.547 | 2.02 |
+| **0** | **1.323** | 2.02 |
+
+**TWO RESULTS, AND BOTH MATTER.**
+
+**1. The macula densa arm carries about 89% of the renin response.** The floor at `g_md` = 0
+is 1.323 and the target is 2.733; this arm supplies 1.41 of that 1.58 gap. **So this
+model's agreement with van den Bosch rests almost entirely on an arm that primary
+micropuncture says does not respond to dietary salt in a normal animal.**
+
+**2. Chronic salt sensitivity is 2.02 at EVERY gain.** The arm has **no effect on the
+pressure limb at all** — the renin ratio and the blood-pressure response are decoupled here.
+That is worth knowing on its own: **fixing the renin ratio honestly cannot break the
+pressure limb**, which removes the usual reason for leaving such a thing alone.
+
+### And §7's pressure-only ceiling is now measured lower, not higher
+
+HANDOVER §7 recorded the pressure-only ceiling as **1.40**, before ADR 0024's renal
+sympathetic arm existed. Re-measured at `g_md` = 0:
+
+| | renin ratio |
+|---|---|
+| sympathetic arm **on** | **1.323** |
+| sympathetic arm **off** | **1.152** |
+
+**The sympathetic arm lifts the floor by 0.17 and no more.** So the gap this record was built
+to close is larger than §7 stated, not smaller.
+
+### What is NOT claimed
+
+**The arm is real.** Lorenz 1990 (PMID 2197878) measured its gain directly in an isolated
+perfused juxtaglomerular apparatus with pressure and nerves physically absent — a five-fold
+renin response below 80 mM Na⁺. **Nothing here questions that the macula densa controls
+renin.** What is in question is whether it carries the response to **dietary salt**, which is
+a different claim and the one this model uses it for.
+
+**AND THE CONFLICT IS NOT SETTLED.** Vallon is **rat micropuncture**; van den Bosch is
+**human plasma renin activity**. A rat early-distal concentration and a human PRA are not the
+same measurement, and this record does not have a human micropuncture to put beside either.
+**What is established is that the model resolves the tension by assuming the macula densa
+arm does the work, and that assumption now has a primary source against it.**
+
+### Nothing was changed
+
+`RN.MD.RENIN_GAIN` stays at 4.99 and the sympathetic arm stays exactly as ADR 0024 left it.
+**Re-tuning the sympathetic arm to absorb what the macula densa arm gives up, inside the
+pass that took it away, is what the pre-registration forbade.**
