@@ -8,8 +8,17 @@ name: Diagnostics (report only - never fails)
 #
 # Read the output under Actions > Diagnostics > Summary. No log-scrolling needed.
 
+# TRIGGER NARROWED 2026-09-20, same reason as ci.yml: `push` plus `pull_request`
+# ran this twice for every push to a PR branch, and each run saves a 418 MiB Julia
+# depot cache against GitHub's 10 GB per-repository limit. Combined with ci.yml's
+# two 988 MiB caches that was about 2.8 GB per push, so roughly three pushes
+# evicted everything and the next run paid a full 18-minute precompile.
+#
+# This workflow is non-gating and report-only, so nothing depends on it running on
+# feature-branch pushes; the pull_request event still reports on every PR.
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 

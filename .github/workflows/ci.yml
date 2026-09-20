@@ -1,5 +1,25 @@
 name: CI
-on: [push, pull_request]
+# WAS `on: [push, pull_request]`, CHANGED 2026-09-20 BECAUSE IT RAN EVERYTHING TWICE.
+#
+# A push to a PR branch fired BOTH events, so every push produced two identical
+# `Julia tests` jobs. MEASURED, not assumed: each one saves a ~988 MiB Julia depot
+# cache, and the Diagnostics workflow adds 418 MiB per run, so a single push wrote
+# about 2.8 GB against GitHub's 10 GB per-repository cache limit. Roughly three
+# pushes evicted everything, the restore key then missed, and the run paid a FULL
+# precompile of all 322 dependencies.
+#
+# THE COST WAS 18 MINUTES OF PRECOMPILATION ON A 2m32s SUITE. Step timings from run
+# 35483681345 against 35469037827: cache restore 17s in both, buildpkg 3s in both,
+# julia-runtest 1233s against 186s, and the test suite itself 2m33.4s against
+# 2m31.7s. The suite is constant; the variance was entirely cache misses.
+#
+# `pull_request` still covers every PR, so the required `Provenance` check still
+# runs on everything that can be merged. The job NAMES are untouched - CLAUDE.md
+# records that renaming `Provenance` once deadlocked every merge.
+on:
+  push:
+    branches: [main]
+  pull_request:
 
 jobs:
   ledger:
