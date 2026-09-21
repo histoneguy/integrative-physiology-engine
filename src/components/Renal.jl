@@ -69,7 +69,8 @@ using ..LedgerParams:
     RN_MD_RENIN_SLOPE, RN_MD_RENIN_THRESHOLD,
     RN_TAL_KM, RN_TAL_ADAPTATION_TAU, RN_TGF_FLOW_ELASTICITY,
     RN_NA_PROXIMAL_DELIVERY,
-    BF_NA_PLASMA_SETPOINT, BF_NA_INTAKE_NOMINAL
+    BF_NA_PLASMA_SETPOINT, BF_NA_INTAKE_NOMINAL,
+    GLU_PLASMA_FASTING, GLU_EGP_BASAL, RN_GLU_TM
 
 """
     Renal(; name)
@@ -98,6 +99,11 @@ function Renal(; name, solute_tracking::Bool = true,
     mz = mass_factor(body_mass)
 
     pars = @parameters begin
+        # THE GLUCOSE DISEASE KNOB - ADR 0029. 1.0 is health. Reduced clearance
+        # is what insulin resistance and insulin deficiency both do to the
+        # balance, and it is a PARAMETER rather than a build flag so a sweep
+        # needs no recompilation.
+        glu_disposal = 1.0
         # EXTENSIVE. GFR is a flow and G_pn is an excretion per mmHg, so both
         # scale. They scale TOGETHER, which is the point: FR_effective subtracts
         # G_pn*(MAP-MAP_ref)/Na_filtered, and with G_pn ~ s and Na_filtered ~ s
@@ -138,6 +144,26 @@ function Renal(; name, solute_tracking::Bool = true,
         # the balance check's own band. The delivery chain must divide by the
         # delivery chain.
         f_dist_ref = 1.0 - (1.0 - FR_Na) / (f_prox * (1.0 - f_tal))
+
+        # ---- GLUCOSE, ADR 0029, glucose_insulin_prereg.md -------------------
+        # A MOLAR MASS, NOT A MEASUREMENT.
+        MW_glu   = 180.16                       # mg/mmol
+        G_fast   = GLU_PLASMA_FASTING           # mmol/L
+        # PER KILOGRAM, so it multiplies body mass directly rather than a size
+        # factor. That is Huidekoper's own normalisation and no conversion is
+        # applied.
+        egp_tot  = GLU_EGP_BASAL * body_mass * 1440.0 / MW_glu      # mmol/day
+        # TmG CORRELATES WITH GFR - Mogensen's own sentence - so it carries the
+        # SURFACE-like factor GFR0 carries. The correlation is across INDIVIDUALS,
+        # so it does NOT license scaling with a within-subject acute GFR change,
+        # and this does not do that.
+        TmG      = sz * RN_GLU_TM * 1440.0 / MW_glu                 # mmol/day
+        # WHOLE-BODY GLUCOSE CLEARANCE, DERIVED as the identity that balances
+        # production at the fasting concentration. It is arithmetic on two sourced
+        # rows and is NOT a fit: k_glu = egp_tot / G_fast. At the reference it is
+        # about 199 L/day, i.e. 138 mL/min, which is the right order for basal
+        # whole-body glucose clearance - a free consistency check nobody arranged.
+        k_glu    = egp_tot / G_fast                                 # L/day
         md_c_ref = RN_NA_MACULA_DENSA_CONC_REFERENCE
         k_md     = RN_MD_RENIN_SLOPE
         md_c_thr = RN_MD_RENIN_THRESHOLD
@@ -422,6 +448,9 @@ function Renal(; name, solute_tracking::Bool = true,
         H2O_excr(t)         # L/day    OUTPUT
         FR_effective(t)     # unitless
         f_dist_excr(t)      # unitless fraction of DISTAL delivery excreted
+        C_glu(t)            # mmol/L   plasma glucose, OUTPUT to bodyfluids
+        C_glu_ns(t)         # mmol/L   the no-spill solution
+        glu_excr(t)         # mmol/day urinary glucose, 0 at every normal value
         Osm_load(t)         # mOsm/day urinary solute load - NOW TRACKS SODIUM
         # STATE, added 2026-09-02. The lagged volume-keyed natriuretic signal, in
         # mEq/day. Its steady-state value is G_vn*(V_blood - V_blood_ref), so the
@@ -786,6 +815,29 @@ function Renal(; name, solute_tracking::Bool = true,
 
         Na_reabsorbed ~ Na_filtered - Na_excr,
 
+        # ---- GLUCOSE BALANCE, ALGEBRAIC AND EXPLICIT - ADR 0029 --------------
+        # ZERO NEW STATES. Branch G2 of glucose_insulin_prereg.md removed the
+        # insulin regulator, and with it the case for integrating glucose: the
+        # pool turns over in about an hour, nothing in this model infuses glucose,
+        # and a fixed clearance leaves the balance with no dynamics worth paying
+        # for on every run of a four-hundred-day integration. Directive 1.10.
+        #
+        # THE BALANCE IS LINEAR ON EACH SIDE OF THE SPILL POINT, so it is solved in
+        # closed form rather than left as an implicit unknown:
+        #
+        #   below spill   egp = k_glu * C          -> C = egp / k_glu
+        #   above spill   egp = k_glu * C + (GFR*C - TmG)
+        #                                         -> C = (egp + TmG)/(k_glu + GFR)
+        #
+        # glu_disposal is the DISEASE KNOB and is 1.0 in health: reduced clearance
+        # is what insulin resistance and insulin deficiency both do to this
+        # balance. It is a parameter rather than a build flag so a sweep needs no
+        # recompilation.
+        C_glu_ns ~ egp_tot / (k_glu * glu_disposal),
+        C_glu ~ ifelse(GFR * C_glu_ns <= TmG, C_glu_ns,
+                       (egp_tot + TmG) / (k_glu * glu_disposal + GFR)),
+        glu_excr ~ max(0.0, GFR * C_glu - TmG),
+
         # OSMOREGULATION (ADR 0006 build order item 5). The placeholder that
         # stood here - intake minus insensible loss, floored - was replaced on
         # 2026-08-25 when ADH landed.
@@ -824,9 +876,12 @@ function Renal(; name, solute_tracking::Bool = true,
         # solute_tracking is a build-time Bool, so this resolves to ONE concrete
         # equation at model construction - not a runtime branch in the compiled
         # system. Same pattern as the enabled/disabled branches elsewhere.
-        Osm_load ~ solute_tracking ?
+        # URINARY GLUCOSE ADDS TO THE SOLUTE LOAD AND DOES NOT RESCALE IT -
+        # ADR 0029, and prereg section 5 forbade the rescaling. It is ZERO at every
+        # normal glucose, so Osm_load is bit-identical at the operating point.
+        Osm_load ~ (solute_tracking ?
                    Osm_nonNa + osm_Na * Na_excr +
-                   k_nonNa * (Na_excr - Na_excr_ref) : Osm_ref,
+                   k_nonNa * (Na_excr - Na_excr_ref) : Osm_ref) + glu_excr,
 
         # Urine volume is solute excretion divided by urine concentration, and
         # ADH sets the concentration. That is where the nonlinearity lives: the

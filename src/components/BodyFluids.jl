@@ -34,7 +34,7 @@ using ..LedgerParams:
     BF_ICF_ECF_OSMOTIC_TAU,
     BF_NA_INTAKE_NOMINAL, BF_H2O_INTAKE_NOMINAL, BF_H2O_INSENSIBLE_LOSS,
     BF_H2O_CUTANEOUS_LOSS,
-    BF_OSM_NONSODIUM,
+    BF_OSM_PLASMA_SETPOINT, GLU_PLASMA_FASTING,
     BF_BODY_MASS_REFERENCE
 
 """
@@ -91,7 +91,22 @@ function BodyFluids(; name, body_mass = BF_BODY_MASS_REFERENCE,
         # gain or lose solute on the timescales this model covers - only water
         # moves - so this is a parameter, not a state.
         Osm_solute_icf = BF_OSM_PLASMA_SETPOINT * body_mass * BF_ICF_MASS_FRACTION
-        Osm_other      = BF_OSM_NONSODIUM
+        # THE NON-SODIUM OSMOLAL REMAINDER, COMPUTED RATHER THAN STORED - ADR 0029.
+        # BF.OSM.NONSODIUM was a ledger row DERIVED as Osm_set - 2*C_Na = 7, and its
+        # own note said it represented "glucose potassium urea and other solutes".
+        # Glucose is now explicit, so the row would double-count it. Computing the
+        # remainder here keeps the identity EXACT at the operating point and stores
+        # no digits - the treatment md_vt_ref and f_dist_ref already have.
+        #
+        # AND THE RESULT IS A FINDING RATHER THAN A TIDY-UP. 287 - 280 - 5.44 leaves
+        # about 1.6 mOsm/kg for urea, potassium and everything else, and UREA ALONE
+        # IS ABOUT 5. So the remainder cannot hold what its old note said it held,
+        # which means BF.OSM.PLASMA_SETPOINT and BF.NA.PLASMA_SETPOINT DO NOT
+        # COMPOSE. They are sourced from different populations. Recorded in ADR 0029
+        # as a flagged inconsistency; nothing here is adjusted to hide it, because
+        # the model's behaviour at normal glucose is identical either way.
+        Osm_other      = BF_OSM_PLASMA_SETPOINT - 2 * BF_NA_PLASMA_SETPOINT -
+                         GLU_PLASMA_FASTING
     end
 
     # Defaults are INLINE. MTK v10 removed `defaults` as a constructor keyword,
@@ -105,6 +120,12 @@ function BodyFluids(; name, body_mass = BF_BODY_MASS_REFERENCE,
                                      body_mass * BF_ECF_MASS_FRACTION *
                                      BF_NA_PLASMA_SETPOINT : 0.0
         C_Na(t)             # mEq/L
+        # INPUT from renal, ADR 0029. [guess], NOT a default: a default on a
+        # CONNECTED variable is an initial CONDITION and over-determines the
+        # initialisation - "3 equations for 2 unknowns", retcode InitialFailure.
+        # It silently worked at normal glucose only because the default happened
+        # to equal the answer. Same failure mode as rn.ln_tal's, same fix.
+        C_glu(t), [guess = GLU_PLASMA_FASTING]   # mmol/L plasma glucose
         Osm_ecf(t)          # mOsm/kg
         Osm_icf(t)          # mOsm/kg
         J_store(t)          # mEq/day  net flux into storage, +ve = retaining
@@ -128,7 +149,12 @@ function BodyFluids(; name, body_mass = BF_BODY_MASS_REFERENCE,
         # accompanying anions. Standard approximation, and a known simplification -
         # it omits glucose and urea, which matters only in states this model does
         # not yet represent.
-        Osm_ecf ~ 2 * C_Na + Osm_other,
+        # GLUCOSE IS AN OSMOLE AND IS NOW COUNTED AS ONE - ADR 0029. At the
+        # fasting concentration this is algebraically identical to the old
+        # 2*C_Na + 7, so the operating point CANNOT move; it bites only when
+        # glucose leaves its fasting value, which is the whole point of the
+        # connection.
+        Osm_ecf ~ 2 * C_Na + C_glu + Osm_other,
         # Intracellular osmolality from a CONSERVED intracellular solute content.
         # Cells contain a fixed osmotically active solute mass; osmolality is that
         # mass divided by current cell water. This is what makes the compartment

@@ -142,12 +142,6 @@ def _check_one(p: dict[str, float]) -> int:
 
 
     # --- osmolality -------------------------------------------------------
-    check("plasma osmolality closes",
-          2 * p["BF.NA.PLASMA_SETPOINT"] + p["BF.OSM.NONSODIUM"],
-          p["BF.OSM.PLASMA_SETPOINT"],
-          "Osm_ecf = 2*C_Na + Osm_other must equal the osmolality setpoint, or "
-          "the model starts hypertonic and drives osmotic flux at t=0.",
-          errors)
 
     # --- compartment volumes ----------------------------------------------
     check("ICF + ECF = TBW",
