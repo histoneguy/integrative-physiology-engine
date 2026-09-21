@@ -66,6 +66,7 @@ using ..LedgerParams:
     RN_GFR_VOLUME_SENSITIVITY, RN_GFR_VOLUME_RANGE, RN_NA_MACULA_DENSA_FRACTION,
     RN_NA_PROXIMAL_SALT_SENSITIVITY, RAAS_PRA_REFERENCE,
     RN_NA_TAL_REABSORBED_FRACTION, RN_NA_MACULA_DENSA_CONC_REFERENCE,
+    RN_TAL_KM, RN_TAL_ADAPTATION_TAU,
     RN_NA_PROXIMAL_DELIVERY,
     BF_NA_PLASMA_SETPOINT, BF_NA_INTAKE_NOMINAL
 
@@ -121,6 +122,20 @@ function Renal(; name, solute_tracking::Bool = true,
         pra_ref_p = RAAS_PRA_REFERENCE
         f_tal    = RN_NA_TAL_REABSORBED_FRACTION
         md_c_ref = RN_NA_MACULA_DENSA_CONC_REFERENCE
+        Km_tal   = RN_TAL_KM
+        tau_tal  = RN_TAL_ADAPTATION_TAU
+        # THE MICHAELIS-MENTEN TRANSPORT INTEGRAL AT THE OPERATING POINT,
+        # Km*ln(C0/C) + (C0 - C), which is what fixes the product of Vmax and
+        # transit time. It is ARITHMETIC ON THREE ROWS ALREADY IN THE LEDGER and
+        # is computed here rather than stored, so there is no derived value to
+        # carry digits it did not earn and no closure check to defend them.
+        # The TAL entrance sits at plasma sodium because proximal reabsorption
+        # is ISOSMOTIC. Vmax and transit never appear separately: only their
+        # product is identified.
+        ln_ratio_ref = log(BF_NA_PLASMA_SETPOINT / md_c_ref)
+        md_vt_ref = Km_tal * ln_ratio_ref + (BF_NA_PLASMA_SETPOINT - md_c_ref)
+        # EXTENSIVE, so it carries the same size scaling GFR0 does.
+        H2O_prox_ref = GFR0 * f_prox
         # EXTENSIVE and SURFACE-like, exactly as GFR0 is: it is a filtered flux.
         # The ratio in md_drive is therefore size-free.
         Na_distal_ref = sz * RN_GFR_NOMINAL * BF_NA_PLASMA_SETPOINT *
@@ -362,6 +377,18 @@ function Renal(; name, solute_tracking::Bool = true,
         H2O_prox_out(t)     # L/day    end-proximal FLUID delivery
         Na_md(t)            # mEq/day  sodium arriving at the macula densa
         md_conc(t)          # mmol/L   THE LORENZ VARIABLE
+        # THE IMPLICIT UNKNOWN IS ln(C0/md_conc), NOT md_conc ITSELF. A
+        # concentration cannot be negative, but a Newton step on md_conc can
+        # overshoot past zero into the log, and the first build of this did:
+        # retcode Unstable with md_conc at 1e-9. Solving for the log-ratio makes
+        # positivity STRUCTURAL rather than something the solver has to respect.
+        # Its guess is the resting value, computed from the same two rows.
+        # [guess], NOT a default: a default on an algebraic unknown is an
+        # initial CONDITION and over-determines the system (retcode
+        # InitialFailure). A guess is what the initialisation solve starts from.
+        ln_tal(t), [guess = ln_ratio_ref]  # unitless ln(C0_tal / md_conc)
+        tal_cap(t) = 1.0    # unitless TAL transport capacity, adapts to load
+        C0_tal(t)           # mmol/L   TAL entrance concentration
         Na_excr(t)          # mEq/day  OUTPUT
         H2O_excr(t)         # L/day    OUTPUT
         FR_effective(t)     # unitless
@@ -542,7 +569,10 @@ function Renal(; name, solute_tracking::Bool = true,
         # descending limb's water reabsorption. They enter md_conc as a ratio and
         # nothing in hand separates them; splitting them would add a parameter no
         # measurement could constrain.
-        Na_md ~ Na_prox_out * (1.0 - f_tal),
+        # Sodium at the macula densa now FOLLOWS from the concentration and the
+        # flow, rather than from a fixed reabsorbed fraction. f_tal survives
+        # only as the constant that sets md_vt_ref at the operating point.
+        Na_md ~ md_conc * H2O_prox_out,
 
         # THE MACULA DENSA CONCENTRATION - the variable Lorenz 1990 perfused and
         # the one this model had no representation of until now. The thick
@@ -555,7 +585,36 @@ function Renal(; name, solute_tracking::Bool = true,
         # Vallon 2002 (PMID 12089382) - dietary salt did not affect the
         # tubuloglomerular feedback signal in nondiabetic rats - reproduced as an
         # EMERGENT CONSEQUENCE of the segment structure rather than assumed.
-        md_conc ~ Na_md / max(H2O_prox_out, 1e-6),
+        # SATURABLE TRANSPORT, 2026-09-20, tal_saturable_prereg.md, and ADR 0025
+        # named this as its own falsifier. Layton 1997 (PMID 9362340): NaCl
+        # concentration along the TAL "depends only on the fluid transit time up
+        # the TAL to that location" - the flow dependence, stated exactly, and the
+        # property a constant reabsorbed fraction cannot produce.
+        #
+        # For plug flow up a water-impermeable tube with Michaelis-Menten efflux,
+        # following a fluid element, dC/dt = -Vmax*C/(Km + C) integrates to
+        #
+        #     Km*ln(C0/C) + (C0 - C) = Vmax * transit_time,   transit ~ 1/flow
+        #
+        # written here as an IMPLICIT equation in md_conc. NOTHING IS FITTED: the
+        # right-hand side at rest is md_vt_ref, which is evaluated above from Km,
+        # plasma sodium and md_conc_ref, so the operating point is preserved BY
+        # CONSTRUCTION and no constant was chosen to make it so.
+        C0_tal ~ Na_prox_out / max(H2O_prox_out, 1e-6),
+
+        # THE CAPACITY ADAPTS, AND WITHOUT THIS THE PASS WOULD BREAK VALLON.
+        # f_prox_eff varies 1.76-fold with salt (Folkerd), so chronic TAL flow
+        # varies with it, and a FIXED capacity would swing md_conc about 34 percent
+        # between salt arms - against Vallon 2002, who measured no change in the
+        # feedback signal across dietary salt. Thick ascending limb transport
+        # capacity tracks sustained load, so acutely the capacity is fixed and flow
+        # raises the concentration, chronically it follows delivery and the
+        # concentration returns to reference. All three sources hold at once.
+        D(tal_cap) ~ (H2O_prox_out / H2O_prox_ref - tal_cap) / tau_tal,
+
+        md_conc ~ C0_tal * exp(-ln_tal),
+        Km_tal * ln_tal + C0_tal * (1.0 - exp(-ln_tal)) ~
+            md_vt_ref * tal_cap / (H2O_prox_out / H2O_prox_ref),
 
         Na_distal ~ Na_md,
 
