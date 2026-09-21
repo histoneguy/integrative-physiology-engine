@@ -528,6 +528,92 @@ derived row HAVE an interval, because 38 rows would fail on the day it is switch
 and most cannot be fixed without the upstream work above. **Turning that check on is the
 natural end of this item**, and the count is how progress on it should be measured.
 
+---
+
+### B15. Jensen's acute limb needs a mechanism that is NOT in the tubule — NEW, 2026-09-20
+
+**ADR 0025's falsifier has fired and this is the honest consequence.** Jensen's acute
+fractional sodium excretion rise is **49% against a band of 60-250**. Splitting the tubule
+cost it (94% -> 43%), and building the named fix - **saturable thick ascending limb
+transport, ADR 0026** - bought back six points of fifty-one.
+
+**WHAT WAS RULED OUT, BY BUILDING IT RATHER THAN BY ARGUING.** ADR 0025 said that if
+saturable transport did not restore the acute response, the constant-fraction assumption is
+not what is wrong. It did not. `tau_tal` was not shortened and `Km` was not adjusted, and
+**Jensen still failing is the evidence that neither was.**
+
+**WHAT I WOULD DO.** Jensen infused isotonic saline and measured a response over four hours.
+The model's chronic limbs are all correct - salt sensitivity 1.97, every Lobo endpoint, the
+sodium balance - so the defect is in a **fast** path. The candidates the model does not
+have, in the order I would take them:
+
+1. **Acute renal sympathetic withdrawal on tubular reabsorption.** ADR 0024 built the
+   sympathetic effect on the *renin threshold* only. `RN.MD.RENIN_GAIN`'s retired note said
+   in terms that sympathetic effects on tubular sodium reabsorption and on afferent tone
+   were still absent. Volume expansion unloads cardiopulmonary receptors in seconds.
+2. **A natriuretic peptide with an acute limb keyed to atrial stretch** rather than to the
+   slow volume signal `CV.VOLUME.NATRIURETIC_GAIN` now carries.
+3. **Peritubular physical factors** - the oncotic and hydrostatic route by which an isotonic
+   load lowers proximal reabsorption within minutes, which is a different mechanism from
+   the AngII-keyed `k_prox` the model has.
+
+**WHAT WOULD RESOLVE IT:** a decision about which to take first, and probably one paper.
+**(1) is my recommendation** - it is the one a retired ledger note already predicted, and
+it is the same arm ADR 0024 half-built.
+
+---
+
+### B16. Two extraction gaps in papers already in hand — NEW, 2026-09-20
+
+**Neither needs a new source. Both need a page of a paper that has already been read.**
+
+**LORENZ 1990 SERIES 2 SEMs.** `RN.MD.RENIN_SLOPE` = 0.029 per mmol/L is derived from four
+group means - 3.2 and 16.6 nGU/min at 80 and 24 mmol/L Na+, n = 8, P < 0.007.
+`macula_densa_lorenz_prereg.md` took down the means and the significance test **but not the
+dispersions**, so the row carries `uncertainty_type = none` with a note saying that this is
+an **extraction gap and not a precision claim**. Directive 1.13 says the inputs' uncertainty
+must be carried; here it was never taken. The full text is in the owner's hands.
+
+**BRIGGS 1984 FREE-FLOW SNGFR.** `gfr_tgf` is clamped to 0.6-1.4 and **ADR 0026 declares
+that clamp a numerical guard rather than a physiological claim**, because the abstract gives
+`dSNGFR_max` in nl/min and not the free-flow SNGFR it would have to be divided by. Measured,
+the guard spans 0.964-1.002 in normal operation and **never binds**, so nothing currently
+rides on it - but a manoeuvre that pushed the macula densa harder would make it load-bearing
+silently. One number from the full text retires the declaration.
+
+**WHAT WOULD RESOLVE BOTH:** the two papers. Lorenz is already supplied; Briggs 1984 (Am J
+Physiol 247:F808, PMID 6496746) is the one I would ask for.
+
+---
+
+### B17. An algebraic unknown silently disabled three harnesses — NEW, 2026-09-20, FIXED but worth a decision
+
+**Fixed, and recorded here because the failure mode is general and will recur.**
+
+Every unknown in this model was **differential** until ADR 0026. Three harnesses -
+`salt_step`, `validation/challenges.jl` and the haemorrhage test - carried *every* unknown
+between phases as an initial condition. An algebraic unknown is not one; pinning it
+over-determines the initialisation.
+
+**`salt_step`'s third salt arm then did not integrate at all.** It reported **103 mEq/day
+excreting 154** and a chronic salt sensitivity of **0.95 against a true 1.96 - and raised no
+error.** A failed solve was cycle-averaged and checked against a human band.
+
+All three now carry differential states only and **treat a failed retcode as an error**. The
+classifier asserts it found something, because its first version matched `Differential(t)(`
+while ModelingToolkit prints `Differential(t, 1)(`, carried nothing at all, and made Jensen
+read **-17%**.
+
+**THE DECISION THIS LEAVES.** Nothing in the six gates could have seen either failure, and
+the suite caught only the second. **Is a seventh gate warranted** - one that asserts every
+harness in the repository checks `successful_retcode` before summarising? CLAUDE.md says do
+not add tooling unless something breaks that cannot be worked around. **Something broke, and
+it broke quietly, twice in one afternoon.** My inclination is still **no** - the assertions
+are now in the three places that carry state, and a gate that greps for `solve(` would have
+a false-positive rate like the first `check_tolerances.py` - but it is the owner's call.
+
+---
+
 ### B7. A de-indexing correction is owed
 
 `validation/ecf_salt_response_extract.py` multiplies an *indexed* ECF difference by ONE
