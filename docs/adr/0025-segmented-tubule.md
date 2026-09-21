@@ -113,3 +113,16 @@ flow-sensitive closed a positive feedback loop with gain 1.6 and left the model 
 steady state at all; it took tubuloglomerular feedback (ADR 0026) and a renin gain sourced
 from Lorenz rather than fitted (ADR 0027) to get a steady state back. **Both were correct
 and both were missing.** Neither restored Jensen.
+
+## Amendment 2 — the segments were given the signal and not the flux, 2026-09-21
+
+**ADR 0028.** This record split the tubule for the renin signal and left sodium excretion a
+whole-nephron fraction, with `Na_distal` computed and **read by nothing** — the same defect
+`tubule_segments_prereg.md` diagnosed in `Na_prox_out`, one level down. The comment this
+record put on `Na_distal` — *"THE SODIUM EQUATION ABOVE IS UNTOUCHED AND THAT IS THE
+POINT"* — was right for a pass that was only moving the signal, and stopped being right the
+moment that pass shipped.
+
+Routing excretion through the segments moved Jensen **49.5% → 59.9%** with **no new
+parameter**, and connected Folkerd 1995's proximal salt response, which had been reaching
+excretion through nothing at all.

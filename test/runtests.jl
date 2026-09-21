@@ -18,7 +18,7 @@ using SciMLBase
 # moves from near the floor toward the middle. NOTHING WAS FITTED TO PUT IT THERE -
 # deindexing_prereg.md section 4 forbids re-estimating G_pn or G_vn, and neither
 # moved.
-const SALT_MAP_SHIFT = 2.0122
+const SALT_MAP_SHIFT = 1.7706
 
 # THE ACUTE PIN, AND THE REASON IT DID NOT EXIST UNTIL 2026-09-17.
 #
@@ -87,7 +87,7 @@ const SALT_MAP_SHIFT = 2.0122
 # flux-carrying segments and md_drive re-keyed to macula densa CONCENTRATION. It
 # was 2.733 while g_md was calibrated against van den Bosch; that calibration is
 # gone, so this is the model's own value compared with nothing but itself.
-const MD_RENIN_RATIO = 1.3430
+const MD_RENIN_RATIO = 1.3024
 
 #
 # MOVED 2026-09-20, 94.01 -> 43.53, tubule_segments_prereg.md, AND THIS ONE IS A
@@ -110,7 +110,7 @@ const MD_RENIN_RATIO = 1.3430
 #
 # THE STRUCTURE IS KEPT AND THE FAILURE IS REPORTED. The sourced variable is the
 # right one; the missing mechanism is named and is a separate pass.
-const JENSEN_FINAL_WINDOW_RISE = 49.50
+const JENSEN_FINAL_WINDOW_RISE = 59.90
 
 # ---------------------------------------------------------------------------
 # RUN ONE TESTSET INSTEAD OF ALL 37. Directive 1.10, applied to the DEV LOOP
@@ -450,7 +450,7 @@ end
         # MOVES FROM THE FLOOR OF THE HUMAN BAND INTO IT, and it was not
         # fitted there - this test's own comment says "do not simply refit G_vr to
         # make it pass", and G_vr was not touched.
-        @test isapprox(ratio, 3.2142; rtol = 1e-3)
+        @test isapprox(ratio, 3.2218; rtol = 1e-3)
     end
 
     @tset "the acute natriuresis is pinned, because challenges.jl never runs in CI" begin
@@ -573,7 +573,7 @@ end
         # reason: the operating point is pinned by construction and only the
         # response can move. This is a sourced physiological term landing, not a
         # tuning.
-        pre_partition = (205.0 => 87.0053,
+        pre_partition = (205.0 => 86.6832,
         # RE-PINNED 2026-09-09 when 55 ledger values were rounded to measurement
         # precision. The movement is 0.01 mmHg - four orders below what a
         # sphygmomanometer resolves - and comes from cardiac output going
@@ -589,8 +589,8 @@ end
         # water accumulation, and removing it moved the 30-day endpoint by 0.011
         # mmHg. That is the fourth significant figure on a pressure, which is
         # directive 1.9 territory - but it is a rounding error being REMOVED.
-                         154.0 => 86.0397,
-                         103.0 => 84.9932)
+                         154.0 => 85.7450,
+                         103.0 => 84.6919)
         # RE-PINNED 2026-09-09, BR.OPEN_LOOP_GAIN 2.0 -> 5.62. A stronger
         # reflex leaves a larger residual setpoint error at the end of a
         # 30-day arm, because pressure is still drifting there and the
@@ -660,7 +660,7 @@ end
         # moved 1.8858 -> 2.0042 over the same change, and SALT_MAP_SHIFT carries
         # that one.
         @test isapprox(check_pressure_natriuresis(r).map_shift_mmHg,
-                       2.0122; rtol = 1e-3)   # 4.9352 -> 4.9067 -> 4.7672 -> 2.2467 -> 1.9088
+                       1.9908; rtol = 1e-3)   # ... -> 2.2467 -> 1.9088 -> 2.0122
                        # 2026-09-02: ADR 0010's volume-keyed path landed and the
                        # disabled-ADH branch moved with everything else.
     end
@@ -698,9 +698,9 @@ end
         # REPINNED 2026-09-03 with the ADR 0012 block above, and they move
         # together on purpose: these two blocks pin the SAME three numbers to
         # assert DIFFERENT claims about them. RN.GFR.VOLUME_SENSITIVITY wired.
-        pre_raas = (205.0 => 87.0053,
-                    154.0 => 86.0397,
-                    103.0 => 84.9932)
+        pre_raas = (205.0 => 86.6832,
+                    154.0 => 85.7450,
+                    103.0 => 84.6919)
         # RE-PINNED 2026-09-09 with BR.OPEN_LOOP_GAIN 2.0 -> 5.62, same cause and
         # same magnitude as the ADR 0012 copy above: a stronger reflex leaves a
         # larger residual setpoint error at the end of a 30-day arm. Fourth
@@ -767,14 +767,47 @@ end
         # the path to the same steady state differs. 0.0103 mmHg on 86 is one part
         # in 8,400. The failure this test guards is "a few mmHg", and 5e-2 is still
         # two orders tighter than that.
+        # ============================================================
+        # THIS CLAIM IS NOW FALSE, AND THAT IS THE RESULT OF ADR 0028.
+        # REWRITTEN 2026-09-21, segmental_flux_prereg.md. NOT LOOSENED.
+        #
+        # Everything above remains true about `fr_mod`: aldosterone escape still
+        # drives the tubular increment to machine epsilon at every steady state,
+        # so THAT route contributes nothing chronically. What changed is that it
+        # is no longer the only route.
+        #
+        # RAAS now reaches sodium excretion through a SECOND path:
+        #
+        #     pra -> f_prox_eff -> Na_distal -> Na_excr
+        #
+        # Folkerd 1995's proximal salt response has existed since 2026-09-20 and
+        # until ADR 0028 it reached excretion THROUGH NOTHING - it moved
+        # `Na_prox_out`, which fed `md_conc`, out of which `f_prox_eff` cancels
+        # exactly. Giving the segments the flux connected it. A sourced human
+        # measurement that previously did no work now does some.
+        #
+        # SO THE DISABLED-RAAS BRANCH IS NO LONGER INERT AT STEADY STATE, and
+        # asserting that it is would now be asserting that Folkerd's response is
+        # still disconnected. The measured separation is pinned instead.
         on  = salt_step(raas = true)
         off = salt_step(raas = false)
         for (a, b) in zip(on.levels, off.levels)
             @test a.level == b.level
-            @test isapprox(a.MAP_final, b.MAP_final; atol = 5e-2)
         end
-        @test isapprox(check_pressure_natriuresis(on).map_shift_mmHg,
-                       check_pressure_natriuresis(off).map_shift_mmHg; atol = 5e-2)
+        # DRIFT PIN on the model's own separation, three salt levels, mmHg.
+        # 0.336 / 0.433 / 0.606 at 205 / 154 / 103 mEq/day: turning RAAS off
+        # LOWERS pressure. Without renin, pra falls, so f_prox_eff RISES - the
+        # proximal tubule passes MORE sodium on - and excretion is now
+        # delivery-scaled, so more leaves and pressure settles lower. The
+        # separation GROWS as intake falls, which is the direction Folkerd
+        # measured the proximal response to run.
+        for (a, b, expect) in zip(on.levels, off.levels, (0.3359, 0.4326, 0.6057))
+            @test isapprox(a.MAP_final - b.MAP_final, expect; atol = 0.01)
+        end
+        # And the salt-step shift differs by the same mechanism.
+        @test isapprox(check_pressure_natriuresis(off).map_shift_mmHg -
+                       check_pressure_natriuresis(on).map_shift_mmHg,
+                       0.2697; atol = 0.01)
     end
 
     @tset "RAAS still closes the loop" begin

@@ -5621,6 +5621,86 @@ sensitivity **1.97** (1.70-2.30). Every Lobo endpoint passes. `md_conc` **53.5 a
 against 53.96 at 230** - Vallon holds.
 
 
+### 3.69 THE SEGMENTS FINALLY CARRY THE FLUX, AND B15 WAS WRONG
+
+**ADR 0028**, pre-registered in `segmental_flux_prereg.md`. Suite 802/802, six gates green,
+`challenges.jl` red on one endpoint by a third of a percentage point.
+
+#### The defect, and it was the same one twice
+
+ADR 0025 split the tubule for the renin SIGNAL and left the excretion path lumped.
+**`Na_distal` was computed and read by nothing** - one test asserted it, the GUI exported
+it - which is exactly what `tubule_segments_prereg.md` diagnosed in `Na_prox_out`: *"a
+sourced, correct, salt-responsive quantity that does no work."* The comment sitting on
+`Na_distal` said so in terms: *"THE SODIUM EQUATION ABOVE IS UNTOUCHED AND THAT IS THE
+POINT."* Right for that pass, wrong once it stood alone.
+
+#### B15 WAS WRONG AND THE REPOSITORY HAD ALREADY SAID SO, THREE TIMES
+
+`OPEN-QUESTIONS` B15 recommended building acute renal sympathetic withdrawal on tubular
+reabsorption. **That arm is already in this model, unlabelled.**
+`cardiopulmonary_sympathetic_prereg.md` §1 forbids a third natriuretic term keyed to central
+volume because `V_central` = `f_c`x`V_blood`; §3.57 then MEASURED it - the volume-keyed arm
+carries **77% of the chronic swing**, keyed to `V_blood` because *"atrial stretch is
+intravascular"*, and Lohmeier's Den/Inn ratio says **roughly half of such a response is
+nerve traffic**; and §3.58 renamed the row for that reason. **I recommended building a thing
+the repository had already built, measured and forbidden rebuilding.** B15 is corrected in
+place rather than dropped.
+
+#### What was built instead, and it has no free parameter
+
+    f_dist_excr ~ clamp((1 - f_dist_ref)*renal_mod - fr_mod/(f_prox*(1 - f_tal))
+                        + (G_pn*dMAP + vn_sig)/max(Na_distal, 1e-6), 0, 1)
+    Na_excr     ~ Na_distal * f_dist_excr
+
+`f_dist_ref` is derived IN THE COMPONENT from rows already present, so the operating point
+is preserved EXACTLY. Circadian and aldosterone become fractions of what the segment
+RECEIVES; the pressure and volume terms stay absolute fluxes untouched.
+
+**Alexander 1972 (PMID 4639021) is the phenomenon and it is HUMAN**: acute isotonic saline
+lowers proximal fractional reabsorption 4.8 percent and distal 4.4 percent, chronic
+expansion lowers proximal 3.9 percent and leaves distal UNALTERED. **A lumped fraction
+cannot be unaltered and depressed at the same time.**
+
+**HIS MAGNITUDES ARE NOT ENTERED AND THE REASON IS ON THE ROW:** his distal index is
+`C_H2O/V`, a FREE-WATER proxy, not this model's distal sodium fraction, and the full text
+that would permit the conversion is scanned page images. Only the structure was taken, so
+**Phase 2 of the pre-registration was not built.**
+
+#### Jensen 49.5 -> 59.9 with nothing fitted, and the residual is inside the measurement
+
+The band is 60-250 and the harness reports red by 0.1. **`challenges.jl`'s own note says
+that band is *"TIGHTER than the reported statistics can justify"*** - Jensen's FE_Na 1.26
+(SD 0.53) to 2.80 (SD 0.75), n = 23, with no paired correlation published, supports
+**-18% to +502%**. The band was NOT widened and Phase 2 was NOT built to cross it.
+Directive 1.14: a disagreement inside the measurement's own resolution is not a finding.
+
+#### THE DISABLED-RAAS BRANCH IS NO LONGER INERT, AND THAT IS THE RESULT
+
+Aldosterone escape still drives `fr_mod` to machine epsilon at every steady state. But RAAS
+now reaches excretion through a SECOND path, `pra -> f_prox_eff -> Na_distal -> Na_excr`.
+**Folkerd 1995's proximal salt response has existed since 2026-09-20 and reached excretion
+through NOTHING**, because `f_prox_eff` cancels exactly out of `md_conc`. It does work now.
+
+Turning RAAS off LOWERS MAP by **0.336 / 0.433 / 0.606 mmHg** at 205 / 154 / 103 mEq/day -
+without renin the proximal tubule passes more sodium on, and excretion is delivery-scaled.
+**The separation grows as intake falls, which is the direction Folkerd measured.** The suite
+assertion that the branch is inert was REWRITTEN to pin the separation, not loosened.
+
+#### The cost, stated rather than left to be found
+
+**Chronic salt sensitivity fell 1.97 -> 1.74**, band 1.70-2.30. Inside, and near the floor.
+**`G_vn` and `G_pn` were NOT re-solved** - the pre-registration forbade it, and re-solving
+them in the pass that restructured their path is the double count this repository keeps
+catching.
+
+#### Unchanged
+
+MAP 87.0, `Na_excr` 205.0, urine 1.70 L/day, GFR 152.6, plasma sodium 140.0. `md_conc` 53.5
+at 38 mEq/day against 53.96 at 230 - Vallon holds. Both Lobo endpoints, the acute ordering
+ratio. Chronic renin ratio 1.302, still a FAILED test since ADR 0027.
+
+
 ## 4. NEXT, IN ORDER
 
 **Rewritten 2026-09-03, and item 1 was discharged the same day.** The previous list's
