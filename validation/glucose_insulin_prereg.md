@@ -417,3 +417,43 @@ REASON IT WAS NOT ONE HERE.**
 
 **Tests 1, 2, 4, 5 and 6 all still run**, and test 4 — osmotic diuresis — is the prediction
 this pass exists to produce.
+
+### 9.11 AMENDMENT — Zanetti's units resolved, and G2 still stands
+
+**The owner supplied Zanetti's Methods and Supplementary Information, 2026-09-21.** Two
+things change and one does not.
+
+**THE UNITS OBJECTION IN §9.8 IS WITHDRAWN.** The Methods read: *"the M value, the rate of
+glucose disposal, was calculated as the amount of glucose taken up during the EIC study and
+was transformed to milligrams per kilogram body weight per minute."* So RISC's
+
+    M = 7.12 +/- 2.95 mg/kg/min, n = 966 healthy adults, age 44.5 (8.3), BMI 25.4 (4.0)
+
+**is a real, unit-stated measurement and §9.8's rejection of it no longer applies.** It was
+correct at the time - no unit appears in the paper body or its tables - and it is withdrawn
+rather than deleted, because the reason it was made is the reason to keep looking.
+
+**BUT THE ESM GIVES THE INFUSION RATE, NOT THE ACHIEVED CONCENTRATION.** RISC clamped
+glucose at 4.5-5.5 mmol/L with insulin infused at **240 pmol/min/m2**, steady state 80-120
+min. The ESM's own words are that M measures *"sensitivity to the prevailing plasma insulin
+concentrations"* - and **the prevailing concentration is not reported.**
+
+**A POINT WITHOUT ITS ABSCISSA IS NOT A POINT.** The model needs disposal as a function of
+insulin:
+
+    disposal = (k_ii + S_I * I) * G
+
+Fasting gives one equation, the clamp gives a second, and **I_clamp is a third unknown**.
+Recovering it from 240 pmol/min/m2 would require an insulin clearance that is not sourced
+either, and chaining one assumption onto another to manufacture a measurement is the
+failure §3.26 records. **BRANCH G2 IS UNCHANGED.**
+
+**WHAT IS RECORDED INSTEAD — A HELD-OUT TARGET, NOT A PARAMETER.** M = 7.12 mg/kg/min
+against this model's basal disposal of 1.93 mg/kg/min is a **3.7-fold dynamic range** for
+insulin-stimulated glucose disposal in healthy humans. **It is NOT entered in the ledger,
+because nothing reads it and directive 1.11 exists to prevent exactly that.** It is written
+here so that the day an insulin axis lands, there is a number waiting that no part of that
+pass will have been fitted to.
+
+**WHAT WOULD UPGRADE G2 TO G1:** the steady-state plasma insulin concentration during the
+RISC clamp. One number, from a RISC baseline paper rather than this one.

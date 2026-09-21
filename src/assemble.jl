@@ -127,6 +127,10 @@ function build_raw_model(; body_mass = 70.0, storage::Bool = true,
         # against the iothalamate space.
         rn.V_ecf        ~ bf.V_ecf,
         # renal -> body fluids (closes the loop)
+        # PLASMA GLUCOSE, ADR 0029. Same direction as the sodium and water
+        # edges: renal owns the balance because it owns GFR and the reabsorptive
+        # maximum, and bodyfluids consumes the concentration as an OSMOLE.
+        bf.C_glu        ~ rn.C_glu,
         bf.Na_excr_rate ~ rn.Na_excr,
         bf.H2O_excr_rate ~ rn.H2O_excr,
         # cardiovascular -> body fluids (currently unused downstream)
