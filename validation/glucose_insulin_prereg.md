@@ -299,3 +299,73 @@ branch **G2** applies.
   `reported`, cycle and population named on the row.
 - **N2 — the download fails or the columns are absent.** Record it, and fall back to a
   published reference interval with its cohort stated. Do NOT substitute a textbook value.
+
+### 9.4 Basal endogenous glucose production — SOURCED
+
+**Huidekoper HH et al.** *Endogenous glucose production from infancy to adulthood: a
+non-linear regression model.* Arch Dis Child 2014 Dec. **PMID 24996789. ABSTRACT READ IN
+FULL on PubMed, 2026-09-21.**
+
+`[6,6-2H2]` glucose dilution after an overnight fast during normoglycaemia, **n = 40
+healthy subjects aged 2.5-54.3 y**, one-phase exponential decay fit:
+
+    EGP (mg/kg/min) = 6.50 * e^(-0.145 * age_years) + 1.93
+
+**THE ADULT PLATEAU IS WHAT A MODEL WITHOUT AN AGE DIMENSION CAN USE.** Beyond about 30
+years the exponential term contributes under 2%, so EGP is **1.93-1.97 mg/kg/min** across
+the adult range and the age term is not representable here anyway.
+
+**THE COHORT IS PAEDIATRIC-WEIGHTED AND THAT IS THE LIMITATION.** It is an *Archives of
+Disease in Childhood* paper whose purpose is paediatric fluid therapy; the adult end of
+2.5-54.3 y is the sparse end. **No dispersion is given for the regression parameters in the
+abstract** — a second extraction gap of the same kind as Lorenz's SEMs.
+
+§2's flagged round number, **"2 mg/kg/min"**, again sits close to a sourced value that
+carries a form and a cohort where the round number carries neither.
+
+### 9.5 Fasting glucose and fasting insulin — SOURCED, branch N1
+
+`validation/glucose_insulin_extract.py`, NHANES 2007-2012, run 2026-09-21. **n = 5,563**
+after every exclusion §10.2 fixed in advance.
+
+| | median | IQR |
+|---|---|---|
+| fasting plasma glucose | **5.44 mmol/L** (98 mg/dL) | 5.05-5.77 |
+| fasting insulin | **64.2 pmol/L** (9.25 uU/mL) | 41.9-103.2 |
+
+**DIRECTIVE 1.12 SCORES AGAIN, AND THIS TIME THE ROUND NUMBER IS MATERIALLY WRONG.** §2
+listed "5.0 mmol/L" as the teaching value for fasting glucose. **5.0 sits essentially at the
+25th percentile of healthy US adults, not at the median** — the measured centre is 5.44.
+That is the fifth instance of this repository's pattern.
+
+**The median, not the mean, and it was fixed before the data were seen** (§10.4). Fasting
+insulin's weighted mean is 11.87 uU/mL against a median of 9.25 — **28% apart** — so a mean
+would have described nobody typical.
+
+### 9.6 Insulin sensitivity — ONE SOURCE OPENED AND REJECTED
+
+**Tam CS et al.** *Defining insulin resistance from hyperinsulinemic-euglycemic clamps.*
+Diabetes Care 2012;35(7):1605-1610. **PMID 22511259. ABSTRACT READ IN FULL, 2026-09-21.**
+
+**NOT ADMISSIBLE, AND REJECTED ON TWO OF THIS PASS'S OWN RULES:**
+
+1. **Its numbers are CUT-POINTS, not measurements.** It reports the glucose disposal rate
+   below which 75% of individuals "are truly insulin resistant" — 4.9 mg/kg/min on body
+   weight. **§2 names diagnostic cut-points as a class this repository keeps getting wrong**
+   and this is one.
+2. **Its cohort contains diabetics by design** — 51 with diabetes against 116 without.
+   **§3 excludes diabetes cohorts for anything that sets a NORMAL value.**
+
+**Recorded rather than quietly skipped**, because a source opened and rejected is evidence
+about the search and the next reader should not have to open it again.
+
+### 9.7 Still outstanding — the §4 blocker
+
+**Insulin sensitivity from a perturbation in healthy adults.** The right cohort has been
+identified: the **EGIR-RISC study** — about 1,300-1,500 healthy Europeans aged 30-60,
+euglycaemic clamp, across 19-20 centres, **a study whose subject IS normal insulin
+sensitivity**, which is exactly what directive 1.7 asks for. The value is not yet in hand.
+
+**IF IT DOES NOT OPEN, BRANCH G2 APPLIES** and glucose is built with a fixed disposal rate
+and no insulin state. That is written here before the attempt, so a failure to source
+cannot quietly become a fit.
