@@ -619,6 +619,74 @@ a false-positive rate like the first `check_tolerances.py` - but it is the owner
 
 ---
 
+### B18. The model has no thirst, so it cannot produce polyuria — NEW, 2026-09-21
+
+**Found by the owner asking what the fluid intake was**, while the glucose pass was reporting
+an osmotic diuresis it had not earned.
+
+`BF.H2O.INTAKE_NOMINAL` is **2.5 L/day**, `extraction_method = assumed`, citation
+**"Convention pending primary source."** Water intake is a fixed parameter, so at steady
+state urine volume is pinned at intake minus losses — **1.70 L/day at every glucose
+concentration the model can reach.** An osmotic load appears as urine **concentration**
+instead (547 → 728 mOsm/kg), which is the right direction and the wrong variable.
+
+**WHY IT MATTERS BEYOND GLUCOSE.** Every osmotic or solute challenge this model will ever run
+— hyperglycaemia, high-protein diets, mannitol, diabetes insipidus — is a challenge to which
+a real person responds by **drinking**. Without thirst the model answers all of them by
+concentrating urine and none by making more of it.
+
+**WHAT I WOULD DO.** Thirst is an afferent this model already half has: `Osm_ecf` is computed
+and ADH already reads it. The missing piece is an efferent onto `H2O_intake`. The osmotic
+threshold for thirst is measurable in healthy humans by hypertonic saline infusion — the same
+paradigm Baylis used for vasopressin, and ADH.OSM.THRESHOLD is already sourced from it.
+**Directive 1.7 is satisfied: the relationship is the subject of that literature.**
+
+**WHAT WOULD RESOLVE IT:** a decision to build it, and one hypertonic-infusion study in
+healthy adults reporting the thirst threshold and slope. This is probably the highest-value
+unbuilt mechanism in the model, because it unblocks a whole class of challenge.
+
+---
+
+### B19. The two osmolality setpoints do not compose — NEW, 2026-09-21
+
+`BF.OSM.PLASMA_SETPOINT` = 287 mOsm/kg and `BF.NA.PLASMA_SETPOINT` = 140 mEq/L are each
+`reported` and each sourced. **They do not add up.**
+
+ADR 0029 made glucose an explicit osmole and computed the remainder rather than storing it:
+`287 − 2×140 − 5.44` = **1.56 mOsm/kg** left for urea, potassium and everything else — and
+**urea alone is about 5**. The retired `BF.OSM.NONSODIUM` row was a closure residual whose
+own note claimed it represented "glucose potassium urea and other solutes", and it cannot
+have.
+
+**NOTHING WAS ADJUSTED**, because the model's behaviour at normal glucose is identical either
+way — the discrepancy is entirely inside the constant. But it means one of the two setpoints
+is from a population the other is not, and the conventional formula `Osm = 2[Na] +
+glucose + urea` would put the model at about 290.4 rather than 287.
+
+**WHAT WOULD RESOLVE IT:** plasma osmolality and plasma sodium measured in the SAME cohort.
+NHANES carries both in its biochemistry profile, and `glucose_insulin_extract.py` already has
+the download machinery — this is one extraction, not a literature search.
+
+---
+
+### B20. Glucose has no splay, so glycosuria starts too late — NEW, 2026-09-21
+
+ADR 0029 spills glucose at `TmG/GFR`, which is about **18 mmol/L**. People spill nearer
+**10–11**. The difference is **splay** — nephrons are heterogeneous, so glycosuria begins
+before any single nephron reaches its own maximum, and this model has one nephron's worth of
+kinetics.
+
+**THE TEACHING THRESHOLD WAS NOT SUBSTITUTED TO HIDE IT.** The pre-registration flagged "180
+mg/dL" in advance as the most suspect number in the subsystem, and the arithmetic bore that
+out: it is **not** `Tm/GFR`, and entering it would have been fitting a population
+observation in place of a mechanism.
+
+**WHAT WOULD RESOLVE IT:** a glucose titration curve in healthy humans reporting excretion
+against plasma concentration across the spill region — Mogensen's own full text may have it,
+since he performed exactly that titration. **PMID 5093515, and the full text is paywalled.**
+
+---
+
 ### B7. A de-indexing correction is owed
 
 `validation/ecf_salt_response_extract.py` multiplies an *indexed* ECF difference by ONE
