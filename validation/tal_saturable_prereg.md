@@ -136,3 +136,85 @@ and §5 test 1 exists so that it cannot be.
 
 **Presenting Layton's constants as measurements.** They are a model's parameters, chosen in
 his Ref. 15 to match experiments. The row says so.
+
+---
+
+## 7. AMENDMENT 1 — L5, AND IT IS NOT ONE OF THE FOUR OUTCOMES I DECLARED
+
+**Written 2026-09-20, after running the structure in §1.1 and BEFORE building anything to
+fix it.** §4 offered four outcomes. **The model produced a fifth: it does not have a steady
+state at all.** That is my omission, not a surprise in the physiology, and it is recorded
+here rather than quietly repaired.
+
+### What happened
+
+`retcode = Success`, and the trajectory is a **violent limit cycle**: `pra` between 1e-66
+and 23.4, `md_conc` between 1e-9 and 131.7, `f_prox_eff` slamming between both ends of its
+clamp. Nothing converges.
+
+### The cause, measured rather than argued
+
+Differentiating the transport integral at the operating point:
+
+    dC/dphi = R / (Km/C + 1) = 61 mmol/L per unit relative flow
+    relative gain (dC/C)/(dphi/phi) = 1.13
+
+So `md_conc` is **slightly more than proportional to TAL flow** — and that closes a loop
+which was inert while the reabsorbed fraction was constant:
+
+    md_conc down -> md_drive up -> renin up -> pra up
+                 -> proximal reabsorption up -> TAL flow down
+                 -> transit longer -> md_conc down FURTHER
+
+Loop gain through the sourced constants is `1.13 x g_md 4.99 x k_prox 0.29` = **1.6**, times
+the renin-to-`pra` gain. **Above one, so it diverges.**
+
+**CONFIRMED BY BREAKING IT AT EACH END, not by inspection:**
+
+| | retcode | `md_conc` | `pra` | MAP, last 100 d |
+|---|---|---|---|---|
+| as built | Success | 1e-9 – 131.7 | -9e-8 – 23.4 | oscillating |
+| `k_prox` = 0, actuator cut | Success | **53.8 – 54.2** | **1.0 – 1.32** | **87.01 flat** |
+| `g_md` = 0, sensor cut | Success | **53.8 – 58.9** | **1.0 – 1.30** | **87.01 flat** |
+
+Either cut removes it completely. **The loop is the one named above and no other.**
+
+### THE MISSING MECHANISM IS TUBULOGLOMERULAR FEEDBACK
+
+The macula densa has **two** effectors. This model has the slow one and not the fast one:
+
+- **renin release**, slow, inverse — built, ADR 0021;
+- **afferent arteriolar tone**, seconds, direct — **not built**. A rise in luminal NaCl
+  constricts the afferent arteriole and **lowers** single-nephron GFR, which lowers flow
+  and returns the concentration. **Negative feedback, and it is the loop that dominates at
+  the macula densa.**
+
+While the TAL reabsorbed a constant fraction, `md_conc` = `C_Na(1 - f_tal)` **could not
+respond to flow at all**, so neither feedback path could act and the omission was invisible.
+Making transport saturable is what exposed it.
+
+**THIS IS "CONNECT IT AND RUN IT" (directive 1.11) PRODUCING A DEFECT NO GATE COULD SEE.**
+Six gates pass on the unstable model. Running it is what found this.
+
+### L5 — the decision rule, fixed before the fix is built
+
+- **The instability is a REAL PROPERTY of the structure**, not a solver artefact: it
+  survives `Rodas5P` at `abstol` and `reltol` of 1e-8 and is removed by cutting either end
+  of the loop.
+- **`g_md` MAY NOT BE REDUCED to restore stability.** §3 already forbids re-solving it and
+  the reason is now stronger, not weaker: a smaller gain would hide a missing mechanism
+  behind a fitted constant. The same goes for `k_prox`, which is Folkerd's.
+- **`tau_tal` MAY NOT BE SHORTENED to damp it.** §6 named that as what would make this pass
+  a failure, and the instability is exactly the pressure that would tempt it.
+- **Tubuloglomerular feedback is to be SOURCED AND BUILT**, not approximated by a damping
+  term chosen to work. Its own ADR, its own evidence tier, its own falsifier.
+- **If TGF with sourced constants does NOT stabilise the loop**, that is the result and it
+  is reported as one. Saturable transport would then be wrong or incomplete, and §4's L3
+  applies after all.
+
+### What this does NOT change
+
+The transport integral, `Km`, and the entrance concentration are untouched, and the
+operating point is still preserved by construction. **The equation is not what is broken.**
+What is broken is that a flow-sensitive macula densa was wired to its slow effector and not
+its fast one.
