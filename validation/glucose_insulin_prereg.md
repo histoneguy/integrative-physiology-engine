@@ -234,3 +234,68 @@ abstract was opened. The full text is paywalled.
 
 Fasting plasma glucose and insulin in healthy adults; basal glucose turnover; glucose
 distribution volume; and at least one PERTURBATION for §4's identifiability requirement.
+
+---
+
+## 10. THE NHANES OPERATIONALISATION, FIXED BEFORE THE EXTRACTION IS WRITTEN
+
+**Appended 2026-09-21, before `glucose_insulin_extract.py` exists.** Verify with
+
+    git log --diff-filter=A -- validation/glucose_insulin_extract.py
+
+§3 fixed admissibility in words. **This fixes it in columns**, because "healthy adult" is a
+decision and `nhanes_hpt_prereg.md` set the precedent that it is made before the data are
+touched, not after.
+
+### 10.1 Files and cycles
+
+NHANES **2007-2008 (E), 2009-2010 (F), 2011-2012 (G)** — the same three cycles the thyroid
+axis used, so the two subsystems describe the same population. Files **GLU** (fasting
+glucose `LBXGLU`, insulin `LBXIN`), **DEMO**, **RXQ_RX**, **DIQ**.
+
+**Insulin moved out of the GLU file after 2011-2012**, which is the reason these three
+cycles and not later ones. Stated so the choice is not mistaken for cherry-picking.
+
+### 10.2 The population, fixed now
+
+**Include:** age `RIDAGEYR` **>= 20**; valid `LBXGLU` **and** `LBXIN`; fasting-subsample
+weight `WTSAF2YR` > 0; fasting time `PHAFSTHR` **>= 8** hours.
+
+**Exclude:**
+- **Diagnosed diabetes** — `DIQ010 == 1`.
+- **Told they are prediabetic** — `DIQ160 == 1`. Excluded because §3 says a NORMAL value may
+  not come from people who have lost the relationship, and prediabetes is the loss beginning.
+- **Any glucose-lowering drug** in `RXQ_RX`, matched as substrings of `RXDDRUG`:
+  INSULIN, METFORMIN, GLIPIZIDE, GLYBURIDE, GLIMEPIRIDE, PIOGLITAZONE, ROSIGLITAZONE,
+  SITAGLIPTIN, SAXAGLIPTIN, LINAGLIPTIN, EXENATIDE, LIRAGLUTIDE, ACARBOSE, NATEGLINIDE,
+  REPAGLINIDE, CHLORPROPAMIDE, TOLBUTAMIDE, TOLAZAMIDE.
+- **Pregnancy** — `RIDEXPRG == 1`.
+- **`LBXGLU` >= 126 mg/dL**, the diagnostic threshold for undiagnosed diabetes. **THIS IS A
+  DIAGNOSTIC CUT-POINT AND NOT A MEASUREMENT** — §2 — and it is used here ONLY to exclude
+  people, never as a model value. The count excluded is reported.
+
+### 10.3 Weighting, and the same honesty as the thyroid pass
+
+Point estimates weighted with `WTSAF2YR/3` for three pooled cycles. **Standard errors
+computed WITHOUT strata and PSU**, so they are independent-sampling errors and are
+**optimistic by a design-effect factor of roughly 1.5 to 2.5**. No conclusion in this pass
+may rest on one being narrow. Copied deliberately from `nhanes_hpt_extract.py` rather than
+re-derived.
+
+### 10.4 What is taken, and what is NOT
+
+**TAKEN:** the weighted **median and interquartile range** of fasting glucose and of fasting
+insulin, and the counts at each exclusion step.
+
+**NOT TAKEN: any relationship between them.** §4 says fasting glucose and fasting insulin
+are ONE equation, so a regression of one on the other across this cohort is not a second
+measurement and may not be used to set insulin sensitivity. **NHANES cannot discharge §4 and
+is not being asked to.** The perturbation study is still required, and if it does not open,
+branch **G2** applies.
+
+### 10.5 The decision branch this adds
+
+- **N1 — both land with usable dispersion.** Enter fasting glucose and fasting insulin as
+  `reported`, cycle and population named on the row.
+- **N2 — the download fails or the columns are absent.** Record it, and fall back to a
+  published reference interval with its cohort stated. Do NOT substitute a textbook value.
