@@ -457,3 +457,39 @@ pass will have been fitted to.
 
 **WHAT WOULD UPGRADE G2 TO G1:** the steady-state plasma insulin concentration during the
 RISC clamp. One number, from a RISC baseline paper rather than this one.
+
+### 9.12 The insulin concentration was pursued in other clamp papers and is still not in hand
+
+**At the owner's suggestion, 2026-09-21.** The right move is not to patch RISC's M with
+another study's insulin - that composes two protocols - but to find ONE paper reporting
+**both** a measured steady-state insulin and M in healthy adults. That was searched for and
+not found; the literature returns method and reproducibility papers.
+
+**What WAS found, and it is the canonical anchor:**
+
+**DeFronzo RA, Tobin JD, Andres R.** *Glucose clamp technique: a method for quantifying
+insulin secretion and resistance.* Am J Physiol 1979;237(3):E214-E223. **PMID 382871.
+ABSTRACT READ IN FULL, 2026-09-21.** The method paper itself:
+
+> *"The plasma insulin concentration is acutely raised and maintained at approximately 100
+> muU/ml by a prime-continuous infusion of insulin."*
+
+**100 uU/mL is about 694 pmol/L. IT IS NOT ENTERED, FOR TWO REASONS THAT ARE BOTH ON THE
+FACE OF IT:**
+
+1. **It is the method's DESIGN TARGET, not a measurement** - "approximately", one
+   significant figure, describing what the technique aims at rather than what a cohort
+   achieved.
+2. **THE PROTOCOLS DIFFER.** DeFronzo's standard clamp infuses about 40 mU/m2/min; RISC
+   infuses 240 pmol/min/m2, which is about 35. Pairing RISC's M with DeFronzo's insulin
+   would be reading a dose-response at a dose neither paper ran.
+
+**A sensitivity derived from those two would be `assumed` wearing `derived`'s label**, and
+§4 of this pre-registration exists precisely to stop insulin's gains being softly
+determined. **G2 STANDS.**
+
+**THE MODEL IS ONE NUMBER AWAY AND THE NUMBER IS SPECIFIC:** the **measured steady-state
+plasma insulin during the RISC clamp**, which a RISC baseline paper will carry in its
+characteristics table. With it, RISC's M and this model's fasting balance become two points
+on the insulin-disposal line - a perturbation and a steady state, which is exactly what §4
+asks for - and G2 becomes G1 in a single pass.
