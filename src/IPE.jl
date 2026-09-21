@@ -62,6 +62,7 @@ include("ensemble.jl")
 
 export MTKSystem, mtk_simplify, mtk_unknowns
 export build_model, build_raw_model, solve_individual, run_population, salt_step, check_pressure_natriuresis
+export differential_unknown_names
 export BodyFluids, Cardiovascular, Renal, Baroreflex, Raas, Adh, Respiratory, Blood
 export FullTrace, StreamingStats, EventWindows, projected_storage
 # recording.jl and ensemble.jl internals, connected 2026-08-27 - all of this

@@ -40,11 +40,32 @@ function integrate(s, name)
 end
 
 "Resting steady state. Verified to be a real fixed point, not a slow drift."
+# WHICH UNKNOWNS ARE ACTUALLY INITIAL CONDITIONS - ADR 0026.
+#
+# AN ALGEBRAIC UNKNOWN IS NOT AN INITIAL CONDITION: it is determined by its own
+# equation given the differential states and the parameters, so carrying it
+# between phases OVER-DETERMINES the initialisation. Every unknown in this model
+# was differential until the saturable thick ascending limb, and the same
+# pattern in salt_step then silently stopped integrating its third salt arm -
+# reporting 103 mEq/day excreting 154, and a chronic salt sensitivity of 0.95
+# against a true 1.96, WITH NO ERROR RAISED. Fixed in both places at once.
+#
+# The algebraic unknowns are simply not carried. Each solve re-derives them
+# from the differential states through their own equations, starting from the
+# declared [guess] on the variable, and the root is unique.
+const DIFFNAMES = IPE.differential_unknown_names(sys)
+const UD = [u for u in U if string(u) in DIFFNAMES]   # true initial conditions
+const UA = [u for u in U if !(string(u) in DIFFNAMES)]   # algebraic: re-derived
+@assert !isempty(UD) "no differential unknowns found - state would not be carried"
+@assert length(UD) + length(UA) == length(U)
+
 function equilibrate(; overrides = Dict(), days = 60.0)
     pm = Dict(pget(k) => v for (k, v) in overrides)
-    p = ODEProblem(sys, collect(pm), (0.0, days), Pair[])
+    p = ODEProblem(sys, pm, (0.0, days))
     s = solve(p, Rodas5P(); abstol = 1e-10, reltol = 1e-10)
-    ([u => s[u][end] for u in U], pm)
+    SciMLBase.successful_retcode(s) ||
+        error("equilibrate: retcode $(s.retcode); no state is carried from a failed solve")
+    ([u => s[u][end] for u in UD], pm)
 end
 
 "Run phases of (duration_days, Dict(param => value)) from a given state."
@@ -53,10 +74,18 @@ function run_phases(u0, basepm, phases; saveat = 0.002)
     for (dur, ov) in phases
         pm = copy(basepm)
         for (k, v) in ov; pm[pget(k)] = v; end
-        p = ODEProblem(sys, vcat(u, collect(pm)), (t0, t0 + dur), Pair[])
+        # A SINGLE Dict OF STATES AND PARAMETERS, which is the form assemble.jl
+        # has always used. The four-argument positional form is a deprecation
+        # shim that broadcasts u0 against the parameter vector and needs u0 to
+        # cover EVERY unknown; it no longer does, because the algebraic ones are
+        # left out on purpose.
+        p = ODEProblem(sys, merge(Dict(u), pm), (t0, t0 + dur))
         s = solve(p, Rodas5P(); abstol = 1e-10, reltol = 1e-10, saveat = saveat)
+        SciMLBase.successful_retcode(s) ||
+            error("run_phases: phase starting at day $(t0) did not integrate " *
+                  "(retcode $(s.retcode)); a failed solve may not be summarised")
         push!(segs, s)
-        u = [x => s[x][end] for x in U]
+        u = [x => s[x][end] for x in UD]
         t0 += dur
     end
     segs

@@ -5525,6 +5525,102 @@ Resting MAP 87.0, `Na_excr` 205.0, urine 1.7 L/day; chronic salt sensitivity 1.9
 Lobo endpoints improved**, to 628 mL and 476 mOsm/kg.
 
 
+### 3.68 THE TAL PASS: THREE MECHANISMS BUILT, A SILENT HARNESS FAILURE FOUND, AND JENSEN STILL RED
+
+**ADR 0026 and ADR 0027.** Pre-registered in `tal_saturable_prereg.md` (with Amendment 1),
+`tgf_prereg.md` and `md_lorenz_gain_prereg.md`. **Suite 802/802, six gates green,
+`challenges.jl` fails ONE endpoint** and that is the pass's result.
+
+#### What was built, and each step was forced by the one before it
+
+1. **Saturable TAL transport**, Layton 1997's plug-flow Michaelis-Menten form integrated:
+   `Km*ln(C0/C) + (C0 - C) = Vmax*transit`, with the right-hand side evaluated at the
+   operating point **inside the component** so nothing is stored and nothing is fitted.
+2. **Tubuloglomerular feedback**, Briggs 1984, because saturable transport left the model
+   with **no steady state**.
+3. **The macula densa renin gain sourced from Lorenz 1990**, because **TGF at Briggs's own
+   gain did not fix it either.**
+
+#### THE INSTABILITY IS THE FINDING, AND IT WAS MEASURED RATHER THAN ARGUED
+
+Saturable transport makes `md_conc` respond to flow with **relative gain 1.13** - obtained by
+differentiating the transport integral, not by simulation. That closed a loop which was inert
+while the reabsorbed fraction was constant:
+
+> concentration down -> renin up -> proximal reabsorption up -> TAL flow down -> transit
+> longer -> concentration down FURTHER
+
+Gain `1.13 x g_md 4.99 x k_prox 0.29` = **1.6**, above one. **Confirmed by cutting it at each
+end:** zeroing `k_prox` or `g_md` each gave MAP flat at 87.01 and `md_conc` 53.8-54.2.
+
+**SIX GATES PASSED ON THE UNSTABLE MODEL.** Directive 1.11 again.
+
+#### TGF IS REAL, IS NOW BUILT, AND DID NOT FIX IT - REPORTED BECAUSE THE PREREG DEMANDED IT
+
+`tgf_prereg.md` §5 test 7 required the loop gain **with and without TGF** whatever happened.
+With `e_tgf` = 0 the model is **equally stable** once the renin gain is sourced. So **TGF is
+not load-bearing for stability and ADR 0026 says so.** It is in the model because it is real,
+measured and was missing - the macula densa has two effectors and this model had only the slow
+one. Its guard spans **0.964-1.002 and never binds**.
+
+Briggs 1984 is the right source for an unusual reason: he varied rat body weight **3.5-fold**
+and every absolute quantity tripled while the **dimensionless elasticity did not**. He
+reported the quantity that survived the manipulation, which is exactly the quantity a human
+whole-kidney model can take.
+
+#### WHAT ACTUALLY FIXED IT WAS PREDICTED IN ADVANCE, TWICE
+
+`tal_saturable_prereg.md` Amendment 1 §4 **G3**, written before TGF was built, named `g_md` -
+calibrated against a **delivery** signal and since ADR 0025 multiplying a **concentration**
+one. And `RN.MD.RENIN_GAIN`'s own note, from 2026-09-05, said: *build a macula densa NaCl
+concentration and this row becomes sourceable from Lorenz.* **ADR 0025 built it.**
+
+Lorenz measured a **fold change**: flat from 141 to 80 mmol/L Na+, then 3.2 to 16.6 nGU/min
+between 80 and 24. So the arm is **flat above 80, log-linear below**, slope
+`ln(16.6/3.2)/(80-24)` = **0.029 per mmol/L**, two significant figures because 3.2 has two.
+Applied **multiplicatively**, which is what a preparation with pressure and nerves physically
+removed licenses. **`RN.MD.RENIN_GAIN` IS DELETED.**
+
+**AND THE THRESHOLD LANDED WHERE LORENZ PUT IT WITHOUT BEING PUT THERE.** `md_conc_ref` =
+53.9, derived from Shirley's proximal fraction and the macula densa fraction, both entered
+before the threshold was consumed; Lorenz reports the full response occurring *"within the
+concentration range normally occurring at the macula densa."* Nothing arranged that.
+
+#### A SILENTLY FAILED SOLVE WAS BEING REPORTED AS A RESULT
+
+**AN ALGEBRAIC UNKNOWN IS NOT AN INITIAL CONDITION.** Every unknown in this model was
+differential until this pass. `salt_step`, `challenges.jl` and the haemorrhage test all
+carried **every** unknown between phases, which over-determines the initialisation.
+
+**`salt_step`'s third salt arm then did not integrate at all.** It returned its carried state,
+so the harness reported **103 mEq/day excreting 154** and a chronic salt sensitivity of
+**0.95 against a true 1.96 - and raised no error.** A failed solve was cycle-averaged and
+checked against a human band.
+
+All three now carry differential states only, and **a failed retcode is an error rather than a
+summary**. The classifier lives in `IPE.differential_unknown_names` and **asserts it found
+something**, because the first version of it matched `Differential(t)(` while MTK prints
+`Differential(t, 1)(`, classified all sixteen unknowns as algebraic, carried nothing, and made
+Jensen read **-17%**. Two silent failures in one afternoon, from the same root.
+
+#### AND JENSEN STILL FAILS - ADR 0025's FALSIFIER HAS FIRED
+
+**43% -> 49%, against 60-250.** ADR 0025 said that if saturable transport did not restore the
+acute response, **the constant-fraction assumption is not what is wrong.** It did not.
+`tau_tal` was not shortened and `Km` was not adjusted; Jensen still failing is the evidence
+that neither was. **The next pass on the acute limb must look elsewhere.**
+
+**van den Bosch is now a TEST and it fails at 1.343 against 2.73** - reported in the sentence
+it would have been celebrated in. `md_conc` is chronically salt-independent, so this arm
+should not carry dietary salt and does not.
+
+#### Unchanged
+
+MAP 87.0, `Na_excr` 205.0, urine 1.70 L/day, GFR 153, plasma sodium 140.0. Chronic salt
+sensitivity **1.97** (1.70-2.30). Every Lobo endpoint passes. `md_conc` **53.5 at 38 mEq/day
+against 53.96 at 230** - Vallon holds.
+
+
 ## 4. NEXT, IN ORDER
 
 **Rewritten 2026-09-03, and item 1 was discharged the same day.** The previous list's
