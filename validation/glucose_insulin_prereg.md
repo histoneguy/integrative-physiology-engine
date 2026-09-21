@@ -175,3 +175,62 @@ can resolve has not been connected, whatever the ledger says about it.
 
 **Letting `BF.OSM_NONSODIUM` absorb the difference.** It is the free parameter in this pass
 and §5 forbids it for that reason.
+
+---
+
+## 9. SOURCING LOG — appended as each source is OPENED, 2026-09-21
+
+**Directive 1.5. Reading level recorded for every entry, before any value enters the ledger.**
+
+### 9.1 Branch G5 was tested FIRST and is NOT taken
+
+The pre-registration said G5 was the branch to take seriously, so it was checked before any
+source was opened. `Osm_ecf` = `2*C_Na + Osm_other`; with plasma osmolality 287 and sodium
+140 the non-sodium lump is about **7 mOsm/kg**, and `ADH.OSM.SENSITIVITY` is 0.12 per
+mOsm/kg. A 10 mmol/L glucose excursion is a **10 mOsm/kg** signal — an order of magnitude
+above anything the model cannot resolve — and it also shifts water out of cells, which the
+ICF/ECF partition already represents. **The connection bites. G5 is not taken.**
+
+At NORMAL glucose the contribution is a constant offset already inside `BF.OSM_NONSODIUM`,
+which is why §7 test 1 (operating point unchanged) and §7 test 5 (the double-count
+subtraction) are the pair that keep this honest.
+
+### 9.2 Renal glucose reabsorptive maximum — SOURCED
+
+**Mogensen CE.** *Maximum Tubular Reabsorption Capacity for Glucose and Renal Hemodynamics
+during Rapid Hypertonic Glucose Infusion in Normal and Diabetic Subjects.* Scand J Clin Lab
+Invest 1971;28(1):101-109. **PMID 5093515**, doi 10.3109/00365517109090668.
+
+**READING LEVEL: ABSTRACT READ IN FULL at the publisher, 2026-09-21. PubMed carries NO
+abstract for this paper** — the figures below were first seen in a search summary of
+secondary reviews, which is not a reading, and were only accepted after the publisher's own
+abstract was opened. The full text is paywalled.
+
+| | |
+|---|---|
+| **normal subjects** | **TmG 352 ± 64 mg/min, n = 9** |
+| diabetics, short duration | 419 ± 50 mg/min, n = 10 |
+
+**THREE THINGS THIS SETTLES, AND THE SECOND IS THE ONE THAT MATTERS:**
+
+1. **§2's flagged round number survives, but only just.** The textbook **375 mg/min** sits
+   inside 352 ± 64 — so it is not *wrong*, it simply **has no error bar and this does**. The
+   sourced value is entered with its dispersion; the teaching number could not have been.
+2. **TmG CORRELATES WITH GFR** — *"for the whole material there was a clear positive
+   correlation between GFR and Tmc."* So it is **not a fixed mg/min** and must not be
+   entered as one. It scales with filtration, which is the scaling discipline this ledger
+   already applies to every extensive renal quantity, and the paper supplies the reason
+   rather than the model assuming it.
+3. **AND IT HANDS THIS PASS A HELD-OUT TEST NOBODY WENT LOOKING FOR.** In both groups,
+   during glucose infusion, **urinary potassium excretion FELL and urinary sodium excretion
+   ROSE.** This model has sodium AND potassium. That is a measured human response to a
+   glucose load, in two quantities the model already computes, **from the same paper that
+   supplies TmG but from a different sentence** — so it is usable as an out-of-sample
+   direction check provided no gain is ever fitted to it. **Recorded here, before the
+   component exists, so that it cannot later be claimed as a prediction that was designed
+   in.**
+
+### 9.3 Still needed
+
+Fasting plasma glucose and insulin in healthy adults; basal glucose turnover; glucose
+distribution volume; and at least one PERTURBATION for §4's identifiability requirement.
