@@ -65,6 +65,7 @@ using ..LedgerParams:
     BF_BODY_MASS_REFERENCE, BF_ECF_MASS_FRACTION, CV_VOLUME_NATRIURETIC_GAIN, RN_VOLUME_NATRIURESIS_TAU,
     RN_GFR_VOLUME_SENSITIVITY, RN_GFR_VOLUME_RANGE, RN_NA_MACULA_DENSA_FRACTION,
     RN_NA_PROXIMAL_SALT_SENSITIVITY, RAAS_PRA_REFERENCE,
+    RN_NA_TAL_REABSORBED_FRACTION, RN_NA_MACULA_DENSA_CONC_REFERENCE,
     RN_NA_PROXIMAL_DELIVERY,
     BF_NA_PLASMA_SETPOINT, BF_NA_INTAKE_NOMINAL
 
@@ -118,6 +119,8 @@ function Renal(; name, solute_tracking::Bool = true,
         f_prox   = RN_NA_PROXIMAL_DELIVERY
         k_prox   = RN_NA_PROXIMAL_SALT_SENSITIVITY
         pra_ref_p = RAAS_PRA_REFERENCE
+        f_tal    = RN_NA_TAL_REABSORBED_FRACTION
+        md_c_ref = RN_NA_MACULA_DENSA_CONC_REFERENCE
         # EXTENSIVE and SURFACE-like, exactly as GFR0 is: it is a filtered flux.
         # The ratio in md_drive is therefore size-free.
         Na_distal_ref = sz * RN_GFR_NOMINAL * BF_NA_PLASMA_SETPOINT *
@@ -356,6 +359,9 @@ function Renal(; name, solute_tracking::Bool = true,
         md_drive(t)         # unitless OUTPUT to raas - the macula densa signal
         pra(t)              # unitless INPUT from raas - normalised renin activity
         f_prox_eff(t)       # unitless end-proximal delivery fraction, salt-responsive
+        H2O_prox_out(t)     # L/day    end-proximal FLUID delivery
+        Na_md(t)            # mEq/day  sodium arriving at the macula densa
+        md_conc(t)          # mmol/L   THE LORENZ VARIABLE
         Na_excr(t)          # mEq/day  OUTPUT
         H2O_excr(t)         # L/day    OUTPUT
         FR_effective(t)     # unitless
@@ -515,7 +521,43 @@ function Renal(; name, solute_tracking::Bool = true,
 
         Na_prox_out ~ Na_filtered * f_prox_eff * renal_mod,
 
-        Na_distal ~ Na_filtered * (1.0 - f_md) * renal_mod,
+        # THE TUBULE IS SPLIT INTO FLUX-CARRYING SEGMENTS, 2026-09-20,
+        # tubule_segments_prereg.md. Four renal passes found the right primary
+        # source and could not use it, all for one reason: every renal source is
+        # segmental and this tubule was one lumped reabsorption.
+        #
+        # FLUID delivery out of the proximal tubule. Lithium clearance IS this
+        # quantity - Boer 1988 calls CLi "an index of filtrate delivery from the
+        # proximal tubules" - and proximal reabsorption is isosmotic, so the same
+        # fraction carries sodium and water.
+        H2O_prox_out ~ GFR * f_prox_eff,
+
+        # THE SEGMENT BETWEEN END-PROXIMAL AND THE MACULA DENSA, and the change
+        # that matters is the DENOMINATOR. f_md was a fixed fraction of the
+        # FILTERED load; f_tal is a fraction of what this segment RECEIVES. With a
+        # fixed fraction of filtration, delivery and concentration at the macula
+        # densa cannot come apart - and coming apart is what Lorenz 1990 measured.
+        #
+        # f_tal LUMPS the thick ascending limb's sodium reabsorption with the
+        # descending limb's water reabsorption. They enter md_conc as a ratio and
+        # nothing in hand separates them; splitting them would add a parameter no
+        # measurement could constrain.
+        Na_md ~ Na_prox_out * (1.0 - f_tal),
+
+        # THE MACULA DENSA CONCENTRATION - the variable Lorenz 1990 perfused and
+        # the one this model had no representation of until now. The thick
+        # ascending limb is water-impermeable, so the fluid arriving here is the
+        # fluid that left the proximal tubule.
+        #
+        # AND NOTE WHAT FALLS OUT: md_conc = Na_filtered*f_prox_eff*(1-f_tal) /
+        # (GFR*f_prox_eff) = C_Na*(1-f_tal). THE PROXIMAL DELIVERY FRACTION
+        # CANCELS, so the macula densa concentration is SALT-INDEPENDENT. That is
+        # Vallon 2002 (PMID 12089382) - dietary salt did not affect the
+        # tubuloglomerular feedback signal in nondiabetic rats - reproduced as an
+        # EMERGENT CONSEQUENCE of the segment structure rather than assumed.
+        md_conc ~ Na_md / max(H2O_prox_out, 1e-6),
+
+        Na_distal ~ Na_md,
 
         # THE MACULA DENSA SIGNAL, as a FRACTIONAL deficit of delivery below its
         # reference. Fractional on purpose: a dimensionless drive cannot inherit a
@@ -553,7 +595,13 @@ function Renal(; name, solute_tracking::Bool = true,
         # delivery over distal flow, and this model lumps water reabsorption and
         # has no distal flow, so the right variable cannot be computed from what
         # exists. That is the structural requirement, recorded rather than faked.
-        md_drive ~ (Na_distal_ref - Na_distal) / Na_distal_ref,
+        # KEYED TO CONCENTRATION, 2026-09-20, AND IT WAS KEYED TO DELIVERY.
+        # Lorenz 1990 series 3 dissociated them: from period 2 to period 3 sodium
+        # DELIVERY ROSE 51 percent and renin rose 3.2-fold anyway, because
+        # concentration fell. His conclusion is that renin "responds with a larger
+        # change to alterations in NaCl concentration than in NaCl delivery or
+        # fluid flow rate." The model now has the concentration, so it uses it.
+        md_drive ~ (md_c_ref - md_conc) / md_c_ref,
 
         # First-order approach to the volume-keyed natriuretic target.
         # c_anp = 0.0 recovers (G_vn*(V_blood - V_blood_ref) - vn_sig)/tau_vn

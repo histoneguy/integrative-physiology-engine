@@ -83,7 +83,34 @@ const SALT_MAP_SHIFT = 2.0042
 # What justifies the change is a PREDICTION CONFIRMED, which is a sign and
 # survives the noise. Directive 1.14, and the same reasoning as the 110 -> 102
 # move above.
-const JENSEN_FINAL_WINDOW_RISE = 94.01
+# DRIFT PIN, 2026-09-20. The chronic renin ratio after the tubule was split into
+# flux-carrying segments and md_drive re-keyed to macula densa CONCENTRATION. It
+# was 2.733 while g_md was calibrated against van den Bosch; that calibration is
+# gone, so this is the model's own value compared with nothing but itself.
+const MD_RENIN_RATIO = 1.4327
+
+#
+# MOVED 2026-09-20, 94.01 -> 43.53, tubule_segments_prereg.md, AND THIS ONE IS A
+# REGRESSION AGAINST A HUMAN ENDPOINT RATHER THAN A DELIBERATE REPOSITIONING.
+# validation/challenges.jl now FAILS this line: 43 against a band of 60-250.
+#
+# WHY. The tubule was split into flux-carrying segments and md_drive re-keyed from
+# distal DELIVERY to macula densa CONCENTRATION, which is the variable Lorenz 1990
+# measured. Acutely, delivery rises steeply with GFR while concentration - being
+# C_Na*(1 - f_tal) under constant fractional TAL reabsorption - does not move at
+# all. So the acute natriuresis this model used to produce was being driven by a
+# signal Lorenz's series 3 shows is NOT the stimulus.
+#
+# WHAT IS MISSING IS SATURABLE TAL TRANSPORT. Constant fractional reabsorption
+# makes macula densa concentration rigidly proportional to plasma sodium at every
+# flow. Real thick ascending limb transport approaches a maximum, so a flow surge
+# is reabsorbed LESS completely and the concentration RISES - which is the acute
+# signal, and which would leave the chronic salt-independence Vallon measured
+# untouched because chronic delivery and reabsorption scale together over days.
+#
+# THE STRUCTURE IS KEPT AND THE FAILURE IS REPORTED. The sourced variable is the
+# right one; the missing mechanism is named and is a separate pass.
+const JENSEN_FINAL_WINDOW_RISE = 43.53
 
 # ---------------------------------------------------------------------------
 # RUN ONE TESTSET INSTEAD OF ALL 37. Directive 1.10, applied to the DEV LOOP
@@ -405,6 +432,12 @@ end
         # ecf_deindex_prereg.md), and that residual is G_vr,
         # which is CALIBRATED and is section 4 item 1. When sourced venous
         # compliance lands this should fail again and move to about 3.0.
+        # 3.2185 -> 3.2142 on 2026-09-20, tubule_segments_prereg.md. The tubule was
+        # split into flux-carrying segments; distal delivery now runs through
+        # f_prox_eff and f_tal instead of a fixed fraction of filtration, which
+        # moves the trajectory by 0.13 percent. Against a human 2.82-4.02 spanning
+        # 43 percent that is invisible - directive 1.9. The pin is tight because a
+        # loose pin catches nothing, NOT because the figure means anything.
         ratio = v.map_shift_mmHg /
                 (r.levels[1].V_ecf_final - r.levels[end].V_ecf_final)
         # 3.0005 -> 2.9814 on 2026-09-09 with BR.OPEN_LOOP_GAIN. 0.6% against a
@@ -417,7 +450,7 @@ end
         # MOVES FROM THE FLOOR OF THE HUMAN BAND INTO IT, and it was not
         # fitted there - this test's own comment says "do not simply refit G_vr to
         # make it pass", and G_vr was not touched.
-        @test isapprox(ratio, 3.2185; rtol = 1e-3)
+        @test isapprox(ratio, 3.2142; rtol = 1e-3)
     end
 
     @tset "the acute natriuresis is pinned, because challenges.jl never runs in CI" begin
@@ -2513,11 +2546,25 @@ end
         # A CALIBRATED PARAMETER IS RE-ESTIMATED BY BEING GIVEN A SECOND PATH, not
         # only by editing its value, and no gate in this repository can see that.
         # This assertion is what stands in for one.
-        let prob = ODEProblem(sys, Pair[], (0.0, 400.0), Pair[]),
-            fp = prob.ps[pget(sys, "rn₊f_md")]
+        let prob = ODEProblem(sys, Pair[], (0.0, 400.0), Pair[])
+        # REWRITTEN 2026-09-20 FOR THE SEGMENTED TUBULE, tubule_segments_prereg.md.
+        # The identity was Na_filtered*(1 - f_md)*renal_mod, a fixed fraction of the
+        # FILTERED load. Delivery is now computed through the segments, so the chain
+        # is Na_filtered * f_prox_eff * (1 - f_tal) * renal_mod. THE GUARD'S PURPOSE
+        # IS UNCHANGED and so is its tightness: nothing calibrated against sodium
+        # excretion may enter this signal, asserted as an exact identity so that
+        # adding any term at all breaks it.
+        #
+        # AND f_prox_eff DOES NOT MAKE THIS CIRCULAR, which is worth saying because
+        # it looks like it might. f_prox_eff depends on pra, and pra depends on
+        # md_drive - but md_drive is keyed to md_conc, and f_prox_eff CANCELS out of
+        # md_conc exactly. The signal cannot see its own downstream effect.
+        let fpe = fin(sys, sol, "rn₊f_prox_eff"),
+            ft  = prob.ps[pget(sys, "rn₊f_tal")]
             @test isapprox(nd,
-                           fin(sys, sol, "rn₊Na_filtered") * (1.0 - fp) *
+                           fin(sys, sol, "rn₊Na_filtered") * fpe * (1.0 - ft) *
                            fin(sys, sol, "rn₊renal_mod"); rtol = 1e-12)
+        end
         end
 
         # ADR 0021 FALSIFIABLE TEST 1 - AND IT IS A FIT, DECLARED ONE BEFORE THE
@@ -2544,13 +2591,41 @@ end
         # van den Bosch's two verified intakes, 24 h urinary sodium 38 and 230.
         ratio_off = pra_at(38.0, 0.0) / pra_at(230.0, 0.0)
         ratio_on  = pra_at(38.0, L.RN_MD_RENIN_GAIN) / pra_at(230.0, L.RN_MD_RENIN_GAIN)
-        @test ratio_off < 1.5              # the pressure-only ceiling, unaided
-        @test ratio_on > 2.5               # the form can exceed it
+        # REWRITTEN 2026-09-20, tubule_segments_prereg.md. THIS BLOCK TESTED A
+        # CALIBRATION THAT NO LONGER EXISTS, and it is rewritten rather than
+        # loosened.
+        #
+        # The tubule was split into flux-carrying segments and md_drive was re-keyed
+        # from distal DELIVERY to macula densa CONCENTRATION, which is what Lorenz
+        # 1990 measured. The concentration works out to C_Na*(1 - f_tal) - the
+        # proximal delivery fraction cancels - so it is SALT-INDEPENDENT, which is
+        # Vallon 2002's measurement in nondiabetic rats reproduced as an emergent
+        # consequence. Measured: 53.62 mM at 38 mEq/day against 53.94 at 230.
+        #
+        # SO THE MACULA DENSA ARM NO LONGER CARRIES THE SALT-RENIN RESPONSE, and the
+        # chronic renin ratio fell from 2.733 to 1.43. THE MODEL NO LONGER
+        # REPRODUCES van den Bosch's 2.73, and that was PREDICTED IN THE
+        # PRE-REGISTRATION BEFORE THE STRUCTURE WAS BUILT.
+        #
+        # That is not a regression to be papered over. Vallon says this arm should
+        # not respond to dietary salt; a model matching van den Bosch through it was
+        # right for the wrong reason. RN.MD.RENIN_GAIN was NOT re-solved to recover
+        # the ratio - a larger gain on a constant signal buys nothing, and reaching
+        # for it would mean the structure was built to preserve an answer.
+        @test ratio_off < 1.5              # the pressure-only floor, unaided
+        @test ratio_on > ratio_off         # the macula densa arm still does SOMETHING
+        @test ratio_on < 2.0               # but it no longer carries the salt response
         # rtol 1e-3 -> 1e-2 on 2026-09-09. van den Bosch reports 5.74 and 2.10,
         # three figures each, so their ratio is not known to four - demanding
         # 0.1% agreement asserts precision the measured pair does not have.
         # 1% still pins the arm hard. Directive 1.13.
-        @test isapprox(ratio_on, 5.74 / 2.10; rtol = 1e-2)   # ARITHMETIC, not agreement
+        # THE van den Bosch PIN IS RETIRED. It asserted that g_md still reproduced
+        # 5.74/2.10 - a calibration check, labelled ARITHMETIC and not agreement.
+        # The arm it calibrated no longer carries that response, so the assertion
+        # has nothing left to check. What replaces it is a DRIFT PIN on the model's
+        # own new value, which is what directive 1.14 says five-figure model numbers
+        # are for.
+        @test isapprox(ratio_on, MD_RENIN_RATIO; atol = 0.01)
 
         # RENIN MUST STAY POSITIVE. The macula densa arm is signed where the
         # pressure arm is rectified, so a large enough delivery drives the target

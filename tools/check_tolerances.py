@@ -45,6 +45,8 @@ SCANNED = ("test/runtests.jl", "validation/challenges.jl")
 DRIFT_PINS = {
     "JENSEN_FINAL_WINDOW_RISE": "drift pin: the model's own previous FE_Na rise",
     "SALT_MAP_SHIFT": "drift pin: the model's own previous salt-step MAP shift",
+    "MD_RENIN_RATIO": "drift pin: the model's own chronic renin ratio after the "
+                      "tubule split retired the van den Bosch calibration",
 }
 
 # AN EXPLICIT DECLARATION, WRITTEN BY THE AUTHOR, NOT GUESSED BY THIS GATE.

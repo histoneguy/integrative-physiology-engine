@@ -497,6 +497,19 @@ def _check_one(p: dict[str, float]) -> int:
     # A for the WRONG QUANTITY - vasopressin release, where the model needs urinary
     # dilution. The identity is the same equation solved for the other unknown, so
     # the operating point it pins is unchanged.
+    # THE SEGMENTED TUBULE, 2026-09-20. md_conc = C_Na*(1-f_tal) falls out of the
+    # segment algebra because the proximal delivery fraction cancels, and the
+    # reference must equal it or md_drive is not zero at the operating point. That
+    # exact drift happened on entry - 53.8 against 53.9 - and left a quiet loop
+    # running at rest.
+    check("macula densa concentration reference closes",
+          p["RN.NA.MACULA_DENSA_CONC_REFERENCE"],
+          p["BF.NA.PLASMA_SETPOINT"] * (1.0 - p["RN.NA.TAL_REABSORBED_FRACTION"]),
+          "md_conc_ref is C_Na * (1 - f_tal) by construction. If it drifts, the "
+          "macula densa signal stops being zero at the operating point and the "
+          "renin loop runs at rest.",
+          errors)
+
     check("ADH dilution threshold closes at the setpoint",
           p["ADH.OSM.THRESHOLD"],
           p["BF.OSM.PLASMA_SETPOINT"] -
