@@ -122,6 +122,22 @@ function Renal(; name, solute_tracking::Bool = true,
         k_prox   = RN_NA_PROXIMAL_SALT_SENSITIVITY
         pra_ref_p = RAAS_PRA_REFERENCE
         f_tal    = RN_NA_TAL_REABSORBED_FRACTION
+        # THE DISTAL REFERENCE FRACTION - ADR 0028. Derived in the component from
+        # rows already in the ledger, so nothing is stored and no digit is claimed.
+        #
+        # Resting distal delivery is Na_filtered*f_prox*(1 - f_tal), and resting
+        # excretion is Na_filtered*(1 - FR_Na) because FR_Na is DERIVED to close
+        # sodium balance. The fraction the distal nephron must reabsorb to leave
+        # exactly that is what follows, and the operating point is therefore
+        # preserved EXACTLY rather than approximately.
+        #
+        # IT IS DIVIDED BY f_prox*(1 - f_tal) AND NOT BY f_md, although those are
+        # the same quantity to three figures. f_md is 0.10 and the product is
+        # 0.1001, because f_tal was rounded when it was derived; using f_md would
+        # move resting excretion by 0.1 percent, which is 0.2 mEq/day and outside
+        # the balance check's own band. The delivery chain must divide by the
+        # delivery chain.
+        f_dist_ref = 1.0 - (1.0 - FR_Na) / (f_prox * (1.0 - f_tal))
         md_c_ref = RN_NA_MACULA_DENSA_CONC_REFERENCE
         k_md     = RN_MD_RENIN_SLOPE
         md_c_thr = RN_MD_RENIN_THRESHOLD
@@ -405,6 +421,7 @@ function Renal(; name, solute_tracking::Bool = true,
         Na_excr(t)          # mEq/day  OUTPUT
         H2O_excr(t)         # L/day    OUTPUT
         FR_effective(t)     # unitless
+        f_dist_excr(t)      # unitless fraction of DISTAL delivery excreted
         Osm_load(t)         # mOsm/day urinary solute load - NOW TRACKS SODIUM
         # STATE, added 2026-09-02. The lagged volume-keyed natriuretic signal, in
         # mEq/day. Its steady-state value is G_vn*(V_blood - V_blood_ref), so the
@@ -515,9 +532,47 @@ function Renal(; name, solute_tracking::Bool = true,
         # references, for two different paths, and they differ by f_pv = 0.211.
         # HANDOVER section 5 item 11 - a name carrying a convention its value
         # contradicts, twice recorded, and no gate sees it.
-        FR_effective ~ clamp(1.0 - (1.0 - FR_Na) * renal_mod + fr_mod -
-                             G_pn * (MAP - MAP_ref) / Na_filtered -
-                             vn_sig / Na_filtered, 0.0, 1.0),
+        # THE SEGMENTS NOW CARRY THE FLUX - ADR 0028, segmental_flux_prereg.md.
+        #
+        # THIS WAS A WHOLE-NEPHRON FRACTION AND Na_distal WAS READ BY NOTHING.
+        # ADR 0025 split the tubule for the renin SIGNAL and left the excretion
+        # path lumped - the same defect tubule_segments_prereg.md diagnosed in
+        # Na_prox_out, one level down, and the comment that used to sit on
+        # Na_distal said so in terms: "THE SODIUM EQUATION ABOVE IS UNTOUCHED AND
+        # THAT IS THE POINT."
+        #
+        # ALEXANDER 1972 (PMID 4639021) IS WHY IT MATTERS, AND IT IS HUMAN. In man,
+        # acute isotonic saline at 37 mL/kg lowers proximal fractional reabsorption
+        # 4.8 percent and distal 4.4 percent, while comparable chronic expansion
+        # lowers proximal 3.9 percent and leaves distal UNALTERED. A lumped
+        # fraction cannot be unaltered and depressed at the same time.
+        #
+        # WHAT CHANGES HERE IS ONE THING: baseline excretion now scales with
+        # DELIVERY. Na_distal carries f_prox_eff, which Folkerd 1995 made
+        # salt-responsive and which previously reached excretion through nothing
+        # at all.
+        #
+        # NO PARAMETER IS ADDED AND NONE IS MOVED. The circadian rhythm and the
+        # aldosterone increment are expressed as fractions of what the segment
+        # RECEIVES rather than of what was filtered - fr_mod is divided by the
+        # same delivery fraction, so its absolute effect at the operating point is
+        # unchanged - and the pressure and volume terms stay ABSOLUTE fluxes in
+        # mEq/day exactly as their estimation sets left them.
+        # EXPRESSED AS A FRACTION OF DELIVERY WITH CONSTANT BOUNDS. Clamping the
+        # flux against a SYMBOLIC upper bound (Na_distal) made the generated
+        # Jacobian try to write a Num into a Matrix{Float64}; the bounds have to
+        # be literals for `jac = true` to compile.
+        f_dist_excr ~ clamp((1.0 - f_dist_ref) * renal_mod -
+                            fr_mod / (f_prox * (1.0 - f_tal)) +
+                            (G_pn * (MAP - MAP_ref) + vn_sig) /
+                            max(Na_distal, 1e-6), 0.0, 1.0),
+        Na_excr ~ Na_distal * f_dist_excr,
+
+        # KEPT AS AN OBSERVABLE, WITH ITS MEANING UNCHANGED. It is still the
+        # fraction of the filtered load that is reabsorbed; it is now a RESULT of
+        # the segment chain rather than the primary equation. The GUI exports it
+        # and the RAAS-off test asserts it reduces to its pre-RAAS form.
+        FR_effective ~ Na_reabsorbed / Na_filtered,
 
         # DISTAL SODIUM DELIVERY, ADR 0021. THE SODIUM EQUATION ABOVE IS UNTOUCHED
         # AND THAT IS THE POINT: this defines a VARIABLE, it does not restructure
@@ -729,8 +784,7 @@ function Renal(; name, solute_tracking::Bool = true,
                       (1.0 + c_anp * abs(V_blood - V_blood_ref) / V_blood_ref)
                       - anp_adapt - vn_sig) / tau_vn,
 
-        Na_reabsorbed ~ FR_effective * Na_filtered,
-        Na_excr       ~ Na_filtered - Na_reabsorbed,
+        Na_reabsorbed ~ Na_filtered - Na_excr,
 
         # OSMOREGULATION (ADR 0006 build order item 5). The placeholder that
         # stood here - intake minus insensible loss, floored - was replaced on

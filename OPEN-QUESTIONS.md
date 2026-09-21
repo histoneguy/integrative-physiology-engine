@@ -530,38 +530,36 @@ natural end of this item**, and the count is how progress on it should be measur
 
 ---
 
-### B15. Jensen's acute limb needs a mechanism that is NOT in the tubule — NEW, 2026-09-20
+### B15. ~~Jensen's acute limb needs a mechanism that is NOT in the tubule~~ — WRONG, AND CLOSED 2026-09-21
 
-**ADR 0025's falsifier has fired and this is the honest consequence.** Jensen's acute
-fractional sodium excretion rise is **49% against a band of 60-250**. Splitting the tubule
-cost it (94% -> 43%), and building the named fix - **saturable thick ascending limb
-transport, ADR 0026** - bought back six points of fifty-one.
+**I wrote this on 2026-09-20 and it was wrong. Kept rather than deleted, because the way it
+was wrong is the part worth remembering.**
 
-**WHAT WAS RULED OUT, BY BUILDING IT RATHER THAN BY ARGUING.** ADR 0025 said that if
-saturable transport did not restore the acute response, the constant-fraction assumption is
-not what is wrong. It did not. `tau_tal` was not shortened and `Km` was not adjusted, and
-**Jensen still failing is the evidence that neither was.**
+**What it recommended:** building acute renal sympathetic withdrawal on tubular
+reabsorption, as the first of three candidates.
 
-**WHAT I WOULD DO.** Jensen infused isotonic saline and measured a response over four hours.
-The model's chronic limbs are all correct - salt sensitivity 1.97, every Lobo endpoint, the
-sodium balance - so the defect is in a **fast** path. The candidates the model does not
-have, in the order I would take them:
+**Why that was wrong, and the repository had already said so three times.**
+`cardiopulmonary_sympathetic_prereg.md` §1 forbids a third natriuretic term keyed to central
+volume, because `V_central` = `f_c`x`V_blood` and ADR 0010's arm already senses it. HANDOVER
+§3.57 then MEASURED the consequence: the volume-keyed arm carries **77% of the chronic
+swing**, it is keyed to `V_blood` because *"atrial stretch is intravascular"*, and Lohmeier's
+Den/Inn ratio says **roughly half of such a response is nerve traffic**. §3.58 renamed the
+row for exactly that reason. **The arm I recommended building is already in the model,
+unlabelled, inside `CV.VOLUME.NATRIURETIC_GAIN`** — and building it again is the double
+count that pre-registration exists to prevent.
 
-1. **Acute renal sympathetic withdrawal on tubular reabsorption.** ADR 0024 built the
-   sympathetic effect on the *renin threshold* only. `RN.MD.RENIN_GAIN`'s retired note said
-   in terms that sympathetic effects on tubular sodium reabsorption and on afferent tone
-   were still absent. Volume expansion unloads cardiopulmonary receptors in seconds.
-2. **A natriuretic peptide with an acute limb keyed to atrial stretch** rather than to the
-   slow volume signal `CV.VOLUME.NATRIURETIC_GAIN` now carries.
-3. **Peritubular physical factors** - the oncotic and hydrostatic route by which an isotonic
-   load lowers proximal reabsorption within minutes, which is a different mechanism from
-   the AngII-keyed `k_prox` the model has.
+**I recommended it anyway, having read none of the three.** That is the failure: not a wrong
+mechanism, but a recommendation made without reading the record that had already settled it.
 
-**WHAT WOULD RESOLVE IT:** a decision about which to take first, and probably one paper.
-**(1) is my recommendation** - it is the one a retired ledger note already predicted, and
-it is the same arm ADR 0024 half-built.
+**What the real defect turned out to be — ADR 0028.** The tubule segments carried the
+*signal* and not the *flux*: `Na_distal` was computed and read by nothing, the same defect
+`tubule_segments_prereg.md` found in `Na_prox_out`, one level down. Routing excretion through
+the segments — **no new parameter** — moved Jensen **49.5% → 59.9%** and connected Folkerd's
+proximal salt response, which had been reaching excretion through nothing at all.
 
----
+**What remains open is narrow and is recorded in ADR 0028 rather than here:** Alexander
+1972's distal magnitudes cannot be entered because his index is a free-water proxy and the
+full text is scanned page images. That is Phase 2, and it needs one paper, not a decision.
 
 ### B16. Two extraction gaps in papers already in hand — NEW, 2026-09-20
 
@@ -581,8 +579,15 @@ the guard spans 0.964-1.002 in normal operation and **never binds**, so nothing 
 rides on it - but a manoeuvre that pushed the macula densa harder would make it load-bearing
 silently. One number from the full text retires the declaration.
 
-**WHAT WOULD RESOLVE BOTH:** the two papers. Lorenz is already supplied; Briggs 1984 (Am J
-Physiol 247:F808, PMID 6496746) is the one I would ask for.
+**ALEXANDER 1972 JOINS THEM, ADDED 2026-09-21.** J Clin Invest 51(9):2370-2379, PMID
+4639021. His acute distal depression of 4.4% cannot be entered because his index is
+`C_H2O/V`, a FREE-WATER proxy, and converting it to this model's distal SODIUM fraction
+needs the reabsorption rates in the full text. **The full text is scanned page images on
+both PMC and jci.org.** ADR 0028 took only the structure.
+
+**WHAT WOULD RESOLVE ALL THREE:** three papers. Lorenz is already supplied. **Briggs 1984**
+(Am J Physiol 247:F808, PMID 6496746) and **Alexander 1972** (PMID 4639021) are the two I
+would ask for, and neither blocks anything today — each retires a declared limitation.
 
 ---
 
