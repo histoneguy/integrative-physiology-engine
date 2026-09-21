@@ -5701,6 +5701,78 @@ at 38 mEq/day against 53.96 at 230 - Vallon holds. Both Lobo endpoints, the acut
 ratio. Chronic renin ratio 1.302, still a FAILED test since ADR 0027.
 
 
+### 3.70 GLUCOSE, AND THE MODEL'S FIRST EMERGENT ELECTROLYTE DISORDER
+
+**ADR 0029, branch G2.** Pre-registered in `glucose_insulin_prereg.md`. Suite **808/808**,
+six gates green, `challenges.jl` unchanged at one failure. **ZERO NEW STATES.**
+
+#### The guard was answered before the component was designed
+
+HANDOVER section 4 item 1 forbids an endocrine axis built for completeness. So the
+pre-registration asked what glucose CONNECTS to first, and found the slot already there and
+CONSTANT in three places - `Osm_other`, `RN.URINE.SOLUTE_LOAD`, `RER`. **Branch G5, "the
+connection does not bite", was tested BEFORE any source was opened**: the non-sodium lump is
+7 mOsm/kg against an ADH sensitivity of 0.12 per mOsm/kg, so a 10 mmol/L excursion is a 10
+mOsm/kg signal. It bites.
+
+#### Insulin did not source, and that decided the architecture
+
+**Three clamp papers opened, none enterable.** Tam 2012 reports diagnostic cut-points from a
+cohort containing diabetics by design. Hills 2004 is a study-design paper. Zanetti 2023 is
+the right cohort - 966 healthy adults from RISC - and printed **M = 7.12 (2.95) with NO
+UNITS in the paper**; the owner supplied the Methods, which resolve them to mg/kg/min, so
+that objection is withdrawn. **But the ESM gives the INFUSION RATE, not the achieved plasma
+insulin**, and DeFronzo 1979's "approximately 100 muU/ml" is a design target at a different
+dose. **A point without its abscissa is not a point.**
+
+**G2 removed the regulator and with it the case for a state.** Glucose turns over in about
+an hour, nothing infuses it here, and a fixed clearance leaves no dynamics worth paying for
+on every run of a 400-day integration. Directive 1.10, applied rather than quoted.
+
+**THE MODEL IS ONE NUMBER AWAY:** the measured steady-state plasma insulin during the RISC
+clamp. With it, RISC's M and this model's fasting balance are two points on the
+insulin-disposal line and G2 becomes G1 in a single pass.
+
+#### The result nothing was fitted to
+
+**DILUTIONAL HYPONATRAEMIA.** Plasma sodium falls **0.49 mmol/L per mmol/L of glucose** -
+140.0 at 5.44, 133.9 at 17.7 - against a classic clinical correction of **0.29** and
+Hillier's measured **0.43**. It falls out of glucose being an osmole in a model that already
+had ICF/ECF water shifts. **The model's first emergent electrolyte disorder.**
+
+#### Three limitations, all named rather than patched
+
+**IT CANNOT PRODUCE POLYURIA, AND THAT IS THE SHARPEST ONE.** `BF.H2O.INTAKE_NOMINAL` is
+2.5 L/day, **assumed, "Convention pending primary source"**. At steady state urine volume is
+pinned by intake minus losses, so it stays at **1.70 L/day at every glucose**; the osmotic
+load appears as CONCENTRATION instead, 547 to 728 mOsm/kg. **Thirst is the missing
+mechanism.** Found by the owner asking what the fluid intake was.
+
+**NO SPLAY.** Tm/GFR spills at about **18 mmol/L** where people spill nearer 10-11. Section
+2 flagged the "180 mg/dL threshold" in advance as the most suspect number in the subsystem
+and the arithmetic bore it out: it is NOT Tm/GFR, and it was not substituted to hide the gap.
+
+**AND THE TWO OSMOLALITY SETPOINTS DO NOT COMPOSE.** Computing the remainder instead of
+storing it exposes that 287 - 280 - 5.44 leaves **1.56 mOsm/kg** for urea, potassium and
+everything else - and urea alone is about 5. `BF.OSM.PLASMA_SETPOINT` and
+`BF.NA.PLASMA_SETPOINT` come from different populations. Nothing was adjusted to hide it.
+
+#### A failed solve was nearly reported as a result, again
+
+`bf.C_glu` carried a **default** rather than a `[guess]`, which over-determines
+initialisation once the variable is connected - *"3 equations for 2 unknowns"* - and every
+perturbed solve returned `InitialFailure` while `sol(t)` on the failed solution produced a
+plausible osmotic-diuresis table. **It passed silently at normal glucose only because the
+default equalled the answer.** Same failure mode as `rn.ln_tal`'s that morning, same fix,
+and the sweep now asserts `successful_retcode` before reading anything.
+
+#### Directive 1.12, fifth instance
+
+Section 2 listed 5.0 mmol/L as the teaching fasting glucose before any search. **The
+measured centre is 5.44 and 5.0 sits essentially at the 25th percentile** of 5,563 healthy
+US adults.
+
+
 ## 4. NEXT, IN ORDER
 
 **Rewritten 2026-09-03, and item 1 was discharged the same day.** The previous list's
