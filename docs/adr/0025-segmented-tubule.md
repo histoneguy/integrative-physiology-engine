@@ -95,3 +95,21 @@ is now simply failed.
 
 **`f_tal` may not be tuned to restore Jensen.** It is derived from two sourced rows and the
 missing mechanism is saturable transport, not a different constant.
+
+## Amendment 1 — the falsifier fired, 2026-09-20
+
+**Saturable thick ascending limb transport was built (ADR 0026) and JENSEN DID NOT RETURN:
+43% to 49%, against a band of 60-250.**
+
+This ADR's Consequences said: *"if it does not restore the acute response the
+constant-fraction assumption is not what is wrong."* **It did not. So it is not.**
+
+`tau_tal` was not shortened and `Km` was not adjusted, and Jensen still failing is the
+evidence that neither was. The next pass on the acute limb must look somewhere other than
+the reabsorbed fraction.
+
+**AND THE ROUTE THERE WAS EXPENSIVE, WHICH IS WORTH RECORDING.** Making `md_conc`
+flow-sensitive closed a positive feedback loop with gain 1.6 and left the model with no
+steady state at all; it took tubuloglomerular feedback (ADR 0026) and a renin gain sourced
+from Lorenz rather than fitted (ADR 0027) to get a steady state back. **Both were correct
+and both were missing.** Neither restored Jensen.

@@ -138,7 +138,7 @@ using ModelingToolkit: t_nounits as t, D_nounits as D
 using ..LedgerParams:
     CV_MAP_SETPOINT, RAAS_RENIN_PRESSURE_THRESHOLD, RAAS_RENIN_PRESSURE_GAIN,
     RAAS_ALDO_PRA_LOG_SLOPE, RAAS_ALDO_REABSORPTION_GAIN, RAAS_PRA_TAU,
-    RAAS_ALDO_ESCAPE_TAU, RN_MD_RENIN_GAIN, RAAS_ALDO_K_GAIN, K_PLASMA_REFERENCE,
+    RAAS_ALDO_ESCAPE_TAU, RAAS_ALDO_K_GAIN, K_PLASMA_REFERENCE,
     RAAS_RENIN_SYMPATHETIC_THRESHOLD_SHIFT, BR_OPEN_LOOP_GAIN,
     RAAS_ANGII_TUBULAR_VMAX, RAAS_ANGII_TUBULAR_KM, RAAS_PRA_REFERENCE
 
@@ -161,7 +161,6 @@ function Raas(; name, enabled::Bool = true, pra_clamp = 0.0, k_angii_override = 
         # dimensionless fractional deviation, and the potassium gain a
         # concentration difference. Neither inherits a body-size scaling, which
         # is deliberate - see the note on md_drive in Renal.jl.
-        g_md    = RN_MD_RENIN_GAIN                   # unitless CALIBRATED
         g_aldo_K = RAAS_ALDO_K_GAIN                  # 1/(mmol/L)
         K_p_ref = K_PLASMA_REFERENCE                 # mmol/L
         # THE RENAL SYMPATHETIC ARM. Kirchheim 1985 in conscious dogs: carotid
@@ -255,8 +254,12 @@ function Raas(; name, enabled::Bool = true, pra_clamp = 0.0, k_angii_override = 
             # operating point by construction: MAP = MAP_ref gives rsna = 0.
             P_thr_eff ~ P_thr + dP_sym * rsna,
 
-            renin_drive ~ ifelse(MAP < P_thr_eff, (P_thr_eff - MAP) / MAP_ref, 0.0) +
-                          g_md * md_drive,
+            # THE MACULA DENSA ARM HAS LEFT THIS SUM, 2026-09-20, ADR 0027.
+            # md_drive is now Lorenz's measured FOLD CHANGE in renin secretion and
+            # multiplies the target below. Summing it here would have made the arm's
+            # effect depend on the size of the pressure term - the very thing his
+            # isolated preparation was built to exclude.
+            renin_drive ~ ifelse(MAP < P_thr_eff, (P_thr_eff - MAP) / MAP_ref, 0.0),
 
             # First-order approach to the renin target. Written out here; the
             # parked version called a helper that does not exist.
@@ -268,7 +271,13 @@ function Raas(; name, enabled::Bool = true, pra_clamp = 0.0, k_angii_override = 
             # is 1.05 at the highest salt intake in the estimation set - and it is
             # here because an unphysical negative would otherwise appear only in a
             # regime nobody had looked at.
-            D(pra) ~ (max(1.0 + g_renin * renin_drive, 0.0) - pra) / tau_pra,
+            # MULTIPLICATIVE MACULA DENSA ARM - Lorenz 1990, ADR 0027. md_drive is
+            # exp(k_md*(md_c_ref - min(md_conc, 80))) - 1, so (1 + md_drive) is his
+            # fold change and is EXACTLY 1.0 at the operating point. The zero floor
+            # stays and is now inert by construction on this arm, because a fold
+            # change cannot be negative; it still guards the pressure term.
+            D(pra) ~ (max(1.0 + g_renin * renin_drive, 0.0) * (1.0 + md_drive) - pra) /
+                     tau_pra,
 
             # Compressive adrenal response: a power law with exponent < 1 IS a
             # log-log slope of that exponent. max() guards the fractional power

@@ -18,7 +18,7 @@ using SciMLBase
 # moves from near the floor toward the middle. NOTHING WAS FITTED TO PUT IT THERE -
 # deindexing_prereg.md section 4 forbids re-estimating G_pn or G_vn, and neither
 # moved.
-const SALT_MAP_SHIFT = 2.0042
+const SALT_MAP_SHIFT = 2.0122
 
 # THE ACUTE PIN, AND THE REASON IT DID NOT EXIST UNTIL 2026-09-17.
 #
@@ -87,7 +87,7 @@ const SALT_MAP_SHIFT = 2.0042
 # flux-carrying segments and md_drive re-keyed to macula densa CONCENTRATION. It
 # was 2.733 while g_md was calibrated against van den Bosch; that calibration is
 # gone, so this is the model's own value compared with nothing but itself.
-const MD_RENIN_RATIO = 1.4327
+const MD_RENIN_RATIO = 1.3430
 
 #
 # MOVED 2026-09-20, 94.01 -> 43.53, tubule_segments_prereg.md, AND THIS ONE IS A
@@ -110,7 +110,7 @@ const MD_RENIN_RATIO = 1.4327
 #
 # THE STRUCTURE IS KEPT AND THE FAILURE IS REPORTED. The sourced variable is the
 # right one; the missing mechanism is named and is a separate pass.
-const JENSEN_FINAL_WINDOW_RISE = 43.53
+const JENSEN_FINAL_WINDOW_RISE = 49.50
 
 # ---------------------------------------------------------------------------
 # RUN ONE TESTSET INSTEAD OF ALL 37. Directive 1.10, applied to the DEV LOOP
@@ -589,8 +589,8 @@ end
         # water accumulation, and removing it moved the 30-day endpoint by 0.011
         # mmHg. That is the fourth significant figure on a pressure, which is
         # directive 1.9 territory - but it is a rounding error being REMOVED.
-                         154.0 => 86.0856,
-                         103.0 => 85.0956)
+                         154.0 => 86.0397,
+                         103.0 => 84.9932)
         # RE-PINNED 2026-09-09, BR.OPEN_LOOP_GAIN 2.0 -> 5.62. A stronger
         # reflex leaves a larger residual setpoint error at the end of a
         # 30-day arm, because pressure is still drifting there and the
@@ -660,7 +660,7 @@ end
         # moved 1.8858 -> 2.0042 over the same change, and SALT_MAP_SHIFT carries
         # that one.
         @test isapprox(check_pressure_natriuresis(r).map_shift_mmHg,
-                       1.9088; rtol = 1e-3)   # 4.9352 -> 4.9067 -> 4.7672 -> 2.2467
+                       2.0122; rtol = 1e-3)   # 4.9352 -> 4.9067 -> 4.7672 -> 2.2467 -> 1.9088
                        # 2026-09-02: ADR 0010's volume-keyed path landed and the
                        # disabled-ADH branch moved with everything else.
     end
@@ -699,8 +699,8 @@ end
         # together on purpose: these two blocks pin the SAME three numbers to
         # assert DIFFERENT claims about them. RN.GFR.VOLUME_SENSITIVITY wired.
         pre_raas = (205.0 => 87.0053,
-                    154.0 => 86.0856,
-                    103.0 => 85.0956)
+                    154.0 => 86.0397,
+                    103.0 => 84.9932)
         # RE-PINNED 2026-09-09 with BR.OPEN_LOOP_GAIN 2.0 -> 5.62, same cause and
         # same magnitude as the ADR 0012 copy above: a stronger reflex leaves a
         # larger residual setpoint error at the end of a 30-day arm. Fourth
@@ -1854,7 +1854,10 @@ end
         # structural_simplify resolved it by promoting Blood.CO to a state. The
         # state is paid either way; with the sourced vagal lag it is paid on a
         # variable that means something. See ADR 0022 and BR.CARDIAC.TAU.
-        @test length(IPE.mtk_unknowns(sys)) == 13   # 12 -> 13, ADR 0004: bf.Na_store on by default
+        # 13 -> 16 on 2026-09-20. ADR 0026 added rn.tal_cap (thick ascending limb
+        # transport capacity) and rn.ln_tal (the implicit transport unknown), and
+        # kp.GFR became an unknown when the tubule stopped being one lumped term.
+        @test length(IPE.mtk_unknowns(sys)) == 16
 
         # RESTING PaCO2 RETURNS THE SOURCED INPUT, AND THIS IS NOT A PREDICTION.
         # ADR 0017's ORIGINAL decision 1 made PaCO2 an output of the chemoreflex, as
@@ -2029,7 +2032,7 @@ end
         # enter through a differential equation somewhere, and there are still ten
         # - eight plus thyroxine plus potassium, and none of them is an oxygen
         # state.
-        @test length(IPE.mtk_unknowns(build_model())) == 13   # 12 -> 13, ADR 0004: bf.Na_store on by default
+        @test length(IPE.mtk_unknowns(build_model())) == 16   # ADR 0026, see above
 
         # ------------------------------------------------------------------
         # THE FICK ARM, ADDED 2026-09-05. ADR 0018 deferred venous content, the
@@ -2157,7 +2160,14 @@ end
         # bleed should raise it.
         function bleed(litres; days = 400.0)
             base = IPE.solve_individual(sys; tspan_days = 60.0)
-            u    = Dict(u_ => base[u_][end] for u_ in IPE.mtk_unknowns(sys))
+            # DIFFERENTIAL STATES ONLY - ADR 0026. An algebraic unknown is not an
+            # initial condition; pinning it over-determines the initialisation and
+            # the solve returns a single point. That is exactly what happened when
+            # the saturable thick ascending limb introduced one: this test failed
+            # with a BoundsError rather than with a physiological result.
+            dn   = IPE.differential_unknown_names(sys)
+            u    = Dict(u_ => base[u_][end] for u_ in IPE.mtk_unknowns(sys)
+                        if string(u_) in dn)
             hct  = base[sys.cv.Hct_eff][end]
             fpv  = L.param(:CV_PLASMA_ECF_FRACTION, :male)
             dV   = -litres * (1 - hct) / fpv          # plasma share, through f_pv
@@ -2559,12 +2569,36 @@ end
         # it looks like it might. f_prox_eff depends on pra, and pra depends on
         # md_drive - but md_drive is keyed to md_conc, and f_prox_eff CANCELS out of
         # md_conc exactly. The signal cannot see its own downstream effect.
-        let fpe = fin(sys, sol, "rn₊f_prox_eff"),
-            ft  = prob.ps[pget(sys, "rn₊f_tal")]
-            @test isapprox(nd,
-                           fin(sys, sol, "rn₊Na_filtered") * fpe * (1.0 - ft) *
-                           fin(sys, sol, "rn₊renal_mod"); rtol = 1e-12)
-        end
+        # REWRITTEN AGAIN 2026-09-20 FOR SATURABLE TRANSPORT, ADR 0026, AND THE
+        # OLD FORM IS RETIRED RATHER THAN LOOSENED.
+        #
+        # Na_filtered*f_prox_eff*(1 - f_tal)*renal_mod WAS AN EXACT IDENTITY while
+        # the thick ascending limb reabsorbed a constant fraction. It no longer is:
+        # md_conc comes out of a Michaelis-Menten transport integral, and it equals
+        # the old constant-fraction value only at the operating point and only to
+        # the extent that tal_cap has settled at 1. Measured, the two agree to 7
+        # parts per million - which is a RESULT, not an identity, and asserting it
+        # at 1e-12 would be asserting the model is something it stopped being.
+        #
+        # WHAT IS STILL AN EXACT IDENTITY IS THE MASS BALANCE, and that is what the
+        # guard's purpose always was: nothing calibrated against sodium excretion
+        # may enter this signal. Sodium reaching the macula densa is the
+        # concentration there times the water that carried it, full stop.
+        # WIRING PIN: an algebraic identity between two observables of the same
+        # component, not a comparison with any measured quantity.
+        @test isapprox(nd, fin(sys, sol, "rn₊md_conc") *
+                           fin(sys, sol, "rn₊H2O_prox_out"); rtol = 1e-12)
+
+        # AND THE OPERATING POINT IS PRESERVED BY CONSTRUCTION, which is the claim
+        # the old assertion was really making. md_vt_ref is evaluated from Km,
+        # plasma sodium and md_conc_ref, so the transport integral is solved at rest
+        # by md_conc = md_conc_ref exactly; the residual below is tal_cap's distance
+        # from 1 after 400 days and nothing else.
+        # CLOSURE PIN: md_conc_ref is a value the transport integral is DERIVED
+        # from, so this compares the model with its own construction.
+        @test isapprox(fin(sys, sol, "rn₊md_conc"),
+                       L.RN_NA_MACULA_DENSA_CONC_REFERENCE; rtol = 1e-3)
+        @test isapprox(fin(sys, sol, "rn₊md_drive"), 0.0; atol = 1e-3)
         end
 
         # ADR 0021 FALSIFIABLE TEST 1 - AND IT IS A FIT, DECLARED ONE BEFORE THE
@@ -2575,11 +2609,11 @@ end
         #
         # HANDOVER section 7: a pressure-only rectified relation caps the renin
         # ratio between two pressures at the ratio of their drives, whatever the
-        # gain. Measured with g_md = 0 that ceiling is 1.14 here; van den Bosch
+        # gain. Measured with k_md = 0 that ceiling is 1.14 here; van den Bosch
         # measures 2.73. A ceiling either is or is not exceeded.
-        function pra_at(na, gmd)
+        function pra_at(na, kmd)
             prob = ODEProblem(sys, Pair[pget(sys, "bf₊Na_intake") => na,
-                                        pget(sys, "ra₊g_md") => gmd],
+                                        pget(sys, "rn₊k_md") => kmd],
                               (0.0, 400.0), Pair[])
             s = solve(prob, Rodas5P(); abstol = 1e-10, reltol = 1e-10, saveat = 400.0)
             v = NaN
@@ -2590,7 +2624,7 @@ end
         end
         # van den Bosch's two verified intakes, 24 h urinary sodium 38 and 230.
         ratio_off = pra_at(38.0, 0.0) / pra_at(230.0, 0.0)
-        ratio_on  = pra_at(38.0, L.RN_MD_RENIN_GAIN) / pra_at(230.0, L.RN_MD_RENIN_GAIN)
+        ratio_on  = pra_at(38.0, L.RN_MD_RENIN_SLOPE) / pra_at(230.0, L.RN_MD_RENIN_SLOPE)
         # REWRITTEN 2026-09-20, tubule_segments_prereg.md. THIS BLOCK TESTED A
         # CALIBRATION THAT NO LONGER EXISTS, and it is rewritten rather than
         # loosened.
@@ -2633,7 +2667,7 @@ end
         # highest intake in the estimation set, which is well outside anything
         # this model is valid for and exactly where an unphysical negative would
         # otherwise hide.
-        @test pra_at(900.0, L.RN_MD_RENIN_GAIN) >= 0.0
+        @test pra_at(900.0, L.RN_MD_RENIN_SLOPE) >= 0.0
 
         # POTASSIUM. The balance closes: what the kidney excretes is what the diet
         # delivers, less the stool fraction. This is a CLOSURE CHECK and not a

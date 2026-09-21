@@ -66,7 +66,8 @@ using ..LedgerParams:
     RN_GFR_VOLUME_SENSITIVITY, RN_GFR_VOLUME_RANGE, RN_NA_MACULA_DENSA_FRACTION,
     RN_NA_PROXIMAL_SALT_SENSITIVITY, RAAS_PRA_REFERENCE,
     RN_NA_TAL_REABSORBED_FRACTION, RN_NA_MACULA_DENSA_CONC_REFERENCE,
-    RN_TAL_KM, RN_TAL_ADAPTATION_TAU,
+    RN_MD_RENIN_SLOPE, RN_MD_RENIN_THRESHOLD,
+    RN_TAL_KM, RN_TAL_ADAPTATION_TAU, RN_TGF_FLOW_ELASTICITY,
     RN_NA_PROXIMAL_DELIVERY,
     BF_NA_PLASMA_SETPOINT, BF_NA_INTAKE_NOMINAL
 
@@ -122,6 +123,8 @@ function Renal(; name, solute_tracking::Bool = true,
         pra_ref_p = RAAS_PRA_REFERENCE
         f_tal    = RN_NA_TAL_REABSORBED_FRACTION
         md_c_ref = RN_NA_MACULA_DENSA_CONC_REFERENCE
+        k_md     = RN_MD_RENIN_SLOPE
+        md_c_thr = RN_MD_RENIN_THRESHOLD
         Km_tal   = RN_TAL_KM
         tau_tal  = RN_TAL_ADAPTATION_TAU
         # THE MICHAELIS-MENTEN TRANSPORT INTEGRAL AT THE OPERATING POINT,
@@ -134,6 +137,15 @@ function Renal(; name, solute_tracking::Bool = true,
         # product is identified.
         ln_ratio_ref = log(BF_NA_PLASMA_SETPOINT / md_c_ref)
         md_vt_ref = Km_tal * ln_ratio_ref + (BF_NA_PLASMA_SETPOINT - md_c_ref)
+        # TUBULOGLOMERULAR FEEDBACK, ADR 0026. Briggs 1984 measured the elasticity
+        # against loop FLOW; the macula densa senses CONCENTRATION, so it is carried
+        # across by this model's own transport integral - dC/C per dphi/phi at the
+        # operating point, differentiating Km*ln(C0/C) + (C0 - C) = R with respect
+        # to flow. ARITHMETIC ON ROWS THE MODEL ALREADY HAS, computed here rather
+        # than stored so it carries no digits it did not earn.
+        e_tgf        = RN_TGF_FLOW_ELASTICITY
+        tgf_rel_gain = md_vt_ref / ((Km_tal / md_c_ref + 1.0) * md_c_ref)
+        e_tgf_conc   = e_tgf / tgf_rel_gain
         # EXTENSIVE, so it carries the same size scaling GFR0 does.
         H2O_prox_ref = GFR0 * f_prox
         # EXTENSIVE and SURFACE-like, exactly as GFR0 is: it is a filtered flux.
@@ -377,6 +389,7 @@ function Renal(; name, solute_tracking::Bool = true,
         H2O_prox_out(t)     # L/day    end-proximal FLUID delivery
         Na_md(t)            # mEq/day  sodium arriving at the macula densa
         md_conc(t)          # mmol/L   THE LORENZ VARIABLE
+        gfr_tgf(t)          # unitless tubuloglomerular feedback on GFR (1.0 = none)
         # THE IMPLICIT UNKNOWN IS ln(C0/md_conc), NOT md_conc ITSELF. A
         # concentration cannot be negative, but a Newton step on md_conc can
         # overshoot past zero into the log, and the first build of this did:
@@ -416,7 +429,30 @@ function Renal(; name, solute_tracking::Bool = true,
         # autoregulation, and it happened to equal GFR0 at MAP = MAP_ref so it
         # looked correct at the operating point.
         GFR ~ GFR0 * ifelse(MAP < MAP_lo, MAP / MAP_lo,
-                     ifelse(MAP > MAP_hi, MAP / MAP_hi, 1.0)) * gfr_vol_mod,
+                     ifelse(MAP > MAP_hi, MAP / MAP_hi, 1.0)) * gfr_vol_mod * gfr_tgf,
+
+        # TUBULOGLOMERULAR FEEDBACK - ADR 0026, tgf_prereg.md. THE MACULA DENSA'S
+        # FAST EFFECTOR, and the model had only its slow one. A rise in luminal NaCl
+        # constricts the afferent arteriole and LOWERS single-nephron GFR, which
+        # lowers TAL flow and returns the concentration. NEGATIVE feedback.
+        #
+        # Briggs 1984 (PMID 6496746): 'Independent of rat size, a 10% increase in
+        # loop flow at the midpoint produced a 5-10% decrease in SNGFR.' Every
+        # absolute quantity in that paper triples across a 3.5-fold weight range and
+        # this dimensionless elasticity does not, which is what makes it usable here.
+        # The same abstract reports free-flow values lying in the MOST SENSITIVE
+        # range of the curve, which is what licenses a LOCAL SLOPE at the operating
+        # point rather than a fitted sigmoid.
+        #
+        # IT IS EXACTLY 1.0 AT REST because md_conc equals md_c_ref there, so the
+        # operating point CANNOT MOVE - it is a feedback, not a recalibration of GFR.
+        #
+        # THE CLAMP IS A NUMERICAL GUARD AND NOT A PHYSIOLOGICAL CLAIM. Briggs's
+        # sigmoid saturates and this linear term does not; his maximal response is
+        # in nl/min and free-flow SNGFR is not in the abstract, so the fraction it
+        # corresponds to cannot be computed from what has been read. Whether the
+        # guard ever binds is a declared test, not an assumption.
+        gfr_tgf ~ clamp(1.0 - e_tgf_conc * (md_conc / md_c_ref - 1.0), 0.6, 1.4),
 
         # THE VOLUME RESPONSE, ledger relation Renal.gfr_vol_mod.
         #
@@ -660,7 +696,31 @@ function Renal(; name, solute_tracking::Bool = true,
         # concentration fell. His conclusion is that renin "responds with a larger
         # change to alterations in NaCl concentration than in NaCl delivery or
         # fluid flow rate." The model now has the concentration, so it uses it.
-        md_drive ~ (md_c_ref - md_conc) / md_c_ref,
+        # LORENZ'S OWN RELATION, 2026-09-20 - md_lorenz_gain_prereg.md, ADR 0027.
+        # Series 2: renin secretion 2.2 nGU/min at 141 mmol/L Na+ and 1.9 at 80,
+        # NO EFFECT, n = 8; then 3.2 at 80 and 16.6 at 24, P < 0.007. So the arm is
+        # FLAT ABOVE 80 and LOG-LINEAR BELOW IT, slope ln(16.6/3.2)/(80 - 24) =
+        # 0.029 per mmol/L.
+        #
+        # md_drive IS NOW A FOLD CHANGE IN RENIN SECRETION, not a fractional signal
+        # awaiting a gain, and Raas.jl applies it multiplicatively. That is what the
+        # preparation licenses: Lorenz measured this arm with intravascular pressure
+        # and renal nerve activity PHYSICALLY REMOVED, so his 5.2-fold belongs to
+        # the arm itself rather than to the sum of three arms.
+        #
+        # IT IS ZERO AT REST EXACTLY, because md_conc equals md_c_ref there.
+        #
+        # THE THRESHOLD IS ON LORENZ'S OWN AXIS AND THE OPERATING POINT LANDS BELOW
+        # IT WITHOUT BEING PUT THERE. md_c_ref is 53.9, derived from Shirley's
+        # proximal fraction and the macula densa fraction; Lorenz reports the full
+        # response occurring "within the concentration range normally occurring at
+        # the macula densa". Two independent derivations agreeing about which side
+        # of 80 the kidney sits on.
+        #
+        # RN.MD.RENIN_GAIN IS GONE. It was calibrated against van den Bosch's
+        # salt-renin ratio, ADR 0025 retired that estimation set, and its own note
+        # predicted this replacement once a macula densa concentration existed.
+        md_drive ~ exp(k_md * (md_c_ref - min(md_conc, md_c_thr))) - 1.0,
 
         # First-order approach to the volume-keyed natriuretic target.
         # c_anp = 0.0 recovers (G_vn*(V_blood - V_blood_ref) - vn_sig)/tau_vn
@@ -762,9 +822,13 @@ function renal_couplings()
         #
         # RENAL SYMPATHETIC TRAFFIC IS STILL ABSENT and would be a third edge into
         # raas from a component that does not exist.
+        # RE-KEYED 2026-09-20, ADR 0027. The gain parameter was RN_MD_RENIN_GAIN,
+        # calibrated against van den Bosch; the edge now carries Lorenz's measured
+        # slope and the signal is a CONCENTRATION, which is what he showed the
+        # stimulus to be.
         Coupling(:renal, :raas, Mechanical,
-                 gain_param = :RN_MD_RENIN_GAIN,
-                 note = "distal sodium delivery inhibits renin at the macula densa"),
+                 gain_param = :RN_MD_RENIN_SLOPE,
+                 note = "macula densa NaCl concentration modulates renin (Lorenz 1990)"),
         # DECLARED 2026-09-03. bodyfluids -> renal already existed for C_Na and is
         # declared in BodyFluids.jl; V_ecf now drives filtration through
         # gfr_vol_mod as well, and the note there already said it did.

@@ -448,6 +448,38 @@ Returns a NamedTuple per level with the solution and the summary quantities the
 test needs, plus a combined trajectory.
 """
 
+"""
+    differential_unknown_names(sys) -> Set{String}
+
+Which unknowns of a simplified system are DIFFERENTIAL states, by name.
+
+AN ALGEBRAIC UNKNOWN IS NOT AN INITIAL CONDITION. It is determined by its own
+equation given the differential states and the parameters, so pinning it
+over-determines the initialisation. Every unknown in this model was differential
+until ADR 0026 introduced the saturable thick ascending limb, and the two places
+that carry state between phases - `salt_step` here and `run_phases` in
+validation/challenges.jl - both silently stopped working.
+
+THE REGEX MATCHES BOTH `Differential(t)(x(t))` AND `Differential(t, 1)(x(t))`,
+because the first version of this matched only the former, found nothing,
+classified ALL SIXTEEN unknowns as algebraic and therefore carried NO state at
+all. Jensen's acute sodium response read -17% against a band of 60-250 and the
+harness reported it as a model result. THE ASSERTION BELOW IS WHY THAT CANNOT
+HAPPEN AGAIN: a printing change in ModelingToolkit now fails loudly instead of
+quietly emptying the set.
+"""
+function differential_unknown_names(sys)
+    d = Set{String}()
+    for eq in equations(sys)
+        m = match(r"^Differential\(t[^)]*\)\((.*)\)$", string(eq.lhs))
+        m === nothing || push!(d, m.captures[1])
+    end
+    isempty(d) && error("differential_unknown_names: no differential equations " *
+                        "recognised in a system with $(length(equations(sys))) " *
+                        "equations - the printed form of Differential has changed")
+    d
+end
+
 function salt_step(; 
                    # THE THREE LEVELS COME FROM THE LEDGER, NOT FROM THIS LINE.
                    # They were hardcoded here as (205.0, 154.0, 103.0) while
@@ -492,10 +524,28 @@ function salt_step(;
                 opmap[prm] = level
             end
         end
-        # Carry the end state of the previous level in as the initial condition.
+        # Carry the end state of the previous level in as the initial condition -
+        # BUT ONLY THE DIFFERENTIAL STATES.
+        #
+        # AN ALGEBRAIC UNKNOWN IS NOT AN INITIAL CONDITION. It is determined by
+        # its own equation given the differential states and the parameters, so
+        # pinning it OVER-DETERMINES the initialisation. Until ADR 0026 every
+        # unknown here was differential and the distinction cost nothing; the
+        # saturable thick ascending limb introduced one algebraic unknown and
+        # this loop silently stopped working.
+        #
+        # HOW IT FAILED IS THE REASON FOR THE ASSERTION BELOW. The third salt arm
+        # did not integrate at all: it returned its carried state, so the harness
+        # reported 103 mEq/day excreting 154 and a chronic salt sensitivity of
+        # 0.95 against a true 1.96. NO ERROR WAS RAISED. A silently failed solve
+        # was summarised, cycle-averaged and checked against a human band.
+        #
+        # The algebraic unknowns are simply not carried: each solve re-derives
+        # them from the differential states, and their root is unique.
         if u_carry !== nothing
+            diffnames = differential_unknown_names(sys)
             for (u, v) in zip(mtk_unknowns(sys), u_carry)
-                opmap[u] = v
+                string(u) in diffnames && (opmap[u] = v)
             end
         end
 
@@ -503,6 +553,15 @@ function salt_step(;
         alg  = solver === nothing ? FBDF(autodiff = AutoForwardDiff()) : solver
         sol  = solve(prob, alg; saveat, dense = false, abstol = 1e-8, reltol = 1e-6,
                      kwargs...)
+
+        # A FAILED SOLVE MAY NEVER BE SUMMARISED. Added 2026-09-20 after the
+        # failure described above produced a plausible wrong number rather than
+        # an error, and was checked against Rakova's salt step as if it were a
+        # result. Directive 1.11: connect it and run it, and then believe the
+        # retcode.
+        SciMLBase.successful_retcode(sol) ||
+            error("salt_step: the $(level) mEq/day arm did not integrate " *
+                  "(retcode $(sol.retcode)); no summary is computed from a failed solve")
 
         u_carry = sol.u[end]
         # PHASE-AWARE SUMMARIES. With a clock running there is no steady state,
