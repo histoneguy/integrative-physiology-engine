@@ -5462,6 +5462,69 @@ problem in §3.65 is untouched and `RN.MD.RENIN_GAIN` is still `calibrated` at 4
 curvature; a linear-in-intake reading of the same two points is equally admissible.
 
 
+### 3.67 THE TUBULE IS SPLIT, VALLON IS EMERGENT, AND THE HARNESS IS RED ON JENSEN
+
+**ADR 0025. Pre-registered in `validation/tubule_segments_prereg.md`, which predicted the
+severe consequence before the structure was built.** Suite and six gates green;
+**`challenges.jl` FAILS one endpoint** and that is reported, not absorbed.
+
+#### Why
+
+Four renal passes found the right primary source and could not use it — `fr_angii` needed an
+AngII anchor, the saturating form was the wrong question, Lorenz needs **concentration** and
+the model had **delivery**, and Folkerd landed and **changed nothing** because `Na_prox_out`
+was read by nothing. **One cause: the tubule was a single lumped reabsorption term and every
+primary renal source is segmental.**
+
+#### What was built
+
+    H2O_prox_out ~ GFR * f_prox_eff
+    Na_md        ~ Na_prox_out * (1 - f_tal)
+    md_conc      ~ Na_md / H2O_prox_out
+    md_drive     ~ (md_conc_ref - md_conc) / md_conc_ref
+
+**The change that matters is the denominator.** `f_md` was a fixed fraction of the
+**filtered** load; `f_tal` is a fraction of what the segment **receives**. Both constants are
+**derived from rows already sourced** — `f_tal` = 1 − 0.10/0.26 = 0.615, `md_conc_ref` =
+140 × 0.385 = 53.9 mmol/L — so no new information entered.
+
+#### Vallon is now emergent, and 53.9 was free
+
+`md_conc` = `C_Na·(1 − f_tal)`: **the proximal delivery fraction cancels.** Measured
+**53.62 at 38 mEq/day against 53.94 at 230** — 0.6% across a six-fold change in sodium
+excretion. Vallon 2002's salt-independent TGF signal, **reproduced as a consequence of the
+structure rather than assumed.**
+
+And **53.9 sits inside Lorenz's stated normal range of "below 80 mM Na+"** — Shirley gave the
+proximal fraction, Lorenz gave the bound, **nobody arranged it and nothing was fitted.**
+
+#### The model no longer reproduces van den Bosch, and that was predicted
+
+The chronic renin ratio fell **2.733 → 1.433**. §3.65 measured the macula densa arm supplying
+1.41 of the 1.58 gap; with its signal salt-independent it supplies almost none.
+**`RN.MD.RENIN_GAIN` was NOT re-solved** — a larger gain on a constant signal buys nothing.
+The `runtests.jl` pin on 5.74/2.10 tested a calibration that no longer exists and was
+**retired**, replaced by a drift pin.
+
+#### And the harness is RED on Jensen — a real regression
+
+**Jensen's acute FE_Na rise fell 94% → 43%, outside its 60–250 band.**
+
+**The cause is the E3 claim and it names its own fix.** Constant fractional TAL reabsorption
+makes `md_conc` rigidly proportional to plasma sodium **at every flow**. Real thick ascending
+limb transport is **saturable**, so an acute flow surge is reabsorbed less completely and the
+concentration **rises** — the acute signal the model just lost. Chronic salt-independence
+would survive, because over days delivery and reabsorption scale together.
+
+**Saturable TAL transport is the named next step.** If it does not restore the acute
+response, the constant-fraction assumption is not what is wrong.
+
+#### Unchanged
+
+Resting MAP 87.0, `Na_excr` 205.0, urine 1.7 L/day; chronic salt sensitivity 1.96; **both
+Lobo endpoints improved**, to 628 mL and 476 mOsm/kg.
+
+
 ## 4. NEXT, IN ORDER
 
 **Rewritten 2026-09-03, and item 1 was discharged the same day.** The previous list's
