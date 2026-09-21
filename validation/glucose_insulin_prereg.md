@@ -369,3 +369,51 @@ sensitivity**, which is exactly what directive 1.7 asks for. The value is not ye
 **IF IT DOES NOT OPEN, BRANCH G2 APPLIES** and glucose is built with a fixed disposal rate
 and no insulin state. That is written here before the attempt, so a failure to source
 cannot quietly become a fit.
+
+### 9.8 BRANCH G2 IS TAKEN — insulin sensitivity did not source
+
+**Three sources opened, 2026-09-21, none enterable. Recorded individually so the next
+reader does not repeat the search.**
+
+| source | reading level | why it fails |
+|---|---|---|
+| **Tam 2012**, Diabetes Care 35(7):1605, PMID 22511259 | abstract, full | reports CUT-POINTS, not measurements (§2); cohort contains 51 diabetics by design (§3) |
+| **Zanetti 2023**, Diabetologia 66(9):1643, PMID 37329449, PMC10390625 | **full text read** | RISC n = 966 healthy adults, age 44.5 (8.3), BMI 25.4 (4.0), **M value 7.12 (2.95) — REPORTED WITH NO UNITS ANYWHERE IN THE PAPER**, and it explicitly notes differing clamp methodology between its two cohorts |
+| **Hills 2004**, Diabetologia 47:566, RISC methodology | abstract, full | study-design paper; no value, full text paywalled |
+
+**THE SECOND ONE IS THE INSTRUCTIVE FAILURE.** It is the right cohort — healthy, non-diabetic,
+1,500 Europeans aged 30-60, a study whose subject IS normal insulin sensitivity, exactly
+what directive 1.7 asks for — and its headline number **cannot be used because no unit is
+printed**. 7.12 is consistent with mg/kg_FFM/min and inconsistent with the usual molar
+convention, so it could be *inferred*. **It is not.** §3.26 is the record of what composing
+quantities across unstated scales costs here, and a number whose unit is a guess is not a
+measurement.
+
+### 9.9 AND G2 HAS A DESIGN CONSEQUENCE: GLUCOSE IS NOT A STATE
+
+**§1 proposed two states. G2 removes the regulator, and with it the case for either.**
+
+With no insulin there is nothing that makes glucose move on a timescale this model runs. Its
+pool turns over in about an hour; no existing challenge infuses glucose; and with a fixed
+disposal rate the balance has no dynamics of its own worth integrating. **Directive 1.10:
+a state is paid on every run of a model that integrates four hundred days.**
+
+**So glucose enters as an ALGEBRAIC balance and the component adds ZERO states.** What the
+model actually needs from it is the *level* — the thing that sets osmolality and urinary
+loss — and that is what an algebraic balance gives.
+
+**IF INSULIN EVER SOURCES, GLUCOSE BECOMES A STATE IN THAT PASS AND THIS SENTENCE IS THE
+REASON IT WAS NOT ONE HERE.**
+
+### 9.10 What G2 can and cannot claim — §7 test 3 is VOID
+
+- **CAN:** sustained hyperglycaemia and its consequences — raised osmolality, the ADH
+  response, urinary glucose above the reabsorptive maximum, and osmotic diuresis. This is
+  the complication axis and it is what makes the component worth building.
+- **CANNOT:** glucose *regulation*. **§7 test 3, the OGTT time course, is VOID** — not
+  failed. The component does not claim a regulator, so a test of one has nothing to judge,
+  and declaring it void is the treatment ADR 0020 used for its own tests 2 and 3 rather
+  than running a test the structure cannot address.
+
+**Tests 1, 2, 4, 5 and 6 all still run**, and test 4 — osmotic diuresis — is the prediction
+this pass exists to produce.
