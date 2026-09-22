@@ -493,3 +493,84 @@ plasma insulin during the RISC clamp**, which a RISC baseline paper will carry i
 characteristics table. With it, RISC's M and this model's fasting balance become two points
 on the insulin-disposal line - a perturbation and a steady state, which is exactly what §4
 asks for - and G2 becomes G1 in a single pass.
+
+---
+
+## 11. AMENDMENT — THE CLAMP IS NOT NEEDED, AND A SCALE PROBLEM I CREATED
+
+**Written 2026-09-22, before any NIMGU source is opened.** Only the search-result summaries
+have been seen; no paper has been read and no value is entered.
+
+### 11.1 Non-insulin-mediated uptake replaces the clamp
+
+§4 said insulin sensitivity and secretion are not separately identifiable from a fasting
+pair, and §9.8/§9.12 then failed to source a clamp with a stated steady-state insulin.
+**There is a second route and it does not need one.**
+
+**Non-insulin-mediated glucose uptake (NIMGU) is itself measured in humans.** If its basal
+fraction is sourced, the postabsorptive balance splits:
+
+    postabsorptive disposal = EGP                       (sourced, Huidekoper)
+    NIMGU                   = f_nimgu * EGP             (sourced, this pass)
+    insulin-mediated        = (1 - f_nimgu) * EGP       at I_fast (sourced, NHANES)
+
+**That is two independent measurements, not one datum used twice**, and §4 is discharged
+without a clamp. The clamp remains the better instrument and `OPEN-QUESTIONS` keeps the ask;
+this is the route that is actually open.
+
+### 11.2 The pooling rule, declared before extraction
+
+`pooling.md`, in its order of preference. Candidates seen in search summaries only: Baron
+1985 (PMID 2865274), Baron 1988 (Am J Physiol 255:E769), PMID 9597380, PMID 20153490, and
+Gottesman's 1.62 mg/kg/min in 16 lean non-diabetic subjects.
+
+1. **`meta-analysis`** if one has already pooled NIMGU fractions.
+2. **`pooled-inverse-variance`** — expected, since several report a fraction with a
+   dispersion and an n.
+3. **`pooled-n-weighted`**, then **`pooled-unweighted`**, then **`single-source`**.
+
+**NOT POOLED:** diabetic and insulin-resistant arms — NIMGU is *elevated* in type II diabetes
+and averaging those in would describe no healthy person. **NOT POOLED ACROSS METHODS** where
+the somatostatin-suppression and clamp-based estimates differ in what they measure; the
+method is recorded per source and mixing is decided by whether they estimate the same
+quantity, not by convenience.
+
+**A FRACTION IS NOT A RATIO WITH NULL 1.0**, so `pooled-geometric` does **not** apply here
+despite the quantity being dimensionless — rule 4 is for gains and multipliers.
+
+**AND THE ROW CARRIES THE BETWEEN-SUBJECT SD**, per §8.4 of `thirst_prereg.md`: pooling
+shrinks the uncertainty in the mean and must not shrink population spread.
+
+### 11.3 THE SCALE PROBLEM, AND IT IS MINE
+
+**Adding dietary carbohydrate made the model's glucose balance a 24-HOUR AVERAGE while its
+target stayed a FASTING measurement.** `k_glu` is derived so that appearance — now hepatic
+production **plus** 225 g/day of diet — lands at `GLU.PLASMA.FASTING` = 5.44 mmol/L. **That
+forces a fed-and-fasted average to sit at the postabsorptive concentration, which is wrong
+in a direction I can state: the 24-hour mean glucose in healthy adults is HIGHER than the
+fasting value.**
+
+Sodium and water already run as 24-hour averages, so the model's framing is consistent and
+**glucose's target is the odd one out.**
+
+**NIMGU MAKES THIS BITE RATHER THAN MERELY UNTIDY.** The NIMGU fraction is measured
+**postabsorptively**. Applying it to a 24-hour-average balance would overstate the
+non-insulin-mediated share, because the fed state is exactly when insulin-mediated uptake
+dominates. **That is a §3.26 scale mismatch and it is recorded here before any number is
+taken.**
+
+### 11.4 The decision, fixed now
+
+- **D1 — 24-hour mean glucose sources in healthy adults** (continuous glucose monitoring
+  normative data is abundant and poolable). **Then it becomes the model's target**, `k_glu`
+  is derived against it, and **`GLU.PLASMA.FASTING` becomes a HELD-OUT comparison** that the
+  model has not been fitted to. This is the preferred outcome and it turns a row into a test.
+- **D2 — it does not source.** Keep the fasting target, and **state the approximation on the
+  row**: a 24-hour balance pinned to a postabsorptive concentration, with the direction of
+  the error named.
+- **D3 — the NIMGU fraction is only available in mixed or diabetic cohorts.** Do not pool
+  them; record INDETERMINATE and leave insulin unbuilt, as §6's G2 already permits.
+
+**WHAT MAY NOT HAPPEN:** `GLU.INTAKE.CARBOHYDRATE` may not be reduced to make a fasting
+target fit a fed balance. It is a measured input and the mismatch is in the target, not in
+it.
