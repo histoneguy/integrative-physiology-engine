@@ -687,6 +687,42 @@ since he performed exactly that titration. **PMID 5093515, and the full text is 
 
 ---
 
+### B21. Rows entered single-source that should have been pooled — NEW, 2026-09-21
+
+**The owner's correction, twice, the second time with "We've already been through this."**
+`validation/pooling.md` has been binding since long before this session and says
+`single-source` is a last resort a row must admit to, not a default. **Three rows went in
+single-source on 2026-09-21 anyway.** One has since been fixed; two have not.
+
+| row | source | status |
+|---|---|---|
+| `BF.THIRST.OSM_THRESHOLD` | Thompson 1986, n = 10 | **FIXED** — repooled from Hughes 2018, a systematic review of 12 trials and 167 participants |
+| `RN.GLU.TM` | Mogensen 1971, n = 9 | **DEBT** |
+| `GLU.EGP.BASAL` | Huidekoper 2014, n = 40 | **DEBT** |
+
+**THE FIX WAS NOT COSMETIC AND THAT IS WHY THE DEBT MATTERS.** Pooling moved the thirst
+threshold 281 → 285.23, which shrank the derived gain's denominator from 6.00 to 1.77
+mOsm/kg and moved the gain by a factor of 3.4. **A single-source row is not a smaller
+version of a pooled one; it can be a different answer.**
+
+**AND THE POPULATION FRAMING IS PART OF IT.** This model is meant to become a population
+model in which each simulated person is a draw, so a row needs the **between-subject SD**,
+not the uncertainty on a mean. Pooling shrinks the latter and must leave the former alone.
+`ledger_to_julia.py` already documents `sd` as population spread and `se` as uncertainty on
+an estimate.
+
+**WHAT WOULD RESOLVE IT:** for each debt row, a search for a meta-analysis first and failing
+that several primaries, pooled under a rule declared before extraction. Both are narrow
+searches, not open-ended ones.
+
+**AND THE THIRST ROW STILL LACKS A POPULATION SD.** Hughes reports a 95% CI on the pooled
+mean, not a between-subject spread. Treating it as a standard error over 167 participants
+implies about 8.5 mOsm/kg, but the review folds between-study heterogeneity into that
+interval, so 8.5 is an **upper bound and not a measurement**. Getting the real spread needs
+the constituent trials' individual data.
+
+---
+
 ### B7. A de-indexing correction is owed
 
 `validation/ecf_salt_response_extract.py` multiplies an *indexed* ECF difference by ONE
