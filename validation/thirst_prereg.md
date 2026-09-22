@@ -197,3 +197,38 @@ SENSITIVITY TO IT SHOWN** — §5 gains a test:
 below threshold and osmotic thirst could not explain baseline drinking. **That is branch
 T5**, added here: report it, and do not move `BF.OSM.PLASMA_SETPOINT` to rescue it, because
 §4 already forbids that and B19 already records that the setpoints do not compose.
+
+### 8.4 THIS IS POPULATION DATA AND THE ROW MUST CARRY THE SPREAD, NOT JUST A CENTRE
+
+**At the owner's instruction, and it changes what pooling is FOR.** This model is meant to
+become a population model in which each simulated person represents a draw from the
+population, so **there is no one right value for an osmotic thirst threshold** — there is a
+distribution, and individuals sit across it.
+
+**POOLING ACROSS STUDIES SHRINKS THE UNCERTAINTY IN THE MEAN. IT MUST NOT SHRINK THE
+POPULATION SD.** Those are different quantities and conflating them would make every
+simulated person more alike than people are. `tools/ledger_to_julia.py` already draws this
+line — it documents `sd` as **population spread** and `se` as uncertainty on an estimate —
+so the convention exists and this pass must use it correctly rather than reach for whichever
+number a paper happens to print.
+
+**THEREFORE, FIXED NOW:**
+
+- The row carries **`uncertainty_type = sd`**, the **between-subject** standard deviation of
+  the threshold across healthy adults.
+- **If a paper reports SEM, it is converted with its own n** — `SD = SEM x sqrt(n)` — and
+  the conversion is recorded per source. **A SEM entered as an SD would understate the
+  population spread by a factor of `sqrt(n)`**, which for n = 10 is 3.2-fold.
+- **Pooling combines the MEANS by §8.1's rule; the SD is pooled as a within-study spread**
+  (the root of the n-weighted mean of the variances), **not** as the spread of the study
+  means, which would measure disagreement between laboratories instead of variation between
+  people.
+- **If only one admissible study exists, its SD is the population SD** and the row says
+  `single-source` — a spread from one cohort is still a spread, whereas a mean from one
+  cohort dressed as consensus is not.
+
+**AND THE DERIVED GAIN INHERITS THE SPREAD, WHICH IS THE POINT.** `k = intake /
+(Osm_setpoint − threshold)` means a person with a low threshold drinks differently from one
+with a high threshold **at the same osmolality**. That is real between-person variation in
+osmoregulation, and it is exactly what a population model should reproduce. §8.3's test 7
+already requires the gain to be reported across that interval.
