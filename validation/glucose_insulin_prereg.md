@@ -626,3 +626,67 @@ than adopting the number.
 **AND THE MODEL HAS NO MEALS**, so it cannot reproduce the excursions that make the 24-hour
 mean exceed the fasting value — it will simply sit at the mean. That is honest for a
 24-hour-average model and it is stated on the row, not discovered later.
+
+### 11.6 BRANCH D1 EXECUTED — AND THE PREDICTION IN §11.5.4 WAS WRONG
+
+**§11.5.4 predicted, before searching, that the 24-hour mean would come out ABOVE the
+fasting 5.44 mmol/L, and said that if it did not the pass would stop to find out why rather
+than adopt the number. It did not. Here is why.**
+
+**Shah VN, DuBose SN, Li Z, Beck RW, Peters AL, Weinstock RS, et al.** *Continuous Glucose
+Monitoring Profiles in Healthy Nondiabetic Participants: A Multicenter Prospective Study.*
+J Clin Endocrinol Metab 2019;104(10):4356-4364. **PMID 31127824. ABSTRACT READ IN FULL,
+2026-09-22.** 153 nonpregnant, nonobese, nondiabetic participants aged 7-80 at 12 T1D
+Exchange centres; blinded **Dexcom G6**, once-daily calibration, up to 10 days.
+
+| | |
+|---|---|
+| mean average glucose | **98-99 mg/dL (5.4-5.5 mmol/L)**, all age groups except >60 y |
+| >60 y | 104 mg/dL (5.8 mmol/L) |
+| median time 70-140 mg/dL | **96%** (IQR 93-98) |
+| median time >140 mg/dL | **2.1%, about 30 min/day** |
+| within-individual CV | 17 +/- 3% |
+
+**THE 24-HOUR MEAN AND THE FASTING MEDIAN COINCIDE.** NHANES gives 98 mg/dL fasting
+(§9.5); Shah gives 98-99 mg/dL over 24 hours. **THE SAME PAPER EXPLAINS IT:** healthy
+nonobese people are between 70 and 140 mg/dL for 96% of the day and above 140 for about
+half an hour. **Excursions are small and brief, so they do not lift the mean.** My
+prediction assumed postprandial excursions large enough to move a daily average, and in
+health they are not.
+
+**Keshet A et al., CGMap, Cell Metab 2023** (abstract read) characterises >7,000
+non-diabetic individuals aged 40-70 and is the larger cohort, but **its mean is in neither
+the abstract nor the accessible full text**, so it could not be pooled. A secondary summary
+reports healthy mean CGM glucose "consistently below 6.2 mmol/L" with within-individual CV
+11.6-25.6%; that is consistent and is **not** entered, because a secondary summary is not a
+reading.
+
+### 11.6.1 A CORRIGENDUM EXISTS AND COULD NOT BE OPENED
+
+**JCEM 2022;107(4):e1775-e1776, PMID 34888657, doi 10.1210/clinem/dgab837**, correcting the
+2019 paper. **PMC is behind a reCAPTCHA and Europe PMC's REST API returns HTTP 500.** What
+it corrects is unknown. **No Shah number is entered as a parameter**, so nothing in the
+ledger depends on it — but it is recorded here because a corrigendum on the very paper a
+conclusion rests on is exactly the thing that gets waved through.
+
+### 11.6.2 THE OUTCOME: NO CGM ROW IS ENTERED, AND THAT IS THE RESULT
+
+**D1's target change is numerically negligible** — 5.44 against 5.4-5.5 is within rounding —
+so re-deriving `k_glu` against the 24-hour mean would change nothing the model can resolve,
+and **`GLU.PLASMA.FASTING` cannot become a held-out test because the two quantities are the
+same number.** The test §11.5.4 hoped to create does not exist.
+
+**A row nothing reads is what directive 1.11 exists to prevent**, so no CGM parameter is
+added.
+
+**WHAT IS GAINED IS NOT NOTHING.** §11.3's scale problem — a 24-hour-average balance pinned
+to a postabsorptive target — is now **MEASURED to be negligible at the healthy operating
+point** instead of assumed away. That licence is explicitly **conditional on health**: in
+hyperglycaemia the excursions are neither small nor brief, and the coincidence will not
+hold. **The approximation is recorded on `GLU.PLASMA.FASTING` with that condition attached.**
+
+**AND THE NIMGU SCALE OBJECTION IN §11.3 IS CORRESPONDINGLY WEAKENED BUT NOT REMOVED.**
+Applying a postabsorptive NIMGU fraction to a 24-hour balance is defensible in health,
+because the 24-hour state and the postabsorptive state are the same state to within
+rounding. It stops being defensible the moment the model is run hyperglycaemic, and §11.4's
+D3 still governs what may be claimed there.
