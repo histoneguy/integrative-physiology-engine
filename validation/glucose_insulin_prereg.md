@@ -690,3 +690,50 @@ Applying a postabsorptive NIMGU fraction to a 24-hour balance is defensible in h
 because the 24-hour state and the postabsorptive state are the same state to within
 rounding. It stops being defensible the moment the model is run hyperglycaemic, and §11.4's
 D3 still governs what may be claimed there.
+
+### 11.7 NIMGU EXTRACTION — one direct-method fraction, and a corroboration that may not be pooled
+
+**All abstracts read in full on PubMed, 2026-09-22.**
+
+| source | n | method | NIMGU |
+|---|---|---|---|
+| **Baron 1985**, J Clin Invest, PMID 2865274 | **11 normal** | somatostatin insulinopenia + [3-3H]glucose, **DIRECT** | **75 +/- 5% of basal Rd**; basal Rd 150 +/- 7 mg/min; NIMGU 113 +/- 8 mg/min |
+| Baron 1988, Am J Physiol 255:E769 | 6 lean healthy men | same group, same direct method | NIMGU **128 +/- 6 mg/min** at euglycaemia — **absolute only; basal Rd is not in the abstract, so no fraction** |
+| García-Estévez 1998, PMID 9597380 | 16 healthy | **MINIMAL MODEL** | 77 +/- 8% |
+
+### 11.7.1 The pool is ONE study, and §11.2 is why
+
+**García-Estévez is NOT pooled with Baron**, and the reason was fixed before extraction.
+§11.2 said methods are not mixed by convenience, and `SOURCES.md` treats a value derived
+from another model as `calibrated` with that model named. **The minimal model is a model**;
+its glucose-effectiveness estimate and a somatostatin-clamp direct measurement are related
+but not the same estimator.
+
+**Baron 1988 cannot supply a fraction** because its abstract gives NIMGU in mg/min without
+the basal Rd to divide by. It corroborates the magnitude — 128 mg/min against 1985's 113 —
+in a different cohort by the same method.
+
+**SO THE ROW WOULD BE `single-source`, AND `pooling.md` SAYS TO SAY SO RATHER THAN DRESS IT
+AS CONSENSUS.** That is the second time this pass has had to; B21 already carries the debt.
+
+**WHAT THE EXCLUSION BUYS IS A CROSS-METHOD CHECK.** 75 +/- 5% by somatostatin clamp against
+77 +/- 8% by minimal model, in different cohorts by different estimators, **agree to within
+2 percentage points.** That is worth more as corroboration than it would be as a pooled
+digit, and it is recorded that way.
+
+### 11.7.2 SE, NOT SD — and §8.4 makes the difference load-bearing
+
+Baron reports **75 +/- 5%** and declares SE elsewhere in the same abstract. **Entering 5 as a
+population SD would understate the spread by sqrt(11) = 3.3-fold.** Converted:
+**SD = 5 x sqrt(11) = 16.6 percentage points**, so individuals span roughly 58-92%.
+
+**For a population model that is the number that matters**, and it is the difference between
+simulated people who all dispose glucose alike and people who do not.
+
+### 11.7.3 What it composes with, checked rather than assumed
+
+Baron's basal Rd of **150 +/- 7 mg/min** is **2.14 mg/kg/min** at 70 kg, against this
+ledger's `GLU.EGP.BASAL` of **1.93 mg/kg/min** from Huidekoper by isotope dilution.
+**Two different groups, two different decades, two different tracer protocols, 10% apart** —
+and neither was chosen with the other in view. The postabsorptive balance the insulin split
+will rest on is therefore consistent at its foundation.
