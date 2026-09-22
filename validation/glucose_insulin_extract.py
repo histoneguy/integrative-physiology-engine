@@ -45,7 +45,7 @@ ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_DATA = ROOT / "validation" / "data" / "nhanes"
 BASE = "https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/{year}/DataFiles/{file}_{s}.xpt"
 CYCLES = [("2007", "E"), ("2009", "F"), ("2011", "G")]
-FILES = ["GLU", "DEMO", "RXQ_RX", "DIQ"]
+FILES = ["GLU", "DEMO", "RXQ_RX", "DIQ", "DR1TOT"]
 
 # Prereg section 10.2, fixed before the data were touched.
 GLUCOSE_DRUGS = (
@@ -193,6 +193,50 @@ def main() -> int:
     print("  AND NO RELATIONSHIP BETWEEN THE TWO IS COMPUTED. Prereg section 10.4:")
     print("  fasting glucose and fasting insulin are ONE equation. Insulin")
     print("  sensitivity still needs a PERTURBATION and NHANES cannot supply it.")
+
+    # ---- AVAILABLE DIETARY CARBOHYDRATE, added 2026-09-21 -------------------
+    # ADR 0029 ceilings plasma glucose at (appearance + TmG)/GFR = 25.5 mmol/L
+    # because appearance is hepatic production ALONE - the model takes in no
+    # glucose at all. This is that input, from the same cycles and the same
+    # population definition, so it composes with the fasting pair by
+    # construction.
+    #
+    # AVAILABLE carbohydrate is TOTAL minus FIBRE. Fibre is not absorbed as
+    # glucose and counting it would overstate appearance; the subtraction is
+    # arithmetic on two columns of the same recall, not an assumption.
+    if not frames.get("DR1TOT"):
+        print("
+  DIETARY CARBOHYDRATE: DR1TOT unavailable, not reported.")
+        return 0
+    dr = pd.concat(frames["DR1TOT"], ignore_index=True)
+    need_d = {"DR1TCARB", "DR1TFIBE", "WTDRD1"}
+    if not need_d.issubset(dr.columns):
+        print(f"
+  DIETARY CARBOHYDRATE: missing {sorted(need_d - set(dr.columns))}.")
+        return 0
+    d = df.merge(dr[["SEQN", "DR1TCARB", "DR1TFIBE", "WTDRD1", "DR1DRSTZ"]]
+                 if "DR1DRSTZ" in dr.columns else
+                 dr[["SEQN", "DR1TCARB", "DR1TFIBE", "WTDRD1"]],
+                 on="SEQN", how="inner")
+    if "DR1DRSTZ" in d.columns:                      # 1 = reliable recall
+        d = d[d["DR1DRSTZ"] == 1]
+    d = d[d["DR1TCARB"].notna() & d["DR1TFIBE"].notna() &
+          d["WTDRD1"].notna() & (d["WTDRD1"] > 0)].copy()
+    d["avail"] = d["DR1TCARB"] - d["DR1TFIBE"]
+    wd = d["WTDRD1"].to_numpy() / len(CYCLES)
+    v = d["avail"].to_numpy(dtype=float)
+    med = weighted_quantile(v, wd, 0.50)
+    q1 = weighted_quantile(v, wd, 0.25)
+    q3 = weighted_quantile(v, wd, 0.75)
+    print("
+AVAILABLE DIETARY CARBOHYDRATE (total - fibre), n = {:,}".format(len(d)))
+    print("-" * 66)
+    print(f"      median {med:7.1f} g/day   IQR {q1:.1f} - {q3:.1f}")
+    print(f"      median {med/0.18016:7.0f} mmol/day  IQR {q1/0.18016:.0f} - {q3/0.18016:.0f}")
+    print("  ONE 24-HOUR RECALL PER PERSON, so this spread is BETWEEN-PERSON")
+    print("  variation PLUS within-person day-to-day variation, and is therefore")
+    print("  WIDER than the habitual-intake distribution. Stated, not corrected.")
+    print("  A recall also UNDER-REPORTS; the direction of that bias is down.")
     return 0
 
 

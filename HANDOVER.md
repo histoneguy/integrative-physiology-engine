@@ -5773,6 +5773,72 @@ measured centre is 5.44 and 5.0 sits essentially at the 25th percentile** of 5,5
 US adults.
 
 
+### 3.71 OSMOTIC THIRST, AND A SINGLE-SOURCE ROW THAT WAS A DIFFERENT ANSWER
+
+**ADR 0030, branch T2.** Pre-registered in `thirst_prereg.md`. Suite green, **ALL CHALLENGES
+PASS**, six gates green.
+
+#### The pooling correction is the lesson, not the mechanism
+
+The threshold went in as **Thompson 1986, n = 10, 281 mOsm/kg** - a single source, in the
+same paradigm and from the same group as `ADH.OSM.THRESHOLD`, which felt like enough.
+**`pooling.md` has been binding since long before this session** and ranks an already-pooled
+estimate first. The owner's correction - twice, the second time with *"We've already been
+through this"* - is why the review was sought.
+
+**Hughes 2018, a systematic review of 12 TRIALS and 167 PARTICIPANTS, gives 285.23 +/- 1.29.**
+Pooling moved the threshold 281 -> 285.23, which **shrank the derived gain's denominator from
+6.00 to 1.77 mOsm/kg and moved the gain by a factor of 3.4.** A SINGLE-SOURCE ROW IS NOT A
+SMALLER VERSION OF A POOLED ONE; IT CAN BE A DIFFERENT ANSWER. `OPEN-QUESTIONS` B21 records
+`RN.GLU.TM` and `GLU.EGP.BASAL` as still carrying that debt.
+
+**AND DIRECTIVE 1.12 SCORED ON A CLAIM.** Section 2 wrote down the teaching ordering - thirst
+threshold above the vasopressin threshold - BEFORE searching. Hughes: thirst 285.23 +/- 1.29,
+vasopressin 284.3 +/- 0.71, overlapping. **The textbook ordering is not supported**, settled
+by twelve trials rather than one.
+
+#### What was built
+
+Thirst ADDS to intake rather than replacing it, because `H2O_intake` is a PROTOCOL INPUT that
+`challenges.jl` overrides. The gain is an IDENTITY - Hughes's slope is in centimetres of
+visual analogue scale and no volumetric drinking slope exists in healthy adults - so it comes
+from the steady-state water balance: 2.5/(287 - 285.23) = 1.41 L/day per mOsm/kg. **Baseline
+drinking IS the thirst response at baseline osmolality.**
+
+#### ADH IS NO LONGER NECESSARY FOR THE SALT RESPONSE, AND A SUITE CLAIM INVERTED
+
+A test asserted `on > off` - ADH amplifies the salt-step shift. It no longer does. Without
+ADH the kidney cannot concentrate, osmolality moves further, **thirst fires harder and
+restores the water anyway.** Measured across the gain's own six-fold interval: at thirst_on 0
+the old claim holds (1.7711 against 1.6737); at every gain from 0.58 to 3.69 it inverts, and
+the inversion is driven by the ADH-OFF branch rising to 1.7875 rather than the ADH-on branch
+moving. **The test now asserts the REDUNDANCY** and the old directional claim is recorded as
+something thirst removed rather than quietly dropped.
+
+#### The prediction works and is weak, and the reason is arithmetic
+
+Urine 1.70 -> 2.14 L/day at glucose 19.4 mmol/L. Osmolality barely moves, 287.00 -> 287.31,
+because `dOsm = dGlucose*(1 - 2f)` and the model's sodium-per-glucose fall f is **0.49** -
+within a hair of the 0.5 that makes dOsm exactly zero. **The gain was NOT raised to improve
+this.**
+
+#### JENSEN CROSSED ITS BAND EDGE AND THAT IS NOT A RESULT
+
+59.9 -> 60.x, and `challenges.jl`'s own note records that band as *"TIGHTER than the reported
+statistics can justify"*. **A 0.1-point move across an arbitrary line is bookkeeping. Thirst
+did not fix the acute natriuresis and must not be said to have.** The harness is now fully
+green, which that same file already warns is LESS informative than the red one was.
+
+#### And the glucose ceiling was diagnosed, not fixed
+
+The model cannot exceed **23.3 mmol/L** glucose with healthy kidneys. The ceiling is
+`C_max = (appearance + TmG)/GFR` = (1080 + 2813)/152.6 = 25.5 mmol/L: at high glucose the
+kidney becomes the dominant clearance, excreting 987 of the 1080 mmol/day the liver makes.
+**The kidneys are not superhuman - the liver cannot overproduce and the model does not eat.**
+Appearance is hepatic production alone; there is no dietary carbohydrate at all, and
+`glu_disposal` removes only peripheral uptake while real diabetes also raises production.
+
+
 ## 4. NEXT, IN ORDER
 
 **Rewritten 2026-09-03, and item 1 was discharged the same day.** The previous list's
