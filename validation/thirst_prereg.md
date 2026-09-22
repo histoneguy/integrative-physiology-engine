@@ -142,3 +142,58 @@ chosen to produce it is not a prediction. If the sourced slope gives too little 
 
 **Reporting the textbook threshold ordering** if the source disagrees with it. §2 wrote the
 claim down first for exactly that reason.
+
+---
+
+## 8. AMENDMENT — THE POOLING RULE, DECLARED BEFORE ANY SECOND SOURCE IS OPENED
+
+**Appended 2026-09-21 at the owner's instruction: gather multiple sources and pool them
+rather than settling for one.** `validation/pooling.md` is binding and says the rule must be
+fixed **before** extraction, because a rule chosen after seeing the numbers is
+unfalsifiable. Thompson 1986 has been read (§9.1); **no further source has been opened at
+the time of writing this section.**
+
+### 8.1 The rule, in `pooling.md`'s own order of preference
+
+1. **`meta-analysis`** if one exists that has already pooled osmotic thirst thresholds with
+   a stated method. Take its estimate and its dispersion; do not re-pool.
+2. **`pooled-inverse-variance`** if the primary studies report a threshold with a dispersion
+   and an n.
+3. **`pooled-n-weighted`** if they report a threshold and an n but no dispersion.
+4. **`pooled-unweighted`** if neither.
+5. **`single-source`** if Thompson turns out to be the only admissible study — **and then
+   the row says so and is not dressed as consensus.**
+
+**`range-midpoint` IS PROHIBITED**, and so is reaching for a review's quoted span instead of
+its constituent papers.
+
+### 8.2 What may NOT be pooled, and this matters more here than usual
+
+- **NOT ACROSS SPECIES.** Rat and dog osmotic thirst literature is large and older than the
+  human work. Averaging it in would produce a number describing no organism.
+- **NOT ACROSS MEASUREMENT METHODS.** The threshold must come from **hypertonic saline
+  infusion with concurrent plasma osmolality**, which is the paradigm `ADH.OSM.THRESHOLD`
+  already uses. Water-deprivation and oral-loading protocols measure something related on a
+  different axis and are excluded from the pool — `pooling.md` prohibits mixing
+  `extraction_method`s, and §3 of this pre-registration already fixed the paradigm.
+- **NOT ACROSS AGE.** Thirst sensitivity falls with age and this model has no age dimension;
+  elderly cohorts are excluded from the pool and recorded if found.
+
+### 8.3 What the pool changes downstream, stated now
+
+The threshold enters the derived gain as `k = intake / (Osm_setpoint − threshold)`. **That
+denominator is a DIFFERENCE of two numbers close together, so it amplifies error**: at 287,
+a threshold of 281 gives 6 mOsm/kg and one of 284 gives 3, which halves the signal and
+doubles the gain.
+
+**THE POOLED THRESHOLD THEREFORE HAS TO BE REPORTED WITH ITS DISPERSION AND THE GAIN'S
+SENSITIVITY TO IT SHOWN** — §5 gains a test:
+
+7. **The derived gain across the pooled threshold's own uncertainty interval**, reported,
+   with the polyuria prediction recomputed at each end. If the prediction survives the
+   interval, it is a result; if it does not, the interval is the finding.
+
+**AND IF THE POOLED THRESHOLD RISES ABOVE 287** the mechanism inverts — the model would rest
+below threshold and osmotic thirst could not explain baseline drinking. **That is branch
+T5**, added here: report it, and do not move `BF.OSM.PLASMA_SETPOINT` to rescue it, because
+§4 already forbids that and B19 already records that the setpoints do not compose.
