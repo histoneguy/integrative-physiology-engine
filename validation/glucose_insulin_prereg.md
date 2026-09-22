@@ -661,13 +661,22 @@ reports healthy mean CGM glucose "consistently below 6.2 mmol/L" with within-ind
 11.6-25.6%; that is consistent and is **not** entered, because a secondary summary is not a
 reading.
 
-### 11.6.1 A CORRIGENDUM EXISTS AND COULD NOT BE OPENED
+### 11.6.1 THE CORRIGENDUM WAS CHASED, AND IT IS READ
 
-**JCEM 2022;107(4):e1775-e1776, PMID 34888657, doi 10.1210/clinem/dgab837**, correcting the
-2019 paper. **PMC is behind a reCAPTCHA and Europe PMC's REST API returns HTTP 500.** What
-it corrects is unknown. **No Shah number is entered as a parameter**, so nothing in the
-ledger depends on it — but it is recorded here because a corrigendum on the very paper a
-conclusion rests on is exactly the thing that gets waved through.
+**JCEM 2022;107(4):e1775, PMID 34888657, doi 10.1210/clinem/dgab837**, correcting the 2019
+paper. **PMC is behind a reCAPTCHA and Europe PMC's REST API returned HTTP 500**, so it
+could not be opened from here; **the owner supplied the PDF and it has now been READ IN
+FULL, 2026-09-22.**
+
+**IT IS A FIGURE-KEY CORRECTION AND NOTHING ELSE.** In its own words: *"The key for Figure
+3B incorrectly identified day statistics as night statistics and vice versa"*, and **"The
+conclusions of the study are unchanged."** No mean, no time-in-range and no dispersion is
+touched, so §11.6's conclusion stands on a paper whose correction has been seen rather than
+assumed harmless.
+
+**IT WAS WORTH CHASING EVEN THOUGH IT CHANGED NOTHING.** A corrigendum on the paper a
+conclusion rests on is exactly what gets waved through, and "it probably only fixes a
+figure" is the assumption that makes waving it through feel safe.
 
 ### 11.6.2 THE OUTCOME: NO CGM ROW IS ENTERED, AND THAT IS THE RESULT
 
