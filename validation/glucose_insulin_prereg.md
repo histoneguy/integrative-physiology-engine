@@ -859,3 +859,50 @@ steps at **100 and 300 mg/dL** — and two points is all `I(G)` needs.
 **Any healthy-adult hyperglycaemic clamp reporting both axes would do**, and per `pooling.md`
 two or three would be better than one. **With it, §12.1's split becomes buildable with no
 free parameter**, because `k_ni` and `S_I` are already determined by rows in hand.
+
+### 12.9 `I(G)` SOURCED — Merovci 2021, supplied by the owner
+
+**Merovci A, Tripathy D, Chen X, Valdez I, Abdul-Ghani M, Solis-Herrera C, Basu S,
+DeFronzo RA.** *Effect of Mild Physiologic Hyperglycemia on Insulin Secretion, Insulin
+Clearance, and Insulin Sensitivity in Healthy Glucose-Tolerant Subjects.* Diabetes
+2021;70(1):204-213. **PMID 33033064, doi 10.2337/db20-0039. FULL TEXT READ, 2026-09-22**,
+supplied by the owner after PubMed's abstract proved to carry only the post-intervention
+changes.
+
+**THE PROTOCOL, FROM THE METHODS AND NOT FROM THE ABSTRACT — and it matters, because the
+abstract's "100 and 300 mg/dL" are INCREMENTS while the methods give one as an ABSOLUTE.**
+Glucose was *"acutely raised and maintained at 100 mg/dL above baseline for 80 min"*, then
+at 80 min *"acutely raised and maintained at 400 mg/dL for an additional 110 min"*.
+Second-phase insulin is the **incremental AUC from 10-80 and 90-160 min**, i.e. over 70-min
+windows.
+
+**WHAT IS TAKEN IS THE BASELINE ARM OF THE FH- GROUP** — 12 healthy subjects with no family
+history of type 2 diabetes, **before** the 72-h glucose infusion. The post-infusion arm is an
+intervention and §12.4 excludes it for setting a healthy relation.
+
+| plasma glucose | | plasma insulin | |
+|---|---|---|---|
+| 90 mg/dL | **5.00 mmol/L** | 9 +/- 1 mU/L | **62 pmol/L** (fasting) |
+| ~190 mg/dL | **10.55 mmol/L** | 9 + 2,327/70 = **42 mU/L** | **292 pmol/L** |
+| 400 mg/dL | **22.20 mmol/L** | 9 + 4,802/70 = **78 mU/L** | **542 pmol/L** |
+
+Incremental AUCs: 2,327 +/- 489 and 4,802 +/- 1,139 mU/L.min, divided by their 70-min
+windows. **SE, not SD** — 21% and 24% respectively — so §8.4's conversion applies to any row
+that carries dispersion.
+
+**THE RELATION SATURATES, AND THAT IS THE POINT.** 5.98 mU/L per mmol/L over the first
+interval against **3.04** over the second. A linear `I(G)` would overstate insulin at high
+glucose by roughly twofold and would buffer hyperglycaemia that people do not buffer.
+
+**TWO CONSISTENCY CHECKS NOBODY ARRANGED.** Merovci's fasting insulin of 9 mU/L is **62
+pmol/L** against NHANES's **64.2** in 5,563 adults — different decade, different cohort,
+different assay. And his fasting glucose of 90-94 mg/dL sits just below NHANES's 98.
+
+**THE MISMATCH THAT MUST BE CARRIED:** this model's fasting glucose is 5.44 mmol/L and
+Merovci's baseline is 5.00. **The SHAPE transfers; the anchor does not.** The relation is
+therefore entered as a response *relative to each study's own fasting point*, not as absolute
+insulin against absolute glucose.
+
+**SINGLE-SOURCE, AND IT SAYS SO.** `pooling.md` permits it and requires the admission; B21
+carries the debt. A second two-step hyperglycaemic clamp in healthy adults reporting both
+axes would pool with this one.
