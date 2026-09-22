@@ -574,3 +574,55 @@ taken.**
 **WHAT MAY NOT HAPPEN:** `GLU.INTAKE.CARBOHYDRATE` may not be reduced to make a fasting
 target fit a fed balance. It is a measured input and the mismatch is in the target, not in
 it.
+
+### 11.5 THE CGM POOLING RULE, DECLARED BEFORE ANY CGM PAPER IS OPENED
+
+**At the owner's instruction, 2026-09-22: take branch D1 and source the 24-hour mean.**
+Nothing has been searched for or opened at the time of writing this section.
+
+**THE QUANTITY:** mean interstitial glucose over 24 hours from **continuous glucose
+monitoring in healthy, non-diabetic adults**, on their habitual diet and free-living.
+
+### 11.5.1 The rule, in `pooling.md`'s order
+
+1. **`meta-analysis`** if one has pooled normative CGM means.
+2. **`pooled-inverse-variance`** — expected; CGM normative papers report mean, SD and n.
+3. **`pooled-n-weighted`**, then **`pooled-unweighted`**, then **`single-source`**.
+
+`range-midpoint` is prohibited, and a review's quoted span may not stand in for its
+constituent papers.
+
+### 11.5.2 Admissibility, fixed now
+
+**Include:** adults, non-diabetic **by the study's own criterion**, free-living on habitual
+diet, **at least 24 h of recording**, with the mean reported. Sensor generation recorded per
+source.
+
+**Exclude:** prediabetes cohorts where they are separable, pregnancy, inpatients, athletes
+under training load, and any protocol that **standardises the diet** — a fixed research diet
+measures a different quantity from habitual intake, and this model's dietary carbohydrate
+row is a habitual-intake median from NHANES. **Mixing them would be the §3.26 error in a new
+place.**
+
+### 11.5.3 What must be checked, not assumed
+
+**CGM MEASURES INTERSTITIAL FLUID, NOT PLASMA.** The two differ by a lag and by a calibration
+convention, and modern sensors are factory-calibrated to report a *plasma-equivalent* value.
+**If the pooled sources do not state which they report, that is a scale question and §3.26
+applies** — record it on the row rather than assuming equivalence. This is written down
+first because it is exactly the kind of thing that gets waved through.
+
+### 11.5.4 What this buys, and the test it creates
+
+`k_glu` is re-derived against the 24-hour mean, and **`GLU.PLASMA.FASTING` = 5.44 mmol/L
+becomes a HELD-OUT COMPARISON the model has not been fitted to** — the model's predicted
+*fasting* glucose against NHANES's measured one, on a quantity that no longer sets anything.
+
+**THE DIRECTION IS PREDICTED NOW:** the 24-hour mean must come out **above** 5.44, because it
+includes postprandial excursions. **If the pooled CGM mean is at or below the fasting value,
+something is wrong with one of the two extractions and the pass stops to find out** rather
+than adopting the number.
+
+**AND THE MODEL HAS NO MEALS**, so it cannot reproduce the excursions that make the 24-hour
+mean exceed the fasting value — it will simply sit at the mean. That is honest for a
+24-hour-average model and it is stated on the row, not discovered later.
