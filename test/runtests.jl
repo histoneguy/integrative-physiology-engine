@@ -87,7 +87,7 @@ const SALT_MAP_SHIFT = 1.7706
 # flux-carrying segments and md_drive re-keyed to macula densa CONCENTRATION. It
 # was 2.733 while g_md was calibrated against van den Bosch; that calibration is
 # gone, so this is the model's own value compared with nothing but itself.
-const MD_RENIN_RATIO = 1.3024
+const MD_RENIN_RATIO = 1.2907
 
 #
 # MOVED 2026-09-20, 94.01 -> 43.53, tubule_segments_prereg.md, AND THIS ONE IS A
@@ -589,8 +589,8 @@ end
         # water accumulation, and removing it moved the 30-day endpoint by 0.011
         # mmHg. That is the fourth significant figure on a pressure, which is
         # directive 1.9 territory - but it is a rounding error being REMOVED.
-                         154.0 => 85.7450,
-                         103.0 => 84.6919)
+                         154.0 => 85.7149,
+                         103.0 => 84.6285)
         # RE-PINNED 2026-09-09, BR.OPEN_LOOP_GAIN 2.0 -> 5.62. A stronger
         # reflex leaves a larger residual setpoint error at the end of a
         # 30-day arm, because pressure is still drifting there and the
@@ -660,7 +660,7 @@ end
         # moved 1.8858 -> 2.0042 over the same change, and SALT_MAP_SHIFT carries
         # that one.
         @test isapprox(check_pressure_natriuresis(r).map_shift_mmHg,
-                       1.9908; rtol = 1e-3)   # ... -> 2.2467 -> 1.9088 -> 2.0122
+                       2.0466; rtol = 1e-3)   # ... -> 2.2467 -> 1.9088 -> 2.0122
                        # 2026-09-02: ADR 0010's volume-keyed path landed and the
                        # disabled-ADH branch moved with everything else.
     end
@@ -699,8 +699,8 @@ end
         # together on purpose: these two blocks pin the SAME three numbers to
         # assert DIFFERENT claims about them. RN.GFR.VOLUME_SENSITIVITY wired.
         pre_raas = (205.0 => 86.6832,
-                    154.0 => 85.7450,
-                    103.0 => 84.6919)
+                    154.0 => 85.7149,
+                    103.0 => 84.6285)
         # RE-PINNED 2026-09-09 with BR.OPEN_LOOP_GAIN 2.0 -> 5.62, same cause and
         # same magnitude as the ADR 0012 copy above: a stronger reflex leaves a
         # larger residual setpoint error at the end of a 30-day arm. Fourth
@@ -1041,6 +1041,7 @@ end
         load  = sol[obs("rn₊Osm_load(t)")][end]
         uosm  = sol[obs("rn₊u_osm(t)")][end]
         water = sol[obs("rn₊H2O_excr(t)")][end]
+        thrst = sol[obs("bf₊thirst(t)")][end]
         adh   = sol[obs("ad₊adh(t)")][end]
         osm   = sol[obs("bf₊Osm_ecf(t)")][end]
 
@@ -1049,8 +1050,15 @@ end
         # Conservation, not a fit. It held before this pass and it must hold
         # after, whatever the load became - which is exactly why sourcing the
         # load cannot be judged by whether the water balance still closes.
+        # THIRST IS PART OF INTAKE NOW - ADR 0030. The identity was
+        # intake - insensible; it is intake + thirst - insensible, and leaving
+        # the new term out would have been asserting that osmotic drinking does
+        # not reach the water balance, which is the whole point of building it.
+        # At rest thirst is 1.2 mL/day - the model's own 0.0009 mOsm/kg offset
+        # from its osmolality setpoint amplified by the derived gain - so this
+        # is a CORRECTION to the identity and not a loosening of it.
         @test isapprox(water,
-                       L.BF_H2O_INTAKE_NOMINAL - L.BF_H2O_INSENSIBLE_LOSS;
+                       L.BF_H2O_INTAKE_NOMINAL + thrst - L.BF_H2O_INSENSIBLE_LOSS;
                        rtol = 1e-4)
 
         # ---- TEST 2: THE MODEL RESTS *AT* ITS OSMOTIC SETPOINT --------------
@@ -1148,9 +1156,36 @@ end
         # is already 2 to 19 times more salt-sensitive than normotensive humans.
         # This moves it further in the wrong direction, which is a fact about
         # G_pn and not about ADH - the mechanism here is correct in sign.
+        # REWRITTEN 2026-09-21, ADR 0030, AND THE OLD CLAIM IS NOW FALSE.
+        #
+        # This asserted `on > off` - that ADH AMPLIFIES the salt-step pressure
+        # shift. With osmotic thirst built it no longer does, and the reason is
+        # physiology rather than a wiring error: without ADH the kidney cannot
+        # concentrate urine, so a salt load moves plasma osmolality further, so
+        # THIRST FIRES HARDER and restores the water the missing ADH would have
+        # retained. The two mechanisms both defend osmolality and are partly
+        # REDUNDANT.
+        #
+        # MEASURED ACROSS THE THIRST GAIN'S OWN SIX-FOLD INTERVAL, which is
+        # thirst_prereg.md section 5 test 7 - thirst_on scales the term linearly,
+        # so it IS the gain multiplier, and the review's 95% CI on the threshold
+        # maps the gain to 0.82-5.21 against a central 1.41:
+        #
+        #   thirst_on   ADH on   ADH off
+        #   0.00        1.7711   1.6737   <- the old claim holds with no thirst
+        #   0.58        1.7824   1.7875
+        #   1.00        1.7842   1.7875
+        #   2.00        1.7857   1.7875
+        #   3.69        1.7865   1.7875
+        #
+        # THE INVERSION IS ROBUST ACROSS THE WHOLE INTERVAL and is driven by the
+        # ADH-OFF branch rising 1.6737 -> 1.7875, not by the ADH-on branch
+        # moving. So what is asserted now is the REDUNDANCY - the two branches
+        # agree to under half a percent - and the old directional claim is
+        # recorded above as something thirst removed rather than quietly dropped.
         on  = check_pressure_natriuresis(salt_step(adh = true)).map_shift_mmHg
         off = check_pressure_natriuresis(salt_step(adh = false)).map_shift_mmHg
-        @test on > off
+        @test isapprox(on, off; rtol = 0.01)
 
         # REPINNED 5.0996 -> 5.0575 ON 2026-08-27, and the direction is the
         # interesting part. RN.URINE.SOLUTE_LOAD stopped being a constant: the
