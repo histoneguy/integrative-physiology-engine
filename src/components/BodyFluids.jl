@@ -34,7 +34,7 @@ using ..LedgerParams:
     BF_ICF_ECF_OSMOTIC_TAU,
     BF_NA_INTAKE_NOMINAL, BF_H2O_INTAKE_NOMINAL, BF_H2O_INSENSIBLE_LOSS,
     BF_H2O_CUTANEOUS_LOSS,
-    BF_OSM_PLASMA_SETPOINT, GLU_PLASMA_FASTING,
+    BF_OSM_PLASMA_SETPOINT, GLU_PLASMA_FASTING, BF_THIRST_OSM_THRESHOLD,
     BF_BODY_MASS_REFERENCE
 
 """
@@ -62,6 +62,11 @@ function BodyFluids(; name, body_mass = BF_BODY_MASS_REFERENCE,
     mz = mass_factor(body_mass)
 
     pars = @parameters begin
+        # ABLATION SWITCH - ADR 0030. thirst_on = 0 recovers the previous model
+        # EXACTLY, the precedent g_md, dP_sym and k_angii were introduced on, and
+        # it is a PARAMETER rather than a build flag so the ablation needs no
+        # recompilation.
+        thirst_on = 1.0
         m_body      = body_mass
         f_icf       = BF_ICF_MASS_FRACTION
         f_ecf       = BF_ECF_MASS_FRACTION
@@ -74,6 +79,24 @@ function BodyFluids(; name, body_mass = BF_BODY_MASS_REFERENCE,
         # loses more water insensibly than a 50 kg adult. See src/scaling.jl.
         Na_intake   = sz * BF_NA_INTAKE_NOMINAL            # protocol input
         H2O_intake  = sz * BF_H2O_INTAKE_NOMINAL           # protocol input
+        # ---- OSMOTIC THIRST, ADR 0030, thirst_prereg.md ---------------------
+        Osm_thr_t   = BF_THIRST_OSM_THRESHOLD              # 281, Thompson 1986
+        # THE RESTING OSMOTIC SIGNAL. This model rests at 287, so it sits 6
+        # mOsm/kg ABOVE Thompson's threshold - and that is what lets baseline
+        # drinking BE the thirst response rather than something added to it.
+        sig_ref     = BF_OSM_PLASMA_SETPOINT - Osm_thr_t
+        # THE GAIN IS AN IDENTITY, NOT A FIT - branch T2, declared in advance.
+        # Thompson's slope is 0.3 cm of visual analogue scale per mOsm/kg, a
+        # PERCEPTION scale with no conversion to litres, so the gain comes from
+        # the steady-state water balance instead: the nominal intake divided by
+        # the resting osmotic signal, 2.5/6 = 0.417 L/day per mOsm/kg.
+        #
+        # IT USES THE LEDGER CONSTANT AND NOT THE H2O_intake PARAMETER, AND THE
+        # DIFFERENCE IS LOAD-BEARING. challenges.jl overrides H2O_intake for
+        # Lobo's infusion and for fluid deprivation; a gain computed from the
+        # overridden value would make a deprived person's thirst gain shrink
+        # because water was withheld, which is backwards.
+        k_thirst    = sz * BF_H2O_INTAKE_NOMINAL / sig_ref
         # INSENSIBLE LOSS IS NOW A SPLIT, NOT A CONSTANT. 2026-09-04, ADR 0017.
         # BF.H2O.INSENSIBLE_LOSS was 0.8 L/day, `assumed`, cited "Convention
         # pending primary source." Respiratory loss is computable from ventilation
@@ -126,6 +149,7 @@ function BodyFluids(; name, body_mass = BF_BODY_MASS_REFERENCE,
         # It silently worked at normal glucose only because the default happened
         # to equal the answer. Same failure mode as rn.ln_tal's, same fix.
         C_glu(t), [guess = GLU_PLASMA_FASTING]   # mmol/L plasma glucose
+        thirst(t)           # L/day osmotic drinking, 0 at the operating point
         Osm_ecf(t)          # mOsm/kg
         Osm_icf(t)          # mOsm/kg
         J_store(t)          # mEq/day  net flux into storage, +ve = retaining
@@ -188,7 +212,17 @@ function BodyFluids(; name, body_mass = BF_BODY_MASS_REFERENCE,
 
     balance = [
         D(Na_ecf) ~ Na_intake - Na_excr_rate - J_store,
-        D(V_ecf)  ~ H2O_intake - H2O_excr_rate - H2O_cutan - H2O_resp_rate - J_osm,
+        # THIRST JOINS INTAKE - ADR 0030. It is EXACTLY ZERO at the operating
+        # point by construction, the discipline fr_mod, vn_sig and md_drive are
+        # already wired under, so every existing protocol is bit-identical.
+        D(V_ecf)  ~ H2O_intake + thirst - H2O_excr_rate - H2O_cutan -
+                    H2O_resp_rate - J_osm,
+
+        # RECTIFIED AT THOMPSON'S THRESHOLD. Below 281 mOsm/kg there is no
+        # osmotic drive to drink, so the term floors at -k*sig_ref, which
+        # switches osmotic drinking off entirely rather than driving it
+        # negative. thirst = 0 when Osm_ecf = BF.OSM.PLASMA_SETPOINT.
+        thirst ~ thirst_on * k_thirst * (max(Osm_ecf - Osm_thr_t, 0.0) - sig_ref),
         D(V_icf)  ~ J_osm,
     ]
 
