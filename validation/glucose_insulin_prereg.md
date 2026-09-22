@@ -828,3 +828,34 @@ such**. **The relation is a SLOPE, so if studies report it as a gain or multipli
 5. **The glucose ceiling is recomputed.** A secretion response BUFFERS hyperglycaemia, so the
    ceiling should RISE less steeply with reduced sensitivity than it does now. Reported.
 6. **The renal, thirst and salt endpoints are unchanged**, by running the whole harness.
+
+### 12.7 `I(G)` DID NOT SOURCE — THE SPLIT IS NOT BUILT
+
+**§12.3 fixed this outcome before searching: with insulin fixed at fasting the split is
+algebraically identical to the single lumped clearance, so if `I(G)` does not source the
+split is not built. It did not, and it is not.**
+
+**What was opened, and why each fails the admissibility §12.4 fixed in advance:**
+
+| candidate | what it gives | why inadmissible |
+|---|---|---|
+| **beta-cell glucose sensitivity, 137 pmol/min/m2 per mmol/L** (Diabetologia 2008, PMID 18719881) | a secretion slope in healthy non-carriers | **THREE STRIKES, TWO DECLARED IN ADVANCE.** It is **OGTT-derived**, and §12.4 excludes OGTT indices because §7 test 3 holds the OGTT out as the test. It is **Mari-model-derived**, so `SOURCES.md` would make it `calibrated` with that model named. And it is a **SECRETION RATE, not plasma insulin** — converting it needs an insulin clearance that is not sourced either, which is chaining an assumption onto an assumption. |
+| **Merovci 2021** (Diabetes, PMID 33033064) | two-step hyperglycaemic clamp at **100 and 300 mg/dL in 12 NGT subjects** — exactly the right design | **The abstract reports only the CHANGES after 72 h of glucose infusion.** The baseline steady-state insulin at each clamp step is in the figures, which cannot be read from here. |
+| DeFronzo 1979 (PMID 382871) | describes the biphasic response | **No steady-state values in the abstract**, and §9.12 already recorded its euglycaemic figure as a design target rather than a measurement. |
+
+**SO THE PASS STOPS WHERE IT SAID IT WOULD.** `k_ni` and `S_I` are both derivable today and
+**neither is entered**, because two terms that each scale with `G` and nothing else are one
+term wearing two names. **Adding a row and an equation that change no behaviour is directive
+1.11's failure with extra steps**, and §12.3 named it as what would make this pass a failure.
+
+**BRANCH G2 CONTINUES TO STAND.** The model keeps one lumped, derived glucose clearance.
+
+### 12.8 The ask, and it is one number from one figure
+
+**Steady-state plasma insulin at a stated steady-state plasma glucose, in healthy adults,
+BEFORE any intervention.** Merovci 2021 has exactly this — baseline hyperglycaemic clamp
+steps at **100 and 300 mg/dL** — and two points is all `I(G)` needs.
+
+**Any healthy-adult hyperglycaemic clamp reporting both axes would do**, and per `pooling.md`
+two or three would be better than one. **With it, §12.1's split becomes buildable with no
+free parameter**, because `k_ni` and `S_I` are already determined by rows in hand.
