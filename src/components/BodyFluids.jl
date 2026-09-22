@@ -80,9 +80,9 @@ function BodyFluids(; name, body_mass = BF_BODY_MASS_REFERENCE,
         Na_intake   = sz * BF_NA_INTAKE_NOMINAL            # protocol input
         H2O_intake  = sz * BF_H2O_INTAKE_NOMINAL           # protocol input
         # ---- OSMOTIC THIRST, ADR 0030, thirst_prereg.md ---------------------
-        Osm_thr_t   = BF_THIRST_OSM_THRESHOLD              # 281, Thompson 1986
+        Osm_thr_t   = BF_THIRST_OSM_THRESHOLD              # 285.23, Hughes 2018 pooled
         # THE RESTING OSMOTIC SIGNAL. This model rests at 287, so it sits 6
-        # mOsm/kg ABOVE Thompson's threshold - and that is what lets baseline
+        # mOsm/kg ABOVE the pooled threshold - and that is what lets baseline
         # drinking BE the thirst response rather than something added to it.
         sig_ref     = BF_OSM_PLASMA_SETPOINT - Osm_thr_t
         # THE GAIN IS AN IDENTITY, NOT A FIT - branch T2, declared in advance.
