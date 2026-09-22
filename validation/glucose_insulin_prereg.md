@@ -746,3 +746,85 @@ ledger's `GLU.EGP.BASAL` of **1.93 mg/kg/min** from Huidekoper by isotope diluti
 **Two different groups, two different decades, two different tracer protocols, 10% apart** —
 and neither was chosen with the other in view. The postabsorptive balance the insulin split
 will rest on is therefore consistent at its foundation.
+
+---
+
+## 12. THE INSULIN SPLIT — structure fixed before building
+
+**Written 2026-09-22, at the owner's instruction, before any equation is changed.**
+
+### 12.1 The split, and both legs are DERIVED identities
+
+    NIMGU = k_ni * G                     insulin-independent, concentration-driven
+    IMGU  = S_I * I * G                  insulin-dependent
+
+At the **postabsorptive** reference, where Baron measured:
+
+    k_ni = f_nimgu * EGP / G_fast
+    S_I  = (appear - k_ni * G_fast) / (G_fast * I_fast)
+
+**Every input is already sourced** — `f_nimgu` 0.75 (Baron 1985), `EGP` 1.93 mg/kg/min
+(Huidekoper), `G_fast` 5.44 mmol/L and `I_fast` 64.2 pmol/L (NHANES), `appear` = EGP +
+dietary carbohydrate (NHANES). **No new free parameter, and §4's identifiability requirement
+is discharged without a clamp.**
+
+### 12.2 NIMGU IS SET POSTABSORPTIVELY AND IMGU TAKES THE REMAINDER — this is the one real choice
+
+`f_nimgu` = 75% is measured **postabsorptively**, where appearance is hepatic production
+alone. This model's appearance also includes 225 g/day of diet. **The dietary load is
+disposed largely by insulin-mediated uptake — that is what a meal insulin response is for —
+so the postabsorptive fraction may NOT be applied to the 24-hour total.**
+
+So `k_ni` is pinned by Baron's postabsorptive measurement, and IMGU absorbs the remainder.
+**The consequence is arithmetic and is stated now rather than discovered:** NIMGU's share of
+24-hour disposal falls to about **35%**, against **75% postabsorptively**. If that number
+comes out otherwise, the wiring is wrong.
+
+### 12.3 THE SPLIT IS WORTHLESS WITHOUT A SECRETION RESPONSE, AND THAT IS THE HONEST SCOPE
+
+**With insulin fixed at its fasting value, `IMGU = S_I * I_fast * G` is mass-action in `G` —
+algebraically identical to the single lumped clearance already in the model.** Splitting
+disposal into two terms that both scale with `G` and nothing else **buys nothing**.
+
+**The split only becomes a mechanism when insulin responds to glucose.** So this pass needs
+one more sourced relation: **plasma insulin as a function of plasma glucose in healthy
+adults**, `I(G)`.
+
+**IF `I(G)` DOES NOT SOURCE, THE SPLIT IS NOT BUILT** and the pass reports that the two-term
+form is unidentifiable from what is available — branch **G2** continues to stand. Building
+it anyway would add a term and a row that change no behaviour, which is directive 1.11's
+failure with extra steps.
+
+### 12.4 Admissibility for `I(G)`, fixed before searching
+
+**Include:** healthy non-diabetic adults; a **graded or stepped glucose stimulus** —
+hyperglycaemic clamp, graded glucose infusion — reporting **steady-state plasma insulin at
+stated steady-state plasma glucose**, so both axes are measured on scales that compose.
+
+**Exclude:** first-phase/acute-insulin-response-only reports, which measure a transient this
+24-hour-average model cannot express; OGTT-derived indices, which are held out as the test
+(§7 test 3); and diabetic cohorts for anything setting a healthy relation.
+
+**POOLING RULE, per `pooling.md`:** meta-analysis if one exists, else
+`pooled-inverse-variance`, else n-weighted, else unweighted, else `single-source` **stated as
+such**. **The relation is a SLOPE, so if studies report it as a gain or multiplier,
+`pooled-geometric` applies** — rule 4, which does not apply to fractions but does apply here.
+
+### 12.5 What may not move
+
+- **`f_nimgu`, `GLU.EGP.BASAL`, `GLU.PLASMA.FASTING`, `GLU.INTAKE.CARBOHYDRATE`, `RN.GLU.TM`.**
+- **The healthy operating point.** `k_ni` and `S_I` are derived so that total disposal equals
+  appearance at the reference; glucose must still come out at 5.44 mmol/L **exactly**.
+- **No band, pin or tolerance widened**, and the thirst and renal rows are untouched.
+
+### 12.6 The falsifiable tests
+
+1. **Operating point unchanged** — glucose 5.44, MAP, sodium, osmolality, urine.
+2. **`thirst_on = 0` and the disease knob at 1.0 reproduce the current model**, so the split
+   is neutral in health by construction.
+3. **NIMGU is about 75% of postabsorptive disposal and about 35% of 24-hour disposal**, both
+   reported — §12.2.
+4. **Insulin rises with glucose**, reported against the sourced `I(G)`.
+5. **The glucose ceiling is recomputed.** A secretion response BUFFERS hyperglycaemia, so the
+   ceiling should RISE less steeply with reduced sensitivity than it does now. Reported.
+6. **The renal, thirst and salt endpoints are unchanged**, by running the whole harness.
