@@ -906,3 +906,54 @@ insulin against absolute glucose.
 **SINGLE-SOURCE, AND IT SAYS SO.** `pooling.md` permits it and requires the admission; B21
 carries the debt. A second two-step hyperglycaemic clamp in healthy adults reporting both
 axes would pool with this one.
+
+### 12.10 THE SPLIT IS BUILT, AND IT MOVES THE CEILING ONTO MY OWN LINEAR NIMGU
+
+**Built and run 2026-09-22. The operating point is EXACT** — glucose 5.44 mmol/L, insulin
+64.2 pmol/L, urine 1.701 L/day, MAP 87.0096, sodium 140.0004, all unchanged.
+
+**§12.6 TEST 3 PASSES AS PREDICTED BEFORE BUILDING:** NIMGU is **75.0%** of postabsorptive
+disposal (Baron, by construction) and **34.8%** of 24-hour disposal, against §12.2's
+prediction of "about 35%".
+
+**§12.6 TEST 5 — THE SECRETION RESPONSE BUFFERS, AND IT CORRECTS SOMETHING I REPORTED.**
+
+| `glu_disposal` | `beta_cell` | glucose mmol/L | insulin pmol/L |
+|---|---|---|---|
+| 1.0 | 1.0 | 5.4 | 64 |
+| 0.2 | 1.0 | 7.7 | **174** |
+| 0.02 | 1.0 | 13.0 | 351 |
+| **1.0** | **0.3** | **5.4** | 64 |
+| 0.2 | 0.05 | 10.9 | 75 |
+| 0.1 | 0.05 | 12.7 | 78 |
+
+**INSULIN RESISTANCE ALONE DOES NOT CAUSE DIABETES HERE, AND THAT IS CORRECT.** Insulin
+rises 64 to 351 pmol/L and compensates. **A BETA-CELL DEFICIT ALONE DOES NOTHING EITHER.**
+Both lesions are required, which is the disposition-index concept emergent rather than
+imposed.
+
+**AND IT MEANS THE POLYURIA I REPORTED ON 2026-09-22 WAS MISLABELLED.** Before the split,
+`glu_disposal` = 0.02 gave 29.4 mmol/L, 374 g/day of glycosuria and 4.09 L/day of urine, and
+I described it as insulin resistance. **It was total absence of a secretion response —
+beta-cell failure — with no insulin arm to say so.** Recorded here rather than left standing.
+
+### 12.10.1 THE NEW CEILING IS 15.6 mmol/L AND THE CAUSE IS MY LINEAR NIMGU
+
+With both knobs at zero the balance is `appear = k_ni*G`, giving **G = 2329/148.9 = 15.6
+mmol/L**, below the renal spill point of 18.4. **So glycosuria is zero at every setting and
+urine never moves.**
+
+**`NIMGU = k_ni * G` IS STRICTLY LINEAR, AND BARON 1988 - ALREADY READ IN §11.7 - SHOWS IT
+IS NOT.** Whole-body NIMGU rose **128 +/- 6 to 213 +/- 18 mg/min** while glucose went from
+euglycaemia (~90 mg/dL) to hyperglycaemia (~220 mg/dL): a **1.66-fold** rise for a
+**2.44-fold** stimulus. **Sub-proportional.** A linear term therefore over-clears glucose at
+high concentrations and caps the ceiling.
+
+**THIS IS A DEFECT I INTRODUCED, NOT ONE THE SOURCES FORCED**, and the numbers to fix it are
+in a paper this pass already opened. It is not fixed in this pass because the split is
+already a structural change and stacking a second one on top would make neither testable on
+its own — the discipline ADR 0025 and ADR 0026 were separated under.
+
+**THE FALSIFIER:** give NIMGU Baron 1988's sub-proportional form and the ceiling should rise
+and glycosuria should reappear. **If it does not, the linear NIMGU was not what was capping
+it** and the diagnosis above is wrong.
