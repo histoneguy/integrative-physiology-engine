@@ -70,7 +70,9 @@ using ..LedgerParams:
     RN_TAL_KM, RN_TAL_ADAPTATION_TAU, RN_TGF_FLOW_ELASTICITY,
     RN_NA_PROXIMAL_DELIVERY,
     BF_NA_PLASMA_SETPOINT, BF_NA_INTAKE_NOMINAL,
-    GLU_PLASMA_FASTING, GLU_EGP_BASAL, RN_GLU_TM
+    GLU_PLASMA_FASTING, GLU_EGP_BASAL, RN_GLU_TM, GLU_INTAKE_CARBOHYDRATE,
+    GLU_INSULIN_FASTING, GLU_INSULIN_RESPONSE_MAX, GLU_INSULIN_RESPONSE_KM,
+    GLU_NIMGU_FRACTION
 
 """
     Renal(; name)
@@ -104,6 +106,16 @@ function Renal(; name, solute_tracking::Bool = true,
         # balance, and it is a PARAMETER rather than a build flag so a sweep
         # needs no recompilation.
         glu_disposal = 1.0
+        # THE BETA-CELL KNOB - ADR 0031. 1.0 is health and the arm is INERT there,
+        # the discipline the thyroid metabolic arm and the sat_rel hypoxic limb
+        # are already wired under.
+        #
+        # IT EXISTS BECAUSE THE SPLIT PROVED IT NECESSARY. With insulin
+        # responding, reducing glu_disposal to 0.02 reaches only 13.0 mmol/L and
+        # spills NO glucose: insulin rises 64 -> 351 pmol/L and compensates. THAT
+        # IS CORRECT PHYSIOLOGY - insulin resistance alone does not cause diabetes
+        # - and it means a SECOND lesion is required to express one.
+        beta_cell = 1.0
         # EXTENSIVE. GFR is a flow and G_pn is an excretion per mmHg, so both
         # scale. They scale TOGETHER, which is the point: FR_effective subtracts
         # G_pn*(MAP-MAP_ref)/Na_filtered, and with G_pn ~ s and Na_filtered ~ s
@@ -163,7 +175,36 @@ function Renal(; name, solute_tracking::Bool = true,
         # rows and is NOT a fit: k_glu = egp_tot / G_fast. At the reference it is
         # about 199 L/day, i.e. 138 mL/min, which is the right order for basal
         # whole-body glucose clearance - a free consistency check nobody arranged.
-        k_glu    = egp_tot / G_fast                                 # L/day
+        # DIETARY CARBOHYDRATE, added 2026-09-22. The model ate sodium and drank
+        # water and took in NO GLUCOSE, which is why ADR 0029 ceilinged plasma
+        # glucose at (appearance + TmG)/GFR with appearance = hepatic production
+        # alone. MASS-like scaling: energy intake tracks body size.
+        diet_tot = mz * GLU_INTAKE_CARBOHYDRATE * 1000.0 / MW_glu   # mmol/day
+        appear   = egp_tot + diet_tot                               # mmol/day
+        # ---- THE INSULIN SPLIT, ADR 0031 --------------------------------
+        # Disposal was ONE lumped clearance. It is now two terms and BOTH ARE
+        # DERIVED IDENTITIES from rows already sourced - no free parameter.
+        #
+        #   NIMGU = k_ni * G            insulin-INDEPENDENT, concentration-driven
+        #   IMGU  = S_I * I * G         insulin-DEPENDENT
+        #
+        # k_ni IS PINNED POSTABSORPTIVELY AND THAT IS THE ONE REAL CHOICE. Baron
+        # 1985 measured NIMGU as 75% of basal disposal in the POSTABSORPTIVE state,
+        # where appearance is hepatic production ALONE. This model's appearance
+        # also carries 225 g/day of diet, and a meal's glucose is disposed largely
+        # by INSULIN-mediated uptake - that is what a meal insulin response is for
+        # - so the postabsorptive fraction may NOT be applied to the 24-hour total.
+        # IMGU takes the remainder, and NIMGU's share of 24-hour disposal
+        # therefore falls to about 35%.
+        f_nimgu  = GLU_NIMGU_FRACTION
+        I_fast   = GLU_INSULIN_FASTING
+        dI_max   = GLU_INSULIN_RESPONSE_MAX
+        K_ins    = GLU_INSULIN_RESPONSE_KM
+        k_ni     = f_nimgu * egp_tot / G_fast                       # L/day
+        # S_I closes the 24-hour balance at the operating point. DERIVED, so the
+        # healthy glucose CANNOT move: at G_fast and I_fast the two terms sum to
+        # appearance exactly.
+        S_I      = (appear - k_ni * G_fast) / (G_fast * I_fast)
         md_c_ref = RN_NA_MACULA_DENSA_CONC_REFERENCE
         k_md     = RN_MD_RENIN_SLOPE
         md_c_thr = RN_MD_RENIN_THRESHOLD
@@ -448,8 +489,9 @@ function Renal(; name, solute_tracking::Bool = true,
         H2O_excr(t)         # L/day    OUTPUT
         FR_effective(t)     # unitless
         f_dist_excr(t)      # unitless fraction of DISTAL delivery excreted
-        C_glu(t)            # mmol/L   plasma glucose, OUTPUT to bodyfluids
-        C_glu_ns(t)         # mmol/L   the no-spill solution
+        # SOLVED IMPLICITLY now that insulin saturates; [guess], not a default.
+        C_glu(t), [guess = GLU_PLASMA_FASTING]  # mmol/L plasma glucose -> bodyfluids
+        I_glu(t)            # pmol/L   plasma insulin
         glu_excr(t)         # mmol/day urinary glucose, 0 at every normal value
         Osm_load(t)         # mOsm/day urinary solute load - NOW TRACKS SODIUM
         # STATE, added 2026-09-02. The lagged volume-keyed natriuretic signal, in
@@ -833,9 +875,26 @@ function Renal(; name, solute_tracking::Bool = true,
         # is what insulin resistance and insulin deficiency both do to this
         # balance. It is a parameter rather than a build flag so a sweep needs no
         # recompilation.
-        C_glu_ns ~ egp_tot / (k_glu * glu_disposal),
-        C_glu ~ ifelse(GFR * C_glu_ns <= TmG, C_glu_ns,
-                       (egp_tot + TmG) / (k_glu * glu_disposal + GFR)),
+        # PLASMA INSULIN AS A FUNCTION OF PLASMA GLUCOSE - Merovci 2021, a
+        # two-step hyperglycaemic clamp in 12 healthy subjects. SATURATING, and
+        # his own two intervals are why: 5.98 mU/L per mmol/L then 3.04, so the
+        # response halves across the range and a line would overstate insulin at
+        # high glucose about twofold.
+        #
+        # RECTIFIED BELOW FASTING because Merovci has no data there. Insulin does
+        # fall below fasting in real hypoglycaemia; this model holds it flat and
+        # says so rather than extrapolating into a region no source covers.
+        I_glu ~ I_fast + beta_cell * dI_max * max(C_glu - G_fast, 0.0) /
+                         (K_ins + max(C_glu - G_fast, 0.0)),
+
+        # THE BALANCE IS NOW IMPLICIT, because I(C_glu) saturates and the closed
+        # form is gone. ZERO NEW STATES - one algebraic unknown, cheaper than a
+        # state on a model that integrates four hundred days.
+        #
+        # glu_disposal now multiplies S_I ALONE, which is what insulin resistance
+        # actually is. It no longer scales the insulin-independent term, which
+        # insulin resistance does not touch.
+        appear ~ k_ni * C_glu + S_I * I_glu * C_glu * glu_disposal + glu_excr,
         glu_excr ~ max(0.0, GFR * C_glu - TmG),
 
         # OSMOREGULATION (ADR 0006 build order item 5). The placeholder that

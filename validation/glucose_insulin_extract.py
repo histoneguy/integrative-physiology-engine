@@ -205,14 +205,12 @@ def main() -> int:
     # glucose and counting it would overstate appearance; the subtraction is
     # arithmetic on two columns of the same recall, not an assumption.
     if not frames.get("DR1TOT"):
-        print("
-  DIETARY CARBOHYDRATE: DR1TOT unavailable, not reported.")
+        print("\n  DIETARY CARBOHYDRATE: DR1TOT unavailable, not reported.")
         return 0
     dr = pd.concat(frames["DR1TOT"], ignore_index=True)
     need_d = {"DR1TCARB", "DR1TFIBE", "WTDRD1"}
     if not need_d.issubset(dr.columns):
-        print(f"
-  DIETARY CARBOHYDRATE: missing {sorted(need_d - set(dr.columns))}.")
+        print(f"\n  DIETARY CARBOHYDRATE: missing {sorted(need_d - set(dr.columns))}.")
         return 0
     d = df.merge(dr[["SEQN", "DR1TCARB", "DR1TFIBE", "WTDRD1", "DR1DRSTZ"]]
                  if "DR1DRSTZ" in dr.columns else
@@ -228,8 +226,7 @@ def main() -> int:
     med = weighted_quantile(v, wd, 0.50)
     q1 = weighted_quantile(v, wd, 0.25)
     q3 = weighted_quantile(v, wd, 0.75)
-    print("
-AVAILABLE DIETARY CARBOHYDRATE (total - fibre), n = {:,}".format(len(d)))
+    print("\n  AVAILABLE DIETARY CARBOHYDRATE (total - fibre), n = {:,}".format(len(d)))
     print("-" * 66)
     print(f"      median {med:7.1f} g/day   IQR {q1:.1f} - {q3:.1f}")
     print(f"      median {med/0.18016:7.0f} mmol/day  IQR {q1/0.18016:.0f} - {q3/0.18016:.0f}")
