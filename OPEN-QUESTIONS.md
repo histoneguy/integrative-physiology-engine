@@ -689,6 +689,10 @@ since he performed exactly that titration. **PMID 5093515, and the full text is 
 
 ### B21. Rows entered single-source that should have been pooled — NEW, 2026-09-21
 
+**See also B24**, which is this same question asked of the equations rather than the
+parameter values, and which measured the answer at **zero forms with two independent
+primaries**.
+
 **The owner's correction, twice, the second time with "We've already been through this."**
 `validation/pooling.md` has been binding since long before this session and says
 `single-source` is a last resort a row must admit to, not a default. **Three rows went in
@@ -793,6 +797,12 @@ same thing twice already.
 ---
 
 ### B24. Every equation in the model is single-sourced — NEW, 2026-09-23
+
+**B21 IS THIS QUESTION FOR VALUES AND THIS IS IT FOR EQUATIONS.** They are the same rule —
+`validation/pooling.md`, binding since 2026-08-21 — applied to the two halves of the ledger.
+**On values it mostly worked** (34 of 58 `reported` rows pooled, meta-analytic or NHANES);
+**on forms it was never applied at all.** Read the two entries together, and see directive
+1.16 for why the second half went unnoticed for five weeks.
 
 **Directive 1.16 was set today and `validation/form_sourcing_audit.md` is the baseline
 measurement.** Of **32 empirical relations**: 11 have no citation for their form, 19 rest
