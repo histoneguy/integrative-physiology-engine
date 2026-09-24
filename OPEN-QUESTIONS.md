@@ -983,7 +983,112 @@ bolt-on to the glucose axis.
 
 ---
 
-### B29. Groop 1989's full text answers two open questions at once — NEW, 2026-09-24
+### B29. ~~Groop 1989's full text answers two open questions at once~~ — READ 2026-09-24, AND IT ANSWERED BOTH PLUS ONE NOBODY ASKED
+
+**The paper was obtained.** JCI returned 503 twice earlier in the night and served the PDF on
+a later attempt — **it was a transient server condition, not a paywall**, exactly as the entry
+below guessed. **Baron 1985, McPhaul 1968 and Groop 1989 all came from JCI's own open-access
+links and no bot check was involved in any of them.**
+
+#### What it says, in controls (n = 8)
+
+| | |
+|---|---|
+| half-maximal HGP suppression | **portal 17 ± 2 µU/ml**, *"peripheral insulin concentration of 14 ± 1"* |
+| >90% suppression | portal **45** µU/ml |
+| basal HGP | **71 ± 2** mg/m²/min |
+
+and in NIDDM (n = 9): **half-maximal at portal 26 ± 4** (P < 0.05 vs controls), complete
+suppression only above **100**; basal HGP **83 ± 4** (P < 0.01).
+
+#### 1. `hep_sens` IS NOW MEASURABLE AND ADR 0035 USED AN ILLUSTRATION
+
+The rightward shift **17 → 26 µU/ml portal** is `hep_sens` = **0.65**. ADR 0035 set it to an
+**illustrative 0.3** and said in terms that no source gave a magnitude. **One does.** The ADR's
+disease columns are therefore further from type 2 than they need to be, and its admission —
+*"the disease columns are illustrations, not predictions"* — is now correctable rather than
+permanent.
+
+#### 2. THE HILL COEFFICIENT IS NOT 1, AND ADR 0034 UNDERSTATED THE PROBLEM
+
+From the controls' own two points — half-max at 17, **>90% at 45** — `h = ln9 / ln(45/17)` =
+**2.26**, and because *">90%"* is a **bound**, the real constraint is **h ≥ 2.26**. ADR 0034
+fixed `h = 1` and declared the cost as under-suppression at high insulin. **It is worse than
+that.**
+
+#### 3. THE DEFECT NOBODY WENT LOOKING FOR: `h = 1` IS NOT MERELY IMPRECISE, IT IS STRUCTURALLY CONSTRAINED
+
+ADR 0034's two-anchor inversion gives `K_egp = I₅₀ − 2·I_fast`, so **it requires
+`I₅₀ > 2 × I_fast` = 128.4 pmol/L = 21.4 µU/ml** or `K_egp` goes **negative** and EGP would
+*rise* with insulin.
+
+| source | peripheral I₅₀ | `K_egp` |
+|---|---|---|
+| Rizza 1981 | 29 µU/ml = 174 pmol/L | **+45.6** ✓ |
+| Groop 1989 | **14 µU/ml = 84 pmol/L** | **−44.4** ✗ |
+
+**THE FORM ONLY WORKS BECAUSE RIZZA'S NUMBER HAPPENS TO BE BIG ENOUGH.** With Groop's value the
+inversion has no valid solution at all. **That is a structural fact about `h = 1`, not a
+tolerance**, and it would not have been visible without the second source — which is the
+directive 1.16 argument in its sharpest form so far.
+
+#### 4. AND THE TWO GROUPS DISAGREE TWO-FOLD ON THE SAME QUANTITY
+
+**Rizza 29 ± 2 (SEM, n = 15) against Groop 14 ± 1 (SEM, n = 8), both peripheral insulin at
+half-maximal HGP suppression in healthy adults, both isotopic, both graded infusions.** The
+intervals do not come close to overlapping.
+
+**DO NOT POOL THESE SILENTLY.** Inverse-variance weighting would land near 17 and would be
+dominated by Groop's tighter SEM while hiding a two-fold conflict between two strong groups —
+the failure `source both sides of a discrepancy` names. **A candidate explanation exists and
+is NOT adopted here**: peripheral insulin infusion inverts the normal portal:peripheral
+gradient, so the peripheral concentration corresponding to a given *hepatic* exposure depends
+on the delivery route and on how portal insulin was estimated. **Groop estimated portal
+explicitly; Rizza did not.** That would make them different quantities rather than
+conflicting measurements — but it is reasoning, not a reading, and resolving it needs Rizza's
+full text.
+
+#### What this leaves
+
+**ADR 0034 AND 0035 ARE NOT WITHDRAWN.** Every number in them is reproducible, health is
+bit-identical, the suite and challenges pass, and both records declared the `h = 1` limitation
+in advance. **What changed is that the limitation now has a measured size and a structural
+edge**, and the fix has a source.
+
+**It is deliberately not rebuilt tonight.** Re-deriving the core form of a record written four
+hours earlier, on an exponent inferred from a *bound*, with a two-fold source conflict
+unresolved, is how the errors this repository keeps cataloguing get made. **See B30.**
+
+---
+
+### B30. The EGP suppression form needs rebuilding with h > 1, and the two sources must be reconciled first — NEW, 2026-09-24
+
+**Everything needed is in hand and computed; what is missing is a decision on the discrepancy.**
+
+**THE ORDER MATTERS.** Reconcile Rizza and Groop **before** choosing `h`, because `I₅₀` and `h`
+are not independent — the same two points fix both, and picking `h` against one source's `I₅₀`
+bakes that source's value in.
+
+**Three routes, and they are not equivalent:**
+
+1. **Treat them as different quantities** (portal-estimated vs not) and use **Groop
+   throughout**, since it reports both portal and peripheral and its `h` and `I₅₀` come from
+   one dataset. **Cleanest if the reasoning in B29 §4 survives Rizza's full text.**
+2. **Pool under `pooling.md`** and accept an `I₅₀` near 17 µU/ml — **which requires `h > 1`
+   anyway**, since 17 < 21.4 breaks the current inversion.
+3. **Keep Rizza and adopt `h` from Groop alone.** Internally inconsistent — two points from
+   two cohorts — and it is the tempting one because it changes least.
+
+**What would resolve it:** **Rizza 1981's full text.** Am J Physiol 1981 is not open access and
+AJP served a bot check earlier tonight, which was not worked around. It is the one paper that
+would say whether portal insulin was estimated and how.
+
+**The falsifier, stated now:** with `h ≥ 2.26`, EGP at zero insulin and the type 1 glucose
+must both change, and **compensated insulin resistance should suppress EGP *harder* than it
+does today** because the curve is steeper near the operating point. **If type 1 does not move,
+`h` was not what mattered.**
+
+
 
 **One closed-access paper, two things it would settle.**
 

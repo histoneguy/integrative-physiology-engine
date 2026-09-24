@@ -169,3 +169,50 @@ and stacking it makes neither testable alone — the ADR 0025/0026 discipline.
 **Reporting type 1's new glucose without test 4.** A more severe type 1 is what this pass was
 *built* to produce, so it is the least surprising possible result and the easiest to
 over-read.
+
+---
+
+## 10. AMENDMENT — GROOP'S FULL TEXT WAS OBTAINED THE SAME NIGHT, AND IT CONSTRAINS `h`
+
+**Appended 2026-09-24, after ADR 0034 and ADR 0035 were built and merged.** The paper was
+**not** available when §4 fixed `h = 1`; JCI returned 503 twice and served it on a later
+attempt. **Recorded here rather than folded back into §4**, because a pre-registration edited
+after the result is not a pre-registration.
+
+### 10.1 What §4's `h = 1` cost turned out to be
+
+§4 accepted that a simple hyperbolic *"will under-suppress at high insulin"* and §7 test 6
+required the number. **Measured: 27% of basal at 60 µU/ml.** Groop's controls give the missing
+constraint directly — half-maximal suppression at portal **17 ± 2**, **>90% at portal 45** —
+so `h = ln9/ln(45/17)` = **2.26**, and since *">90%"* is a bound, **h ≥ 2.26**.
+
+### 10.2 AND IT IS A STRUCTURAL CONSTRAINT, NOT A TOLERANCE — WHICH §4 DID NOT SEE
+
+The two-anchor inversion gives `K_egp = I₅₀ − 2·I_fast`, so **`h = 1` REQUIRES
+`I₅₀ > 2·I_fast` = 21.4 µU/ml**. Rizza's 29 clears it; **Groop's peripheral 14 does not**, and
+gives `K_egp` = **−44.4 pmol/L** — EGP would *rise* with insulin.
+
+**So the form adopted in ADR 0034 is viable only because Rizza's value happens to exceed a
+threshold nobody had computed.** §4 chose `h = 1` as "one fewer assumption"; it is in fact an
+assumption with a hidden admissibility condition on `I₅₀`. **That is the single most useful
+thing this pass learned, and it came from the second source rather than from the first.**
+
+### 10.3 What may NOT be done with this
+
+**`h` MAY NOT BE SET TO 2.26 AND THE MODEL REBUILT ON IT TONIGHT**, and §9's reasoning is why:
+
+- **2.26 is inferred from a BOUND** (*">90%"*), so it is a floor, not an estimate.
+- **`h` and `I₅₀` are not independent** — the same two points fix both — so adopting Groop's
+  `h` while keeping Rizza's `I₅₀` mixes two cohorts inside one curve.
+- **The two sources disagree two-fold on peripheral `I₅₀`** — 29 ± 2 against 14 ± 1 — and
+  `pooling.md` is not a licence to average a conflict that tight.
+
+**`OPEN-QUESTIONS` B30 carries it, with the three routes and the falsifier stated.**
+
+### 10.4 And `hep_sens` is measurable after all
+
+ADR 0035 said *"no admissible source gives a population value for the magnitude."* **Groop
+does**: half-maximal suppression moves **17 → 26 µU/ml portal** from control to NIDDM, so
+`hep_sens` = **0.65**. The ADR used an illustrative **0.3**. **The claim was wrong about the
+literature, not about the model**, and it was wrong because the paper had not been read yet.
+
