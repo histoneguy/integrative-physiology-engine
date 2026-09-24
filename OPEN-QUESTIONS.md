@@ -1115,6 +1115,67 @@ without incident.
 **Neither ADR is blocked.** Both declared their limitation in advance and measured it.
 
 
+### B31. The glucose spill threshold is a ratio of two unrelated cohorts — NEW, 2026-09-24
+
+**Found while trying to close B20.** The model spills glucose when the filtered load reaches
+`TmG`, so the threshold is **`TmG / GFR`** — and those two numbers come from **different
+studies of different people**.
+
+| | TmG | GFR | TmG/GFR | with McPhaul's splay |
+|---|---|---|---|---|
+| **McPhaul 1968, the same 14 men** | 325 mg/min | **127** ml/min | 14.2 | **11.8** |
+| **this model** | 352 (Mogensen) | **106** (Soares) | **18.4** | 15.3 |
+
+**McPhaul measured both in the same subjects and lands where B20 said people land.** This
+model's numerator is Mogensen's and its denominator is Soares's reference-interval GFR, and
+nothing has ever checked that the two describe comparable populations — McPhaul's were *young
+men*, Soares's is a broad adult reference range, and GFR falls with age.
+
+**THIS IS NOT A CALIBRATION PROBLEM.** Both rows are properly sourced and neither is wrong.
+**The defect is in the ratio**, which is a derived quantity no row owns and no gate checks.
+`check_closure.py` verifies identities the model is *built* on; **`TmG/GFR` is an emergent
+ratio that sets a clinically meaningful threshold and is checked by nothing.**
+
+**WHY IT MATTERS MORE THAN IT DID YESTERDAY.** Before ADR 0033/0034 the model could not reach
+the spill threshold at all, so its position was untestable. It now sets when urine starts to
+move in diabetes.
+
+**What would resolve it.** Either a TmG and a GFR from one cohort — **McPhaul supplies both,
+and DeFronzo 2014 supplies a modern pair** — or an explicit statement that the two rows are
+not composable and the threshold is therefore uncertain by about 30%.
+
+**What may NOT resolve it:** moving either row to make the ratio come out. `glucose_splay_prereg.md`
+§8 names that, and B20 refused the same move when it declined to enter 180 mg/dL.
+
+---
+
+### B32. A pre-registered form was mathematically invalid and the gates could not see it — NEW, 2026-09-24
+
+**`glucose_splay_prereg.md` §4 fixed the form `reabs = TmG·load/(load + K)` before extraction,
+and argued it had "the right limits: proportional at low load, asymptotic to TmG at high
+load".** The second half is true. **The first is false** — at low load it tends to
+`(TmG/K)·load`, and with `K = 0.17·TmG` that is **5.88 × load**.
+
+**Built and measured at the healthy operating point: reabsorption 1785 mmol/day against a
+filtered load of 830.** The model reabsorbing **2.2× what it filtered**.
+
+**AND HEALTH LOOKED PERFECT.** Excretion clamps at `max(0, load − reabs)`, so glucose, urine
+and every reported quantity were unchanged and **all six gates passed**. It was caught only by
+printing an intermediate nobody had asked for.
+
+**THE GENERAL PROBLEM.** Nothing checks that an intermediate quantity is *physically
+admissible* — that reabsorption ≤ filtration, that a fraction is in [0,1], that a flux has the
+right sign. `check_closure.py` checks identities at the operating point; **this was wrong at
+the operating point and closure still passed**, because the invalid quantity never entered an
+identity.
+
+**The candidate fix is cheap and is still a decision:** a handful of range assertions on
+observables at the operating point, in the existing closure gate rather than a new one.
+**Against it: the standing no-new-tooling rule, and this was caught by looking.** **It is the
+third gate-hole found in two days** — B27 (`expression` unread), B25 (`form_citation` unread),
+and now this. **If any of them is built they should be built together.**
+
+
 ### B7. A de-indexing correction is owed
 
 `validation/ecf_salt_response_extract.py` multiplies an *indexed* ECF difference by ONE
