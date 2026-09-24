@@ -139,3 +139,90 @@ comes from the sources' titration curves, and if it lands at 13 or 8 **that is t
 
 **Reporting a lower threshold without test 4.** If type 1 moves a lot, splay is not what was
 added.
+
+---
+
+## 9. OUTCOME — THE VALUE WAS EXTRACTED, THE PRE-REGISTERED FORM WAS INVALID, AND THE PASS STOPPED
+
+**Appended 2026-09-24. Nothing above was edited.**
+
+### 9.1 The value, and it is good
+
+**McPhaul & Simonaitis 1968, full text read** (JCI, open access, downloaded from the
+publisher's own link; **no bot check involved**). 14 normal young men by glucose titration:
+
+| | |
+|---|---|
+| **point of splay** | **0.83 ± 0.04** (SEM) → SD **0.150** |
+| lowest individual | 0.79 |
+| TmG | 325 ± 36 mg/min |
+| GFR | 127 ml/min |
+
+**THE AUTHORS CALL THEIR OWN RESULT AN OUTLIER** — *"an unexpectedly high threshold in normal
+young men"*, *"a much smaller splay than previously published data"* — attributing it to
+earlier series using older subjects. **So this is a conservative estimate, deviating in the
+direction that flatters the model.**
+
+**AND THE VALUE IS RECORDED HERE RATHER THAN IN THE LEDGER, BECAUSE THE GATE REFUSED IT AND
+WAS RIGHT.** It was entered as `RN.GLU.SPLAY_POINT` and `check_relations.py` failed with
+*"UNREAD ROW … nothing reads it — directive 1.11. Wire it into a component or a gate, or it is
+not a parameter and belongs in an ADR instead."* **With §9.2's form invalid there is nothing to
+wire it into**, so the row was removed and the extraction lives in this pre-registration. **The
+gate stated the correct disposal of an unused sourced value and it is followed rather than
+worked around** — an `unledgered` row kept "for later" is how a parameter drifts out of sync
+with the code that does not read it.
+
+### 9.2 §4'S FORM IS MATHEMATICALLY INVALID AND I DID NOT CHECK ITS LOW-LOAD LIMIT
+
+    reabs ~ TmG * load / (load + K_splay)      with K_splay = 0.17 * TmG
+
+**At low load this tends to `(TmG/K)·load` = 5.88 × load.** Built and measured at the healthy
+operating point: **`glu_reabs` = 1785 mmol/day against a filtered load of 830** — the model
+reabsorbing **2.2× what it filtered**. Excretion still clamped to zero, so **health looked
+correct and the observable was nonsense**, which is the dangerous version.
+
+**§4 called it "the standard summary of that aggregate" and argued it had "the right limits:
+proportional at low load, asymptotic to TmG at high load".** The second half is true. **The
+first half is false**, and one line of arithmetic before writing the section would have shown
+it.
+
+### 9.3 Why a replacement was NOT improvised
+
+A form with both correct limits and a tunable splay exists —
+`reabs = load / (1 + (load/TmG)^p)^(1/p)` — but **`p` is a sharpness parameter that §4 did not
+pre-register**, and fixing it requires a **detectability criterion** for where a titration
+curve "departs from unity", which McPhaul states only qualitatively:
+
+| `p` | excretion/load at 0.83·TmG | leak at health |
+|---|---|---|
+| 8 | 2.51% | 6.0e-3 mmol/day |
+| 11 | 1.10% | 1.1e-4 |
+| 15 | 0.39% | 6.2e-7 |
+
+**Choosing `p` to put the departure at 0.83 means choosing the criterion that defines the
+answer.** That is a modelling decision the owner should see stated, not one to improvise at
+the end of a long night against a curve read from prose. **The code change was reverted; the
+sourced row was kept.**
+
+### 9.4 AND THE PASS FOUND SOMETHING BIGGER THAN SPLAY
+
+**Splay moves the threshold 18.4 → 15.3 mmol/L, not to the 10–11 B20 quoted.** The remainder
+is not a missing mechanism:
+
+| | TmG | GFR | TmG/GFR | with splay |
+|---|---|---|---|---|
+| **McPhaul, same 14 men** | 325 mg/min | **127** ml/min | 14.2 | **11.8** |
+| **this model** | 352 (Mogensen) | **106** (Soares) | 18.4 | 15.3 |
+
+**THE MODEL FORMS `TmG/GFR` FROM TWO UNRELATED COHORTS**, and that ratio is what sets the
+spill threshold. McPhaul measured both in the same subjects and lands where B20 said people
+land. **A ratio assembled across two studies is not a property of any population, and no gate
+checks for it.** `OPEN-QUESTIONS` **B31**.
+
+### 9.5 Branch taken
+
+**Not S1–S4.** The value extracted cleanly (S2) and the **form** failed, which §7 did not
+anticipate because §4 asserted the form was safe. **Recorded as its own outcome rather than
+forced into a declared branch**, and §8's list of failures gains one it did not have: *a form
+whose limits were asserted instead of checked.*
+
