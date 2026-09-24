@@ -210,3 +210,83 @@ wrote down the expected direction.
 **Counting Baron 1985, Baron 1988 and Edelman 1990 as three sources.** §4. They are one.
 
 **Claiming agreement with Best's 38% to more figures than two.**
+
+---
+
+## 10. EXTRACTION RECORD — 2026-09-24, AND IT STOPS AT BRANCH N3
+
+**Written after §§0–9 and after the searches below; nothing above was edited.**
+
+### 10.1 What could be read, and what could not
+
+| Paper | DOI | Open? | Read |
+|---|---|---|---|
+| Baron 1985, JCI | 10.1172/jci112169 | **yes, bronze** | abstract in full; **full text not reachable** by the fetcher |
+| Baron 1988 | — | no | numbers as already recorded in ADR 0031 |
+| Edelman 1990, Diabetes | 10.2337/diab.39.8.955 | **closed** | abstract, truncated at 250 words |
+| Best 1981, Diabetes | 10.2337/diab.30.10.847 | **closed** | abstract |
+
+**Checked against OpenAlex** rather than assumed from a paywall page — three are `closed`,
+Baron 1985 is `bronze`. **No bot check was worked around** on `diabetesjournals.org`,
+`journals.physiology.org` or elsewhere.
+
+### 10.2 What Baron 1985's abstract does supply, and it is more than expected
+
+| | controls |
+|---|---|
+| basal Rd | **150 ± 7 mg/min** |
+| NIMGU at basal glucose | **113 ± 8 mg/min** |
+| NIMGU at a 250 mg/dl SRIF clamp | **186 ± 19 mg/min** |
+| NIMGU share of basal Rd | **75 ± 5%**, SEM, n = 11 |
+
+**INTERNALLY CONSISTENT AND THAT IS A REAL CHECK:** 0.75 × 150 = 112.5 ≈ 113. The share and
+the absolute rate are not independent claims, and they agree.
+
+**A TWO-POINT NIMGU DOSE-RESPONSE IS THEREFORE IN AN OPEN-ACCESS PAPER**, which §8's branch
+N3 did not anticipate — it expected the dose–response to live only in the closed Edelman.
+
+### 10.3 Why the pass still stops
+
+**THE FIT NEEDS THE CONTROLS' FASTING GLUCOSE AND THE ABSTRACT DOES NOT REPORT IT.**
+`U_fixed + k_ni·G` through (G_basal, 113) and (250, 186) is an exact two-point inversion —
+but only once `G_basal` is known.
+
+**AND SUBSTITUTING 90 mg/dl IS EXACTLY WHAT §3 FORBADE.** That is directive 1.12's teaching
+number, listed before extraction for this reason. The answer moves on it:
+
+| assumed `G_basal` | concentration-independent fraction at basal |
+|---|---|
+| 90 mg/dl (the teaching number) | **64%** |
+| 98 mg/dl (this model's NHANES fasting value) | **58%** |
+
+**THE DIRECTION IS ROBUST AND THE MAGNITUDE IS NOT.** Best 1981's independent bracket,
+derived from its reported 38% fall in metabolic clearance, is **63–76%** — and it too is
+unextractable to better precision, because its abstract says only *"more than twice basal"*,
+which spans 63% at 2.5× and 76% at 2.0×.
+
+**SO TWO INDEPENDENT LABORATORIES AGREE ON THE FORM AND NEITHER PINS THE VALUE FROM WHAT CAN
+BE READ.** Entering a number here would be a three-figure claim built on a two-figure
+assumption about someone else's cohort — directive 1.13, and `check_tolerances.py` exists
+because that failure is structural rather than occasional.
+
+### 10.4 What is nevertheless established, and it is not nothing
+
+**NIMGU IS NOT PROPORTIONAL TO GLUCOSE, ON TWO INDEPENDENT LINES OF HUMAN EVIDENCE.** Baron
+(Indiana, SRIF clamp, direct rates) and Best (Porte, Seattle, somatostatin at three fixed
+insulin levels, metabolic clearance) — **different cities, methods, decades and endpoints.**
+ADR 0031's `k_ni·C_glu` is therefore **wrong in form and not merely imprecise**, and its own
+stated falsifier stands.
+
+**THIS IS THE FIRST FORM IN THIS MODEL WITH TWO INDEPENDENT GROUPS BEHIND IT** — and it
+cannot be built yet. `form_sourcing_audit.md` stays at **zero** until it is, because the
+audit counts what is in `relations.csv`, not what is known.
+
+### 10.5 The access request — ONE item, not four
+
+**Baron AD et al. J Clin Invest 1985;76(5):1782–1788. PMID 2865274. DOI 10.1172/jci112169.
+OPEN ACCESS — the owner can simply open it.** One number is needed: **the mean fasting serum
+glucose of the 11 normal control subjects.** That alone converts this pass from N3 to **N1**
+and builds the form.
+
+Edelman 1990 and Best 1981 would strengthen it and are **not required**.
+
