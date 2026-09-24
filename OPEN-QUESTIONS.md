@@ -768,6 +768,29 @@ moved the model off the boundary — **so runs 1–2 and run 3 are not strictly 
 neither "intermittent" nor "fixed" is established.** Recorded that way rather than resolved
 by the reading that happens to be convenient.
 
+**THREE MORE FULL-SUITE RUNS, 2026-09-23. ALL THREE PASSED, 828/828** — 6m05s, 5m29s and
+3m55s, at three different trees across the directive 1.16 work (after the audit commit, after
+the ledger corrections, and after the section 4 re-order). **`salt_step(raas = false)` did not
+fail once.**
+
+**WHAT THAT IS AND IS NOT.** It is **evidence the failure is not reproducing**; it is **not
+proof it is fixed**, and the difference is the one this entry already got wrong once. None of
+the three runs is on the tree that failed, no model equation changed between them, and
+**nothing was done that would explain a fix** — so the honest reading is an intermittent
+failure that has not recurred in five consecutive passes (three tonight plus run 3 on the
+22nd), not a resolved one.
+
+**AND B26 RAISES THE STAKES RATHER THAN LOWERING THEM.** Moving `RN.AUTOREG.LOWER` to 80.5
+would put a piecewise kink **1.4 mmHg** from the low-salt arm's resting pressure, which is
+exactly the geometry in which a stiff solve near a non-smooth point starts returning
+`Unstable`. **Do not treat this entry as closed when deciding B26** — if anything it is the
+argument for B26's option 2, smoothing the breakpoint, and that is why option 2 exists.
+
+**STILL OPEN.** Closing it needs either a reproduction with a diagnosis, or a stated
+retirement rule — e.g. ten consecutive clean full-suite runs — **declared before the runs
+rather than after**, since counting until the answer is convenient is the failure this entry
+already recorded.
+
 **IT WAS CAUGHT RATHER THAN ABSORBED**, by the `successful_retcode` assertion ADR 0026 added
 after `salt_step` silently reported a failed solve as a result. The assertion worked; that is
 the good news in this entry.
