@@ -6141,6 +6141,79 @@ autoregulation plateau first; **B25** asks whether a seventh gate should read
 `form_citation`, and it is **not built**, because the standing rule is not to add tooling
 unless something breaks that cannot be worked around.
 
+### 3.74 THE FIRST PASS RUN UNDER DIRECTIVE 1.16, AND IT FOUND A LOST CITATION
+
+**The audit ranked `Renal.GFR` first and the pass went looking for a residual plateau
+slope. The sources refuted the need for one, and on the way the pass found something
+worse.** Pre-registered in `validation/autoreg_form_prereg.md`; ADR 0032.
+
+#### The review did its job, including the part that embarrasses reviews
+
+**Carlström, Wilcox & Arendshorst, Physiol Rev 2015;95:405–511, PMID 25834230.** Abstract
+read; full text not retrievable, and **the publisher's bot check was not worked around** —
+an access item, not a bypass.
+
+It gave **structure**: autoregulation is myogenic **plus** MD-TGF, plus a third mechanism
+(**connecting-tubule glomerular feedback**) this model has never heard of, and the
+mechanisms **modulate each other** rather than multiplying independently. The model has
+MD-TGF and no myogenic term, so its piecewise plateau is a lumped stand-in — which is worth
+knowing before writing an equation, and is exactly what 1.16 is for.
+
+**AND IT QUOTED "80–180 mmHg".** The figure this repository traced months ago to Shipley &
+Study 1951, anaesthetised dog, legacy MeSH artefact. **Directive 1.12 scoring against a 2015
+Physiological Reviews article** is the strongest argument available for 1.16's own
+restriction: **structure from reviews, numbers from primaries, never the other way.**
+
+#### Branch A3 — the model was already right
+
+Kirchheim 1987 (PMID 3324052), **22 conscious foxhounds**, servo-controlled graded renal
+artery pressure: *"Between 160 and 81 mm Hg … concomitant autoregulation of GFR and RBF
+with a high precision"*, and below the break point GFR falls **linearly**. **That is the
+equation already in the code.** `a_index` = 0. **No model line changed; the row gained a
+citation and left `GRANDFATHERED_UNSOURCED`.**
+
+**THE NOTE THAT MOTIVATED THE PASS WAS ITSELF THE ERROR.** `RN.AUTOREG.LOWER`'s note ends
+*"the true plateau has a slight slope the model's `ifelse` does not represent"*, citing
+Finke's ~7%. **That 7% is RENAL BLOOD FLOW.** RBF autoregulates over a wider range than GFR
+because it *"also involves postglomerular vessels"*. **An RBF observation had been imported
+onto a GFR equation** — and the same conflation put an RBF breakpoint into a GFR parameter,
+which is B26.
+
+#### What it actually found: ADR 0028 lost pressure natriuresis its citation
+
+| | before ADR 0028 | after |
+|---|---|---|
+| carries `G_pn*(MAP − MAP_ref)`, `vn_sig` | `Renal.FR_effective` | `Renal.f_dist_excr` |
+| class | **empirical** | **definitional** |
+| form citation | Roman & Cowley 1985 | **empty** |
+
+**`NEEDS_CITATION = {"empirical"}`, so the gate never asked.** The model's most important
+empirical relation sat in a row calling itself definitional and citing nothing, while
+`FR_effective` kept the citation for an equation it no longer contained — it is now
+`Na_reabsorbed / Na_filtered`, a ratio with **no pressure term in it**. Both corrected.
+
+**AND THE HOLE THAT HID IT IS THE SAME ONE AS §3.73.** `check_relations.py` matches on
+`relation_id` and **never compares the `expression` column to the code**. Measured: **13
+rows had genuinely drifted**, nine corrected here, **three of them ADR 0028's**. The
+remaining four are not drift — they are the legitimate pattern where the ledger records the
+enabled physics and the code carries a toggle.
+
+**A crude comparison flagged 53 and that number is not reported as a finding**, because most
+were artefacts of a single-line extractor meeting multi-line and disabled-branch forms.
+§3.73's lesson applied one day later: **the scary count was the measurement's, not the
+repository's.**
+
+#### What this pass is careful NOT to claim
+
+**Directive 1.16's second requirement was NOT met, on the first pass run under it.**
+Kirchheim 1987, Persson 1988, Finke 1983, Just 1999 and Just 2001 are **one Heidelberg
+laboratory**, and both the audit and the pre-registration fixed in advance that one group
+counts as **one source**. No independent laboratory has measured the whole-kidney GFR
+breakpoint in a conscious preparation. **Branch A2's admission, made rather than avoided.**
+
+**No model equation changed, so "suite 828/828, six gates green, challenges pass" is
+expected rather than reassuring**, and is reported that way.
+
 ## 4. NEXT, IN ORDER
 
 **Rewritten 2026-09-03, and item 1 was discharged the same day.** The previous list's

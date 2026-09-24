@@ -57,7 +57,10 @@ GRANDFATHERED_UNSOURCED = {
     "BodyFluids.Osm_ecf",
     "Circadian.cv_mod",
     "Circadian.renal_mod",
-    "Renal.GFR",
+    # Renal.GFR LEFT ON 2026-09-23. Its piecewise plateau form is now sourced to
+    # Kirchheim 1987 (conscious dog, servo-controlled graded renal artery
+    # pressure), pre-registered in validation/autoreg_form_prereg.md branch A3.
+    # The list shrinks only, which is the rule this exemption was landed under.
 }
 VALID_CLASSES = {"definitional", "conservation", "empirical", "placeholder"}
 
