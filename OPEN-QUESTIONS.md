@@ -727,7 +727,17 @@ the constituent trials' individual data.
 
 ---
 
-### B22. NIMGU is linear and Baron 1988 says it is not — NEW, 2026-09-22
+### B22. ~~NIMGU is linear and Baron 1988 says it is not~~ — CLOSED 2026-09-24, ADR 0033
+
+**Closed by building it.** `NIMGU = U_fixed + k_ni·G`, Best 1981's stated mechanism, with the
+value an exact two-point inversion of Baron 1985's full text. The ceiling moved 15.64 → 21.32
+mmol/L, glycosuria reappeared and urine moved — **the falsifier ADR 0031 wrote against
+itself**. It is also **the first equation in this model with two independent groups behind its
+form**. The entry below is kept as filed.
+
+---
+
+### B22-ORIGINAL. NIMGU is linear and Baron 1988 says it is not — NEW, 2026-09-22
 
 **A defect I introduced in ADR 0031, with the fix already read.**
 
@@ -950,6 +960,54 @@ for is that the same hole produced two defects in two days and neither was found
 should be**, since they are one pass over one file.
 
 **NOT BUILT. Awaiting a decision.**
+
+
+### B28. The glucose axis has no free fatty acids and no glucagon — NEW, 2026-09-24
+
+**Named by ADR 0035 so a later pass cannot present it as a discovery.** Groop 1989's other
+half is that **FFA suppression by insulin is impaired at all five insulin steps** in type 2,
+and that **FFA oxidation correlates positively with hepatic glucose production** both basally
+and during the clamp. So in the source that supplied this model's hepatic lesion, lipolysis is
+not a separate story — it is mechanistically upstream of the hepatic defect the model now has.
+
+**And glucagon is the other arm of EGP control entirely.** The model's hepatic output responds
+to insulin alone, so it cannot represent the glucagon:insulin ratio, which is what actually
+drives hepatic output in type 1 and in fasting.
+
+**WHY THIS IS NOT THE NEXT PASS ANYWAY.** Both need a lipid compartment the model does not
+have, and FFA turnover is where **body composition** stops being deferrable — adipose mass is
+the substrate. That is HANDOVER §4's standing note and the owner's call.
+
+**What would resolve it:** a decision on body composition first. Neither should be built as a
+bolt-on to the glucose axis.
+
+---
+
+### B29. Groop 1989's full text answers two open questions at once — NEW, 2026-09-24
+
+**One closed-access paper, two things it would settle.**
+
+1. **The Hill coefficient ADR 0034 fixed at 1.** Rizza reports production *"completely
+   suppressed"* at about 60 µU/ml; the hyperbolic gives **27% of basal** there, so it
+   under-suppresses at high insulin. `egp_suppression_prereg.md` §9 forbade raising `h` to
+   match a qualitative word. **Groop's five graded steps are a multi-point curve and would
+   justify an `h` on data.**
+2. **`hep_sens`, which is currently a dial with no measured value.** Groop's NIDDM-versus-
+   control suppression at each step would let the rightward shift be **estimated** rather
+   than dialled.
+
+**J Clin Invest 1989;84(1):205–213, PMID 2661589, DOI 10.1172/jci114142.** OpenAlex reports it
+`closed`. **JCI served Baron 1985 freely from its own open-access link**, so this one was
+tried: `/articles/view/114142/files/pdf` and `/articles/view/114142/pdf` both returned
+**HTTP 503**, twice, a few minutes apart.
+
+**503 IS A SERVER CONDITION, NOT A PAYWALL AND NOT A BOT CHECK** — most likely rate-limiting
+after the Baron 1985 download earlier the same night. **It was not retried further**, because
+hammering a publisher is not a research method. **Worth one attempt on another day before this
+becomes an access request**, since the sister article from the same journal was served
+without incident.
+
+**Neither ADR is blocked.** Both declared their limitation in advance and measured it.
 
 
 ### B7. A de-indexing correction is owed
