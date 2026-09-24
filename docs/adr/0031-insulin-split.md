@@ -81,6 +81,15 @@ measured 5.44 mmol/L at `beta_cell` = 0.
 1 the cells are destroyed and basal secretion goes with the stimulated. The two knobs are now
 the two diseases:
 
+
+> **SUPERSEDED 2026-09-24 — THE NUMBERS IN THE TABLE BELOW ARE NO LONGER THE MODEL'S.**
+> ADR 0033 (two-term NIMGU), ADR 0034 (insulin suppression of hepatic output) and ADR 0035
+> (hepatic insulin resistance) each moved them. **The current disease axis is the table in
+> ADR 0035 and HANDOVER §3.75.** This one is kept because the *reasoning* around it still
+> holds and because deleting a superseded record loses the direction it was pointing —
+> §3.73. **A stale table that reads as current is the failure mode this repository keeps
+> finding; this note is the cheap fix.**
+
 | | `beta_cell` | `glu_disposal` | glucose | insulin |
 |---|---|---|---|---|
 | health | 1.0 | 1.0 | 5.44 | 64.2 |
