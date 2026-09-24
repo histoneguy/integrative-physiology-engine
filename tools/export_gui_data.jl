@@ -137,6 +137,12 @@ const REPORT = [
     ("glucose",        "rn₊C_glu",    "Plasma glucose", "mmol/L"),
     ("glucose",        "rn₊I_glu",    "Plasma insulin", "pmol/L"),
     ("glucose",        "rn₊glu_excr", "Urinary glucose", "mmol/day"),
+    # ADDED 2026-09-24. Endogenous glucose production is the headline quantity of
+    # ADR 0034 and ADR 0035 and was computed by the model and shown by NOTHING -
+    # the same defect the GUI pass caught for haematocrit and red cell volume.
+    # It is what distinguishes hepatic from peripheral insulin resistance: at the
+    # same knob value the two move it in OPPOSITE directions.
+    ("glucose",        "rn₊egp_i",    "Endogenous glucose production", "mmol/day"),
     ("body-fluids",    "bf₊thirst",   "Osmotic thirst (drinking above protocol)", "L/day"),
 ]
 
@@ -235,8 +241,12 @@ const TC_GLUC = let
     base = steady(sys; days = 400.0)
     U = IPE.mtk_unknowns(sys); DN = IPE.differential_unknown_names(sys)
     carry = Dict{Any,Any}(u => base[u][end] for u in U if string(u) in DN)
+    # THREE LESIONS since ADR 0035, not two: peripheral resistance, beta-cell
+    # failure AND hepatic resistance. The two-lesion version reached hyperglycaemia
+    # with hepatic output BELOW basal, which is the opposite of type 2.
     o = merge(Dict{Any,Any}(pget(sys, "glu_disposal") => 0.2,
-                            pget(sys, "beta_cell") => 0.05), carry)
+                            pget(sys, "beta_cell") => 0.05,
+                            pget(sys, "hep_sens") => 0.3), carry)
     sol = solve(ODEProblem(sys, o, (0.0, 60.0)), Rodas5P(); abstol = 1e-10, reltol = 1e-10)
     SciMLBase.successful_retcode(sol) || error("glucose course: $(sol.retcode)")
     course(sys, sol, 0.0, 60.0)
