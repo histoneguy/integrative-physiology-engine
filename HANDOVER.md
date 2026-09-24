@@ -626,10 +626,10 @@ blood volume and haematocrit — and left the compartment fraction alone.
 
 ### Ledger
 
-**RECOMPUTED 2026-09-23. 142 parameters over 160 rows** — 58 `reported`, 72 `derived`,
-28 `assumed`, and **2 `calibrated`**. Tiers: 72 A, 57 B, 31 C.
+**RECOMPUTED 2026-09-24. 144 parameters over 162 rows** — 59 `reported`, 73 `derived`,
+28 `assumed`, and **2 `calibrated`**. Tiers: 74 A, 57 B, 31 C.
 
-**OF THE 58 `reported` ROWS, 34 ARE POOLED, META-ANALYTIC OR NHANES AND 24 ARE
+**OF THE 59 `reported` ROWS, 34 ARE POOLED, META-ANALYTIC OR NHANES AND 25 ARE
 SINGLE-SOURCE.** That ratio is the parameter side of directive 1.16, and it is the half
 this repository has been doing reasonably well — `pooling.md` has been binding since
 2026-08-21. `validation/form_sourcing_audit.md` measures the other half and the answer
@@ -673,7 +673,7 @@ UP was on 2026-08-31.** `CV.CO.NOMINAL` and `RN.H2O.OBLIGATORY_LOSS` did not acq
 citations; they stopped being primitives. Each is now DERIVED from the quantity that is
 actually measured — stroke volume and maximal urine concentration — and it is those two
 rows that carry the new sources.
-**94 relations — 39 definitional, 32 empirical, 17 conservation, 6 placeholder.** Recomputed 2026-09-23, and **the recount found a stale row hiding behind a duplicated key** — §3.73; this line said 72, recomputed 2026-09-08 when it said 53; this line said 53, which was true on 2026-09-04 and stopped being true with the acid-base, potassium and chronotropic relations.
+**95 relations — 39 definitional, 34 empirical, 16 conservation, 6 placeholder.** Recomputed 2026-09-24; the 2026-09-23 recount found **a stale row hiding behind a duplicated key** (§3.73) and the 2026-09-24 one moved two rows from `conservation` to `empirical` because measured forms landed in them (§3.74, §3.75); this line said 72, recomputed 2026-09-08 when it said 53; this line said 53, which was true on 2026-09-04 and stopped being true with the acid-base, potassium and chronotropic relations.
 Nine landed on 2026-09-04 with the respiratory and blood components (§3.24), including
 `Renal.gfr_vol_mod`'s siblings `Respiratory.V_E` (`sourced-piecewise-threshold`) and
 `Blood.SaO2` (`sourced-published-fit`).
@@ -6213,6 +6213,72 @@ breakpoint in a conscious preparation. **Branch A2's admission, made rather than
 
 **No model equation changed, so "suite 828/828, six gates green, challenges pass" is
 expected rather than reassuring**, and is reported that way.
+
+### 3.75 THE GLUCOSE AXIS GOT ITS LIVER, AND TYPE 2 HAD IT BACKWARDS
+
+**Three ADRs in one night — 0033, 0034, 0035 — and they are one arc.** Each was
+pre-registered separately and built separately, because each names the next one as the thing
+it deliberately did not do. That chain is the record working as designed rather than three
+passes that happened to follow each other.
+
+#### The chain, and each link was declared before the next was built
+
+| | what it fixed | what it recorded against itself |
+|---|---|---|
+| **0033** | NIMGU was strictly linear | EGP suppression is a term the model lacks |
+| **0034** | EGP was a constant | hepatic resistance cannot be lesioned separately |
+| **0035** | hepatic sensitivity is now a lesion | FFA and glucagon are absent entirely |
+
+**ADR 0031 WROTE THE FALSIFIER THAT 0033 DISCHARGED**, and `nimgu_form_prereg.md` §1.2
+recorded — *from the review, before ADR 0034 existed* — that `S_G` lumps EGP suppression,
+which is why an `S_G` value was refused. **0034 is the term that refusal said existed.**
+
+#### The three results worth keeping
+
+**1. NIMGU IS NOT PROPORTIONAL TO GLUCOSE, ON TWO INDEPENDENT LINES.** Baron 1985 (Indiana,
+full text, exact two-point inversion) and Best 1981 (Porte, Seattle — different decade,
+protocol and endpoint). **The first equation in this model with two independent groups behind
+its form**, against an audited baseline of **zero** the day before.
+
+**2. FASTING HYPERGLYCAEMIA IS A HEPATIC PHENOMENON AND THE MODEL COULD NOT PRODUCE IT.**
+With EGP fixed, glucose could only rise by failing to be *disposed of* — the postprandial
+defect. Rizza 1981's contrast is why it matters: production is half-maximally suppressed at
+**29 µU/ml** against **55** for utilization. **Production is roughly twice as insulin-sensitive
+as utilization**, so a model suppressing neither has the wrong arm doing the work.
+
+**3. AND THE PREDICTION THAT MATTERED WAS A DIRECTION CHANGE.** Compensated insulin resistance
+got **less** hyperglycaemic, 8.18 → 7.21, because its hyperinsulinaemia suppresses the liver
+harder. That is why fasting glucose stays near-normal in compensated resistance in people, and
+it is now **emergent** rather than absent.
+
+#### What the last one found, which nobody was looking for
+
+**THE MODEL'S TYPE 2 HAD HEPATIC GLUCOSE OUTPUT BELOW NORMAL.** The two-lesion version reached
+11.63 mmol/L with EGP at **850.8 against a basal 1079.8** — and fasting EGP is *elevated* in
+type 2 and is the principal source of its fasting hyperglycaemia. **The sign of the defining
+hepatic abnormality was inverted**, and it was invisible until the liver could be lesioned.
+`hepatic_ir_prereg.md` §2 predicted the direction before the knob existed.
+
+**AND THE TWO RESISTANCES ARE IDENTIFIABLE, WHICH WAS NOT GUARANTEED.** At the same knob value
+they move EGP in **opposite directions** — hepatic 1680.2, peripheral 698.7 — because the
+peripheral lesion drives insulin higher and therefore suppresses the liver harder. **Branch H2,
+"remove the knob as a duplicate", was a live outcome and did not occur.**
+
+#### What is NOT claimed, and it is most of it
+
+**No disease column is a prediction.** They are dial settings chosen to demonstrate
+separability. **`hep_sens` has no measured value and never will from Groop's abstract.**
+
+**The Hill coefficient is 1 and under-suppresses at high insulin** — 27% of basal at 60 µU/ml
+against Rizza's *"approximately complete"*. Declared in advance, measured, **not tuned away**.
+
+**One closed paper answers both open questions** — Groop 1989's five graded steps would give
+both the Hill coefficient and an estimated `hep_sens`. **B29**, and JCI returned 503 twice
+rather than a paywall.
+
+**Health is bit-identical through all three.** Glucose 5.44, insulin 64.2, MAP 87.0, sodium
+140.0, urine 1.70, `Na_excr` 205.0 — because every split was constrained to be exact at the
+operating point rather than checked afterwards.
 
 ## 4. NEXT, IN ORDER
 
