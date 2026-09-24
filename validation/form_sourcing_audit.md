@@ -16,37 +16,32 @@ sources stand behind the FUNCTIONAL FORM of each equation.**
 | | |
 |---|---|
 | empirical relations | **32** |
-| form rests on **no** citation at all | **11** |
-| form rests on **exactly one** primary | **19** |
+| form rests on **no** citation at all | **10** |
+| form rests on **exactly one** primary | **20** |
 | form has a **systematic review** behind it | **2** |
 | form has **more than one primary** | **0** |
 
 **NOT ONE EQUATION IN THIS MODEL HAS TWO PRIMARY SOURCES BEHIND ITS FORM.** Thirty of
-thirty-two rest on one paper or on none. The two exceptions are reviews —
+thirty-two rest on one paper or on none. **Re-measured 2026-09-23 after ADR 0032: still
+zero.** That pass found two papers for `Renal.GFR` and they are the same laboratory, which
+§4 counts as one — so the count did not move and the honest reason is recorded rather than
+the count quietly improved. The two exceptions are reviews —
 `BodyFluids.thirst` (Hughes 2018) and `Raas.renin_drive` (van Ochten 2025) — and **both
 arrived in the last four days**, the first because the owner ordered a repool and the
 second because the renal baroreflex had no usable human data at all.
 
 **THE PARAMETER SIDE IS IN BETTER SHAPE, AND THAT CONTRAST IS THE FINDING.** Of 58
 `reported` rows, **34 are pooled, meta-analytic or NHANES** and 24 are single-source.
-
-**AND THE POLICY THAT MADE THAT HAPPEN HAS EXISTED SINCE 2026-08-21.** `validation/pooling.md`
-opens *"Binding. Fix before extracting any parameter from more than one source"* and was
-written from an owner instruction five weeks before this audit. **It governs VALUES.**
-Where this repository has been disciplined, it has been disciplined about numbers.
-
-**NOBODY EVER EXTENDED IT TO FORMS, AND THE COUNT ABOVE IS WHAT FIVE WEEKS OF THAT LOOKS
-LIKE.** Directive 1.8 said cast a wide net and was read as a rule about *searching*;
-`pooling.md` said combine what you find and was read as a rule about *numbers*. **The
-equations fell between the two.** Directive 1.16 closes the gap; this file is the baseline
-it is measured from.
+Where this repository has been disciplined, it has been disciplined about **numbers**;
+`pooling.md` is entirely about numbers, and **no equivalent policy has ever existed for
+forms.** Directive 1.16 is that missing policy.
 
 ---
 
 ## 2. THE TABLE
 
-**"NONE" covers two different failures** and they are listed apart. Seven relations have
-an **empty** `form_citation`; four carry **prose** in the field — an explanation of why a
+**"NONE" covers two different failures** and they are listed apart. Six relations have an
+**empty** `form_citation`; four carry **prose** in the field — an explanation of why a
 first-order lag was chosen, which is honest and is still not a source.
 
 | Relation | Primaries behind the FORM | Declared status | Source |
@@ -57,7 +52,6 @@ first-order lag was chosen, which is honest and is still not a source.
 | `BodyFluids.J_store` | **NONE** | `unsourced` | (field empty) |
 | `BodyFluids.Osm_ecf` | **NONE** | `unsourced` | (field empty) |
 | `Circadian.renal_mod` | **NONE** | `unsourced` | (field empty) |
-| `Renal.GFR` | **NONE** | `unsourced` | (field empty) |
 | `Baroreflex.D(hr_mod)` | **NONE** | `sourced-lag-unsourced-order` | (prose, not a citation) |
 | `Cardiovascular.D(V_rbc)` | **NONE** | `assumed` | (prose, not a citation) |
 | `Cardiovascular.o2_deficit` | **NONE** | `assumed` | (prose, not a citation) |
@@ -72,8 +66,9 @@ first-order lag was chosen, which is honest and is still not a source.
 | `Raas.aldo` | one | `sourced-power-law` | Walker 1976 |
 | `Raas.fr_angii` | one | `sourced-two-points-assumed-saturating` | Hall 1984 |
 | `Raas.rsna` | one | `sourced-phenomenon-assumed-shape` | Kirchheim 1985 |
-| `Renal.FR_effective` | one | `sourced-linear` | Roman 1985 |
+| `Renal.GFR` | one | `sourced-piecewise-plateau` | Kirchheim 1987 |
 | `Renal.I_glu` | one | `saturating-two-point` | Merovci 2021 |
+| `Renal.f_dist_excr` | one | `sourced-linear-composite` | Roman 1985 |
 | `Renal.f_prox_eff` | one | `sourced-two-points-assumed-linear-in-pra` | Folkerd 1995 |
 | `Renal.gfr_tgf` | one | `local-slope-sourced` | Briggs 1984 |
 | `Renal.gfr_vol_mod` | one | `sourced-linear-censored` | van den Bosch JJJON, Hesse |
@@ -91,11 +86,12 @@ first-order lag was chosen, which is honest and is still not a source.
 **Most are defensible and one is load-bearing.** A flat "11 unsourced" would be exactly
 the scary-sounding count directive 1.14 exists to stop, so they are ranked here by hand.
 
-- **`Renal.GFR` IS THE LOAD-BEARING ONE.** Pressure autoregulation of the glomerular
-  filtration rate is the piecewise plateau that every pressure–natriuresis result in this
-  model passes through, and **its form has no citation.** Both breakpoints are sourced
-  rows (`RN.AUTOREG.LOWER`, `RN.AUTOREG.UPPER`); the shape between them is not.
-  **First item on the 1.16 backlog.**
+- **`Renal.GFR` — CLOSED 2026-09-23, THE SAME DAY THIS AUDIT RANKED IT FIRST.** The pass is
+  ADR 0032, pre-registered in `autoreg_form_prereg.md`, and it landed on **branch A3**:
+  Kirchheim 1987 reports GFR *"perfectly autoregulated"* across the plateau and falling
+  **linearly** below it, which is the equation already in the code. **No model line changed;
+  the row gained a citation and left the grandfathered set.** The pass also found that ADR
+  0028 had moved pressure natriuresis into an uncited row — §3.74, and the reason B27 exists.
 - **`BodyFluids.Osm_ecf`, `BodyFluids.J_osm`** — osmotic equilibration. `Osm_ecf` is close
   to definitional and may simply be misclassified as empirical; `J_osm` relaxes to osmotic
   equilibrium on a time constant that does not matter at this horizon.

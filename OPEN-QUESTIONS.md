@@ -851,6 +851,74 @@ Landing it red would deadlock every merge, which this repo has done to itself be
 than one I should assume.
 
 
+### B26. `RN.AUTOREG.LOWER` is a RENAL BLOOD FLOW limit used as a GFR limit — NEW, 2026-09-23, OWNER'S DECISION
+
+**The model's GFR autoregulation breakpoint is 63.9 mmHg, from Finke 1983. That row's own
+citation field says what it is:** *"Lower limit of renal **blood flow** autoregulation."*
+**It is wired into `GFR ~ GFR0 * ifelse(MAP < MAP_lo, …)`.**
+
+**TWO STUDIES MEASURED BOTH LIMITS IN THE SAME ANIMALS AND FOUND THEM DIFFERENT:**
+
+| | GFR break-off | RBF break-off | n |
+|---|---|---|---|
+| Kirchheim 1987, PMID 3324052 | **80.5 ± 3.5** | 65.6 ± 1.3 | 22 |
+| Persson 1988, PMID 3239413 | **81.5 ± 2.2** | 65.0 ± 1.4 | 10 |
+
+Different at **P < 0.01**, and Kirchheim gives the mechanism: RBF autoregulation *"also
+involves postglomerular vessels"*, so flow is defended below the pressure at which
+filtration is not.
+
+**WHY IT MATTERS AND IT IS NOT THE 17 mmHg.** The model's low-salt arm rests at **MAP
+81.900**. `RN.AUTOREG.LOWER`'s note currently reads *"the low-salt arm sat 1.9 mmHg above a
+piecewise kink and now sits 18.0 mmHg above it"* — **at 80.5 it would sit 1.4 mmHg above
+it**, which is the original uncomfortable position the 63.9 change was recorded as
+relieving. **The margin claim inverts.**
+
+**WHAT MAKES THIS A DECISION RATHER THAN A CORRECTION.** Moving the breakpoint puts a
+piecewise kink within a hair of an operating arm, and `structural_simplify` plus a stiff
+solver near a non-smooth point is how `salt_step` failures start — **B23 is already open and
+unexplained.** The alternatives are: (1) adopt 80.5 and accept the kink's proximity;
+(2) adopt 80.5 **and smooth the breakpoint**, which is a second change and needs its own
+pre-registration; (3) keep 63.9 and relabel the row honestly as an RBF limit standing in for
+a GFR limit, recording the known bias.
+
+**NOT DONE HERE, AND DELIBERATELY.** `validation/autoreg_form_prereg.md` §6 forbade moving
+`RN.AUTOREG.LOWER` in that pass, written before the sources were opened. Honouring it is why
+this is an entry and not a commit.
+
+**What would resolve it:** the owner picking 1, 2 or 3. Both papers are in hand as abstracts;
+neither full text has been read, and **directive 1.5 means the row cannot be re-entered on
+abstracts alone if the reported values need context.**
+
+---
+
+### B27. The ledger's `expression` column is documentation no gate reads — NEW, 2026-09-23
+
+**Two defects in two days came through the same hole.** §3.73: two rows shared the
+`relation_id` `Renal.Na_distal`, and `by_id = {r["relation_id"]: r for r in rows}` silently
+kept the last, so a stale row was invisible. §3.74: **ADR 0028 moved pressure natriuresis
+from an `empirical` row with a citation into a `definitional` row without one**, and
+`NEEDS_CITATION = {"empirical"}` meant nothing asked.
+
+**`check_relations.py` matches on `component.lhs` and never compares `expression` to the
+code.** Measured 2026-09-23: **13 rows had genuinely drifted**, nine corrected, **three of
+them from ADR 0028 alone**. Four remain and are legitimate — ledger records the enabled
+physics, code carries a toggle.
+
+**THE CANDIDATE FIX IS SMALL AND IS STILL A DECISION.** Assert `relation_id` uniqueness, and
+compare a whitespace-normalised `expression` against the extracted source text, with the
+toggle pattern either tolerated or declared per row.
+
+**The case against is the standing rule** — *do not add tooling unless something breaks that
+cannot be worked around* — and this **was** worked around, by hand, in one evening. The case
+for is that the same hole produced two defects in two days and neither was found by a gate.
+
+**Related: B25** asks the same question about `form_citation`. **If either is built, both
+should be**, since they are one pass over one file.
+
+**NOT BUILT. Awaiting a decision.**
+
+
 ### B7. A de-indexing correction is owed
 
 `validation/ecf_salt_response_extract.py` multiplies an *indexed* ECF difference by ONE
