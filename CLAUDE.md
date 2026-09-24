@@ -77,6 +77,17 @@ per-repository limit** — roughly three pushes evicted everything, the restore 
 and the next run recompiled all 322 dependencies. Both workflows now take `push` on `main`
 only, plus `pull_request`. **Job names were not touched.**
 
+**CONFIRMED AGAIN 2026-09-24, BY CAUSING IT.** One session pushed **31 commits** and triggered
+**20 CI runs** in twelve hours. At 988 MiB per `Julia tests` run and 418 MiB per Diagnostics
+that is roughly **28 GB written against the 10 GB limit** — several evictions over — and the
+last Julia job took **29m41s**, beyond the 3–23 min range recorded above. **The suite did not
+change; the cache did.**
+
+**SO THE PRACTICAL RULE IS: BATCH YOUR PUSHES, NOT JUST YOUR `julia -e` CALLS.** Every push to
+an open PR restarts CI and evicts cache for the next run, so a session that pushes after each
+small commit makes its own CI slow and then waits on it. **Commit locally as often as useful;
+push when a coherent piece is done.**
+
 **A SINGLE WALL-CLOCK TIMING ON THIS MACHINE IS NOT EVIDENCE.** The same commit measured
 2m14s and 5m40s in one session. Compare paired runs taken back to back, or CI job
 durations.
