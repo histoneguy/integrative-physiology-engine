@@ -83,6 +83,15 @@ not hoped: glucose **5.44**, insulin **64.2**, MAP 87.0, sodium 140.0, urine 1.7
 
 **THE FALSIFIER ADR 0031 WROTE AGAINST ITSELF IS DISCHARGED.**
 
+
+> **SUPERSEDED 2026-09-24 — THE NUMBERS IN THE TABLE BELOW ARE NO LONGER THE MODEL'S.**
+> ADR 0034 (insulin suppression of hepatic output) and ADR 0035 (hepatic insulin resistance)
+> each moved them, both on the same day this record was written. **The current disease axis is the table in
+> ADR 0035 and HANDOVER §3.75.** This one is kept because the *reasoning* around it still
+> holds and because deleting a superseded record loses the direction it was pointing —
+> §3.73. **A stale table that reads as current is the failure mode this repository keeps
+> finding; this note is the cheap fix.**
+
 | | `β` | `S_I` | glucose | insulin | glycosuria | urine |
 |---|---|---|---|---|---|---|
 | health | 1.0 | 1.0 | **5.44** | 64.2 | 0 | 1.701 |
