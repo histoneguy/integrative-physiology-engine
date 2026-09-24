@@ -21,9 +21,17 @@ sources stand behind the FUNCTIONAL FORM of each equation.**
 | form has a **systematic review** behind it | **2** |
 | form has **more than one primary** | **0** |
 
-**NOT ONE EQUATION IN THIS MODEL HAS TWO PRIMARY SOURCES BEHIND ITS FORM.** Thirty of
-thirty-two rest on one paper or on none. **Re-measured 2026-09-23 after ADR 0032: still
-zero.** That pass found two papers for `Renal.GFR` and they are the same laboratory, which
+**SUPERSEDED 2026-09-24 BY ADR 0033 — THE COUNT IS NO LONGER ZERO.** `Renal.appear` now
+carries **Baron 1985** (Indiana, full text) for the value and **Best 1981** (Porte, Seattle)
+as independent corroboration of the form: different laboratory, decade, protocol and
+endpoint. **One equation of thirty-two.** The table below is the 2026-09-23 baseline and is
+kept unedited so the movement is visible; the mechanical classifier still reads that row as
+`one`, because it counts citation strings and cannot judge group independence — **§5's known
+limitation, not a regression.**
+
+**THE BASELINE, 2026-09-23: NOT ONE EQUATION IN THIS MODEL HAD TWO PRIMARY SOURCES BEHIND ITS
+FORM.** Thirty of thirty-two rested on one paper or on none. **Re-measured the same day after
+ADR 0032: still zero.** That pass found two papers for `Renal.GFR` and they are the same laboratory, which
 §4 counts as one — so the count did not move and the honest reason is recorded rather than
 the count quietly improved. The two exceptions are reviews —
 `BodyFluids.thirst` (Hughes 2018) and `Raas.renin_drive` (van Ochten 2025) — and **both
