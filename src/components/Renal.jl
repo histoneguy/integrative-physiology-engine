@@ -72,7 +72,7 @@ using ..LedgerParams:
     BF_NA_PLASMA_SETPOINT, BF_NA_INTAKE_NOMINAL,
     GLU_PLASMA_FASTING, GLU_EGP_BASAL, RN_GLU_TM, GLU_INTAKE_CARBOHYDRATE,
     GLU_INSULIN_FASTING, GLU_INSULIN_RESPONSE_MAX, GLU_INSULIN_RESPONSE_KM,
-    GLU_NIMGU_FRACTION, GLU_NIMGU_FIXED_FRACTION
+    GLU_NIMGU_FRACTION, GLU_NIMGU_FIXED_FRACTION, GLU_EGP_INSULIN_I50
 
 """
     Renal(; name)
@@ -164,7 +164,7 @@ function Renal(; name, solute_tracking::Bool = true,
         # PER KILOGRAM, so it multiplies body mass directly rather than a size
         # factor. That is Huidekoper's own normalisation and no conversion is
         # applied.
-        egp_tot  = GLU_EGP_BASAL * body_mass * 1440.0 / MW_glu      # mmol/day
+        egp_basal = GLU_EGP_BASAL * body_mass * 1440.0 / MW_glu     # mmol/day
         # TmG CORRELATES WITH GFR - Mogensen's own sentence - so it carries the
         # SURFACE-like factor GFR0 carries. The correlation is across INDIVIDUALS,
         # so it does NOT license scaling with a within-subject acute GFR change,
@@ -180,7 +180,11 @@ function Renal(; name, solute_tracking::Bool = true,
         # glucose at (appearance + TmG)/GFR with appearance = hepatic production
         # alone. MASS-like scaling: energy intake tracks body size.
         diet_tot = mz * GLU_INTAKE_CARBOHYDRATE * 1000.0 / MW_glu   # mmol/day
-        appear   = egp_tot + diet_tot                               # mmol/day
+        # appear_ref is APPEARANCE AT THE OPERATING POINT and it is what the
+        # derived identities below are solved against. Since ADR 0034 the ACTUAL
+        # appearance is insulin-dependent, and the two coincide at I_fast by
+        # construction - see the EGP block below.
+        appear_ref = egp_basal + diet_tot                           # mmol/day
         # ---- THE INSULIN SPLIT, ADR 0031 --------------------------------
         # Disposal was ONE lumped clearance. It is now two terms and BOTH ARE
         # DERIVED IDENTITIES from rows already sourced - no free parameter.
@@ -198,6 +202,41 @@ function Renal(; name, solute_tracking::Bool = true,
         # therefore falls to about 35%.
         f_nimgu  = GLU_NIMGU_FRACTION
         I_fast   = GLU_INSULIN_FASTING
+
+        # ---- INSULIN SUPPRESSION OF HEPATIC GLUCOSE OUTPUT, ADR 0034 -----
+        # egp_suppression_prereg.md branch E1. EGP WAS A CONSTANT, so insulin
+        # could not suppress hepatic glucose output at all - and unrestrained EGP
+        # is the principal driver of FASTING hyperglycaemia in BOTH diabetes
+        # types. A model with fixed EGP can only raise glucose by failing to
+        # DISPOSE of it, which is the postprandial defect and not the fasting one.
+        #
+        # THE FORM IS A HYPERBOLA AND THE REASON IS TYPE 1. A suppression
+        # fraction written as egp_basal*(1 - I^h/(K^h + I^h)) is undefined below
+        # basal insulin, and type 1 is exactly where insulin goes to ZERO. This
+        # form is smooth, strictly positive and defined on the whole range I >= 0,
+        # so the type 1 limit is a VALUE rather than an extrapolation off the end
+        # of a curve.
+        #
+        # TWO ANCHORS, TWO PARAMETERS - AN EXACT INVERSION, NOT A FIT, the same
+        # discipline as Merovci (ADR 0031) and Baron (ADR 0033):
+        #   EGP(I_fast) = egp_basal        <- the DEFINITION of basal, so the
+        #                                     healthy operating point cannot move
+        #   EGP(I50)    = egp_basal / 2    <- Rizza 1981, 29 +/- 2 uU/ml, n = 15
+        # which invert to K_egp = I50 - 2*I_fast and egp_0 = 1 + I_fast/K_egp.
+        #
+        # BOTH ARE COMPUTED HERE AND STORED NOWHERE. A stored derived constant is
+        # a precision claim and a drift risk - ADR 0032's lesson, on purpose.
+        #
+        # RIZZA'S CONTRAST IS WHY THIS MATTERS AT ALL: production is half-maximally
+        # suppressed at 29 uU/ml against 55 for utilization, P < 0.01. PRODUCTION
+        # IS ROUGHLY TWICE AS INSULIN-SENSITIVE AS UTILIZATION.
+        #
+        # THE h = 1 COST IS DECLARED AND NOT TUNED AWAY. Rizza reports production
+        # 'completely suppressed' at about 60 uU/ml; this gives 27% of basal there.
+        # Raising h to match a qualitative word is prereg section 9's named failure.
+        I50_egp  = GLU_EGP_INSULIN_I50                              # pmol/L
+        K_egp    = I50_egp - 2.0 * I_fast                           # pmol/L
+        egp_0    = 1.0 + I_fast / K_egp                             # x basal, at I = 0
         dI_max   = GLU_INSULIN_RESPONSE_MAX
         K_ins    = GLU_INSULIN_RESPONSE_KM
         # NIMGU SPLITS INTO A CONCENTRATION-INDEPENDENT AND A PROPORTIONAL TERM -
@@ -215,13 +254,16 @@ function Renal(; name, solute_tracking::Bool = true,
         # ADR 0031's k_ni*G_fast was, and the two terms sum to it AT G_fast by
         # construction - so the healthy operating point cannot move, and S_I
         # below is unchanged in value as well as in form.
-        nimgu_tot = f_nimgu * egp_tot                               # mmol/day
+        # Baron's fraction is of POSTABSORPTIVE disposal, so it is taken against
+        # BASAL EGP and not against the insulin-suppressed value - the reference
+        # NIMGU is a property of the operating point, not a function of state.
+        nimgu_tot = f_nimgu * egp_basal                             # mmol/day
         U_fixed   = GLU_NIMGU_FIXED_FRACTION * nimgu_tot            # mmol/day
         k_ni      = (1.0 - GLU_NIMGU_FIXED_FRACTION) * nimgu_tot / G_fast   # L/day
         # S_I closes the 24-hour balance at the operating point. DERIVED, so the
         # healthy glucose CANNOT move: at G_fast and I_fast the terms sum to
         # appearance exactly. U_fixed + k_ni*G_fast == nimgu_tot identically.
-        S_I      = (appear - nimgu_tot) / (G_fast * I_fast)
+        S_I      = (appear_ref - nimgu_tot) / (G_fast * I_fast)
         md_c_ref = RN_NA_MACULA_DENSA_CONC_REFERENCE
         k_md     = RN_MD_RENIN_SLOPE
         md_c_thr = RN_MD_RENIN_THRESHOLD
@@ -510,6 +552,7 @@ function Renal(; name, solute_tracking::Bool = true,
         C_glu(t), [guess = GLU_PLASMA_FASTING]  # mmol/L plasma glucose -> bodyfluids
         I_glu(t)            # pmol/L   plasma insulin
         glu_excr(t)         # mmol/day urinary glucose, 0 at every normal value
+        egp_i(t)            # mmol/day endogenous glucose production, insulin-suppressed (ADR 0034)
         Osm_load(t)         # mOsm/day urinary solute load - NOW TRACKS SODIUM
         # STATE, added 2026-09-02. The lagged volume-keyed natriuretic signal, in
         # mEq/day. Its steady-state value is G_vn*(V_blood - V_blood_ref), so the
@@ -517,6 +560,12 @@ function Renal(; name, solute_tracking::Bool = true,
         vn_sig(t) = 0.0
         anp_adapt(t) = 0.0   # FORM (B) - zero and inert unless anp_adaptation
     end
+
+    # APPEARANCE IS INSULIN-DEPENDENT SINCE ADR 0034. This is a Julia-level
+    # expression in the unknown egp_i, not an MTK unknown of its own: it adds no
+    # state, and it keeps the glucose balance's left-hand side a single symbol so
+    # check_relations.py sees one relation rather than a compound.
+    appear = egp_i + diet_tot                                       # mmol/day
 
     eqs = [
         # GFR autoregulation: FLAT across the autoregulatory range, falling
@@ -923,7 +972,15 @@ function Renal(; name, solute_tracking::Bool = true,
         # glu_disposal now multiplies S_I ALONE, which is what insulin resistance
         # actually is. It no longer scales the insulin-independent term, which
         # insulin resistance does not touch.
-        appear ~ U_fixed + k_ni * C_glu + S_I * I_glu * C_glu * glu_disposal + glu_excr,
+        # APPEARANCE IS NOW INSULIN-DEPENDENT (ADR 0034). At I_glu = I_fast the
+        # bracket is exactly 1.0, so this reduces to appear_ref and health cannot
+        # move; as insulin falls the liver is released and EGP rises toward
+        # egp_0 x basal.
+        egp_i ~ egp_basal * egp_0 / (1.0 + I_glu / K_egp),
+        # `appear` below is a Julia-level expression in egp_i, NOT an unknown - it
+        # costs no state and keeps the balance's left-hand side one symbol.
+        appear ~ U_fixed + k_ni * C_glu +
+                 S_I * I_glu * C_glu * glu_disposal + glu_excr,
         glu_excr ~ max(0.0, GFR * C_glu - TmG),
 
         # OSMOREGULATION (ADR 0006 build order item 5). The placeholder that
