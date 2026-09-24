@@ -374,9 +374,134 @@ chronotropic baroreflex is the only neurogenic arm wired at all. That work has b
 deferred repeatedly for want of a source, and **this directive removes that excuse.**
 
 
+### 1.16 REVIEWS FIRST FOR THE BASICS, THEN MULTIPLE PRIMARIES FOR THE EQUATIONS — FOUNDATIONAL — 2026-09-23
+
+**Set by the owner**, and the sentence that came with it names the failure exactly:
+
+> *"Trying to model diabetes without understanding the difference between type 1 and 2
+> was ridiculous."*
+
+**ONLY THE FIRST HALF IS NEW.** The second half restates a rule binding since 2026-08-21 —
+see below, and see `validation/pooling.md`.
+
+**THE RULE, IN TWO PARTS AND IN ORDER.**
+
+1. **Before modelling anything, find RECENT REVIEW ARTICLES and read them for the
+   basics** — what the entities are, how the field currently divides them, which
+   distinctions are load-bearing and which are nomenclature. This happens **before** the
+   pre-registration, not after.
+2. **Then source MULTIPLE PRIMARY ARTICLES for the equations.** One paper per functional
+   form is what this repository has actually been doing, and `validation/form_sourcing_audit.md`
+   measures the result: **thirty of thirty-two empirical relations rest on one source or
+   none, and not one rests on two primaries.**
+
+**THE SECOND HALF IS NOT NEW AND THAT IS THE MORE USEFUL FINDING.** The owner's reply
+when this directive was being written:
+
+> *"I think early on I specifically asked for multiple citations when available and
+> explained they wouldn't agree and we'd have to find a mean."*
+
+**Checked, and correct.** `validation/pooling.md` was created **2026-08-21** — five weeks
+before this directive — and opens *"Binding. Fix before extracting any parameter from more
+than one source."* Its first paragraph is that instruction written down: the preferred
+sources report **ranges across studies, not values**, so *"the directive that tells us
+which sources to read is the same directive that creates an averaging problem. Both halves
+have to be answered or the source choice is worthless."*
+
+**SO THE RULE HAS BEEN BINDING SINCE 2026-08-21 AND WAS APPLIED TO EXACTLY ONE OF THE TWO
+THINGS A MODEL IS MADE OF.** `pooling.md` governs **values**, and on values it mostly
+worked — 34 of 58 `reported` rows are pooled, meta-analytic or NHANES. **Nobody ever
+extended it to FORMS**, and the audit's count of equations with two primaries behind them
+is **zero**. Directive 1.8 said cast a wide net and was read as a rule about *searching*;
+`pooling.md` said combine what you find and was read as a rule about *numbers*. **The
+equations fell between them for five weeks.**
+
+**AND IT DRIFTED ON VALUES TOO.** The owner had to give the same instruction again on
+2026-09-21 — *"Stop finding one source. Gather multiple sources (if available) and average
+them"* — and repooling the thirst threshold moved it 281 → 285.23 and **the derived gain
+by a factor of 3.4** (ADR 0030). **A single-source row is not a smaller version of a
+pooled one; it can be a different answer.**
+
+**TWICE-GIVEN IS THE SIGNAL.** A directive that has to be restated is one the working
+habit does not contain, and the correct response is structural rather than resolving to
+try harder: the audit exists, `OPEN-QUESTIONS` B24 carries the backlog, and B25 asks
+whether a gate should read the `form_citation` column the way `check_tolerances.py` reads
+printed precision.
+
+**WHY, AND IT IS A WORKED EXAMPLE RATHER THAN A PRINCIPLE.** ADR 0031 built a
+glucose–insulin axis with a saturating secretion curve, a derived insulin sensitivity, a
+pre-registration with declared branches, and a full challenge harness. It rested on
+Merovci 2021 read in full, Baron 1985, and NHANES — **good sources, correctly extracted.**
+And it **could not express type 1 diabetes at all**, because `beta_cell` scaled only the
+increment above fasting and left basal secretion untouched. The record then wrote the
+artefact up as a finding: *"a beta-cell deficit alone does nothing either — both lesions
+are required."*
+
+**THAT SENTENCE IS TYPE 2'S NATURAL HISTORY STATED AS THOUGH IT WERE DIABETES'.** It
+survived a pre-registration, an ADR, six gates and a green suite, and it was caught by the
+owner saying there are two diseases. **No amount of care about the sources would have
+caught it, because the defect was upstream of every source** — in not knowing what the
+model was supposed to be able to represent. **A recent review of diabetes classification
+would have cost ten minutes and made the omission impossible to write.**
+
+**WHAT A REVIEW IS FOR, AND WHAT IT IS NOT FOR.**
+
+- **FOR: the structure of the problem.** The categories, the mechanisms, what varies
+  between them, what a model of this system is expected to reproduce, and **what the open
+  controversies are** — so a contested claim is not built as though settled.
+- **FOR: finding the primaries.** A good review's reference list is the fastest route to
+  the papers directive 1.8 wants a wide net over.
+- **NOT FOR: numbers.** `pooling.md` already prohibits *reaching for a review's quoted
+  span instead of its constituent papers*, and this directive does not create an
+  exception. **A number still comes from a primary or from a meta-analysis that pooled
+  primaries with a stated method.** A systematic review that pooled is the first case;
+  a narrative review quoting a round figure is directive 1.12's teaching aid wearing a
+  citation.
+- **NOT FOR: equations.** Reviews redraw other people's curves without their protocols.
+  The form comes from the primaries.
+
+**RECENCY MATTERS FOR THE REVIEW AND NOT FOR THE PRIMARIES.** A review is read to learn
+what the field currently believes the categories are, so an old one misleads about
+exactly the thing it is being read for. **The primaries are judged by directive 1.7 —
+fundamental, new or old** — and the best measurement of a relationship is frequently
+decades old. The two halves of this directive have **opposite** recency preferences and
+that is deliberate.
+
+**HOW IT BINDS, CONCRETELY.** Every pre-registration gains a section, written **before
+the search for values begins**, naming:
+
+- the **reviews read**, with what basic distinctions each established;
+- **what the model will and will not be able to represent** as a result — the section
+  that would have caught the diabetes omission;
+- **how many primaries are expected to constrain each form**, and what to do if only one
+  exists.
+
+**ONE SOURCE FOR A FORM IS STILL PERMITTED AND MUST DECLARE ITSELF.** Sometimes one
+laboratory has done the experiment and nobody else has — Severinghaus, Mogensen, Kent.
+`pooling.md`'s `single-source` rule applies unchanged: **it is allowed, the row says so,
+and it is not dressed as consensus.** What is no longer permitted is reaching the end of a
+pass without having *looked* for the second.
+
+**WHAT IT DOES NOT OVERRIDE.**
+
+- **1.5 binds absolutely, and a review is not an exemption.** A review read counts as a
+  source opened; a review *cited* without being opened is the same violation as any other.
+- **1.12 still binds, and reviews are where teaching conventions LIVE.** Reading one is
+  how to find the round numbers to distrust, not a licence to adopt them.
+- **1.10 still binds.** This is reading, not tooling, and it is paid once per subsystem
+  against a defect that costs a rebuild.
+- **1.11 still binds and comes FIRST.** Connect and run what exists before sourcing
+  anything new. 1.16 governs how a *new* subsystem starts, not whether to start one.
+
+**THE RETROSPECTIVE WAS RUN THE SAME DAY**, at the owner's asking, and it is
+`validation/form_sourcing_audit.md`. It is an **audit and not a re-sourcing pass**: it
+ranks where the model rests on one paper and no overview, and names `Renal.GFR`'s
+uncited autoregulation plateau as the first item. **§7 B24 carries the backlog.**
+
+
 ## 2. STATE
 
-**Five gates exit 0. The challenge harness exits 0** — run it rather than trusting this
+**Six gates exit 0. The challenge harness exits 0** — run it rather than trusting this
 line, which was wrong for four sessions in the other direction. **§3.39 explains why a
 green harness is currently worth less than the red one it replaced.** Test counts are
 deliberately not quoted here; `Pkg.test()` is the receipt.
@@ -394,14 +519,28 @@ source could be opened (`CV.CO.NOMINAL`, `RN.H2O.OBLIGATORY_LOSS`). **Four of th
 that could be opened were materially wrong.** The `assumed` count went UP by two, and
 that is the honest direction — see `validation/verify_rows_prereg.md` branch 6.
 
-### The model — 12 states after `structural_simplify`
+### The model — 17 unknowns after `structural_simplify`: **14 integrated, 3 algebraic**
 
-`bf.V_icf`, `bf.V_ecf`, `bf.Na_ecf`, `br.tpr_mod`, `br.sp`, `ra.pra`, `ra.esc`,
-`rn.anp_sig`, plus `ty.FT4` (ADR 0019), `kp.K_p` (ADR 0021), **`br.hr_mod`
-(ADR 0022)** and **`cv.V_rbc` (ADR 0023)** — the last is the slowest state in the
-model by a factor of three over thyroxine, and it exists because a haemorrhage could
-otherwise be lost and never recovered — §3.38 records why the last exists: it was pre-registered as stateless
-and the model refused. The list below stopped at eight and was not updated; — the eighth arrived 2026-09-03 with ADR 0010 (§3.17).
+**RECOUNTED 2026-09-23 FROM THE BUILT MODEL AND THIS HEADING SAID 12.** It was true
+when written and four states landed after it. **Do not increment this line; regenerate
+it** — `IPE.differential_unknown_names(sys)` is the authority and exists because three
+harnesses once carried algebraic unknowns as initial conditions and silently stopped
+integrating (§3, ADR 0026).
+
+**INTEGRATED (14).** `bf.V_icf`, `bf.V_ecf`, `bf.Na_ecf`, `bf.Na_store`, `br.tpr_mod`,
+`br.sp`, `br.hr_mod`, `ra.pra`, `ra.esc`, `rn.vn_sig`, `rn.tal_cap`, `ty.FT4` (ADR 0019),
+`kp.K_p` (ADR 0021), `cv.V_rbc` (ADR 0023). **`cv.V_rbc` is the slowest by a factor of
+three over thyroxine** and exists because a haemorrhage could otherwise be lost and never
+recovered — §3.38 records that it was pre-registered as stateless and **the model
+refused**. `rn.anp_sig` appears in older text under that name and is now `rn.vn_sig`
+(ADR 0010, §3.17).
+
+**ALGEBRAIC (3), AND THEY ARE NOT INITIAL CONDITIONS.** `rn.ln_tal` — the thick ascending
+limb transport unknown, solved on the **log-ratio** for positivity (ADR 0026);
+`bf.C_glu` — plasma glucose, implicit since insulin secretion saturates (ADR 0031);
+`kp.GFR`. **Each must be given `[guess = …]` metadata and never `= default`**, which
+over-determines initialisation and returns `InitialFailure`. §5 records that this was hit
+twice.
 
 **IT WAS STILL EIGHT AFTER TWO NEW SUBSYSTEMS LANDED ON 2026-09-04, AND THAT WAS THE
 DESIGN.** Respiration is quasi-static at this horizon — arterial PCO2 re-equilibrates
@@ -421,9 +560,9 @@ representing a delay.
 
 | Component | Status |
 |---|---|
-| `BodyFluids.jl` | ICF/ECF volumes, sodium mass balance, osmotic equilibration. Intakes now scale with body size. Inactive-Na storage **default off** (ADR 0004). |
+| `BodyFluids.jl` | ICF/ECF volumes, sodium mass balance, osmotic equilibration. Intakes scale with body size. Inactive-Na storage **default off** (ADR 0004). **Osmotic thirst since ADR 0030** — it ADDS to `H2O_intake` rather than replacing it, because `H2O_intake` is a protocol input the challenge harness overrides; it is exactly zero at the operating point, and **its gain is a DERIVED identity, not a measurement** (§ADR 0030). **Glucose is an osmole** and `bf.C_glu` is the algebraic unknown (ADR 0031). |
 | `Cardiovascular.jl` | ECF → plasma → blood volume, partitioned central/peripheral (ADR 0012). **CO = HR × `hr_mod` × SV** since ADR 0022 — heart rate is reflex-modulated and no longer a pure parameter, though `hr_mod` returns to 1 at every steady state. Stroke volume is the SOURCED half (ADR 0011) and deliberately keeps the UNMODULATED heart rate in its denominator. MAP = CO × TPR, sexed. |
-| `Renal.jl` | GFR autoregulation, filtered load, pressure natriuresis, RAAS increment, circadian modulation, osmoregulated water excretion, urine solute load tracking sodium, **a lagged volume-keyed natriuretic path keyed to `V_blood`** (ADR 0010, §3.17), and **a censored GFR response to `V_ecf`** (§3.22). **It now reads TWO volumes and they are different volumes** — blood for atrial stretch, extracellular for filtration. |
+| `Renal.jl` | GFR autoregulation, filtered load, pressure natriuresis, RAAS increment, circadian modulation, osmoregulated water excretion, urine solute load tracking sodium, **a lagged volume-keyed natriuretic path keyed to `V_blood`** (ADR 0010, §3.17), and **a censored GFR response to `V_ecf`** (§3.22). **It reads TWO volumes and they are different volumes** — blood for atrial stretch, extracellular for filtration. **Since 2026-09-20 it is SEGMENTED** (ADR 0025, 0026, 0028): a proximal/TAL/distal split, **saturable TAL transport solved on the LOG-RATIO for positivity**, tubuloglomerular feedback from macula densa concentration, a Lorenz fold-change renin arm (ADR 0027), and **the segments carry the flux** rather than a lumped fractional reabsorption. **Glucose and the insulin split live here** (ADR 0029, 0031) — dietary carbohydrate in, saturating `I(G)`, non-insulin- and insulin-mediated disposal, and a `TmG` threshold for glycosuria. **`Renal.GFR`'s autoregulation form has NO citation** — B24 item 1. |
 | `Baroreflex.jl` | Resetting, **TWO effectors since 2026-09-08 (ADR 0022)** — `tpr_mod` on resistance and `hr_mod` on heart rate, driven by one shared error signal. The chronotropic arm carries a **0.4 s vagal lag** and is therefore a state, which the pre-registration did not expect (§3.38), and is **sexed**, which no other neural row is. Setpoint scaled by the clock. |
 | `Raas.jl` | Active at rest — PRA 1.30× the baroreflex plateau since the gain was re-derived (§3.13), 2.31× before. No AngII vasoconstriction, deliberate. |
 | `Adh.jl` | Osmolality → antidiuretic activity → urine osmolality. Algebraic, no states. |
@@ -431,6 +570,8 @@ representing a delay.
 | `reconstruct.jl` | **Connected.** SBP/DBP/PP from `SV` and `C_art`. NOT part of the ODE system — see §3.2. |
 | `Respiratory.jl` | **New 2026-09-04, ADR 0017.** Piecewise chemoreflex and the alveolar ventilation equation, solved together in closed form. **No state.** Drives respiratory water loss into `BodyFluids`. **Arterial PCO2 is an INPUT, not an output** — §3.24. |
 | `Blood.jl` | **New 2026-09-04, ADR 0018.** Alveolar gas equation, Severinghaus dissociation, oxygen content and delivery. **A forward computation — two inbound edges, no feedback, no state.** First quantity needing two subsystems at once. |
+| `Potassium.jl` | **ADR 0021.** Plasma potassium as a state, intake-dependent fractional distribution, and the macula densa coupling. `kp.GFR` is one of the three algebraic unknowns. |
+| `Thyroid.jl` | **ADR 0019.** Free thyroxine as the slowest state bar red cell mass — a 10.3-day turnover, which IS the physiology. Log-linear thyrotropin. **Its euthyroid TSH is 2.4× too high and that is §4 item 1**, not a reason to distrust the axis. |
 | `scaling.jl` | Extensive quantities scale with body mass, intensive ones do not. |
 
 ### The result
@@ -485,8 +626,21 @@ blood volume and haematocrit — and left the compartment fraction alone.
 
 ### Ledger
 
-**122 parameters over 139 rows** — 53 `reported`, 57 `derived`, 27 `assumed`, and
-**2 `calibrated`**. Tiers: 66 A, 45 B, 28 C.
+**RECOMPUTED 2026-09-23. 142 parameters over 160 rows** — 58 `reported`, 72 `derived`,
+28 `assumed`, and **2 `calibrated`**. Tiers: 72 A, 57 B, 31 C.
+
+**OF THE 58 `reported` ROWS, 34 ARE POOLED, META-ANALYTIC OR NHANES AND 24 ARE
+SINGLE-SOURCE.** That ratio is the parameter side of directive 1.16, and it is the half
+this repository has been doing reasonably well — `pooling.md` has been binding since
+2026-08-21. `validation/form_sourcing_audit.md` measures the other half and the answer
+there is **zero**. `OPEN-QUESTIONS` B21 lists the named single-source debts;
+**B24 is the equation-side backlog.**
+
+> **THIS PARAGRAPH SAID 122/139 AND EVERY FIGURE WAS STALE**, in the same way the
+> 2026-09-08 note below records it being stale then. The counts are not incremented as
+> rows land, and the fix is not discipline — it is to **recompute from the CSVs** with a
+> `python -c` over `parameters.csv`, `relations.csv` and `docs/adr/` whenever this section
+> is touched. Third time this has been necessary.
 
 > **THESE COUNTS WERE RECOMPUTED ON 2026-09-08 AND FOUR OF THEM WERE WRONG.** This
 > paragraph read *"91 parameters over 104 rows — 40 reported, 39 derived, 24 assumed,
@@ -519,7 +673,7 @@ UP was on 2026-08-31.** `CV.CO.NOMINAL` and `RN.H2O.OBLIGATORY_LOSS` did not acq
 citations; they stopped being primitives. Each is now DERIVED from the quantity that is
 actually measured — stroke volume and maximal urine concentration — and it is those two
 rows that carry the new sources.
-**72 relations** — 30 definitional, 22 empirical, 16 conservation, 4 placeholder. Recomputed 2026-09-08; this line said 53, which was true on 2026-09-04 and stopped being true with the acid-base, potassium and chronotropic relations.
+**94 relations — 39 definitional, 32 empirical, 17 conservation, 6 placeholder.** Recomputed 2026-09-23, and **the recount found a stale row hiding behind a duplicated key** — §3.73; this line said 72, recomputed 2026-09-08 when it said 53; this line said 53, which was true on 2026-09-04 and stopped being true with the acid-base, potassium and chronotropic relations.
 Nine landed on 2026-09-04 with the respiratory and blood components (§3.24), including
 `Renal.gfr_vol_mod`'s siblings `Respiratory.V_E` (`sourced-piecewise-threshold`) and
 `Blood.SaO2` (`sourced-published-fit`).
@@ -536,8 +690,8 @@ from the sourced stroke volume.
 
 ### Couplings — connected 2026-08-27
 
-**21 couplings** as of 2026-09-08 — the count the suite asserts, recomputed rather than
-inherited, because this line said 16 while the suite said 20. Respiratory to bodyfluids (ADR 0017); two INBOUND to blood with none outbound, which is what a forward computation looks like in the graph (ADR 0018); thyroid to respiratory (ADR 0019); three for the macula densa and potassium (ADR 0021); and **a SECOND baroreflex → cardiovascular edge for the chronotropic arm (ADR 0022)**, declared separately from the vasomotor one because the two differ in the time constant, which is the field the partition rule actually reads. **An outbound edge from blood would mean an oxygen feedback had been built**, and the count is the cheapest tripwire for that. Cross-checked against the built model by
+**22 couplings** as of 2026-09-23 — the count the suite asserts, recomputed rather than
+inherited, because this line said 21 and before that 16 while the suite said 20. Respiratory to bodyfluids (ADR 0017); two INBOUND to blood with none outbound, which is what a forward computation looks like in the graph (ADR 0018); thyroid to respiratory (ADR 0019); three for the macula densa and potassium (ADR 0021); and **a SECOND baroreflex → cardiovascular edge for the chronotropic arm (ADR 0022)**, declared separately from the vasomotor one because the two differ in the time constant, which is the field the partition rule actually reads. **An outbound edge from blood would mean an oxygen feedback had been built**, and the count is the cheapest tripwire for that. Cross-checked against the built model by
 `assert_couplings_match_model()`. Declared time constants **3.0 / 302.4 / 3600 / 3600 s**,
 largest gap **100.8×**, suggested boundary **30.1 s**. `cost_profile` on a real solution
 returns `nf/nw = 2.5` — **linear-algebra bound, so partitioning is the right lever.** Both
@@ -546,8 +700,19 @@ halves of the ADR 0003 argument now exist; ADR 0003 stays Deferred on state coun
 ### Gates
 
 `ledger_to_julia.py --check`, `check_relations.py --repo .`, `check_closure.py`
-(19 checks, per sex), `check_adrs.py`, `fix_deps.py`. **Never rename the `Provenance` job
-in `ci.yml`** — branch protection requires that exact string.
+(per sex), `check_adrs.py`, `fix_deps.py`, and **`check_tolerances.py`** — the sixth,
+which makes directive 1.13's significant-figures rule structural: **no comparison
+tolerance may be tighter than its target's printed precision.** A tight comparison
+against a constant the model is *derived from* is legitimate and must declare itself with
+a `CLOSURE PIN` or `WIRING PIN` comment; **the gate does not guess, because the version
+that guessed had a 100% false-positive rate.**
+
+**Never rename the `Provenance` job in `ci.yml`** — branch protection requires that exact
+string.
+
+**AND NO GATE CHECKS WHAT ANY EQUATION'S FORM RESTS ON.** That is directive 1.16's
+territory, `validation/form_sourcing_audit.md` measures it, and whether a seventh gate
+should exist is `OPEN-QUESTIONS` B25.
 
 ---
 
@@ -5915,6 +6080,66 @@ now in the reporting layer.
 MAP 87.0, sodium 140.0, osmolality 287.0, urine 1.70 L/day, `Na_excr` 205.0, glucose 5.44,
 insulin 64.2, thirst 1.2 mL/day. **All challenges pass.**
 
+
+### 3.73 THE RETROSPECTIVE AUDIT, AND A RELATION THE GATE COULD NOT SEE
+
+**Directive 1.16 was set on 2026-09-23 and the owner immediately asked whether the work
+already done should be reviewed against it.** It should, and the answer is
+`validation/form_sourcing_audit.md`. **It is an audit, not a re-sourcing pass** — 142
+parameters re-derived would take weeks and mostly reconfirm. What the criteria buy is a
+**ranked list of where the model rests on one paper and no overview.**
+
+#### What it measured
+
+| | |
+|---|---|
+| empirical relations | **32** |
+| form rests on no citation | **11** |
+| form rests on exactly one primary | **19** |
+| form has a systematic review behind it | **2** |
+| **form has more than one primary** | **0** |
+
+**ZERO.** And the contrast with the parameter side is the finding: of 58 `reported` rows,
+**34 are pooled, meta-analytic or NHANES.** `validation/pooling.md` has been binding since
+**2026-08-21** and it worked — on values. **Nobody ever extended it to forms.** Directive
+1.8 said cast a wide net and was read as a rule about searching; `pooling.md` said combine
+what you find and was read as a rule about numbers. **The equations fell between them for
+five weeks.**
+
+**THE TWO REVIEWS BOTH ARRIVED IN THE LAST FOUR DAYS** — Hughes 2018 under thirst because
+the owner ordered a repool, van Ochten 2025 under the renal baroreflex because there was
+no usable human data. Neither was found by a habit.
+
+#### And the recount found something the gates cannot
+
+**TWO ROWS IN `relations.csv` SHARED THE PRIMARY KEY `Renal.Na_distal`.**
+`check_relations.py` keys on `relation_id`, so it reported **94 relations while its own
+class breakdown summed to 95**, and the second row was **invisible to the gate** — never
+matched against the source, never reported as debt, never reported at all.
+
+The shadowed row was the **2026-09-05** one, `Na_distal ~ Na_filtered*(1 - FR_prox)*renal_mod`.
+**ADR 0028 replaced it on 2026-09-20 with `Na_distal ~ Na_md`**, and `FR_prox` appears
+**nowhere in `Renal.jl`**. So the ledger carried a documented equation that the model had
+not contained for three days, and **the gate whose entire job is to match relations
+against the committed source could not see it.** Removed; 94 rows, 94 unique ids, gate
+green.
+
+**THIS IS FAILURE MODE 12 IN A NEW PLACE** — a true record left standing while a later
+change made it false. The new part is the mechanism: **not prose this time, but a machine-
+read ledger, where a duplicate primary key silently hides a row.** Nothing checks
+uniqueness of `relation_id`, and the collision was found only because a recount disagreed
+with the gate by one.
+
+**THE CHEAP LESSON, AND IT IS THE ONE WORTH KEEPING: when two counts of the same thing
+disagree by one, that is a defect and not a rounding difference.** The temptation was to
+quote the gate's 94 and move on.
+
+**What is NOT claimed.** No result changed — the stale row was documentation, not code,
+and the model has been running ADR 0028's equation since 2026-09-20. **`OPEN-QUESTIONS`
+B24** carries the equation-sourcing backlog and ranks `Renal.GFR`'s uncited
+autoregulation plateau first; **B25** asks whether a seventh gate should read
+`form_citation`, and it is **not built**, because the standing rule is not to add tooling
+unless something breaks that cannot be worked around.
 
 ## 4. NEXT, IN ORDER
 

@@ -125,8 +125,19 @@ found by connecting something, and none by any of the five gates.
   every check in this repo. It has already happened.
 - **Never rename the `Provenance` job** in `.github/workflows/ci.yml`. Branch protection
   requires that exact string; a rename once deadlocked every merge.
+- **READ A RECENT REVIEW BEFORE MODELLING ANYTHING, THEN SOURCE THE EQUATIONS FROM
+  MULTIPLE PRIMARIES.** Directive 1.16, foundational. The review is for the **structure of
+  the problem** — what the entities are and how the field divides them — and **never for
+  numbers or equations**, which come from primaries. It exists because a glucose–insulin
+  axis was built from good sources, read in full, that **could not express type 1
+  diabetes**, and nothing in the six gates could see it. The second half is not new:
+  `validation/pooling.md` has been binding since 2026-08-21 and was applied to values and
+  never to forms. `validation/form_sourcing_audit.md` is the baseline — **32 empirical
+  relations, 0 with two primaries behind the form.**
 - **Pre-register before extracting** literature values — see `validation/pooling.md` and
-  the three `*_prereg.md` files in `validation/`. It has caught something every time.
+  the `*_prereg.md` files in `validation/`. It has caught something every time. **A
+  pre-registration now opens with the reviews read and what the model will and will not be
+  able to represent** — directive 1.16.
 - **Judge sources on study quality, not species.** Animal data is legitimate where the
   human experiment cannot ethically be performed. Record species, preparation and range.
   **For neurogenic control of pressure through renal or baroreceptor mechanisms with no
@@ -156,5 +167,5 @@ it. The file has not been rewritten yet.
 | `src/components/` | the model — all **ten** components wired, including RAAS, ADH, the clock, **Respiratory and Blood** (ADR 0017, ADR 0018) and the **Thyroid** axis (ADR 0019) |
 | `ledger/` | parameters and relations, with provenance |
 | `docs/adr/` | **A**rchitecture **D**ecision **R**ecords - structural decisions, each with an evidence tier and a falsifiable test; ADR 0006 defines the tiers |
-| `validation/` | targets, averaging and pooling policy, pre-registrations |
+| `validation/` | targets, averaging and pooling policy, pre-registrations, and `form_sourcing_audit.md` — what every equation's FORM rests on |
 | `tools/` | the six gates |

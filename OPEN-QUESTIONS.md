@@ -792,6 +792,65 @@ same thing twice already.
 
 ---
 
+### B24. Every equation in the model is single-sourced — NEW, 2026-09-23
+
+**Directive 1.16 was set today and `validation/form_sourcing_audit.md` is the baseline
+measurement.** Of **32 empirical relations**: 11 have no citation for their form, 19 rest
+on exactly one primary, 2 have a systematic review, and **0 rest on two primaries.**
+
+**THIS IS DEBT, NOT A DEFECT.** No result in the repository is known to be wrong because
+of it. The claim is narrower and worse: **nothing has ever checked**, and directive 1.16's
+worked example is a case where every source was good and the model was still unable to
+represent the physiology.
+
+**RANKED, BY CONSEQUENCE RATHER THAN BY THE AUDIT'S FLAT COUNT:**
+
+1. **`Renal.GFR` — the autoregulation plateau has NO form citation.** Every
+   pressure–natriuresis result in this model passes through it. Both breakpoints are
+   sourced rows; the piecewise shape between them is not. **Start here.**
+2. **`Renal.I_glu` and the glucose axis** — Merovci 2021 alone, and it is the subsystem
+   directive 1.16 was written about. **A recent review of diabetes classification is owed
+   before any further glucose work**, including B22.
+3. **The four first-order lags** — `Baroreflex.D(sp)`, `D(tpr_mod)`, `D(hr_mod)`,
+   `Renal.D(vn_sig)`. Time constants sourced, **order of the lag assumed.** ADR 0022
+   records a lag doing structural work, so the order is not cosmetic.
+4. **`Baroreflex.drive` and `hr_drive`** — both `divergent`, both Kent 1972, **counted as
+   two single-source rows and not as a pool.**
+5. **Everything on a default-OFF path** (`BodyFluids.J_store`, `Circadian.renal_mod`) —
+   cheapest debt in the file, lowest priority.
+
+**WHAT WOULD CLOSE IT.** Not a re-sourcing pass — that is weeks and would mostly
+reconfirm. **Item 1 sourced, and 1.16 applied to every NEW subsystem from today.** The
+audit regenerates from the ledger, so progress is measurable rather than asserted.
+
+**WHAT WOULD MAKE IT WORSE.** Adding a second citation that agrees, from the same group or
+reusing the same published equation. That is one source wearing two names, and it would
+make the count improve while the constraint did not.
+
+---
+
+### B25. Should a seventh gate read `form_citation`? — NEW, 2026-09-23, OWNER'S DECISION
+
+**The case for.** This repository's own repeated lesson is that a true sentence in prose
+goes stale silently and **no gate can see it** — §5 item 12's stale SHA, §3.15's stale
+Lobo claim, the `calibrated` count that said one while the ledger said two. **B24 is
+currently a prose claim of exactly that kind.** `check_tolerances.py` is the precedent: it
+made directive 1.13 structural, and it is the gate that has caught the most.
+
+**The case against, and it is the standing rule.** *"Do not add tooling unless something
+breaks that cannot be worked around."* Nothing has broken. The audit regenerates in under
+a second from the ledger, so the count can be refreshed by running it rather than by
+gating it.
+
+**The shape it would take if built.** A `form_sources` column, or a count parsed from
+`form_citation`, with **the existing grandfathered-unsourced set extended** — the pattern
+`check_relations.py` already uses, where the list shrinks only and is printed as debt.
+Landing it red would deadlock every merge, which this repo has done to itself before.
+
+**NOT BUILT. Awaiting a decision**, because it is a cost the owner should choose rather
+than one I should assume.
+
+
 ### B7. A de-indexing correction is owed
 
 `validation/ecf_salt_response_extract.py` multiplies an *indexed* ECF difference by ONE
