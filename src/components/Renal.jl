@@ -884,8 +884,20 @@ function Renal(; name, solute_tracking::Bool = true,
         # RECTIFIED BELOW FASTING because Merovci has no data there. Insulin does
         # fall below fasting in real hypoglycaemia; this model holds it flat and
         # says so rather than extrapolating into a region no source covers.
-        I_glu ~ I_fast + beta_cell * dI_max * max(C_glu - G_fast, 0.0) /
-                         (K_ins + max(C_glu - G_fast, 0.0)),
+        # beta_cell SCALES TOTAL SECRETION, BASAL INCLUDED - corrected 2026-09-23.
+        # It first multiplied only the INCREMENT above fasting, which left basal
+        # insulin at 64.2 pmol/L however far the knob fell. Because S_I is derived
+        # so that basal insulin disposes the whole appearance at G_fast, TOTAL
+        # BETA-CELL DESTRUCTION THEN PRODUCED NO HYPERGLYCAEMIA AT ALL: measured
+        # 5.44 mmol/L at beta_cell = 0. TYPE 1 DIABETES WAS INEXPRESSIBLE, and the
+        # record claimed that as a result - "a beta-cell deficit alone does
+        # nothing" - when it was an artefact of where the knob was applied.
+        #
+        # In type 1 the beta cells are destroyed and BASAL secretion goes with the
+        # stimulated, so the knob belongs outside both terms. beta_cell = 1 is
+        # health and leaves the operating point exactly where it was.
+        I_glu ~ beta_cell * (I_fast + dI_max * max(C_glu - G_fast, 0.0) /
+                                      (K_ins + max(C_glu - G_fast, 0.0))),
 
         # THE BALANCE IS NOW IMPLICIT, because I(C_glu) saturates and the closed
         # form is gone. ZERO NEW STATES - one algebraic unknown, cheaper than a

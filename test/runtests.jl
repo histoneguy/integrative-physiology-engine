@@ -1925,7 +1925,21 @@ end
         # 13 -> 16 on 2026-09-20. ADR 0026 added rn.tal_cap (thick ascending limb
         # transport capacity) and rn.ln_tal (the implicit transport unknown), and
         # kp.GFR became an unknown when the tubule stopped being one lumped term.
-        @test length(IPE.mtk_unknowns(sys)) == 16
+        # 16 -> 17 on 2026-09-22. ADR 0031 made plasma glucose IMPLICIT: once
+        # insulin saturates with glucose the balance has no closed form.
+        #
+        # ASSERTED AS A SPLIT, NOT A TOTAL, BECAUSE THE TOTAL WAS MISLEADING.
+        # `mtk_unknowns` counts differential states AND algebraic unknowns
+        # together, and three of these seventeen are NOT integrated - rn.ln_tal,
+        # rn.C_glu and kp.GFR. The GUI called the total "integrated states" until
+        # 2026-09-22; pinning the split here is what stops that recurring, and it
+        # is the distinction ADR 0026 was written about.
+        @test length(IPE.mtk_unknowns(sys)) == 17
+        let dn = IPE.differential_unknown_names(sys)
+            ndiff = count(u -> string(u) in dn, IPE.mtk_unknowns(sys))
+            @test ndiff == 14                                   # integrated
+            @test length(IPE.mtk_unknowns(sys)) - ndiff == 3    # algebraic
+        end
 
         # RESTING PaCO2 RETURNS THE SOURCED INPUT, AND THIS IS NOT A PREDICTION.
         # ADR 0017's ORIGINAL decision 1 made PaCO2 an output of the chemoreflex, as
@@ -2100,7 +2114,7 @@ end
         # enter through a differential equation somewhere, and there are still ten
         # - eight plus thyroxine plus potassium, and none of them is an oxygen
         # state.
-        @test length(IPE.mtk_unknowns(build_model())) == 16   # ADR 0026, see above
+        @test length(IPE.mtk_unknowns(build_model())) == 17   # ADR 0026/0031, see above
 
         # ------------------------------------------------------------------
         # THE FICK ARM, ADDED 2026-09-05. ADR 0018 deferred venous content, the

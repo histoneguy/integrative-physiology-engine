@@ -126,9 +126,121 @@ const REPORT = [
     ("potassium",      "kp₊K_p",      "Plasma potassium", "mmol/L"),
     ("potassium",      "kp₊K_excr",   "Renal potassium excretion", "mmol/day"),
     ("renal",          "rn₊Na_distal","Distal sodium delivery", "mEq/day"),
+    # ADDED 2026-09-22. The glucose, insulin and thirst quantities existed in the
+    # model and were shown by NOTHING - the same defect Na_prox_out and Na_distal
+    # each had, in the reporting layer rather than the equations. Directive 1.11.
+    # ADR 0023's two headline quantities, and the haemorrhage time course exists
+    # to show them apart: haematocrit falls within a day, red cell mass takes
+    # months. Neither was exported until 2026-09-22.
+    ("cardiovascular", "cv₊Hct_eff",  "Haematocrit", "fraction"),
+    ("cardiovascular", "cv₊V_rbc",    "Red cell volume", "L"),
+    ("glucose",        "rn₊C_glu",    "Plasma glucose", "mmol/L"),
+    ("glucose",        "rn₊I_glu",    "Plasma insulin", "pmol/L"),
+    ("glucose",        "rn₊glu_excr", "Urinary glucose", "mmol/day"),
+    ("body-fluids",    "bf₊thirst",   "Osmotic thirst (drinking above protocol)", "L/day"),
 ]
 
 snapshot(sys, sol) = [final(sys, sol, n) for (_, n, _, _) in REPORT]
+
+# ------------------------------------------------- differential vs algebraic
+# IPE.differential_unknown_names exists because three harnesses once carried
+# algebraic unknowns as initial conditions and silently stopped integrating
+# (ADR 0026). Reused here so the page cannot mislabel them either.
+const DIFF_STATES = [u for u in unknowns(SYS_M)
+                     if string(u) in IPE.differential_unknown_names(SYS_M)]
+
+# ------------------------------------------------------------- TIME COURSES
+# CHANGE OVER TIME, which the sweeps tab cannot show: it plots equilibria
+# against a control, not trajectories. Three protocols were chosen because each
+# exposes a DIFFERENT timescale, not because each looks good.
+#
+# Every series is subsampled to at most NT points. That is a plotting decision
+# and not an integration one - the solver chooses its own steps and is not
+# constrained by it.
+const NT = 240
+
+"Sample a solution at `n` evenly spaced times and return (t, rows)."
+function course(sys, sol, t0, t1; n = NT)
+    ts = collect(range(t0, t1; length = n))
+    rows = Vector{Vector{Float64}}()
+    for t in ts
+        push!(rows, [ (function ()
+                          for u in unknowns(sys)
+                              String(Symbol(u)) == nm * "(t)" && return sol(t, idxs = u)
+                          end
+                          for o in observed(sys)
+                              String(Symbol(o.lhs)) == nm * "(t)" && return sol(t, idxs = o.lhs)
+                          end
+                          return NaN
+                       end)() for (_, nm, _, _) in REPORT ])
+    end
+    (ts, rows)
+end
+
+println("time courses...")
+
+# (1) THE SALT STEP - the model's headline protocol, 30 days per arm.
+#     Slow: pressure and volume take weeks, which is the point of ADR 0016.
+const TC_SALT = let
+    sys = SYS_M
+    na = pget(sys, "Na_intake")
+    U = IPE.mtk_unknowns(sys); DN = IPE.differential_unknown_names(sys)
+    ts = Float64[]; rows = Vector{Vector{Float64}}(); carry = nothing; t0 = 0.0
+    for lvl in (205.0, 154.0, 103.0)
+        o = Dict{Any,Any}(na => lvl)
+        carry === nothing || merge!(o, carry)
+        sol = solve(ODEProblem(sys, o, (t0, t0 + 30.0)), Rodas5P();
+                    abstol = 1e-10, reltol = 1e-10)
+        SciMLBase.successful_retcode(sol) || error("salt course: $(sol.retcode) at $lvl")
+        (tt, rr) = course(sys, sol, t0, t0 + 30.0; n = 80)
+        append!(ts, tt); append!(rows, rr)
+        carry = Dict{Any,Any}(u => sol[u][end] for u in U if string(u) in DN)
+        t0 += 30.0
+    end
+    (ts, rows)
+end
+
+# (2) ONE-LITRE HAEMORRHAGE - ADR 0023. TWO timescales in one trace:
+#     haematocrit falls within a day as plasma refills, red cell mass takes
+#     months. A single chart cannot show both; the quantity selector can.
+const TC_BLEED = let
+    sys = SYS_M
+    base = steady(sys; days = 400.0)
+    U = IPE.mtk_unknowns(sys); DN = IPE.differential_unknown_names(sys)
+    hct   = final(sys, base, "cv₊Hct_eff")
+    fpv   = LedgerParams.param(:CV_PLASMA_ECF_FRACTION, :male)
+    dV    = -1.0 * (1 - hct) / fpv          # the plasma share, through f_pv
+    vecf0 = final(sys, base, "bf₊V_ecf")
+    naecf0 = final(sys, base, "bf₊Na_ecf")
+    u0 = Dict{Any,Any}()
+    for u in U
+        string(u) in DN || continue
+        n = string(u)
+        v = base[u][end]
+        n == "bf₊V_ecf(t)"  && (v += dV)
+        n == "bf₊Na_ecf(t)" && (v += (naecf0 / vecf0) * dV)   # isotonic loss
+        n == "cv₊V_rbc(t)"  && (v -= 1.0 * hct)
+        u0[u] = v
+    end
+    sol = solve(ODEProblem(sys, u0, (0.0, 150.0)), Rodas5P(); abstol = 1e-9, reltol = 1e-7)
+    SciMLBase.successful_retcode(sol) || error("bleed course: $(sol.retcode)")
+    course(sys, sol, 0.0, 150.0)
+end
+
+# (3) THE TWO GLUCOSE LESIONS - ADR 0031. Insulin resistance alone is
+#     COMPENSATED; it takes a beta-cell deficit as well to move glucose. The
+#     trace shows the compensation arriving, which a steady state cannot.
+const TC_GLUC = let
+    sys = SYS_M
+    base = steady(sys; days = 400.0)
+    U = IPE.mtk_unknowns(sys); DN = IPE.differential_unknown_names(sys)
+    carry = Dict{Any,Any}(u => base[u][end] for u in U if string(u) in DN)
+    o = merge(Dict{Any,Any}(pget(sys, "glu_disposal") => 0.2,
+                            pget(sys, "beta_cell") => 0.05), carry)
+    sol = solve(ODEProblem(sys, o, (0.0, 60.0)), Rodas5P(); abstol = 1e-10, reltol = 1e-10)
+    SciMLBase.successful_retcode(sol) || error("glucose course: $(sol.retcode)")
+    course(sys, sol, 0.0, 60.0)
+end
 
 # ---------------------------------------------------------------- the baselines
 println("baseline...")
@@ -251,11 +363,31 @@ open(OUT, "w") do io
     ])
     write(io, jobj([
         "generated" => jstr(string(Dates.now())),
-        "n_states" => jnum(length(unknowns(SYS_M))),
+        # SPLIT 2026-09-22. `unknowns` counts DIFFERENTIAL states AND ALGEBRAIC
+        # unknowns together, and the page was calling the total "integrated
+        # states". Two of them are not integrated: rn.ln_tal (the thick ascending
+        # limb transport unknown, ADR 0026) and rn.C_glu (plasma glucose, implicit
+        # since insulin saturates, ADR 0031). Reported apart.
+        "n_states" => jnum(length(DIFF_STATES)),
+        "n_algebraic" => jnum(length(unknowns(SYS_M)) - length(DIFF_STATES)),
         "quantities" => quantities,
         "baseline" => jobj(["male" => jarr(snapshot(SYS_M, base_m), jnum),
                             "female" => jarr(snapshot(SYS_F, base_f), jnum)]),
         "sweeps" => sweeps,
+        "courses" => jobj([
+            "salt" => jobj(["label" => jstr("Sodium intake stepped 205 → 154 → 103 mEq/day, 30 days each"),
+                            "xlabel" => jstr("Day"),
+                            "t" => jarr(TC_SALT[1], jnum),
+                            "rows" => jarr(TC_SALT[2], v -> jarr(v, jnum))]),
+            "bleed" => jobj(["label" => jstr("One-litre haemorrhage at day 0"),
+                             "xlabel" => jstr("Day"),
+                             "t" => jarr(TC_BLEED[1], jnum),
+                             "rows" => jarr(TC_BLEED[2], v -> jarr(v, jnum))]),
+            "glucose" => jobj(["label" => jstr("Insulin sensitivity to 0.2 and beta-cell capacity to 0.05 at day 0"),
+                               "xlabel" => jstr("Day"),
+                               "t" => jarr(TC_GLUC[1], jnum),
+                               "rows" => jarr(TC_GLUC[2], v -> jarr(v, jnum))]),
+        ]),
         "parameters" => "[" * join([jrow(r, LED_KEYS) for r in led], ",") * "]",
         "relations" => "[" * join([jrow(r, REL_KEYS) for r in rel], ",") * "]",
     ]))
