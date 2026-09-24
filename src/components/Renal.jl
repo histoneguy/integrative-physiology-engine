@@ -116,6 +116,20 @@ function Renal(; name, solute_tracking::Bool = true,
         # IS CORRECT PHYSIOLOGY - insulin resistance alone does not cause diabetes
         # - and it means a SECOND lesion is required to express one.
         beta_cell = 1.0
+        # THE HEPATIC INSULIN-SENSITIVITY KNOB - ADR 0035, hepatic_ir_prereg.md.
+        # 1.0 is health and the arm is INERT there, so this reduces to ADR 0034
+        # exactly. Below 1.0 MORE insulin is needed for the same suppression of
+        # hepatic output, and maximal suppression at infinite insulin is
+        # PRESERVED - which is the shape Groop 1989 reports: HGP suppression
+        # 'impaired at all but the highest insulin concentration', while
+        # peripheral disposal failed only at the three HIGHEST steps. Two defects
+        # at different insulin ranges, which is why one knob could not carry both.
+        #
+        # IT IS A LESION DIAL AND NOT A SOURCED CONSTANT. Groop sources the SHAPE
+        # of the defect; no admissible source gives a population value for its
+        # magnitude, and the ledger row says so. Same standing as glu_disposal
+        # and beta_cell.
+        hep_sens = 1.0
         # EXTENSIVE. GFR is a flow and G_pn is an excretion per mmHg, so both
         # scale. They scale TOGETHER, which is the point: FR_effective subtracts
         # G_pn*(MAP-MAP_ref)/Na_filtered, and with G_pn ~ s and Na_filtered ~ s
@@ -976,7 +990,7 @@ function Renal(; name, solute_tracking::Bool = true,
         # bracket is exactly 1.0, so this reduces to appear_ref and health cannot
         # move; as insulin falls the liver is released and EGP rises toward
         # egp_0 x basal.
-        egp_i ~ egp_basal * egp_0 / (1.0 + I_glu / K_egp),
+        egp_i ~ egp_basal * egp_0 / (1.0 + hep_sens * I_glu / K_egp),
         # `appear` below is a Julia-level expression in egp_i, NOT an unknown - it
         # costs no state and keeps the balance's left-hand side one symbol.
         appear ~ U_fixed + k_ni * C_glu +
