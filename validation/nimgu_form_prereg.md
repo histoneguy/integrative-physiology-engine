@@ -281,12 +281,72 @@ stated falsifier stands.
 cannot be built yet. `form_sourcing_audit.md` stays at **zero** until it is, because the
 audit counts what is in `relations.csv`, not what is known.
 
-### 10.5 The access request — ONE item, not four
+### 10.5 SUPERSEDED — the number was obtained, 2026-09-24, and the branch is N1
 
-**Baron AD et al. J Clin Invest 1985;76(5):1782–1788. PMID 2865274. DOI 10.1172/jci112169.
-OPEN ACCESS — the owner can simply open it.** One number is needed: **the mean fasting serum
-glucose of the 11 normal control subjects.** That alone converts this pass from N3 to **N1**
-and builds the form.
+**§10.3 stopped because the controls' fasting glucose was not in the abstract. It is in the
+paper, and the paper is open access.** The JCI PDF was downloaded directly from the
+publisher's own open-access link — **no bot check was involved or circumvented**, and this
+is what §10.1 should have done before writing a stop.
 
-Edelman 1990 and Best 1981 would strengthen it and are **not required**.
+**Table I. Control, n = 11: fasting serum glucose 90 ± 1.7 mg/dl** (the text rounds it to
+90 ± 2).
+
+#### The exact two-point inversion
+
+| glucose | NIMGU | n |
+|---|---|---|
+| **90** mg/dl (euglycaemic) | **113 ± 8** mg/min | 11 |
+| **248 ± 2** mg/dl (SRIF + hyperglycaemic clamp) | **186 ± 19** mg/min | **7** |
+
+**THE TWO POINTS HAVE DIFFERENT n — 11 and 7 — because only seven controls underwent the
+hyperglycaemic arm.** Recorded because it is the kind of detail an abstract loses.
+
+    k_ni    = (186 - 113)/(248 - 90) = 0.462 (mg/min)/(mg/dl)
+    U_fixed = 113 - 0.462 x 90       = 71.4  mg/min
+    concentration-independent fraction at fasting = 71.4/113 = 0.63
+
+**AND THE PAPER CONTAINS ITS OWN CONSISTENCY CHECK, WHICH THE FIT PASSES.** It separately
+reports NIMGU metabolic clearance falling **1.2 ± 0.07 → 0.74 ± 0.08**. The fitted rates give
+113/90 = **1.256** and 186/248 = **0.750**. **The arithmetic closes**, so the rates and the
+clearances are one dataset and not two claims.
+
+**A CORRECTION MADE IMMEDIATELY RATHER THAN CARRIED.** The clearance *fall* is **38%** from
+the paper's printed clearances and **40.3%** from the fitted rates. These are **not** two
+findings: 1.2 ± 0.07 and 0.74 ± 0.08 are two-figure numbers whose ratio carries several
+points of uncertainty, and directive 1.13 forbids reading a difference inside that as
+anything. **Neither figure may be quoted to three.**
+
+#### The independent corroboration, and it is strong
+
+**Best 1981 reports metabolic clearance falling 38% at low insulin** — the same direction,
+the same rough magnitude, in a **different laboratory** (Porte, Seattle), a **different
+decade**, and by a **different protocol** (somatostatin at three fixed insulin levels rather
+than one insulinopenic clamp at two glucose levels). Best's implied concentration-independent
+fraction is **63–76%**, and **it contains Baron's 63%.**
+
+**THIS IS BRANCH N1.** Two independent groups support the form; one supplies the value; the
+other constrains it and agrees. **§4's group-independence rule is satisfied on the FORM,
+which is what directive 1.16 asked for and what no other equation in this model has.**
+
+#### Dispersions, per §4
+
+All Baron figures are **SEM**; converted with their own n. **NIMGU basal SD = 8 x sqrt(11) =
+26.5 mg/min; hyperglycaemic SD = 19 x sqrt(7) = 50.3; the 75 ± 5% share SD = 16.6 percentage
+points**, which is the figure ADR 0031 already carries.
+
+---
+
+### 10.6 The access request that REMAINS — and it is no longer blocking
+
+**Nothing blocks B22 any more.** Edelman 1990 (`10.2337/diab.39.8.955`) and Best 1981
+(`10.2337/diab.30.10.847`) are both `closed` by OpenAlex and both remain **desirable rather
+than required**:
+
+- **Edelman 1990** would add a **four-point** dose–response where Baron gives two, turning an
+  exact inversion into something with a residual — which is the only way §7 test 5's
+  comparison against a saturating form can be decided on data rather than on mechanism.
+- **Best 1981** would replace an abstract-derived 63–76% bracket with a real number and make
+  the form **pooled** rather than corroborated.
+
+**Neither is needed to build.** They are what would let the next pass falsify this one.
 

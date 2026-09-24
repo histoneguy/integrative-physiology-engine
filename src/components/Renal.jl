@@ -72,7 +72,7 @@ using ..LedgerParams:
     BF_NA_PLASMA_SETPOINT, BF_NA_INTAKE_NOMINAL,
     GLU_PLASMA_FASTING, GLU_EGP_BASAL, RN_GLU_TM, GLU_INTAKE_CARBOHYDRATE,
     GLU_INSULIN_FASTING, GLU_INSULIN_RESPONSE_MAX, GLU_INSULIN_RESPONSE_KM,
-    GLU_NIMGU_FRACTION
+    GLU_NIMGU_FRACTION, GLU_NIMGU_FIXED_FRACTION
 
 """
     Renal(; name)
@@ -200,11 +200,28 @@ function Renal(; name, solute_tracking::Bool = true,
         I_fast   = GLU_INSULIN_FASTING
         dI_max   = GLU_INSULIN_RESPONSE_MAX
         K_ins    = GLU_INSULIN_RESPONSE_KM
-        k_ni     = f_nimgu * egp_tot / G_fast                       # L/day
+        # NIMGU SPLITS INTO A CONCENTRATION-INDEPENDENT AND A PROPORTIONAL TERM -
+        # ADR 0033, nimgu_form_prereg.md branch N1. ADR 0031 made this term
+        # STRICTLY LINEAR and named that as its own defect: k_ni*G alone cleared
+        # the whole appearance at 15.6 mmol/L, below the renal threshold, so
+        # glycosuria was zero at every setting and urine never moved.
+        #
+        # THE FORM IS BEST 1981'S STATED MECHANISM, NOT A CURVE FIT - insulin-
+        # independent tissues such as brain have a relatively fixed uptake while
+        # other tissues take up glucose proportionally. Two terms, ONE new
+        # parameter, and f_ni_fixed = 0 returns ADR 0031 exactly.
+        #
+        # THE SPLIT IS A REDISTRIBUTION AND NOT AN ADDITION. nimgu_tot is what
+        # ADR 0031's k_ni*G_fast was, and the two terms sum to it AT G_fast by
+        # construction - so the healthy operating point cannot move, and S_I
+        # below is unchanged in value as well as in form.
+        nimgu_tot = f_nimgu * egp_tot                               # mmol/day
+        U_fixed   = GLU_NIMGU_FIXED_FRACTION * nimgu_tot            # mmol/day
+        k_ni      = (1.0 - GLU_NIMGU_FIXED_FRACTION) * nimgu_tot / G_fast   # L/day
         # S_I closes the 24-hour balance at the operating point. DERIVED, so the
-        # healthy glucose CANNOT move: at G_fast and I_fast the two terms sum to
-        # appearance exactly.
-        S_I      = (appear - k_ni * G_fast) / (G_fast * I_fast)
+        # healthy glucose CANNOT move: at G_fast and I_fast the terms sum to
+        # appearance exactly. U_fixed + k_ni*G_fast == nimgu_tot identically.
+        S_I      = (appear - nimgu_tot) / (G_fast * I_fast)
         md_c_ref = RN_NA_MACULA_DENSA_CONC_REFERENCE
         k_md     = RN_MD_RENIN_SLOPE
         md_c_thr = RN_MD_RENIN_THRESHOLD
@@ -906,7 +923,7 @@ function Renal(; name, solute_tracking::Bool = true,
         # glu_disposal now multiplies S_I ALONE, which is what insulin resistance
         # actually is. It no longer scales the insulin-independent term, which
         # insulin resistance does not touch.
-        appear ~ k_ni * C_glu + S_I * I_glu * C_glu * glu_disposal + glu_excr,
+        appear ~ U_fixed + k_ni * C_glu + S_I * I_glu * C_glu * glu_disposal + glu_excr,
         glu_excr ~ max(0.0, GFR * C_glu - TmG),
 
         # OSMOREGULATION (ADR 0006 build order item 5). The placeholder that
