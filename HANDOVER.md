@@ -6216,6 +6216,71 @@ expected rather than reassuring**, and is reported that way.
 
 ## 4. NEXT, IN ORDER
 
+### RE-ORDERED 2026-09-23. READ THIS BLOCK; THE NUMBERED LIST BELOW IT IS FROM 2026-09-03 AND IS KEPT AS HISTORY
+
+**It is kept rather than deleted because several of its items are still live and because
+§3.73's lesson is that deleting a stale record loses the direction it was pointing.** But it
+predates ADRs 0025–0032, the whole glucose axis, thirst, and directive 1.16. **Its item 5 —
+*"`RN.PRESSURE_NATRIURESIS.SLOPE` … IS THE LAST ONE"* — is FALSE and has been since
+2026-09-05**, when ADR 0021 entered `RN.MD.RENIN_GAIN` as a second `calibrated` row. §2
+already records that; item 5 was never updated. **Same failure as everything else found
+today: a true sentence left standing.**
+
+**0. ACCESS, AND IT IS THE ONLY THING THAT BLOCKS WORK RATHER THAN ORDERING IT.** Three
+publishers served bot checks on 2026-09-23 and **none was worked around**. Each blocks a
+named, pre-registered pass:
+
+| Paper | Blocks | Why it matters |
+|---|---|---|
+| Edelman SV et al. *Diabetes* 1990;39:955–964, PMID 1973673 | **B22**, branch N3 | the four-level NIMGU dose–response; the abstract truncates at 250 words and the NIMGU arm may be figure-only |
+| Best JD et al. *Diabetes* 1981;30:847–850, PMID 6115785 | **B22** | the **independent** second primary; abstract gives "more than twice basal", which is not extractable to useful precision |
+| Kirchheim HR et al. *Pflugers Arch* 1987;410:441–449, PMID 3324052 | **B26** | already used from its abstract; directive 1.5 limits what may be entered from one |
+
+**1. B26 — `RN.AUTOREG.LOWER` IS A RENAL BLOOD FLOW LIMIT USED AS A GFR LIMIT.** The only
+item on this list that can move a published result. Two studies put the GFR break-off at
+**80.5 ± 3.5** and **81.5 ± 2.2**; the model carries **63.9**, which is Finke's RBF limit,
+and the low-salt arm rests at MAP **81.900**. **Owner's decision between three options**, and
+`autoreg_form_prereg.md` §6 is why it was not taken unilaterally.
+
+**2. B22 — NIMGU IS LINEAR AND TWO INDEPENDENT LABORATORIES SAY IT IS NOT.** Pre-registered
+in `nimgu_form_prereg.md`, form fixed (`U_fixed + k_ni·G`, Best's own stated mechanism),
+tests declared including the comparison against a saturating form. **Blocked at branch N3 on
+item 0.** It is the only pass that would give this model an equation with **two independent
+primaries** behind its form.
+
+**3. B25 AND B27 — WHETHER A GATE SHOULD READ `form_citation` AND `expression`.** One pass
+over one file, and **they should be decided together or not at all.** Two defects in two days
+came through these columns: the duplicate `relation_id` (§3.73) and ADR 0028's lost
+pressure-natriuresis citation (§3.74). **The standing rule says do not add tooling unless
+something breaks that cannot be worked around** — and both *were* worked around, by hand, in
+one evening. **That is the argument against, and it is a real one.** Owner's call.
+
+**4. B24 — THE EQUATION-SOURCING BACKLOG, RANKED.** `form_sourcing_audit.md` is the baseline
+and regenerates from the ledger, so progress is measurable rather than asserted. **18
+single-source forms and 5 uncited ones outstanding.** Do **not** attack this as a campaign;
+apply 1.16 to each subsystem as it is next touched, which is how B22 and ADR 0032 arose.
+
+**5. B23 — THE FLAKY `salt_step(raas = false)`.** Still 2 of 3 full-suite runs against 8 of 8
+isolated, still not characterised, and **B26 makes it more urgent**: moving a piecewise kink
+to within 1.4 mmHg of an operating arm is exactly how a stiff solve near a non-smooth point
+starts failing. **Three clean full-suite runs before anything is concluded.**
+
+**6. EVERYTHING BELOW, STILL LIVE.** The thyroid intercept (old item 1), the acute/chronic
+natriuretic gains a factor of two apart (old item 2), `BF.ICF_ECF.OSMOTIC_TAU` (old item 3),
+and ADRs 0013/0015/0016 being out of date (old item 4). **None was touched today.**
+
+**AND ONE STANDING NOTE THAT IS NOT AN ITEM.** Body composition — muscle, fat and liver mass
+— is the shared substrate under metabolism, energy balance, thermoregulation and urea, and
+**hepatic glucose production being insulin-insensitive is the single biggest gap in the
+glucose axis**: unrestrained EGP drives fasting hyperglycaemia in both diabetes types, and
+the model cannot represent that. It is a change of unit from "a system" to "a substrate" and
+therefore **the owner's call, not a next item.**
+
+---
+
+### The list below is from 2026-09-03
+
+
 **Rewritten 2026-09-03, and item 1 was discharged the same day.** The previous list's
 every numbered item was already done — the ANP input coupling, renal haemodynamics,
 venous return, the renin gain, and the ADR 0013 versus ADR 0015 decision, which are
