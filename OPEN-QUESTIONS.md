@@ -723,6 +723,75 @@ the constituent trials' individual data.
 
 ---
 
+### B22. NIMGU is linear and Baron 1988 says it is not — NEW, 2026-09-22
+
+**A defect I introduced in ADR 0031, with the fix already read.**
+
+`NIMGU = k_ni * G` is strictly linear in glucose. With insulin sensitivity and beta-cell
+capacity both at zero, the insulin-independent term alone clears the entire glucose
+appearance at **15.6 mmol/L** — *below* the renal spill point of 18.4 — so **glycosuria is
+zero at every setting and urine volume never moves.**
+
+**Baron 1988 (Am J Physiol 255:E769), read in the same pass, gives the numbers:** whole-body
+NIMGU rose **128 ± 6 → 213 ± 18 mg/min** while glucose went from euglycaemia (~90 mg/dL) to
+hyperglycaemia (~220 mg/dL) — a **1.66-fold** rise for a **2.44-fold** stimulus.
+Sub-proportional, not linear.
+
+**WHY IT WAS NOT FIXED IN THE SAME PASS.** The insulin split is already a structural change,
+and stacking a second makes neither testable on its own — the discipline ADR 0025 and ADR
+0026 were deliberately separated under.
+
+**THE FALSIFIER, STATED:** give NIMGU Baron's sub-proportional form and the ceiling should
+rise and glycosuria should reappear. **If it does not, the linear term was not what capped
+it** and the diagnosis is wrong.
+
+**WHAT WOULD RESOLVE IT:** nothing external. The source is read, the numbers are in §11.7 of
+`glucose_insulin_prereg.md`, and it is one pass.
+
+---
+
+### B23. A flaky `salt_step(raas = false)` failure — NEW, 2026-09-22
+
+**Failed in 2 of 3 full-suite runs**, with `retcode Unstable` on the 103 mEq/day arm.
+**Passes 8 of 8 in isolation**, including under `--check-bounds=yes` (the flag `Pkg.test`
+adds) and in the testset's exact call order — `raas = true` then `raas = false` — run three
+times in one process, **bit-identical** each trial (shift 1.7837 and 2.0453). So it is **not
+solver nondeterminism** in isolation.
+
+**THE COUNT WAS FIRST WRITTEN AS "2 OF 2" AND THAT WAS OVER-CLAIMED.** The third run passed.
+It also carried the `beta_cell` correction, which changes the insulin term and could have
+moved the model off the boundary — **so runs 1–2 and run 3 are not strictly comparable, and
+neither "intermittent" nor "fixed" is established.** Recorded that way rather than resolved
+by the reading that happens to be convenient.
+
+**IT WAS CAUGHT RATHER THAN ABSORBED**, by the `successful_retcode` assertion ADR 0026 added
+after `salt_step` silently reported a failed solve as a result. The assertion worked; that is
+the good news in this entry.
+
+**A SINGLE PASS IS NOT PROOF OF STABILITY**, any more than a single wall-clock timing is
+evidence of speed — the same reason `CLAUDE.md` refuses to quote a whole-suite runtime. The
+honest reading is that the RAAS-off salt step is now **marginally stable** and something —
+solver step selection, machine load during a concurrent run — can tip it.
+
+**WHY IT MIGHT HAVE BECOME MARGINAL:** ADR 0030 gave the model a second osmotic effector, and
+with RAAS off the ADH-off/thirst-on branch does more work (the redundancy ADR 0030 measured).
+ADR 0031 then made plasma glucose an implicit algebraic unknown. Either could narrow the
+basin.
+
+**WHAT WOULD RESOLVE IT:** bisect the SUITE, not the model — run `runtests.jl` with
+progressively fewer preceding testsets until the failure disappears, and the last one removed
+is the culprit. `IPE_TESTS` filters by name, so this needs a temporary ordering hack rather
+than the existing switch.
+
+**FIRST, ESTABLISH WHETHER IT STILL HAPPENS.** Run the full suite three more times on the
+current tree. If it never recurs, the `beta_cell` correction moved it and this entry closes
+with that recorded; if it does, bisect the suite.
+
+**Do not "fix" it by loosening the assertion** — it is the instrument, and it has caught the
+same thing twice already.
+
+---
+
 ### B7. A de-indexing correction is owed
 
 `validation/ecf_salt_response_extract.py` multiplies an *indexed* ECF difference by ONE

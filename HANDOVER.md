@@ -5839,6 +5839,83 @@ Appearance is hepatic production alone; there is no dietary carbohydrate at all,
 `glu_disposal` removes only peripheral uptake while real diabetes also raises production.
 
 
+### 3.72 THE INSULIN SPLIT, WHICH CORRECTED A RESULT REPORTED THE DAY BEFORE
+
+**ADR 0031, branch G1**, reached after the pre-registration had already recorded G2 twice.
+Pre-registered in `glucose_insulin_prereg.md` sections 11-12. ZERO NEW STATES.
+
+#### The clamp was never needed
+
+Sections 9.8 and 9.12 failed to source insulin sensitivity from three clamp papers and took
+branch G2 - no insulin. **Section 11.1 found the way round: NON-INSULIN-MEDIATED GLUCOSE
+UPTAKE is measured directly in humans**, so sourcing its basal fraction splits the
+postabsorptive balance into its two legs without a clamp at all. Baron 1985 gives **75 +/- 5
+percent** by somatostatin insulinopenia with tracer.
+
+**Garcia-Estevez's 77 +/- 8 percent was NOT pooled with it** - it is a MINIMAL-MODEL estimate
+and `pooling.md` forbids mixing methods. Keeping it separate turned it into something better:
+two estimators, two cohorts, **agreeing within 2 percentage points**.
+
+`I(G)` came from Merovci 2021, supplied by the owner after PubMed proved to carry only the
+post-intervention changes. The protocol detail is in the METHODS and not the abstract, and it
+matters: the abstract's "100 and 300 mg/dL" are INCREMENTS while the methods give step two as
+400 mg/dL ABSOLUTE.
+
+#### It corrected the previous day's headline result
+
+**Before the split, `glu_disposal` = 0.02 gave 29.4 mmol/L, 374 g/day of glycosuria and 4.09
+L/day of urine, and section 3.71 described it as insulin resistance producing the diabetic
+triad. THAT WAS WRONG.** With a secretion response present the same knob reaches **13.0
+mmol/L and spills nothing**, because insulin rises 64 to 351 pmol/L and compensates. What had
+been simulated was total beta-cell failure with no insulin arm to say so.
+
+**INSULIN RESISTANCE ALONE NO LONGER CAUSES DIABETES**, which is type 2's natural history:
+compensated resistance is hyperinsulinaemic and near-normoglycaemic, and diabetes appears
+only when compensation fails.
+
+**BUT THIS ENTRY FIRST CLAIMED "A BETA-CELL DEFICIT ALONE DOES NOTHING EITHER", AND THAT WAS
+WRONG.** The owner pointed out that there are two diabetes, not one. `beta_cell` scaled only
+the INCREMENT above fasting, so basal insulin stayed at 64.2 pmol/L however far it fell -
+and since `S_I` is derived so basal insulin disposes the whole appearance at `G_fast`,
+**total beta-cell destruction produced no hyperglycaemia at all.** TYPE 1 WAS INEXPRESSIBLE
+AND THE ARTEFACT WAS REPORTED AS A RESULT. Corrected 2026-09-23: the knob scales TOTAL
+secretion, basal included. Type 1 total now gives **15.64 mmol/L with insulin 0**; type 2
+marked gives 13.49 with insulin 36.
+
+#### And the ceiling moved onto a defect I introduced
+
+`NIMGU = k_ni*G` is **strictly linear**, so with both knobs at zero the insulin-independent
+term alone clears the entire appearance at **15.6 mmol/L** - below the renal spill point, so
+glycosuria is zero at every setting. **Baron 1988, read in the same pass, shows NIMGU is
+SUB-proportional**: 128 to 213 mg/min for a glucose rise of 90 to 220 mg/dL.
+
+**Left for its own pass on purpose.** The split is already a structural change and stacking a
+second makes neither testable alone - the discipline ADR 0025 and 0026 were separated under.
+
+#### Three things the GUI pass found
+
+**THE GUI HAD NO GRAPHS AND NOW HAS A TIME-COURSE TAB** - salt step, haemorrhage, and the two
+glucose lesions, each chosen for a DIFFERENT timescale, any of 50 quantities against time,
+with a crosshair that snaps to the nearest real sample rather than interpolating.
+
+**`gui/template.html` HAD NO `<meta charset>`.** `live.html` always had one; the template
+never did, so every em-dash was read as latin-1. Fixed at source.
+
+**THE PAGE CALLED SEVENTEEN UNKNOWNS "INTEGRATED STATES" AND THREE OF THEM ARE NOT** -
+`rn.ln_tal`, `rn.C_glu` and `kp.GFR`. It now reports **14 integrated and 3 algebraic**, split
+by `IPE.differential_unknown_names`, and `runtests.jl` pins the SPLIT rather than the total so
+the mislabel cannot recur.
+
+**AND HAEMATOCRIT AND RED CELL VOLUME WERE NEVER EXPORTED AT ALL** - ADR 0023's two headline
+quantities, computed by the model and shown by nothing. The `Na_distal` pattern a third time,
+now in the reporting layer.
+
+#### Unchanged
+
+MAP 87.0, sodium 140.0, osmolality 287.0, urine 1.70 L/day, `Na_excr` 205.0, glucose 5.44,
+insulin 64.2, thirst 1.2 mL/day. **All challenges pass.**
+
+
 ## 4. NEXT, IN ORDER
 
 **Rewritten 2026-09-03, and item 1 was discharged the same day.** The previous list's

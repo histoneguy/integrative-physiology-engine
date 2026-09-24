@@ -1,3 +1,8 @@
+<meta charset="utf-8">
+<!-- WITHOUT THIS THE BROWSER GUESSES THE ENCODING. build_gui.py writes UTF-8,
+     and a file served or opened without a charset was being read as latin-1:
+     every em-dash rendered as three characters. gui/live.html always had it;
+     this template did not. -->
 <title>Integrative Physiology Engine</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -174,6 +179,23 @@ details .body b{color:var(--ink)}
   </div>
 </section>
 
+<section id="tab-courses" hidden>
+  <div class="panel">
+    <h2>Time courses</h2>
+    <div class="note">Change over time, which the response curves cannot show &mdash; those plot
+      equilibria against a control, not trajectories. Three protocols, chosen because each exposes
+      a <b>different timescale</b>. Hover for values.</div>
+    <div class="controls">
+      <label class="ctl">Protocol<select id="tcSel"></select></label>
+      <label class="ctl">Quantity<select id="tcQ"></select></label>
+    </div>
+    <div class="chartwrap">
+      <svg id="tcChart" viewBox="0 0 780 350" role="img" aria-label="model time course"></svg>
+    </div>
+    <div class="note" id="tcNote" style="margin-top:14px"></div>
+  </div>
+</section>
+
 <section id="tab-sweeps" hidden>
   <div class="panel">
     <h2>Response curves</h2>
@@ -257,7 +279,7 @@ const fmt = (v, u) => {
 };
 
 /* ---------------------------------------------------------------- tabs */
-const TABS = [['state','Resting state'],['sweeps','Response curves'],
+const TABS = [['state','Resting state'],['courses','Time courses'],['sweeps','Response curves'],
               ['params','Parameters &amp; citations'],['rel','Equations &amp; citations'],
               ['caveats','Limits &amp; known errors']];
 const nav = document.getElementById('nav');
@@ -273,7 +295,9 @@ TABS.forEach(([id,label],i)=>{
 
 document.getElementById('meta').innerHTML =
   '<b>' + D.parameters.length + '</b> parameters &middot; <b>' + D.relations.length +
-  '</b> relations<br><b>' + D.n_states + '</b> integrated states &middot; <b>10</b> components<br>' +
+  '</b> relations<br><b>' + D.n_states + '</b> integrated states' +
+  (D.n_algebraic ? ' &middot; <b>' + D.n_algebraic + '</b> algebraic' : '') +
+  ' &middot; <b>10</b> components<br>' +
   'run ' + (D.generated||'').slice(0,10);
 
 /* ------------------------------------------------------- resting state */
@@ -289,6 +313,117 @@ document.getElementById('meta').innerHTML =
       '<span class="f' + (same?' none':'') + '">' + (same ? '—' : fmt(f, q.units)) + '</span></div>';
   });
   g.innerHTML = html;
+})();
+
+/* ------------------------------------------------------ time courses */
+/* Deliberately the SAME SVG idiom as the sweep chart below rather than a second
+   charting path - one axis, recessive grid, thin marks, gridlines labelled with
+   values the trace actually reaches. Directive 1.10 applies to code too.
+
+   ONE SERIES PER CHART, so there is no legend and no categorical palette to
+   validate: identity is carried by the quantity selector and the title. The
+   crosshair is the interaction layer - an SVG chart that shows a number should
+   let you read it off. */
+const TC_NOTES = {
+  salt: '<b>The model\u2019s headline protocol.</b> Each arm is 30 days and the state carries '
+      + 'over, so what you see is the approach, not three separate equilibria. Pressure and '
+      + 'extracellular volume take <b>weeks</b>; renin moves in days. The slope of the settled '
+      + 'values is the salt sensitivity, and two of the three parameters producing it were solved '
+      + 'against that target \u2014 a fit, not a prediction.',
+  bleed: '<b>Two timescales in one trace, which is the whole point of ADR 0023.</b> Haematocrit '
+       + 'falls within a day as plasma refills the lost volume; red cell mass takes <b>months</b> '
+       + 'to rebuild. Switch the quantity to see them apart \u2014 no single chart can show both '
+       + 'without a second axis, and a dual axis is never the answer.',
+  glucose: '<b>Both lesions at once, because neither alone does anything.</b> Insulin sensitivity '
+         + 'to 0.2 and beta-cell capacity to 0.05 at day 0. Watch insulin rise first and glucose '
+         + 'follow: the compensation arrives before the failure shows, which a steady state '
+         + 'cannot display. ADR 0031.'
+};
+(function(){
+  if (!D.courses) return;
+  const sel = document.getElementById('tcSel'), qs = document.getElementById('tcQ');
+  const svg = document.getElementById('tcChart');
+  Object.keys(D.courses).forEach(k=>{
+    const o = document.createElement('option'); o.value = k;
+    o.textContent = D.courses[k].label; sel.appendChild(o);
+  });
+  Q.forEach((q,i)=>{
+    const o = document.createElement('option'); o.value = i;
+    o.textContent = q.group + ' \u2014 ' + q.label; qs.appendChild(o);
+  });
+  qs.value = idx['cv\u208aMAP'] !== undefined ? idx['cv\u208aMAP'] : 0;
+
+  const L=86, R=26, T=30, B=52, W=780, H=350;
+  let PX=null, PY=null, XS=null, YS=null, QQ=null;
+
+  function draw(){
+    const c = D.courses[sel.value], qi = +qs.value, q = Q[qi];
+    document.getElementById('tcNote').innerHTML = TC_NOTES[sel.value] || '';
+    const xs = c.t, ys = c.rows.map(r=>r[qi]);
+    const fin = ys.filter(isFinite);
+    let lo = fin.length ? Math.min(...fin) : 0, hi = fin.length ? Math.max(...fin) : 1;
+    if (hi - lo < 1e-12) { hi = lo + Math.max(1e-9, Math.abs(lo)*0.02 || 1); }
+    const pad=(hi-lo)*0.14; lo-=pad; hi+=pad;
+    const xlo=Math.min(...xs), xhi=Math.max(...xs);
+    const px = v => L + (v-xlo)/(xhi-xlo||1)*(W-L-R);
+    const py = v => T + (1-(v-lo)/(hi-lo))*(H-T-B);
+    PX=px; PY=py; XS=xs; YS=ys; QQ=q;
+
+    let g='';
+    for (let i=0;i<=4;i++){
+      const v = lo+(hi-lo)*i/4, y = py(v);
+      g += '<line x1="'+L+'" y1="'+y.toFixed(1)+'" x2="'+(W-R)+'" y2="'+y.toFixed(1)+
+           '" stroke="var(--grid)" stroke-width="1"/>'+
+           '<text x="'+(L-10)+'" y="'+(y+4).toFixed(1)+'" text-anchor="end" font-size="11.5" '+
+           'font-family="IBM Plex Mono, monospace" fill="var(--faint)">'+fmt(v,q.units)+'</text>';
+    }
+    g += '<line x1="'+L+'" y1="'+T+'" x2="'+L+'" y2="'+(H-B)+'" stroke="var(--line)"/>';
+    g += '<line x1="'+L+'" y1="'+(H-B)+'" x2="'+(W-R)+'" y2="'+(H-B)+'" stroke="var(--line)"/>';
+    const nticks = 6;
+    for (let i=0;i<=nticks;i++){
+      const v = xlo+(xhi-xlo)*i/nticks;
+      g += '<text x="'+px(v).toFixed(1)+'" y="'+(H-B+19)+'" text-anchor="middle" font-size="11.5" '+
+           'font-family="IBM Plex Mono, monospace" fill="var(--faint)">'+
+           (Math.abs(v)>=100?v.toFixed(0):v.toFixed(1))+'</text>';
+    }
+    g += '<text x="'+((L+W-R)/2).toFixed(0)+'" y="'+(H-B+40)+'" text-anchor="middle" '+
+         'font-size="12" fill="var(--faint)">'+esc(c.xlabel||'Day')+'</text>';
+
+    let d='';
+    xs.forEach((x,i)=>{ if(!isFinite(ys[i])) return;
+      d += (d?'L':'M')+px(x).toFixed(1)+' '+py(ys[i]).toFixed(1); });
+    g += '<path d="'+d+'" fill="none" stroke="var(--male)" stroke-width="2" '+
+         'stroke-linejoin="round" stroke-linecap="round"/>';
+    g += '<g id="tcHover" style="display:none">'+
+         '<line id="tcX" y1="'+T+'" y2="'+(H-B)+'" stroke="var(--line)" stroke-width="1"/>'+
+         '<circle id="tcDot" r="4" fill="var(--male)" stroke="var(--panel)" stroke-width="2"/>'+
+         '<text id="tcLab" font-size="12" font-family="IBM Plex Mono, monospace" '+
+         'fill="var(--ink)"></text></g>';
+    svg.innerHTML = g;
+  }
+
+  /* CROSSHAIR. Nearest sample by x, so it snaps to real data rather than
+     interpolating a value the model never produced. */
+  svg.addEventListener('mousemove', ev => {
+    if (!PX) return;
+    const r = svg.getBoundingClientRect();
+    const x = (ev.clientX - r.left) * (W / r.width);
+    let best=-1, bd=1e18;
+    XS.forEach((v,i)=>{ const d=Math.abs(PX(v)-x); if(d<bd && isFinite(YS[i])){bd=d;best=i;} });
+    if (best<0) return;
+    const gx = PX(XS[best]), gy = PY(YS[best]);
+    const G=svg.querySelector('#tcHover'); if(!G) return;
+    G.style.display='';
+    svg.querySelector('#tcX').setAttribute('x1',gx); svg.querySelector('#tcX').setAttribute('x2',gx);
+    const dot=svg.querySelector('#tcDot'); dot.setAttribute('cx',gx); dot.setAttribute('cy',gy);
+    const lab=svg.querySelector('#tcLab');
+    lab.textContent = 'day '+XS[best].toFixed(1)+'  \u00b7  '+fmt(YS[best],QQ.units)+' '+QQ.units;
+    lab.setAttribute('x', Math.min(gx+10, W-R-230));
+    lab.setAttribute('y', Math.max(gy-12, T+14));
+  });
+  svg.addEventListener('mouseleave', ()=>{ const G=svg.querySelector('#tcHover'); if(G) G.style.display='none'; });
+
+  sel.onchange = draw; qs.onchange = draw; draw();
 })();
 
 /* ------------------------------------------------------------ sweeps */
