@@ -309,6 +309,11 @@ function Renal(; name, solute_tracking::Bool = true,
         Na_distal_ref = sz * RN_GFR_NOMINAL * BF_NA_PLASMA_SETPOINT *
                         (1.0 - RN_NA_MACULA_DENSA_FRACTION)
         MAP_lo   = RN_AUTOREG_LOWER
+        # BLEND FRACTION for the autoregulation corner, ADR 0036. 0.05 of MAP_lo
+        # is 4.03 mmHg, so the blend spans 76.47-80.50 mmHg - entirely below the
+        # lowest operating arm. NUMERICAL, declared in the pre-registration before
+        # building, and not tunable to make a test pass.
+        d_auto   = 0.05
         MAP_hi   = RN_AUTOREG_UPPER
         MAP_ref  = CV_MAP_SETPOINT
         # GFR RESPONDS TO VOLUME, NOT ONLY TO PRESSURE. WIRED 2026-09-03.
@@ -568,6 +573,8 @@ function Renal(; name, solute_tracking::Bool = true,
         glu_excr(t)         # mmol/day urinary glucose, 0 at every normal value
         egp_i(t)            # mmol/day endogenous glucose production, insulin-suppressed (ADR 0034)
         Osm_load(t)         # mOsm/day urinary solute load - NOW TRACKS SODIUM
+        gfr_auto(t)         # autoregulation factor, smoothed below MAP_lo (ADR 0036)
+        u_auto(t)           # blend coordinate for gfr_auto
         # STATE, added 2026-09-02. The lagged volume-keyed natriuretic signal, in
         # mEq/day. Its steady-state value is G_vn*(V_blood - V_blood_ref), so the
         # CHRONIC gain is G_vn exactly and the ACUTE gain is smaller by the lag.
@@ -596,8 +603,34 @@ function Renal(; name, solute_tracking::Bool = true,
         # PROPORTIONAL to pressure within the range - the opposite of
         # autoregulation, and it happened to equal GFR0 at MAP = MAP_ref so it
         # looked correct at the operating point.
-        GFR ~ GFR0 * ifelse(MAP < MAP_lo, MAP / MAP_lo,
-                     ifelse(MAP > MAP_hi, MAP / MAP_hi, 1.0)) * gfr_vol_mod * gfr_tgf,
+        # THE AUTOREGULATION FACTOR, SMOOTHED BELOW THE LOWER BREAKPOINT - ADR 0036,
+        # autoreg_breakpoint_prereg.md. MAP_lo moved 63.9 -> 80.5 in the same pass
+        # because 63.9 was Finke's renal BLOOD FLOW limit wired into a GFR equation,
+        # and Kirchheim 1987 measured both in the same dogs: GFR 80.5, RBF 65.6,
+        # P < 0.01. RBF is defended below the pressure at which filtration is not.
+        #
+        # THAT PUTS A PIECEWISE KINK 1.4 mmHg FROM THE LOW-SALT ARM (MAP 81.900),
+        # which is the geometry in which a stiff solve near a non-smooth point
+        # starts returning Unstable. So the corner is regularised.
+        #
+        # A ONE-SIDED CUBIC HERMITE BLEND, ENTIRELY BELOW THE BREAKPOINT. The
+        # standard symmetric smoothing of min(x,1) was REJECTED with numbers: it
+        # undershoots 1 everywhere, so any width wide enough to regularise the
+        # corner moves the operating point the suite pins to five figures. This
+        # form is 1 EXACTLY at and above MAP_lo and x EXACTLY at and below
+        # (1-d)*MAP_lo, with value and slope matched at both joins, so STEADY
+        # STATES CANNOT MOVE and only transients see it.
+        #
+        # d IS A NUMERICAL REGULARISATION WIDTH, NOT A PHYSIOLOGICAL CLAIM.
+        # Kirchheim calls the break-off points 'sharp' in individual animals.
+        gfr_auto ~ ifelse(MAP >= MAP_lo, 1.0,
+                   ifelse(MAP <= (1.0 - d_auto) * MAP_lo, MAP / MAP_lo,
+                          (2.0 * u_auto^3 - 3.0 * u_auto^2 + 1.0) * (1.0 - d_auto) +
+                          (u_auto^3 - 2.0 * u_auto^2 + u_auto) * d_auto +
+                          (-2.0 * u_auto^3 + 3.0 * u_auto^2))),
+        u_auto ~ (MAP / MAP_lo - (1.0 - d_auto)) / d_auto,
+        GFR ~ GFR0 * gfr_auto * ifelse(MAP > MAP_hi, MAP / MAP_hi, 1.0) *
+              gfr_vol_mod * gfr_tgf,
 
         # TUBULOGLOMERULAR FEEDBACK - ADR 0026, tgf_prereg.md. THE MACULA DENSA'S
         # FAST EFFECTOR, and the model had only its slow one. A rise in luminal NaCl

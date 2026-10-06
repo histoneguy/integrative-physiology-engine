@@ -898,19 +898,29 @@ end
         v = check_pressure_natriuresis(salt_step())
         @test all(m -> lo < m < hi, v.maps)
 
-        # AND THE MARGIN, asserted rather than assumed. Before today the
-        # low-salt arm sat 1.9 mmHg above lo = 80, an unsourced number that
-        # traced to an anaesthetised dog. CV.MAP.SETPOINT then moved 6 mmHg
-        # TOWARD it on 2026-08-27. A model whose operating point is one and a
-        # half mmHg from a piecewise kink is one parameter revision away from
-        # crossing it. With lo = 63.9 (Finke 1983, conscious dog, servo-
-        # controlled steps) the margin is 18 mmHg.
+        # AND THE MARGIN, asserted rather than assumed. The history: the arm
+        # once sat 1.9 mmHg above lo = 80, an unsourced number tracing to an
+        # anaesthetised dog; lo then moved to 63.9 (Finke 1983) and the margin
+        # became 18 mmHg, and this guard was set at 10.0 against that.
         #
-        # This is a strict inequality on the MARGIN, not a pin on the value,
-        # for the same reason the RAAS test above was inverted rather than
-        # repinned: pinning 18.0 would certify today's arithmetic, while this
-        # fails only when the model drifts back toward the cliff.
-        @test minimum(v.maps) - lo > 10.0
+        # WEAKENED 2026-10-06, ADR 0036, AND THE WEAKENING IS DELIBERATE AND
+        # DOCUMENTED. lo is now 80.5 (Kirchheim 1987), because 63.9 was the
+        # renal BLOOD FLOW limit wired into a GFR equation and the two differ
+        # at P < 0.01 in the same animals. The margin is therefore 4.7 mmHg,
+        # and the old 10.0 was calibrated against a breakpoint wrong by 16.6.
+        #
+        # THE CONSTANT IS NOW DERIVED RATHER THAN PICKED. The hazard this
+        # guards is an operating arm sitting inside the non-linear transition,
+        # so the margin must exceed the BLEND WIDTH. That ties the test to the
+        # thing that can actually go wrong instead of to a distance someone
+        # chose. Today's headroom is 0.7 mmHg - thin, and that is the point of
+        # a tripwire.
+        #
+        # THE SUBSTANTIVE FINDING IS NOT THE TEST. With the correct GFR
+        # breakpoint the model's operating range is 4.7 mmHg from the limit,
+        # far closer than any record assumed. OPEN-QUESTIONS B33.
+        d_auto = 0.05
+        @test minimum(v.maps) - lo > d_auto * lo
     end
 
     @tset "the model reconstructs systolic and diastolic (ADR 0002)" begin
