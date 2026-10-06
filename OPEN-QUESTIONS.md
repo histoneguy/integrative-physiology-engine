@@ -911,6 +911,11 @@ Different at **P < 0.01**, and Kirchheim gives the mechanism: RBF autoregulation
 involves postglomerular vessels"*, so flow is defended below the pressure at which
 filtration is not.
 
+**CORRECTED 2026-10-06: THE ARM FIGURE BELOW IS STALE AND THE MARGIN ARGUMENT IS WEAKER THAN
+IT READS.** The salt arms were measured at 81.9 / 84.5 / 87.0 on 2026-08-27 and are now at
+**85.2 / 86.1 / 87.0 mmHg** — ADRs 0026–0035 moved them. The low-salt arm sits **4.7 mmHg**
+above 80.5, not 1.4. The entry as filed follows.
+
 **WHY IT MATTERS AND IT IS NOT THE 17 mmHg.** The model's low-salt arm rests at **MAP
 81.900**. `RN.AUTOREG.LOWER`'s note currently reads *"the low-salt arm sat 1.9 mmHg above a
 piecewise kink and now sits 18.0 mmHg above it"* — **at 80.5 it would sit 1.4 mmHg above
@@ -1174,6 +1179,69 @@ observables at the operating point, in the existing closure gate rather than a n
 **Against it: the standing no-new-tooling rule, and this was caught by looking.** **It is the
 third gate-hole found in two days** — B27 (`expression` unread), B25 (`form_citation` unread),
 and now this. **If any of them is built they should be built together.**
+
+
+### B33. With the correct breakpoint, the operating range is 4.7 mmHg from the autoregulation limit — NEW, 2026-10-06
+
+**This is the finding of the B26 pass, and it is not the thing B26 predicted.**
+
+| | |
+|---|---|
+| GFR autoregulation limit | **80.5** mmHg (Kirchheim 1987) |
+| lowest salt arm (103 mEq/day) | **85.2** mmHg |
+| **margin** | **4.7 mmHg** |
+| blend width | 4.0 mmHg |
+| headroom above the blend | **0.7 mmHg** |
+
+**EVERY PREVIOUS STATEMENT ABOUT THIS MARGIN WAS WRONG, IN BOTH DIRECTIONS.** The ledger note
+said 18.0 mmHg, computed when `lo` was an RBF limit. B26 said 1.4 mmHg, computed from a
+salt-arm table measured 2026-08-27 that ADRs 0026–0035 had since invalidated. **Neither was
+measured against the model as it stands.** The answer is 4.7.
+
+**WHY IT MATTERS.** The suite's drift guard demanded 10 mmHg of margin and **failed** — it was
+calibrated against a breakpoint wrong by 16.6 mmHg. It has been re-derived from the blend
+width (ADR 0036), which is defensible, **but the underlying fact is unchanged: the model's
+low-salt arm operates 4.7 mmHg above the pressure at which its kidney stops autoregulating
+filtration.**
+
+**THAT MAY BE CORRECT PHYSIOLOGY.** Conscious dogs autoregulate GFR down to ~80 mmHg and
+humans run resting MAP near 85–95, so a healthy person on a low-salt diet genuinely is not far
+above the limit. **It may equally be an artefact of this model's pressure being a few mmHg
+low** — `CV.MAP.SETPOINT` moved 93 → 87 on 2026-08-27, which is 6 mmHg *toward* the limit, and
+HANDOVER §3.1 records that move as the reason this margin was first examined at all.
+
+**WHAT WOULD RESOLVE IT:** a human resting MAP distribution against the human GFR
+autoregulatory limit — **and `autoreg_lower_prereg.md` established by pre-registered search
+over 1114 records that the second does not exist outside anaesthesia.** So this may be
+irreducible, in which case the honest outcome is to state the margin and its species caveat
+rather than to engineer it away.
+
+**WHAT MAY NOT RESOLVE IT:** moving `CV.MAP.SETPOINT` or `RN.AUTOREG.LOWER` to open the gap.
+Both are sourced, and that is the failure `autoreg_breakpoint_prereg.md` §8 names.
+
+---
+
+### B34. The salt-arm pressures are quoted in prose to five figures and drift silently — NEW, 2026-10-06
+
+**Three separate records asserted the arms sit at MAP 81.900 / 84.450 / 87.001.** That was
+measured **2026-08-27**. The arms are now at **85.2 / 86.1 / 87.0**. The stale figure survived
+in `RN.AUTOREG.LOWER`'s note, in `OPEN-QUESTIONS` B26 and in ADR 0032, **and it was the premise
+the owner's B26 decision rested on.**
+
+**THE FIVE FIGURES ARE WHY IT SURVIVED.** At one decimal place, 81.9 against 85.2 is an
+obvious disagreement. At five, both look like data and neither invites checking. **Arterial
+pressure is not measured past a tenth of a mmHg** — directives 1.9 and 1.13 — and HANDOVER §2
+already says the five-figure table exists *"because the test suite pins them there and a loose
+pin catches nothing"*. **That is a wiring-error tripwire, not a measurement, and it has been
+copied into prose as a result repeatedly.**
+
+**The rule is already written and was not followed.** What is missing is anything that makes
+not following it visible: **no gate reads prose**, which is the same hole as B25, B27 and B32.
+
+**Candidate fix, and it is cheap:** the GUI export already computes the arms. A generated
+table — one file, regenerated like `form_sourcing_audit.md` — would make every record point at
+one measured source instead of a transcribed number. **Not built.** It is the fourth gate-hole
+in the same family and `OPEN-QUESTIONS` already says they should be decided together.
 
 
 ### B7. A de-indexing correction is owed

@@ -173,3 +173,33 @@ regularise, entirely below the lowest arm — before anything was built.
 of where the arms sit, not of the breakpoint's value, and §5 requires saying so.
 
 **Letting 80.5 ≈ 80 feel like the textbook agreeing.** §2.
+
+---
+
+## 9. CORRECTION — THE PREMISE USED A STALE NUMBER, AND THE DIGITS WERE OVER-PRECISE
+
+**Appended 2026-10-06 on measuring the model. Nothing above was edited.**
+
+**§3 and §4.2 say the salt arms rest at MAP 81.900 / 84.450 / 87.001.** That table was measured
+**2026-08-27** and stopped being true as ADRs 0026–0035 moved the renal and glucose machinery.
+**Measured today: 85.2 / 86.1 / 87.0 mmHg.**
+
+**So the low-salt arm sits 4.7 mmHg above the new breakpoint, not 1.4.** B26 made the kink's
+proximity the reason smoothing was a decision rather than a correction, and **that argument was
+built on a number three ADR-generations old.** The owner chose option 2 on the strength of it.
+
+**THE SMOOTHING IS KEPT AND THE REASON IS NOT THE ONE B26 GAVE.** It is exact at every steady
+state (§4.2), costs nothing, and a C¹ corner on the path a falling pressure takes is defensible
+on its own. **What is withdrawn is the urgency**, not the change.
+
+**AND THE DIGITS WERE WRONG TO WRITE AT ALL.** Arterial pressure is not measured past a tenth
+of a mmHg — directives 1.9 and 1.13. The five-figure values the suite pins are a **wiring-error
+tripwire**, which HANDOVER §2 states in terms: *"carried to five places because the test suite
+pins them there and a loose pin catches nothing"*. **Quoting them in prose as results is what
+let a stale figure travel unchallenged through an entire pass** — at one decimal place,
+81.9 against 85.2 is an obvious disagreement; at five, both look like data.
+
+**§7 gains a test:** report every pressure to **0.1 mmHg** and every derived slope to the
+precision its weakest input supports. The suite may keep its five-figure pins; **the prose may
+not.**
+
