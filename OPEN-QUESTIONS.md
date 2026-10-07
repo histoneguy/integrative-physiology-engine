@@ -1244,6 +1244,44 @@ one measured source instead of a transcribed number. **Not built.** It is the fo
 in the same family and `OPEN-QUESTIONS` already says they should be decided together.
 
 
+### B35. Salt sensitivity drifted onto its lower band edge and nobody noticed — NEW, 2026-10-06
+
+**Found by remeasuring HANDOVER §2's result table, not by any test.**
+
+| | recorded | measured 2026-10-06 |
+|---|---|---|
+| salt sensitivity, mmHg per 100 mmol/day | **1.849** | **1.7** |
+| Δ`V_ecf` over the step, L | 0.63 | **0.55** |
+| `dMAP/dV_ecf`, mmHg/L | 3.00 | **3.2** |
+| human band | 1.70–2.30 | — |
+
+**It is now sitting on the lower edge of its band.** The volume excursion shrank ~13% and the
+pressure slope rose ~7%, so their product fell ~8%.
+
+**NOTHING IN THE ADR 0036 PASS DID THIS.** That pass asserted and verified that no steady state
+moves, and the suite's five-figure pins held. **The drift happened across ADRs 0026–0035** —
+the segmented tubule, saturable TAL, tubuloglomerular feedback, the Lorenz renin arm, segmental
+flux, thirst and the glucose axis — and **each of those passes checked that the suite stayed
+green without anyone asking what the headline number had become.**
+
+**IT IS NOT A FAILURE.** §3.23 derived the band, and 1.70–2.30 is **the spread of three
+meta-analytic point estimates rather than a confidence interval** — directive 1.14 — so a value
+at the edge is inside the evidence. **The problem is that it moved 8% unobserved**, which means
+the next 8% would also go unobserved and would leave the band.
+
+**WHY THE SUITE DID NOT CATCH IT.** The pins are exact-value regression pins, updated
+deliberately as each pass changed them. **A pin that is re-pinned every time it moves records
+history; it does not guard a range.** There is no assertion of the form *"salt sensitivity lies
+in 1.70–2.30"*.
+
+**What would resolve it:** one band assertion on the headline comparison, which is cheap and is
+different in kind from a regression pin. **Not built** — it is the fifth item in the same family
+as B25, B27, B32 and B34, and `OPEN-QUESTIONS` already says they should be decided together.
+
+**What may NOT resolve it:** re-tuning `G_pn` or the natriuretic gain to raise the number. Both
+`calibrated` rows are already over-determined and that is failure mode 22.
+
+
 ### B7. A de-indexing correction is owed
 
 `validation/ecf_salt_response_extract.py` multiplies an *indexed* ECF difference by ONE

@@ -576,19 +576,35 @@ representing a delay.
 
 ### The result
 
+**REMEASURED 2026-10-06 AND REPORTED AT A PRECISION THE QUANTITY CAN CARRY.** Arterial
+pressure is not measured past a tenth of a mmHg — directives 1.9 and 1.13. The previous
+version of this table carried five figures and **that is why a stale value survived in three
+records and reached the owner as the premise of a decision** (B34, and §3.76).
+
 | intake (mEq/d) | MAP (mmHg) | SBP | DBP | PP | `V_ecf` (L) |
 |---|---|---|---|---|---|
-| 205 | 86.995 | 108.99 | 76.00 | 33.00 | 14.5572 |
-| 154 | 86.086 | 107.86 | 75.20 | 32.65 | 14.2545 |
-| 103 | 85.109 | 106.63 | 74.35 | 32.28 | 13.9288 |
+| 205 | 87.0 | 109.0 | 76.0 | 33.0 | 14.56 |
+| 154 | 86.1 | 107.9 | 75.3 | 32.7 | 14.29 |
+| 103 | 85.2 | 106.8 | 74.5 | 32.3 | 14.01 |
 
-**Shift 1.8858 mmHg over the 102 mEq/day step = 1.849 mmHg per 100 mmol/day**, against
-a human meta-analytic **1.70–2.30**. Δ`V_ecf` is 0.6285 L and **`dMAP/dV_ecf` is 3.00
-mmHg/L against a measured human 2.97–4.16.**
+**Shift 1.8 mmHg over the 102 mEq/day step = 1.7 mmHg per 100 mmol/day**, against a human
+meta-analytic **1.70–2.30**. Δ`V_ecf` is 0.55 L and **`dMAP/dV_ecf` is 3.2 mmHg/L against a
+measured human 2.97–4.16.**
 
-**THE FIGURES IN THIS TABLE ARE MODEL PRECISION, NOT AGREEMENT PRECISION.** They are
-carried to five places because the test suite pins them there and a loose pin catches
-nothing. **The comparisons are not resolved to anything like that** — 1.70–2.30 is the
+**AND SALT SENSITIVITY IS NOW SITTING ON THE LOWER EDGE OF ITS BAND.** This paragraph read
+**1.849** and the measured value is **1.7**. Nothing in the ADR 0036 pass moved a steady state
+— that was asserted and verified — so the drift happened across **ADRs 0026–0035** and
+**nobody remeasured.** Δ`V_ecf` fell 0.63 → 0.55 L over the same stretch, so the volume
+excursion shrank and the pressure slope rose (3.00 → 3.2) while their product fell.
+
+**IT IS NOT A FAILURE AND MUST NOT BE REPORTED AS AGREEMENT EITHER.** §3.23 derived the band
+and 1.70–2.30 is **the spread of three meta-analytic point estimates, not a confidence
+interval**, so a value at its edge is inside the evidence. What is unacceptable is that it
+moved 8% unobserved. **`OPEN-QUESTIONS` B35.**
+
+**THE SUITE STILL PINS FIVE FIGURES AND SHOULD.** A loose pin catches nothing, and those pins
+are a **wiring-error tripwire** — the distinction B34 exists to keep: five figures in the
+assertions, one decimal in the prose. **The comparisons are not resolved to anything like that** — 1.70–2.30 is the
 spread of three meta-analytic point estimates rather than a confidence interval, and
 2.97–4.16 spans forty per cent. §3.23 derived the bands and found that the two acute
 datasets cannot supply one at all. Both limbs are inside the human range —
