@@ -1350,7 +1350,17 @@ sends you to the primary literature*, again.
    students carrying the fluid model.
 3. **Re-anchor on fat-free mass** with one hydration constant — the level-II identity the
    five-level model actually asserts, making **adiposity** rather than sex carry the
-   difference. **It needs a sourced hydration constant**, which this ledger does not have.
+   difference. **This is the elegant fix if the constant is sex-invariant**: the dimorphism
+   would then *emerge* from the sourced fat fractions instead of being imposed. Computed from
+   the measured fractions it would move total body water from a single 0.552 of body mass to
+   **0.531 male / 0.448 female** — a **19% reduction in women**, which propagates straight
+   through `V_ecf` to pressure. **BLOCKED:** the constant's source is Wang 1999 (PMID 10232621),
+   closed on three routes, and its abstract's *"approximately 0.73 in mammals"* is a round
+   number in a review — which 1.12 and 1.16 both forbid taking.
+4. **Extract total body water from NHANES BIA** — needs no cite, is a strict improvement on
+   the present row (US, weighted, thousands, sexed, same method), and is **not a solution**:
+   BIA stays the weakest method and NHANES may not support the three-way split without
+   importing a prediction equation. `CITES-NEEDED.md` §3b.
 
 **What may NOT resolve it:** picking whichever option leaves the female salt-sensitivity
 prediction where it is. All three move it, and which number comes out is the result.

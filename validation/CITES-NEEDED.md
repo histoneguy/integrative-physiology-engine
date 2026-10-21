@@ -23,6 +23,7 @@ through an institutional subscription**, which is the point of this file.
 | **Edelman SV** et al. Kinetics of insulin-mediated and non-insulin-mediated glucose uptake in humans. *Diabetes* 1990;39:955–64 | **1973673** | **closed** | **ADR 0033** §7 test 5. A **four-point** NIMGU dose–response where Baron gives two, which would decide the two-term vs saturating form **on data** instead of on mechanism. |
 | **Chumlea WC** et al. Total body water reference values and prediction equations for adults. *Kidney Int* 2001;59(6):2250–8 | **11380828** | **closed** | **B37.** The replacement for the three body-water fractions the entire fluid model rests on. US adults, **sexed**. Named inside the paper currently used. |
 | **Janssen I** et al. Skeletal muscle mass and distribution in 468 men and women aged 18–88 yr. *J Appl Physiol* 2000;89(1):81–8 | **10904038** | **closed** | **B36.** The regression of muscle mass on weight and height — he reports it explains ~half the variance, so a **curvilinear** form exists and the ledger currently carries a linear fraction. |
+| **Wang Z, Deurenberg P, Wang W, Pietrobelli A, Baumgartner RN, Heymsfield SB.** Hydration of fat-free body mass: review and critique of a classic body-composition constant. *Am J Clin Nutr* 1999;69(5):833–41 | **10232621** | **closed.** Three routes tried: AJCN **bot-checked** (not bypassed), no PMCID, and the Wageningen repository holds **metadata only, no deposited text** | **B37 route 3.** The hydration constant itself, and whether it is **sex-invariant** — which is the whole question. Its abstract says *"approximately 0.73 in mammals"*, and **a round number from a review abstract is exactly what directives 1.12 and 1.16 forbid taking.** Same group as the five-level model. |
 
 ---
 
@@ -57,6 +58,29 @@ functional form be entered properly.
 | `THY.TSH.FT4_SLOPE`, `THY.LOOP_GAIN` | 19926783, 19226261 | the intercept is §4's item 1 — euthyroid TSH is 2.4× high |
 | `THY.TSH.EUTHYROID` | 11836274 | — |
 | `K.NONRENAL_LOSS_EXPONENT` | 3523191, 6486085 | — |
+
+---
+
+---
+
+## 3b. THE ONE ROUTE THAT NEEDS NO CITE — AND ITS HONEST LIMITS
+
+**B37 route 4: extract total body water from NHANES bioelectrical impedance directly**, by the
+machinery `body_composition_extract.py` already uses.
+
+**WHAT IT WOULD FIX.** The present source (Zhang) is **also BIA**, so the method does not get
+worse — and everything else gets better: **US** rather than mainland-China conducted
+(directive 1.17), **nationally weighted** rather than 160 students, **n in the thousands**, and
+**sexed**, which is the defect B37 is about.
+
+**WHAT IT WOULD NOT FIX, AND THIS IS WHY IT IS NOT AUTOMATICALLY THE ANSWER.** BIA remains the
+weakest method against **deuterium dilution** for total body water and **bromide** for
+extracellular. And **NHANES publishes resistance and reactance, not an ECF/ICF split** — the
+three-way partition this ledger needs may not be derivable without importing a prediction
+equation, which would make the row `calibrated` with that equation named.
+
+**SO IT IS A STRICT IMPROVEMENT ON THE CURRENT ROW AND NOT A SOLUTION.** Worth doing if the
+closed papers stay closed; **not worth doing instead of asking for them.**
 
 ---
 
