@@ -178,5 +178,5 @@ it. The file has not been rewritten yet.
 | `src/components/` | the model — all **ten** components wired, including RAAS, ADH, the clock, **Respiratory and Blood** (ADR 0017, ADR 0018) and the **Thyroid** axis (ADR 0019) |
 | `ledger/` | parameters and relations, with provenance |
 | `docs/adr/` | **A**rchitecture **D**ecision **R**ecords - structural decisions, each with an evidence tier and a falsifiable test; ADR 0006 defines the tiers |
-| `validation/` | targets, averaging and pooling policy, pre-registrations, and `form_sourcing_audit.md` — what every equation's FORM rests on |
+| `validation/` | targets, averaging and pooling policy, pre-registrations, `form_sourcing_audit.md` — what every equation's FORM rests on — and **`CITES-NEEDED.md`, the standing catalogue of papers the model needs and cannot read, with access status checked** |
 | `tools/` | the six gates |

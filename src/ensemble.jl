@@ -291,7 +291,16 @@ function member_remake(prob, sys, member; sex::Symbol = :male)
              # section 3.8 reports as evidence that haematocrit is identifiable at all.
              sys.cv.Hct            => LedgerParams.param(:CV_HEMATOCRIT_NOMINAL, sex),
              sys.cv.f_pv           => LedgerParams.param(:CV_PLASMA_ECF_FRACTION, sex),
-             sys.cv.HR0            => LedgerParams.param(:CV_HR_NOMINAL, sex)],
+             sys.cv.HR0            => LedgerParams.param(:CV_HR_NOMINAL, sex),
+             # BODY COMPOSITION, ADDED 2026-10-20 WITH ADR 0037. The fat and
+             # skeletal-muscle fractions are STRONGLY sexed - 27.2% against 38.7%
+             # fat - so a re-sexed member that kept the base problem's values
+             # would give a woman a man's adiposity. The suite caught exactly
+             # that: adding these two parameters without updating this list
+             # failed `member_remake re-sexes and re-sizes to match a natively
+             # built model` on the first run. Connect it and run it.
+             sys.bf.f_fat          => LedgerParams.param(:BF_FAT_MASS_FRACTION, sex),
+             sys.bf.f_muscle       => LedgerParams.param(:BF_MUSCLE_MASS_FRACTION, sex)],
         # THE FOURTH INITIAL CONDITION, ADDED 2026-09-16 WITH ADR 0023, AND IT IS
         # THE FIRST ONE OUTSIDE BODY FLUIDS. Red cell volume is a state whose
         # starting value is Hct*BV0 - sexed through BOTH factors and mass-scaled

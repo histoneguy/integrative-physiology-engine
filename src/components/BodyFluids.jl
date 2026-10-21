@@ -52,7 +52,7 @@ Interface (see src/coupling.jl):
   out  V_ecf, C_Na, Osm_ecf      to cardiovascular, renal, endocrine
 """
 function BodyFluids(; name, body_mass = BF_BODY_MASS_REFERENCE,
-                    storage::Bool = true)
+                    storage::Bool = true, sex::Symbol = :male)
 
     # TWO FACTORS SINCE 2026-09-05. `sz` is SURFACE-like, (m/m_ref)^0.5083, for
     # the metabolic and dietary quantities; `mz` is MASS-like for the fluid
@@ -68,6 +68,19 @@ function BodyFluids(; name, body_mass = BF_BODY_MASS_REFERENCE,
         # recompilation.
         thirst_on = 1.0
         m_body      = body_mass
+        # ---- BODY COMPOSITION, ADR 0037 --------------------------------
+        # LEVEL II (molecular) and LEVEL IV (tissue-system) of the five-level
+        # model, Wang 1992, PMID 1609756. SEPARATE rows from separate methods
+        # because the levels are NOT interchangeable: DXA measures fat and
+        # fat-free soft tissue; skeletal muscle is an organ measured by MRI.
+        # Treating DXA lean mass as muscle is the standard conflation and is
+        # wrong by roughly twofold, so mass_muscle sits beside mass_ffm below
+        # and the gap is an observable rather than a footnote.
+        #
+        # STRONGLY SEXED, which is why BodyFluids takes `sex` at all - 27.2%
+        # fat in men against 38.7% in women, NHANES DXA, n = 10832.
+        f_fat       = LedgerParams.param(:BF_FAT_MASS_FRACTION, sex)
+        f_muscle    = LedgerParams.param(:BF_MUSCLE_MASS_FRACTION, sex)
         f_icf       = BF_ICF_MASS_FRACTION
         f_ecf       = BF_ECF_MASS_FRACTION
         C_Na_set    = BF_NA_PLASMA_SETPOINT
@@ -143,6 +156,11 @@ function BodyFluids(; name, body_mass = BF_BODY_MASS_REFERENCE,
                                      body_mass * BF_ECF_MASS_FRACTION *
                                      BF_NA_PLASMA_SETPOINT : 0.0
         C_Na(t)             # mEq/L
+        # BODY COMPOSITION OBSERVABLES, ADR 0037. No state: algebraic in
+        # body_mass, aliased away by structural_simplify.
+        mass_fat(t)         # kg   fat mass, level II
+        mass_ffm(t)         # kg   fat-free mass incl bone mineral, level II
+        mass_muscle(t)      # kg   skeletal muscle, level IV
         # INPUT from renal, ADR 0029. [guess], NOT a default: a default on a
         # CONNECTED variable is an initial CONDITION and over-determines the
         # initialisation - "3 equations for 2 unknowns", retcode InitialFailure.
@@ -169,6 +187,15 @@ function BodyFluids(; name, body_mass = BF_BODY_MASS_REFERENCE,
 
     obs = [
         C_Na    ~ Na_ecf / V_ecf,
+        # ---- BODY COMPOSITION, ADR 0037 --------------------------------
+        # Both fractions are OF BODY MASS as their sources report them. Janssen's
+        # 38.4%/30.6% is a fraction of body mass, NOT of fat-free mass, and it is
+        # deliberately not re-based onto mass_ffm - that would be rescaling a
+        # measured number to fit this model's compartments, which the
+        # pre-registration names as a way the pass fails.
+        mass_fat    ~ f_fat * m_body,
+        mass_ffm    ~ (1.0 - f_fat) * m_body,
+        mass_muscle ~ f_muscle * m_body,
         # Sodium is the dominant extracellular cation; the factor of two covers
         # accompanying anions. Standard approximation, and a known simplification -
         # it omits glucose and urea, which matters only in states this model does

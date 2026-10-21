@@ -1282,6 +1282,172 @@ as B25, B27, B32 and B34, and `OPEN-QUESTIONS` already says they should be decid
 `calibrated` rows are already over-determined and that is failure mode 22.
 
 
+### B37. The model's body water is unsexed, and that makes female fat-free mass 90% water — NEW, 2026-10-20
+
+**Found by building body composition (ADR 0037). It was invisible without the substrate.**
+
+All three water fractions are `sex = both`, each a fraction of **body** mass: TBW **0.552**,
+ICF **0.344**, ECF **0.208** (Zhang N et al., PMC6751809). Divide by the measured fat-free
+fraction and ask what hydration of fat-free mass that implies:
+
+| | fat fraction | implied FFM hydration |
+|---|---|---|
+| male | 0.272 | 0.758 |
+| **female** | **0.387** | **0.900** |
+
+**The hydration of fat-free mass is ≈0.73 and is one of the most stable quantities in body
+composition — it is called a constant for a reason. Fat-free mass cannot be 90% water.**
+
+In litres: 73% of measured female fat-free mass is **34.9 L** against the model's **43.0 L**.
+**Roughly 8 litres of water the model puts in women that has nowhere to be.**
+
+**WHY NO GATE SAW IT.** `check_closure.py` verifies **ICF + ECF = TBW**, and that identity
+holds perfectly in both sexes — **the compartments sum, they are simply the wrong size in
+women.** This is the **B32** class precisely: an intermediate that is physically inadmissible
+and enters no identity. A hydration check would have caught it on day one.
+
+**AND IT PROPAGATES INTO THE LOOP.** `V_ecf` → plasma volume → blood volume → cardiac output →
+arterial pressure. The female arm of every volume result rests on it, including the sexed salt
+sensitivity HANDOVER §2 reports as a prediction.
+
+### AND CHECKING THE SOURCE MADE IT WORSE — THE WATER FRACTIONS NEED RE-SOURCING, NOT JUST SEXING
+
+**Zhang N et al. was read 2026-10-20** (PMC6751809, open access, full text). It is
+**160 Chinese college students, measured by BIOELECTRICAL IMPEDANCE, in a study about water
+intake.** Its reported 55.2 ± 6.2 / 34.4 ± 4.0 / 20.8 ± 2.3 percent of body weight are exactly
+this ledger's 0.552 / 0.344 / 0.208.
+
+**1. IT REPORTS SEX DIFFERENCES AND THE LEDGER TOOK THE POOLED VALUE.** The paper states there
+were *"sex differences in all these values with males being higher than females"*. **The sexed
+numbers existed and were not used** — which is how the `sex = both` rows arose.
+
+**2. BIA IS THE WEAKEST AVAILABLE METHOD.** It infers ECF and ICF from impedance using
+population-specific equations; the reference methods are **deuterium dilution** for total body
+water and **bromide dilution** for extracellular. `pooling.md` already forbids mixing
+extraction methods, and this is the bottom of that ladder.
+
+**3. DIRECTIVE 1.7 FAILS OUTRIGHT, AND THIS IS THE ONE THAT MATTERS.** Apply its own test:
+*if the physiology had come out differently, what would this paper's conclusion have been?* It
+would still have been about water intake. **Body water is the INSTRUMENT here, not the
+subject** — and these three numbers are the foundation of the whole fluid model.
+
+**4. AND THE COHORT IS WRONG FOR THIS MODEL.** Chinese college students are young, lean and of
+one ancestry; this model's reference individual is a **90.3 kg US adult at 27% fat.** Total
+body water as a fraction of body weight **falls with adiposity**, so a lean young cohort's
+55.2% cannot be applied to an adipose reference individual — which is precisely the arithmetic
+that produced the 90% figure above.
+
+**THE PAPER ITSELF POINTS AT THE PRIMARY.** It cites **Chumlea 2001** for total body water in
+NHANES III — a US population reference by the repository's own preferred route. *The review
+sends you to the primary literature*, again.
+
+**THREE WAYS FORWARD, AND THEY ARE NOT EQUIVALENT — OWNER'S DECISION.**
+
+1. **Re-source the fractions** from a dilution-based or NHANES-based series in adults, sexed.
+   **Chumlea 2001 is the named candidate** and is cited inside the paper currently used.
+   Most work, and it fixes the cause rather than the symptom.
+2. **Sex the existing Zhang values.** Cheapest, and it leaves three BIA numbers from college
+   students carrying the fluid model.
+3. **Re-anchor on fat-free mass** with one hydration constant — the level-II identity the
+   five-level model actually asserts, making **adiposity** rather than sex carry the
+   difference. **It needs a sourced hydration constant**, which this ledger does not have.
+
+**What may NOT resolve it:** picking whichever option leaves the female salt-sensitivity
+prediction where it is. All three move it, and which number comes out is the result.
+
+---
+
+### B36. Janssen's muscle fraction is from a lighter cohort, a leaner era, and is linear where he says it is curved — NEW, 2026-10-20
+
+**Branch C2 of `body_composition_prereg.md`, taken deliberately and recorded rather than
+rescaled away.**
+
+| | model reference | Janssen's implied cohort | muscle here | Janssen measured |
+|---|---|---|---|---|
+| male | 90.3 kg | 85.9 | 34.7 kg | **33.0** |
+| female | 77.9 kg | **68.6** | 23.8 kg | **21.0** |
+
+**5% high in men, 13.5% high in women.** Three compounding reasons, none of them fixable by
+adjusting his number:
+
+1. **Cohort mass.** A fraction from one cohort applied to a body mass from another — **the B31
+   defect again**, and no gate can see it.
+2. **Era.** Janssen scanned in the 1990s; the DXA fat fractions are 2011–2018, and population
+   adiposity rose between. The muscle fraction comes from a leaner era than the fat fraction
+   beside it.
+3. **Form.** Janssen states the contribution of skeletal muscle to weight gain **decreases**
+   with increasing body weight. **A constant fraction is the wrong shape**, overstating muscle
+   in heavy individuals — which is exactly where the population sweep goes.
+
+**What would resolve it:** Janssen's **full text**, for the regression of muscle mass on weight
+and height — he reports those explain about half the variance, so the regression exists.
+J Appl Physiol 2000;89(1):81–88, PMID 10904038. **A second whole-body MRI series would also
+pool**, which this row currently cannot do.
+
+**What may NOT resolve it:** rescaling 38.4%/30.6% so the masses match at this model's
+reference. `body_composition_prereg.md` §9 names that as a way the pass fails.
+
+
+### B38. The model spills glucose at twice the measured human threshold — NEW, 2026-10-20, AND IT NOW HAS A SOURCED TARGET
+
+**DeFronzo RA et al.** *Characterization of renal glucose reabsorption in response to
+dapagliflozin in healthy subjects and subjects with type 2 diabetes.* Diabetes Care
+2014;37(6):1730–7. **PMID 23735727, PMC3781504, full text read 2026-10-20** (open access, from
+PubMed Central). Healthy controls **n = 12**, pancreatic/stepped hyperglycaemic clamp over
+**5.5–30.5 mmol/L**, with a published pharmacodynamic model fitted to **individual titration
+curves**.
+
+| | healthy controls | this model |
+|---|---|---|
+| **renal threshold** (glucose first appears in urine) | **9.5 ± 3.7 mmol/L** | **18.4** |
+| TmG | **317 mg/min** | 352 (Mogensen) |
+
+**THE MODEL SPILLS AT ROUGHLY TWICE THE MEASURED HUMAN THRESHOLD.** B20 estimated "nearer
+10–11" from the teaching literature; **measured, it is 9.5 with an SD of 3.7**, which is both
+lower than the guess and comes with a dispersion.
+
+**THIS IS A VALIDATION TARGET, NOT A PARAMETER, AND THE DISTINCTION MATTERS.** The threshold is
+an **output** of `TmG`, `GFR` and the splay form. It must not be entered as a row — entering it
+would be fitting the population observation B20 explicitly refused when it declined 180 mg/dL.
+It belongs with the challenge bands as a thing the model is **judged against**.
+
+**AND IT RESOLVES WHICH WAY THE SPLAY DISAGREEMENT RUNS.** Working backwards from a threshold
+of 171 mg/dL at a normal GFR, DeFronzo's numbers imply a point of splay near **0.67**, against
+**McPhaul's 0.83**. **McPhaul said in his own paper that his was an unusually small splay and a
+high threshold**, attributing the difference to earlier series using older subjects — so two
+independent groups forty-six years apart bracket it at **0.67–0.83 and disagree in the
+direction one of them predicted.** That is corroboration of the form, not a conflict.
+
+**THREE SOURCES FOR TmG NOW, AND THEY ARE CLOSE:** Mogensen **352 mg/min** (the ledger's),
+McPhaul **325**, DeFronzo **317**. The ledger carries the highest of the three.
+
+**AND SPLAY IS QUANTIFIED IN THE TEXT, WITH ITS DEFINITION.** Healthy controls:
+**13,598 mg²/min²**, defined as *"the difference in area under the curve between observed data
+and the ideal titration curve"*, against 27,328 in type 2 (101% higher, P < 0.001). Dapagliflozin
+cut it 40% in the healthy group to 8,707.
+
+**SO THE BLOCKER IS NARROWER THAN B20 ASSUMED.** It is not the form and not the value — it is
+**the integration convention**. An AUC difference is an exact constraint on a one-parameter
+form, so a candidate could be inverted against 13,598 the way `GLU.NIMGU.FIXED_FRACTION` was
+inverted against two points. **What is missing is the integration limits and the definition of
+the "ideal" curve**, which live in the Supplementary Data.
+
+**THE SUPPLEMENT WAS ATTEMPTED AND IS NOT REACHABLE.** Europe PMC's `supplementaryFiles`
+endpoint for PMC3781504 returns the article's own figures and Table 1, not the Supplementary
+Data; the latter is served from `care.diabetesjournals.org`, which **bot-checks and was not
+worked around.** The figures came down and **are deliberately not digitised** — branch S3 of
+`glucose_splay_prereg.md`, honoured.
+
+**GUESSING THE CONVENTION IS HOW THE LAST SPLAY FORM WENT WRONG.** `glucose_splay_prereg.md` §4
+asserted a form had the right limits without checking, and the model reabsorbed 2.2× what it
+filtered while all six gates passed. **An assumed integration limit is the same error one level
+up.**
+
+**WHAT MAY NOT BE DONE:** moving `RN.GLU.TM` or `RN.GFR.NOMINAL` to make the threshold land on
+9.5. Both are sourced, the gap is in a **ratio of two unrelated cohorts** (**B31**), and
+`glucose_splay_prereg.md` §8 names that as a way the pass fails.
+
+
 ### B7. A de-indexing correction is owed
 
 `validation/ecf_salt_response_extract.py` multiplies an *indexed* ECF difference by ONE
