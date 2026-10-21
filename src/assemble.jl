@@ -68,7 +68,7 @@ function build_raw_model(; body_mass = 70.0, storage::Bool = true,
                          anp_convexity = 0.0,
                          anp_adaptation::Bool = false,
                          anp_adapt_fraction = 0.0, anp_adapt_tau = 1.0)
-    @named bf = BodyFluids(; body_mass, storage)
+    @named bf = BodyFluids(; body_mass, storage, sex)
     sex in (:male, :female) ||
         error("sex must be :male or :female, got :$sex. There is no :both " *
               "individual - a parameter with no known dimorphism resolves to its " *

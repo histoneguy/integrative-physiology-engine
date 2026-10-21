@@ -499,6 +499,55 @@ ranks where the model rests on one paper and no overview, and names `Renal.GFR`'
 uncited autoregulation plateau as the first item. **§7 B24 carries the backlog.**
 
 
+### 1.17 PREFER STUDIES NOT CONDUCTED IN MAINLAND CHINA, AND MATCH THE COHORT TO THE REFERENCE INDIVIDUAL — 2026-10-20
+
+**Set by the owner.** Two rules that arrived together and are kept together because in the case
+that prompted them they pointed the same way.
+
+**RULE A — SOURCE SELECTION.** Where an admissible alternative exists, **prefer a study not
+conducted in mainland China.** The owner's ground is study conduct and verifiability rather
+than the participants' ancestry: **it is about where the work was done, not who was in it**, so
+a Chinese-ancestry cohort studied elsewhere is not affected.
+
+**IT IS A PREFERENCE, NOT AN EXCLUSION, AND THE DIFFERENCE IS LOAD-BEARING.** Where a
+relationship exists **only** in that literature, the choice is between using it with the
+provenance recorded and having nothing — and **having nothing is not neutral**, it leaves a row
+`assumed`. That is the same structure directive 1.6 already applies to animal data: where the
+alternative does not exist, the available evidence is the evidence, with its limitations on the
+row. **Do not silently substitute a worse source from elsewhere to satisfy this rule** — a
+weaker study from a preferred country is still a weaker study, and directive 1.7 outranks
+geography.
+
+**RULE B — AND IT IS THE ONE THAT DOES THE SCIENTIFIC WORK.** **Match the cohort to this
+model's reference individual.** That individual is a **US adult**: body mass from Fryar's NHANES
+anthropometric reference, body composition from NHANES DXA, fasting glucose and insulin from
+NHANES. A fraction measured in one population and applied to a body mass from another is the
+defect `OPEN-QUESTIONS` **B31** and **B36** already record twice, and **no gate can see it.**
+
+**WHAT PROMPTED BOTH.** `BF.TBW/ICF/ECF.MASS_FRACTION` — the three numbers the entire fluid
+model rests on — come from **160 Chinese college students measured by bioelectrical impedance
+in a study about water intake** (Zhang N et al., Peking University, PMC6751809). §3.76. It
+fails on **four** independent counts before geography is reached at all:
+
+- **Directive 1.7**: had the physiology come out differently, the paper's conclusion would
+  still have been about water intake. **Body water is the instrument, not the subject.**
+- **Method**: BIA, against deuterium and bromide dilution as the reference methods.
+- **Cohort**: lean young students against a 90.3 kg reference individual at 27% fat, and
+  total body water as a fraction of body weight **falls with adiposity.**
+- **Sex**: the paper reports sex differences and the **pooled** value was taken, which is what
+  produced the impossible 0.900 hydration of female fat-free mass.
+
+**SO THE HONEST RECORD IS THAT RULE A WAS NOT NEEDED TO REJECT IT.** Any one of those four was
+sufficient. **Where the two rules disagree, write down which one is doing the work** — a row
+rejected on geography alone, with no methodological or cohort objection, is a weaker record
+than one rejected on 1.7, and the file should say so.
+
+**THE REPLACEMENT IS NAMED AND CAME FROM THE REJECTED PAPER'S OWN REFERENCE LIST.**
+Chumlea 2001, total body water in **NHANES III** — US population, and the primary these
+fractions should have come from. *The review sends you to the primary literature*, which is
+directive 1.16's mechanism working one level down.
+
+
 ## 2. STATE
 
 **Six gates exit 0. The challenge harness exits 0** — run it rather than trusting this
@@ -6296,6 +6345,89 @@ rather than a paywall.
 140.0, urine 1.70, `Na_excr` 205.0 — because every split was constrained to be exact at the
 operating point rather than checked afterwards.
 
+### 3.76 BODY COMPOSITION, AND THE FLUID MODEL RESTS ON 160 CHINESE COLLEGE STUDENTS
+
+**ADR 0037. The substrate §4 has named as deferrable for weeks, built — and it immediately
+found that the most load-bearing numbers in the model are the worst-sourced.**
+
+#### What was built
+
+**The model had level V and nothing else.** Wang's five-level model (PMID 1609756) is the
+review that settled which level to build: **atomic, molecular, cellular, tissue-system, whole
+body**, whose compartments are connected but **not interchangeable.**
+
+| | level | source | method |
+|---|---|---|---|
+| fat / fat-free mass | **II, molecular** | NHANES DXA 2011–2018, **extracted** | DXA |
+| skeletal muscle | **IV, tissue-system** | Janssen 2000 | whole-body MRI |
+
+Fat fraction **0.272 ± 0.060** male, **0.387 ± 0.063** female, n = 10,832, survey-weighted.
+**Directive 1.12 scored hard**: the teaching pair of 15% and 25% was written down before
+extraction and is out by **twelve percentage points.**
+
+**TEST 3 WAS THE ONE THAT COULD HAVE SUNK IT AND IT PASSED.** Fat-free mass exceeds skeletal
+muscle by **1.9× and 2.0×**. Treating DXA lean mass as muscle is the standard conflation, wrong
+by about twofold, and the two levels are measurably not conflated.
+
+#### What it found, which is much worse than what it built
+
+**THE MODEL'S BODY WATER IS UNSEXED, AND THAT MAKES FEMALE FAT-FREE MASS 90% WATER.** TBW
+0.552, ICF 0.344, ECF 0.208, each `sex = both` and each a fraction of **body** mass. Divide by
+the measured fat-free fraction:
+
+| | implied FFM hydration |
+|---|---|
+| male | 0.758 |
+| **female** | **0.900** |
+
+**The hydration of fat-free mass is ≈0.73 and is among the most stable quantities in body
+composition. Fat-free mass cannot be 90% water.** In litres the model carries about **8 L** of
+water in women that has nowhere to be.
+
+**NO GATE COULD SEE IT.** `check_closure.py` verifies ICF + ECF = TBW, and that holds perfectly
+in both sexes — **the compartments sum; they are the wrong size.** It is the B32 class exactly:
+a physically inadmissible intermediate that enters no identity.
+
+#### And the source is worse than the arithmetic
+
+**Zhang N et al. (PMC6751809), read in full: 160 Chinese college students, bioelectrical
+impedance, in a study about water intake.** Its 55.2 / 34.4 / 20.8 percent are this ledger's
+three fractions exactly.
+
+- **It reports sex differences and the pooled value was taken.**
+- **BIA is the weakest method**; dilution is the reference.
+- **DIRECTIVE 1.7 FAILS OUTRIGHT** — had the physiology come out differently the paper's
+  conclusion would still have been about water intake. **Body water is the instrument, not the
+  subject.**
+- **The cohort is wrong**: lean young students against a 90.3 kg reference at 27% fat, and
+  TBW/body weight **falls with adiposity.**
+
+**AND THE PAPER CITES CHUMLEA 2001** — NHANES III, a US population reference. *The review sends
+you to the primary literature*, for the fourth time in this record.
+
+**`V_ecf` FEEDS BLOOD VOLUME, CARDIAC OUTPUT AND ARTERIAL PRESSURE.** Every volume result's
+female arm rests on this, including the sexed salt sensitivity §2 reports as a prediction.
+**`OPEN-QUESTIONS` B37** carries three non-equivalent routes and it is the owner's call.
+
+#### What is NOT claimed
+
+**Nothing consumes muscle mass yet**, and insulin-mediated uptake is where it belongs — Baron
+measured it in leg muscle. **A substrate that pretends to be a mechanism is worse than one that
+admits it is not.**
+
+**The operating point did not move, and that is a property of wiring nothing into the loop**,
+not evidence the compartments are right.
+
+**Branch C2 on the muscle row**: Janssen's cohort is 68.6 kg in women against this model's 77.9,
+his era is a leaner one, and his own paper says the relationship is **curvilinear** where this
+row is linear. **His number was not rescaled to fit.** B36.
+
+**And test 4's premise was wrong.** The pre-registration expected re-anchoring the water
+compartments on fat-free mass to change the **population sweep**. With a constant `f_fat` the
+two anchorings are **algebraically identical** — the sweep is a no-op. The effect is entirely
+**between sexes**, which is how B37 surfaced. **The right change was predicted for the wrong
+reason**, recorded rather than re-framed.
+
 ## 4. NEXT, IN ORDER
 
 ### RE-ORDERED 2026-09-23. READ THIS BLOCK; THE NUMBERED LIST BELOW IT IS FROM 2026-09-03 AND IS KEPT AS HISTORY
@@ -6308,9 +6440,14 @@ predates ADRs 0025–0032, the whole glucose axis, thirst, and directive 1.16. *
 already records that; item 5 was never updated. **Same failure as everything else found
 today: a true sentence left standing.**
 
-**0. ACCESS, AND IT IS THE ONLY THING THAT BLOCKS WORK RATHER THAN ORDERING IT.** Three
-publishers served bot checks on 2026-09-23 and **none was worked around**. Each blocks a
-named, pre-registered pass:
+**0. ACCESS, AND IT IS THE ONLY THING THAT BLOCKS WORK RATHER THAN ORDERING IT.**
+
+**THE STANDING CATALOGUE IS `validation/CITES-NEEDED.md`, opened 2026-10-20 at the owner's
+instruction.** It carries every paper the model needs and cannot read, what each unblocks, and
+**access status checked rather than assumed** — which matters, because **four papers that
+looked paywalled were not** (Baron 1985, McPhaul 1968, Groop 1989 from JCI's own links, and
+DeFronzo 2014 from PMC). **Read that file rather than the table below**, which is the
+2026-09-23 snapshot and is kept for its reasoning:
 
 | Paper | Blocks | Why it matters |
 |---|---|---|
