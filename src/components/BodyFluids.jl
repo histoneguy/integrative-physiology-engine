@@ -28,7 +28,6 @@ using ModelingToolkit
 using ModelingToolkit: t_nounits as t, D_nounits as D
 
 using ..LedgerParams:
-    BF_ICF_MASS_FRACTION, BF_ECF_MASS_FRACTION,
     BF_NA_PLASMA_SETPOINT, BF_OSM_PLASMA_SETPOINT,
     BF_NA_OSMOTICALLY_INACTIVE_FRACTION, BF_NA_STORAGE_TAU,
     BF_ICF_ECF_OSMOTIC_TAU,
@@ -61,6 +60,15 @@ function BodyFluids(; name, body_mass = BF_BODY_MASS_REFERENCE,
     sz = size_factor(body_mass)
     mz = mass_factor(body_mass)
 
+    # SEXED SINCE ADR 0038. The body-water fractions were a single shared value
+    # until they were re-sourced to Chumlea 1999 by deuterium dilution, which
+    # reports them by sex - and the sex difference is large: total body water is
+    # 0.510 of body mass in men against 0.441 in women, because women carry more
+    # fat and fat holds almost no water. Looked up ONCE here so the component has
+    # a single place where sex enters the water compartments.
+    f_icf_sex = LedgerParams.param(:BF_ICF_MASS_FRACTION, sex)
+    f_ecf_sex = LedgerParams.param(:BF_ECF_MASS_FRACTION, sex)
+
     pars = @parameters begin
         # ABLATION SWITCH - ADR 0030. thirst_on = 0 recovers the previous model
         # EXACTLY, the precedent g_md, dP_sym and k_angii were introduced on, and
@@ -81,8 +89,8 @@ function BodyFluids(; name, body_mass = BF_BODY_MASS_REFERENCE,
         # fat in men against 38.7% in women, NHANES DXA, n = 10832.
         f_fat       = LedgerParams.param(:BF_FAT_MASS_FRACTION, sex)
         f_muscle    = LedgerParams.param(:BF_MUSCLE_MASS_FRACTION, sex)
-        f_icf       = BF_ICF_MASS_FRACTION
-        f_ecf       = BF_ECF_MASS_FRACTION
+        f_icf       = f_icf_sex
+        f_ecf       = f_ecf_sex
         C_Na_set    = BF_NA_PLASMA_SETPOINT
         Osm_set     = BF_OSM_PLASMA_SETPOINT
         f_store     = BF_NA_OSMOTICALLY_INACTIVE_FRACTION
@@ -126,7 +134,7 @@ function BodyFluids(; name, body_mass = BF_BODY_MASS_REFERENCE,
         # at nominal ICF volume the cell is iso-osmolar with plasma. Cells do not
         # gain or lose solute on the timescales this model covers - only water
         # moves - so this is a parameter, not a state.
-        Osm_solute_icf = BF_OSM_PLASMA_SETPOINT * body_mass * BF_ICF_MASS_FRACTION
+        Osm_solute_icf = BF_OSM_PLASMA_SETPOINT * body_mass * f_icf_sex
         # THE NON-SODIUM OSMOLAL REMAINDER, COMPUTED RATHER THAN STORED - ADR 0029.
         # BF.OSM.NONSODIUM was a ledger row DERIVED as Osm_set - 2*C_Na = 7, and its
         # own note said it represented "glucose potassium urea and other solutes".
@@ -149,11 +157,11 @@ function BodyFluids(; name, body_mass = BF_BODY_MASS_REFERENCE,
     # and inline is better practice regardless - the default sits next to the
     # variable it belongs to.
     vars = @variables begin
-        V_icf(t)         = body_mass * BF_ICF_MASS_FRACTION            # L
-        V_ecf(t)         = body_mass * BF_ECF_MASS_FRACTION            # L
-        Na_ecf(t)        = body_mass * BF_ECF_MASS_FRACTION * BF_NA_PLASMA_SETPOINT
+        V_icf(t)         = body_mass * f_icf_sex                       # L
+        V_ecf(t)         = body_mass * f_ecf_sex                       # L
+        Na_ecf(t)        = body_mass * f_ecf_sex * BF_NA_PLASMA_SETPOINT
         Na_store(t)      = storage ? BF_NA_OSMOTICALLY_INACTIVE_FRACTION *
-                                     body_mass * BF_ECF_MASS_FRACTION *
+                                     body_mass * f_ecf_sex *
                                      BF_NA_PLASMA_SETPOINT : 0.0
         C_Na(t)             # mEq/L
         # BODY COMPOSITION OBSERVABLES, ADR 0037. No state: algebraic in

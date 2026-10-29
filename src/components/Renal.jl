@@ -62,7 +62,7 @@ using ..LedgerParams:
     RN_URINE_SOLUTE_LOAD, RN_URINE_SOLUTE_NONNA, RN_URINE_OSM_PER_NA, RN_URINE_SOLUTE_NONNA_SLOPE,
     RN_AUTOREG_LOWER, RN_AUTOREG_UPPER, ADH_URINE_OSM_MAX, RN_URINE_SOLUTE_LOAD,
     CV_MAP_SETPOINT, BF_H2O_INTAKE_NOMINAL, BF_H2O_INSENSIBLE_LOSS,
-    BF_BODY_MASS_REFERENCE, BF_ECF_MASS_FRACTION, CV_VOLUME_NATRIURETIC_GAIN, RN_VOLUME_NATRIURESIS_TAU,
+    BF_BODY_MASS_REFERENCE, CV_VOLUME_NATRIURETIC_GAIN, RN_VOLUME_NATRIURESIS_TAU,
     RN_GFR_VOLUME_SENSITIVITY, RN_GFR_VOLUME_RANGE, RN_NA_MACULA_DENSA_FRACTION,
     RN_NA_PROXIMAL_SALT_SENSITIVITY, RAAS_PRA_REFERENCE,
     RN_NA_TAL_REABSORBED_FRACTION, RN_NA_MACULA_DENSA_CONC_REFERENCE,
@@ -344,7 +344,9 @@ function Renal(; name, solute_tracking::Bool = true,
         # silently re-based. It is written in the sz form rather than as
         # body_mass*f_ecf so that it reads identically to the line in
         # ensemble.jl's member_remake, which must reapply it.
-        V_ecf_ref  = mz * BF_ECF_MASS_FRACTION * BF_BODY_MASS_REFERENCE
+        # SEXED SINCE ADR 0038 - the extracellular fraction is no longer shared.
+        V_ecf_ref  = mz * LedgerParams.param(:BF_ECF_MASS_FRACTION, sex) *
+                     BF_BODY_MASS_REFERENCE
         # V_min (RN.H2O.OBLIGATORY_LOSS) IS DELIBERATELY NO LONGER A PARAMETER
         # HERE. It was a constant 0.5 L/day floor, which equalled
         # RN.URINE.SOLUTE_LOAD / ADH.URINE.OSM_MAX only while the solute load was

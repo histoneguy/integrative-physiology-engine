@@ -6428,6 +6428,73 @@ two anchorings are **algebraically identical** — the sweep is a no-op. The eff
 **between sexes**, which is how B37 surfaced. **The right change was predicted for the wrong
 reason**, recorded rather than re-framed.
 
+### 3.77 THE 90% HYDRATION IS GONE, AND THE FIX CAME FROM A PAPER NOBODY ASKED FOR
+
+**ADR 0038, eight days after ADR 0037 found the defect.** The owner supplied the paper; it was
+**not the one the catalogue requested**, and it was better.
+
+#### What was wrong
+
+`BF.TBW/ICF/ECF.MASS_FRACTION` were a single `sex = both` triple — 0.552 / 0.344 / 0.208 of
+**body** mass — from **160 Chinese college students, bioimpedance, in a study about water
+intake**. Divided by ADR 0037's measured fat-free fraction, they implied hydration of fat-free
+mass of **0.758 in men and 0.900 in women.** Fat-free mass cannot be 90% water.
+
+#### The source, and why the substituted paper was the right one
+
+**Chumlea 1999, the Fels Longitudinal Study** — 566 US adults, **TBW by deuterium NMR**, DXA
+alongside, sexed. The catalogue had asked for Chumlea **2001**.
+
+**THE DECIDING REASON IS COMPARTMENT DEFINITION, NOT RECENCY.** Chumlea computes FFM as DXA
+**lean + bone mineral**, which is exactly how `mass_ffm` is defined from NHANES DXA. **The
+canonical 0.73 was deliberately refused**: it refers to fat-free *body* mass, and a DXA FFM
+includes bone mineral that carries no water, so pairing 0.73 with a DXA fat fraction is a level
+and method mismatch — the error the five-level model exists to prevent.
+
+**THE PAPER REPORTS ITS OWN RATIO THREE INCONSISTENT WAYS** — text ≈0.68, Table 3's fit
+0.700/0.720, Table 1's ratio-of-means 0.716/0.733. **Table 3 was taken and the rule was fixed
+before choosing**; all three are on the row, because a source that reports one quantity three
+ways is a fact about the evidence.
+
+#### The result
+
+| | implied FFM hydration | was |
+|---|---|---|
+| male | **0.700** | 0.758 |
+| female | **0.719** | **0.900** |
+
+**TBW falls from a shared 0.552 to 0.510 male and 0.441 female**, and the sex difference now
+**emerges from the sourced fat fractions** rather than being imposed — hydration itself is
+nearly sex-invariant and slightly *higher* in women.
+
+**THE OPERATING POINT HELD WHILE THE VOLUMES MOVED.** `V_ecf` fell from a shared 14.56 L to
+**13.44** and **11.62**, and MAP stayed at 87.0 / 86.1 / 85.2. The closure identity absorbed it
+through `f_pv`, re-derived 0.2111 → 0.2287 male and 0.2044 → **0.2562** female. **Nothing left
+its band:** salt sensitivity 1.7 male / 1.8 female against 1.70–2.30, `dMAP/dV_ecf` 3.5 / 4.2
+against 2.97–4.16.
+
+**AND A NEW SEXED PREDICTION FELL OUT, EMERGENT.** `dMAP/dV_ecf` now differs by sex — **3.5
+against 4.2** — because `f_pv` differs by sex, because `V_ecf` differs by composition. Nothing
+sourced that difference directly. **Salt sensitivity in women also moved slightly off the lower
+band edge B35 recorded**, which was not predicted and is not claimed as a success.
+
+#### Two things this did not do
+
+**SEXING A SHARED PARAMETER IS NOT A ONE-LINE CHANGE.** Sixteen use sites across `BodyFluids`,
+`Renal`, `ensemble` and the suite read these as scalars and had to move to the sexed lookup. The
+first build after the ledger edit failed outright. **In `BodyFluids` the lookup now happens
+once**, so the component has a single place where sex enters the water compartments.
+
+**AND THE PARTITION IS STILL WRONG — B39.** Chumlea measures the **total**, not ECW and ICW; its
+introduction's 65/35 is *"the proverbial 70 kg person"*, which directive 1.12 forbids. So the
+split keeps Zhang's ratio. **`V_ecf` is what feeds the loop, so the total barely touches it and
+the split is the loop** — this pass moved the error rather than removing it, and the ADR says so.
+Bromide dilution is the reference method and the ask is in `CITES-NEEDED.md`.
+
+**GEOGRAPHY DID NOT REJECT ZHANG, AND DIRECTIVE 1.17 REQUIRES SAYING SO.** Rule A was satisfied,
+but four stronger grounds each sufficed independently — **directive 1.7** above all, since body
+water was the instrument in that paper and not the subject.
+
 ## 4. NEXT, IN ORDER
 
 ### RE-ORDERED 2026-09-23. READ THIS BLOCK; THE NUMBERED LIST BELOW IT IS FROM 2026-09-03 AND IS KEPT AS HISTORY

@@ -1458,6 +1458,41 @@ up.**
 `glucose_splay_prereg.md` §8 names that as a way the pass fails.
 
 
+### B39. The ECF/ICF split is the last thing in the fluid model still resting on bioimpedance — NEW, 2026-10-28
+
+**ADR 0038 re-sourced the TOTAL and deliberately left the PARTITION.** Total body water is now
+deuterium-measured and sexed (Chumlea 1999); **the split between extracellular and
+intracellular water is still Zhang's 0.3768 : 0.6232**, carried across unchanged.
+
+**WHY IT COULD NOT BE FIXED IN THE SAME PASS.** Chumlea measures total body water, not ECW and
+ICW. Its introduction gives **65/35** for *"the proverbial 70 kg person"* — **a convention, and
+directive 1.12 forbids taking it.** Nothing else in the paper constrains the split.
+
+**WHY IT MATTERS MORE THAN THE TOTAL DID.** `V_ecf` is what feeds plasma volume, blood volume,
+cardiac output and arterial pressure. **The total body water figure barely touches the loop; the
+split is the loop.** Getting the total right while the split stays wrong moves the error rather
+than removing it — and ADR 0038 says so rather than claiming the fluid model is sourced.
+
+**WHAT WOULD RESOLVE IT: bromide dilution.** Sodium bromide is the reference method for
+extracellular water, as deuterium is for total. A series reporting **both** in the same healthy
+adults, **sexed**, would give the split directly and would compose with the TBW row because the
+total would be measured in the same subjects.
+
+**WHAT MAY NOT RESOLVE IT:**
+
+- **Taking 65/35 from Chumlea's introduction**, or any other round pair. Directive 1.12.
+- **A BIA-derived split**, which is what is already there — swapping one impedance estimate for
+  another is not progress, and `pooling.md` forbids mixing extraction methods with the
+  deuterium-based total.
+- **Deriving the split to make the loop close.** `CV.PLASMA.ECF_FRACTION` is already a derived
+  closure row; making the ECF *fraction* derived too would leave the partition determined by
+  the cardiovascular rows rather than by measurement. That is failure mode 22's shape.
+
+**WHAT TO ASK FOR.** Added to `CITES-NEEDED.md`: a bromide-dilution extracellular water series
+in healthy adults, sexed, ideally with concurrent deuterium. **Not yet searched** — this entry
+is the record that it is the next thing, not a report that it was tried.
+
+
 ### B7. A de-indexing correction is owed
 
 `validation/ecf_salt_response_extract.py` multiplies an *indexed* ECF difference by ONE
