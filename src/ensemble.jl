@@ -160,7 +160,8 @@ function member_remake(prob, sys, member; sex::Symbol = :male)
         # ensemble is to avoid rebuilding. The two paths must agree, and the test
         # suite asserts they do rather than trusting that they do.
         p = [sys.bf.m_body         => bm,
-             sys.bf.Osm_solute_icf => BF_OSM_PLASMA_SETPOINT * bm * BF_ICF_MASS_FRACTION,
+             sys.bf.Osm_solute_icf => BF_OSM_PLASMA_SETPOINT * bm *
+                                      LedgerParams.param(:BF_ICF_MASS_FRACTION, sex),
              sys.bf.Na_intake      => sz * BF_NA_INTAKE_NOMINAL,
              sys.bf.H2O_intake     => sz * BF_H2O_INTAKE_NOMINAL,
              sys.rn.GFR0           => sz * RN_GFR_NOMINAL,
@@ -198,7 +199,8 @@ function member_remake(prob, sys, member; sex::Symbol = :male)
              # V_blood_ref does above, and omitting it would make every heavy
              # member read as volume-expanded in the same way omitting V_blood_ref
              # did. That failure is recorded above; this list is where it happens.
-             sys.rn.V_ecf_ref      => mz * BF_ECF_MASS_FRACTION * BF_BODY_MASS_REFERENCE,
+             sys.rn.V_ecf_ref      => mz * LedgerParams.param(:BF_ECF_MASS_FRACTION, sex) *
+                                      BF_BODY_MASS_REFERENCE,
              sys.cv.CO0            => sz * LedgerParams.param(:CV_CO_NOMINAL, sex),
              sys.cv.BV0            => mz * LedgerParams.param(:CV_BLOOD_VOLUME_NOMINAL, sex),
              sys.cv.VC0            => mz * LedgerParams.param(:CV_CENTRAL_VOLUME_NOMINAL, sex),
@@ -300,7 +302,16 @@ function member_remake(prob, sys, member; sex::Symbol = :male)
              # failed `member_remake re-sexes and re-sizes to match a natively
              # built model` on the first run. Connect it and run it.
              sys.bf.f_fat          => LedgerParams.param(:BF_FAT_MASS_FRACTION, sex),
-             sys.bf.f_muscle       => LedgerParams.param(:BF_MUSCLE_MASS_FRACTION, sex)],
+             sys.bf.f_muscle       => LedgerParams.param(:BF_MUSCLE_MASS_FRACTION, sex),
+             # THE WATER FRACTIONS, ADDED 2026-10-28 WITH ADR 0038, AND THIS IS THE
+             # SECOND TIME THIS LIST HAS BEEN MISSED IN EIGHT DAYS. Sexing a shared
+             # parameter means every reader must change, and this list is the one
+             # that is easy to forget because nothing in the component references
+             # it. The suite caught it both times - worst disagreement 15.7% here -
+             # which is what `member_remake re-sexes and re-sizes to match a
+             # natively built model` exists for.
+             sys.bf.f_icf          => LedgerParams.param(:BF_ICF_MASS_FRACTION, sex),
+             sys.bf.f_ecf          => LedgerParams.param(:BF_ECF_MASS_FRACTION, sex)],
         # THE FOURTH INITIAL CONDITION, ADDED 2026-09-16 WITH ADR 0023, AND IT IS
         # THE FIRST ONE OUTSIDE BODY FLUIDS. Red cell volume is a state whose
         # starting value is Hct*BV0 - sexed through BOTH factors and mass-scaled
@@ -314,9 +325,10 @@ function member_remake(prob, sys, member; sex::Symbol = :male)
         # is a STATE, and adding a state to a component that has sexed or extensive
         # parameters silently creates an obligation here. Written down so the
         # tenth one is looked for rather than found.
-        u0 = [sys.bf.V_icf  => bm * BF_ICF_MASS_FRACTION,
-              sys.bf.V_ecf  => bm * BF_ECF_MASS_FRACTION,
-              sys.bf.Na_ecf => bm * BF_ECF_MASS_FRACTION * BF_NA_PLASMA_SETPOINT,
+        u0 = [sys.bf.V_icf  => bm * LedgerParams.param(:BF_ICF_MASS_FRACTION, sex),
+              sys.bf.V_ecf  => bm * LedgerParams.param(:BF_ECF_MASS_FRACTION, sex),
+              sys.bf.Na_ecf => bm * LedgerParams.param(:BF_ECF_MASS_FRACTION, sex) *
+                               BF_NA_PLASMA_SETPOINT,
               sys.cv.V_rbc  => LedgerParams.param(:CV_HEMATOCRIT_NOMINAL, sex) *
                                mz * LedgerParams.param(:CV_BLOOD_VOLUME_NOMINAL, sex),
               # AND HERE IS THE TENTH, FOUND THE WAY THE NOTE ABOVE HOPED IT WOULD
@@ -333,7 +345,8 @@ function member_remake(prob, sys, member; sex::Symbol = :male)
               # It must match BodyFluids.jl's inline default exactly, or the member
               # starts off its own steady state - which is the bug, not the fix.
               sys.bf.Na_store => BF_NA_OSMOTICALLY_INACTIVE_FRACTION * bm *
-                                 BF_ECF_MASS_FRACTION * BF_NA_PLASMA_SETPOINT])
+                                 LedgerParams.param(:BF_ECF_MASS_FRACTION, sex) *
+                                 BF_NA_PLASMA_SETPOINT])
 end
 
 """
